@@ -13,6 +13,6 @@ Text {
     horizontalAlignment: Text.AlignHCenter
     verticalAlignment: Text.AlignVCenter
     renderType: Text.NativeRendering
-    implicitWidth: iconSize + 2
-    implicitHeight: iconSize + 2
+    width: iconSize + 2
+    height: iconSize + 2
 }
