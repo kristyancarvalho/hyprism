@@ -11,7 +11,31 @@ import "notifications"
 
 ShellRoot {
     id: root
-    IpcHandler { target: "test"; function ping(): string { return "pong" } }
+    IpcHandler { target: "shell"
+        function toggleControlCenter(): void { controller.toggle("control") }
+        function toggleNetwork(): void { controller.toggle("network") }
+        function togglePowerSaver(): void { controller.togglePowerSaver() }
+        function close(): void { controller.close() }
+        function themeChanged(image: string): void { controller.showOsd("Theme", "Updated") }
+        function reload(): void { controller.run(["sh", "-lc", "~/.local/share/hyprism/scripts/system/reload-shell"]) }
+    }
+    IpcHandler { target: "app-launcher"; function toggle(): void { controller.toggle("launcher") } }
+    IpcHandler { target: "wallpaper-picker"; function toggle(): void { controller.toggle("wallpaper") } }
+    IpcHandler { target: "wallpaper"; function random(): void { controller.run(["sh", "-lc", "~/.local/share/hyprism/scripts/wallpaper random"]) } }
+    IpcHandler { target: "clipboard"; function toggle(): void { controller.toggle("clipboard") } }
+    IpcHandler { target: "window-switcher"; function forward(): void { controller.switcher(1) } function backward(): void { controller.switcher(-1) } function commit(): void { controller.commitSwitcher() } }
+    IpcHandler { target: "notifications"; function toggle(): void { controller.toggle("control") } }
+    IpcHandler { target: "power-menu"; function toggle(): void { controller.toggle("power") } }
+    IpcHandler { target: "emoji-picker"; function toggle(): void { controller.toggle("emoji") } }
+    IpcHandler { target: "osd"
+        function volume(value: string): void { controller.showOsd("Volume", value) }
+        function brightness(value: string): void { controller.showOsd("Brightness", value) }
+        function microphone(value: string): void { controller.showOsd("Microphone", value) }
+        function screenshot(value: string): void { controller.showOsd("Screenshot", value.split("/").pop()) }
+        function color(value: string): void { controller.showOsd("Color", value) }
+        function night(value: string): void { controller.showOsd("Night mode", value) }
+        function power(value: string): void { controller.showOsd("Power saver", value) }
+    }
     Theme { id: theme }
     ShellController { id: controller }
     SystemService { controller: controller }
