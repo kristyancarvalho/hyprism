@@ -1,0 +1,25 @@
+import QtQuick
+import QtQuick.Controls
+import "../components"
+
+Glass {
+    id: card
+    required property var notification
+    required property var controller
+    width: 330; height: Math.max(76, body.implicitHeight + 28); radius: 16; surfaceOpacity: .96
+    border.color: notification && notification.urgency === 2 ? theme.colors.error : theme.colors.outline
+    visible: notification !== null
+    Column { id: body; anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 13 } spacing: 3
+        Row { width: parent.width
+            Text { text: notification && notification.appIcon ? "◈" : "●"; color: theme.colors.accent; width: 21; font.pixelSize: 15 }
+            Text { text: notification ? (notification.appName + " · " + notification.summary) : ""; width: parent.width - 48; color: theme.colors.foreground; elide: Text.ElideRight; font { pixelSize: 11; bold: true } }
+            Button { text: "×"; width: 24; height: 24; onClicked: notification.dismiss() }
+        }
+        Text { width: parent.width; text: notification ? notification.body.replace(/<[^>]*>/g, "") : ""; wrapMode: Text.Wrap; maximumLineCount: 3; elide: Text.ElideRight; color: theme.colors.mutedForeground; font.pixelSize: 11 }
+        Row { visible: notification && notification.actions.length > 0; spacing: 4
+            Repeater { model: notification ? notification.actions : []
+                Button { required property var modelData; text: modelData.text; onClicked: modelData.invoke() }
+            }
+        }
+    }
+}
