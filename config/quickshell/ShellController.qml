@@ -31,7 +31,7 @@ Item {
     function returnToPrevious() { mode === "compact" ? close() : (mode = previousMode === "compact" ? "compact" : previousMode) }
     function showOsd(kind, value) { osdKind = kind; osdValue = value; osdTimer.restart() }
     function run(command) { commandRunner.exec(command) }
-    function toggleNightMode() { nightMode = !nightMode; run(["sh", "-lc", "~/.local/share/hyprism/scripts/system/action night-mode " + (nightMode ? "0.35" : "0")]); showOsd("Night mode", nightMode ? "On" : "Off") }
+    function toggleNightMode() { nightMode = !nightMode; run(["sh", "-lc", "~/.local/share/hyprism/scripts/system/action night-mode " + (nightMode ? "on" : "off")]); showOsd("Night mode", nightMode ? "On" : "Off") }
     function togglePowerSaver() { powerSaver = !powerSaver; run(["sh", "-lc", "~/.local/share/hyprism/scripts/system/action power-save " + (powerSaver ? "power-saver" : "balanced")]); showOsd("Power saver", powerSaver ? "On" : "Off") }
     function switcher(step) {
         switcherWindows = []

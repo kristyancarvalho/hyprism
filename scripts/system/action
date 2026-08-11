@@ -41,7 +41,15 @@ case "${1:-}" in
     [[ -n $color ]] && printf '%s' "$color" | wl-copy && notify color "$color"
     ;;
   clipboard-watch) clipboard_watch ;;
-  night-mode) hyprctl keyword decoration:dim_special "${2:-0.18}" >/dev/null 2>&1; notify night "${2:-toggle}" ;;
+  night-mode)
+    night_state="${XDG_CACHE_HOME:-$HOME/.cache}/hyprism/state/night-mode"
+    mkdir -p "$(dirname "$night_state")"
+    mode=${2:-toggle}
+    if [[ $mode == toggle ]]; then [[ $(cat "$night_state" 2>/dev/null || true) == on ]] && mode=off || mode=on; fi
+    if [[ $mode == on ]]; then hyprctl hyprsunset temperature 4000 >/dev/null 2>&1 && printf on >"$night_state" && notify night On
+    else hyprctl hyprsunset identity >/dev/null 2>&1 && printf off >"$night_state" && notify night Off
+    fi
+    ;;
   power-save) powerprofilesctl set "${2:-power-saver}" >/dev/null 2>&1 || true; notify power "${2:-power-saver}" ;;
   record) ${HYPRISM_RECORD_COMMAND:-wf-recorder -f "$HOME/Imagens/Screenshots/$(date +%Y%m%d_%H%M%S)_recording.mp4"} ;;
   *) printf 'Usage: %s {volume-up|volume-down|volume-mute|mic-mute|brightness-up|brightness-down|screenshot-area|screenshot-monitor|color-picker|clipboard-watch|night-mode|power-save|record}\n' "$0" >&2; exit 2 ;;
