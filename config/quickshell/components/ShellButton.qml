@@ -19,7 +19,7 @@ Rectangle {
     radius: height / 2
     color: destructive && available ? theme.colors.error : active && available ? theme.colors.accentDim : hovered ? theme.colors.surfaceHover : theme.colors.surfaceVariant
     border.width: activeFocus ? 2 : Design.outlineWidth
-    border.color: activeFocus || active ? theme.colors.accent : theme.colors.outline
+    border.color: activeFocus || active ? theme.colors.borderFocused : theme.colors.borderNormal
     opacity: available ? pending ? .72 : 1 : .5
 
     Row {
