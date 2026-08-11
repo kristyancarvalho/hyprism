@@ -94,4 +94,10 @@ ansi = [background, theme["error"], primary, theme["warning"], secondary, second
         muted, theme["error"], primary, theme["warning"], secondary, secondary, primary, foreground]
 kitty += [f"color{i} {color}" for i, color in enumerate(ansi)]
 write(OUT / "kitty.conf", "\n".join(kitty) + "\n")
-write(OUT / "hyprland.conf", f"$hyprism_active_border = rgb({primary[1:]})\n$hyprism_inactive_border = rgb({outline[1:]})\n")
+write(
+    OUT / "hyprland.lua",
+    "return {\n"
+    f'    active_border = "rgb({primary[1:]})",\n'
+    f'    inactive_border = "rgb({outline[1:]})",\n'
+    "}\n",
+)
