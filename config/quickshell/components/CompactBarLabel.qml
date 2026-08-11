@@ -2,7 +2,7 @@ import QtQuick
 import ".."
 
 Text {
-    implicitHeight: Design.compactItemHeight
+    height: Design.compactItemHeight
     color: "white"
     font.family: Design.fontFamily
     font.pixelSize: Design.compactTextSize
