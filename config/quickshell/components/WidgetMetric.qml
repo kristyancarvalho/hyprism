@@ -7,7 +7,7 @@ Row {
     property string iconName: "settings"
     property string value: ""
     spacing: 5
-    implicitHeight: Design.widgetHeaderHeight
+    height: Design.widgetHeaderHeight
 
     StatusIcon {
         width: Design.widgetHeaderHeight
