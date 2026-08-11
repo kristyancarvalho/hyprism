@@ -27,5 +27,6 @@ PanelWindow {
         notification: popup.notification
         controller: popup.controller
         theme: popup.theme
+        onDismissed: popup.notification = null
     }
 }

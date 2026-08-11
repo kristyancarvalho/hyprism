@@ -13,6 +13,8 @@ Item {
     property string osdValue: ""
     property int switcherIndex: 0
     property var switcherWindows: []
+    property var mruWindows: []
+    property var mediaPlayer: null
     property bool nightMode: false
     property bool powerSaver: false
     property bool systemServiceAvailable: false
@@ -20,60 +22,189 @@ Item {
     property var appEntries: []
     property var wallpaperEntries: []
     property var clipboardEntries: []
-    property var weather: ({ city: "São Paulo", temperature: null, apparentTemperature: null, weatherCode: -1 })
-    property var system: ({ audio: { available: false, percent: 0, muted: false }, microphone: { available: false, percent: 0, muted: false }, network: { kind: "disconnected", name: "Desconectado", enabled: false, signal: 0 }, bluetooth: { available: false, powered: false, connected: false, devices: [] }, battery: { available: false, percent: 0, status: "" }, brightness: { available: false, percent: 0 }, memory: { percent: 0, used: 0, total: 0 }, cpu: { percent: 0 }, gpu: { available: false, percent: 0 }, media: { available: false, status: "", artist: "", title: "", artUrl: "" } })
-    property var config: ({ shell: { primaryMonitor: "", islandWidth: 520, compactHeight: 50, topMargin: 14, surfaceOpacity: .9, radiusSmall: 14, radiusMedium: 22, radiusLarge: 30, spacingSmall: 8, spacingMedium: 14, spacingLarge: 22, animationFast: 130, animationNormal: 210, widgets: { clock: true, weather: true, media: true, system: true } } })
+    property var cpuHistory: []
+    property var memoryHistory: []
+    property var gpuHistory: []
+    property var temperatureHistory: []
+    property var networkHistory: []
+    property var weather: ({ city: "São Paulo", condition: "Indisponível", temperature: null, apparentTemperature: null, minimum: null, maximum: null, weatherCode: -1 })
+    property var system: ({ audio: { available: false, percent: 0, muted: false }, microphone: { available: false, percent: 0, muted: false }, network: { kind: "disconnected", name: "Desconectado", enabled: false, signal: 0, receiveKib: 0, transmitKib: 0 }, bluetooth: { available: false, powered: false, connected: false, devices: [] }, battery: { available: false, percent: 0, status: "" }, brightness: { available: false, percent: 0 }, memory: { percent: 0, used: 0, total: 0 }, cpu: { percent: 0 }, gpu: { available: false, percent: 0 }, temperature: { available: false, celsius: 0 } })
+    property var config: ({ shell: { primaryMonitor: "", islandWidth: 560, compactHeight: 50, topMargin: 14, reserveGap: 10, surfaceOpacity: .9, radiusSmall: 14, radiusMedium: 22, radiusLarge: 30, spacingSmall: 8, spacingMedium: 14, spacingLarge: 22, animationFast: 130, animationNormal: 210, widgets: { clock: true, weather: true, media: true, system: true } } })
     property string rootDir: Quickshell.env("HYPRISM_ROOT") || Quickshell.env("HOME") + "/.local/share/hyprism"
 
     function open(next) {
         if (mode !== next) previousMode = mode
         mode = next
     }
-    function toggle(next) { mode === next ? close() : open(next) }
-    function close() { mode = "compact" }
-    function returnToPrevious() { mode === "compact" ? close() : (mode = previousMode === "compact" ? "compact" : previousMode) }
-    function showOsd(kind, value) { osdKind = kind; osdValue = value; osdTimer.restart() }
-    function run(command) { commandRunner.exec(command) }
-    function toggleNightMode() { nightMode = !nightMode; run([rootDir + "/scripts/system/action", "night-mode", nightMode ? "on" : "off"]); showOsd("Modo noturno", nightMode ? "Ativado" : "Desativado") }
-    function togglePowerSaver() { powerSaver = !powerSaver; run([rootDir + "/scripts/system/action", "power-save", powerSaver ? "power-saver" : "balanced"]); showOsd("Economia de energia", powerSaver ? "Ativada" : "Desativada") }
-    function switcher(step) {
-        switcherWindows = []
-        for (let i = 0; i < ToplevelManager.toplevels.count; i++) switcherWindows.push(ToplevelManager.toplevels.get(i))
-        if (!switcherWindows.length) return
-        if (mode !== "switcher") { previousMode = mode; mode = "switcher"; switcherIndex = 0 }
-        else switcherIndex = (switcherIndex + step + switcherWindows.length) % switcherWindows.length
+
+    function toggle(next) {
+        mode === next ? close() : open(next)
     }
+
+    function close() {
+        mode = "compact"
+    }
+
+    function returnToPrevious() {
+        mode === "compact" ? close() : (mode = previousMode === "compact" ? "compact" : previousMode)
+    }
+
+    function showOsd(kind, value) {
+        osdKind = Design.safeText(kind, "Sistema")
+        osdValue = Design.safeText(value, "Indisponível")
+        osdTimer.restart()
+    }
+
+    function run(command) {
+        commandRunner.exec(command)
+    }
+
+    function toggleNightMode() {
+        nightMode = !nightMode
+        run([rootDir + "/scripts/system/action", "night-mode", nightMode ? "on" : "off"])
+        showOsd("Modo noturno", nightMode ? "Ativado" : "Desativado")
+    }
+
+    function togglePowerSaver() {
+        powerSaver = !powerSaver
+        run([rootDir + "/scripts/system/action", "power-save", powerSaver ? "power-saver" : "balanced"])
+        showOsd("Economia de energia", powerSaver ? "Ativada" : "Desativada")
+    }
+
+    function appendHistory(history, value) {
+        const next = Array.isArray(history) ? history.slice(-Design.historyLimit + 1) : []
+        next.push(Design.clamp(value, 0, 100))
+        return next
+    }
+
+    function updateSystem(incoming) {
+        const next = incoming || {}
+        system = {
+            audio: Object.assign({}, system.audio, next.audio || {}),
+            microphone: Object.assign({}, system.microphone, next.microphone || {}),
+            network: Object.assign({}, system.network, next.network || {}),
+            bluetooth: Object.assign({}, system.bluetooth, next.bluetooth || {}),
+            battery: Object.assign({}, system.battery, next.battery || {}),
+            brightness: Object.assign({}, system.brightness, next.brightness || {}),
+            memory: Object.assign({}, system.memory, next.memory || {}),
+            cpu: Object.assign({}, system.cpu, next.cpu || {}),
+            gpu: Object.assign({}, system.gpu, next.gpu || {}),
+            temperature: Object.assign({}, system.temperature, next.temperature || {})
+        }
+        cpuHistory = appendHistory(cpuHistory, system.cpu.percent)
+        memoryHistory = appendHistory(memoryHistory, system.memory.percent)
+        if (system.gpu.available) gpuHistory = appendHistory(gpuHistory, system.gpu.percent)
+        if (system.temperature.available) temperatureHistory = appendHistory(temperatureHistory, system.temperature.celsius)
+        networkHistory = appendHistory(networkHistory, Math.min(100, Math.log2(1 + Design.safeNumber(system.network.receiveKib, 0) + Design.safeNumber(system.network.transmitKib, 0)) * 8))
+    }
+
+    function rememberWindow(window) {
+        if (!window) return
+        const available = ToplevelManager.toplevels.values || []
+        const next = [window]
+        for (let i = 0; i < mruWindows.length; i++) {
+            const candidate = mruWindows[i]
+            if (candidate && candidate !== window && available.indexOf(candidate) >= 0) next.push(candidate)
+        }
+        for (let j = 0; j < available.length; j++) {
+            if (available[j] && next.indexOf(available[j]) < 0) next.push(available[j])
+        }
+        mruWindows = next
+    }
+
+    function orderedWindows() {
+        const available = ToplevelManager.toplevels.values || []
+        const ordered = []
+        for (let i = 0; i < mruWindows.length; i++) {
+            if (mruWindows[i] && available.indexOf(mruWindows[i]) >= 0 && ordered.indexOf(mruWindows[i]) < 0) ordered.push(mruWindows[i])
+        }
+        for (let j = 0; j < available.length; j++) {
+            if (available[j] && ordered.indexOf(available[j]) < 0) ordered.push(available[j])
+        }
+        return ordered
+    }
+
+    function switcher(step) {
+        if (mode !== "switcher") {
+            rememberWindow(ToplevelManager.activeToplevel)
+            switcherWindows = orderedWindows()
+            if (!switcherWindows.length) return
+            previousMode = mode
+            mode = "switcher"
+            switcherIndex = step < 0 ? switcherWindows.length - 1 : Math.min(1, switcherWindows.length - 1)
+            return
+        }
+        switcherIndex = (switcherIndex + step + switcherWindows.length) % switcherWindows.length
+    }
+
     function commitSwitcher() {
         if (mode !== "switcher") return
-        let window = switcherWindows[switcherIndex]
-        if (window) window.activate()
+        const window = switcherWindows[switcherIndex]
+        if (window) {
+            if (window.minimized) window.minimized = false
+            window.activate()
+        }
         close()
     }
+
     function weatherIconName(code) {
-        if (code === 0) return "weather-clear"
-        if (code === 1 || code === 2) return "weather-few-clouds"
-        if (code === 3) return "weather-overcast"
-        if (code === 45 || code === 48) return "weather-fog"
-        if (code >= 51 && code <= 67) return "weather-showers-scattered"
-        if (code >= 71 && code <= 77) return "weather-snow"
-        if (code >= 80 && code <= 82) return "weather-showers"
-        if (code >= 95) return "weather-storm"
-        return "weather-overcast"
+        if (code === 0) return "weatherClear"
+        if (code === 1 || code === 2) return "weatherPartlyCloudy"
+        if (code === 3) return "weatherCloudy"
+        if (code === 45 || code === 48) return "weatherFog"
+        if (code >= 51 && code <= 67) return "weatherRain"
+        if (code >= 71 && code <= 77) return "weatherSnow"
+        if (code >= 80 && code <= 82) return "weatherRain"
+        if (code >= 95) return "weatherStorm"
+        return "weatherCloudy"
     }
-    function networkIconName() { return system.network.kind === "wifi" ? "network-wireless" : system.network.kind === "ethernet" ? "network-wired" : "network-offline" }
-    function networkLabel() { return system.network.kind === "ethernet" ? "Cabo" : system.network.kind === "wifi" ? system.network.name : "Sem rede" }
-    function bluetoothIconName() { return "bluetooth" }
+
+    function weatherCondition(code) {
+        if (code === 0) return "Céu limpo"
+        if (code === 1 || code === 2) return "Parcialmente nublado"
+        if (code === 3) return "Nublado"
+        if (code === 45 || code === 48) return "Neblina"
+        if (code >= 51 && code <= 67) return "Chuva"
+        if (code >= 71 && code <= 77) return "Neve"
+        if (code >= 80 && code <= 82) return "Pancadas de chuva"
+        if (code >= 95) return "Tempestade"
+        return "Tempo indisponível"
+    }
+
+    function networkIconName() {
+        return system.network.kind === "wifi" ? "wifi" : system.network.kind === "ethernet" ? "ethernet" : "networkOff"
+    }
+
+    function networkLabel() {
+        return system.network.kind === "ethernet" ? "Cabo" : system.network.kind === "wifi" ? Design.safeText(system.network.name, "Wi-Fi") : "Sem rede"
+    }
+
+    function bluetoothIconName() {
+        if (!system.bluetooth.powered) return "bluetoothOff"
+        return system.bluetooth.connected ? "bluetoothConnected" : "bluetooth"
+    }
+
     function batteryIconName() {
-        if (!system.battery.available) return "battery-missing"
-        if (system.battery.percent <= 10) return "battery-empty"
-        if (system.battery.percent <= 25) return "battery-caution"
-        if (system.battery.percent <= 50) return "battery-low"
-        if (system.battery.percent <= 80) return "battery-good"
-        return "battery-full"
+        if (!system.battery.available) return "batteryMissing"
+        if (system.battery.status === "Charging") return "batteryCharging"
+        if (Design.safeNumber(system.battery.percent, 0) <= 10) return "batteryCritical"
+        if (Design.safeNumber(system.battery.percent, 0) <= 35) return "batteryLow"
+        return "battery"
     }
-    function volumeIconName() { return system.audio.muted ? "audio-volume-muted" : system.audio.percent < 35 ? "audio-volume-low" : system.audio.percent < 70 ? "audio-volume-medium" : "audio-volume-high" }
-    function microphoneIconName() { return "audio-input-microphone" }
-    function batteryText() { return system.battery.available ? system.battery.percent + "%" : "" }
+
+    function volumeIconName() {
+        if (system.audio.muted) return "volumeMuted"
+        return Design.safeNumber(system.audio.percent, 0) < 35 ? "volumeLow" : "volume"
+    }
+
+    function microphoneIconName() {
+        return system.microphone.muted ? "microphoneMuted" : "microphone"
+    }
+
+    function batteryText() {
+        return system.battery.available ? Math.round(Design.safeNumber(system.battery.percent, 0)) + "%" : ""
+    }
+
     function batteryStatus() {
         if (system.battery.status === "Charging") return "Carregando"
         if (system.battery.status === "Discharging") return "Descarregando"
@@ -81,9 +212,75 @@ Item {
         if (system.battery.status === "Not charging") return "Sem carregar"
         return "Indisponível"
     }
-    function formattedDate(format) { return Qt.locale("pt_BR").toString(currentTime, format) }
+
+    function mediaAvailable() {
+        return mediaPlayer !== null && Design.safeText(mediaPlayer.trackTitle, "").length > 0
+    }
+
+    function mediaTitle() {
+        return mediaAvailable() ? Design.safeText(mediaPlayer.trackTitle, "Faixa sem título") : ""
+    }
+
+    function mediaArtist() {
+        return mediaAvailable() ? Design.safeText(mediaPlayer.trackArtist, Design.safeText(mediaPlayer.identity, "Artista desconhecido")) : ""
+    }
+
+    function mediaArtUrl() {
+        return mediaAvailable() ? Design.safeText(mediaPlayer.trackArtUrl, "") : ""
+    }
+
+    function mediaProgress() {
+        if (!mediaAvailable() || !mediaPlayer.lengthSupported || mediaPlayer.length <= 0) return 0
+        return Design.clamp(mediaPlayer.position / mediaPlayer.length, 0, 1)
+    }
+
+    function mediaToggle() {
+        if (mediaPlayer && mediaPlayer.canTogglePlaying) mediaPlayer.togglePlaying()
+    }
+
+    function mediaPrevious() {
+        if (mediaPlayer && mediaPlayer.canGoPrevious) mediaPlayer.previous()
+    }
+
+    function mediaNext() {
+        if (mediaPlayer && mediaPlayer.canGoNext) mediaPlayer.next()
+    }
+
+    function applicationEntry(appId) {
+        const requested = Design.safeText(appId, "").toLowerCase().replace(/\.desktop$/, "")
+        if (!requested) return null
+        for (let i = 0; i < appEntries.length; i++) {
+            const entryId = Design.safeText(appEntries[i].id, "").toLowerCase().replace(/\.desktop$/, "")
+            if (entryId === requested || entryId.endsWith("." + requested) || requested.endsWith("." + entryId)) return appEntries[i]
+        }
+        return null
+    }
+
+    function applicationIcon(appId) {
+        const entry = applicationEntry(appId)
+        return entry ? Design.safeText(entry.icon, "application-x-executable") : Design.safeText(appId, "application-x-executable")
+    }
+
+    function applicationName(appId) {
+        const entry = applicationEntry(appId)
+        if (entry) return Design.safeText(entry.name, "Janela")
+        const raw = Design.safeText(appId, "Janela")
+        const tail = raw.split(".").pop().replace(/[-_]/g, " ")
+        return tail.length ? tail.charAt(0).toUpperCase() + tail.slice(1) : "Janela"
+    }
+
+    function formattedDate(format) {
+        return Qt.locale("pt_BR").toString(currentTime, format)
+    }
 
     Process { id: commandRunner }
-    SystemClock { id: systemClock; precision: SystemClock.Minutes }
+    SystemClock { id: systemClock; precision: SystemClock.Seconds }
     Timer { id: osdTimer; interval: 1600; onTriggered: { controller.osdKind = ""; controller.osdValue = "" } }
+    Connections {
+        target: ToplevelManager
+        function onActiveToplevelChanged() {
+            controller.rememberWindow(ToplevelManager.activeToplevel)
+        }
+    }
+    Component.onCompleted: rememberWindow(ToplevelManager.activeToplevel)
 }

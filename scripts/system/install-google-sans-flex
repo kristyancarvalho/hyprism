@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+font_dir="${XDG_DATA_HOME:-$HOME/.local/share}/fonts/google-sans-flex"
+temp_dir=$(mktemp -d)
+trap 'rm -rf -- "$temp_dir"' EXIT
+
+download_font() {
+  local name=$1 url=$2 expected=$3 target="$temp_dir/$name"
+  curl -fL --retry 3 --connect-timeout 15 "$url" -o "$target"
+  printf '%s  %s\n' "$expected" "$target" | sha256sum --check --status
+}
+
+download_font GoogleSansFlex-Regular.ttf https://fonts.gstatic.com/s/googlesansflex/v22/t5sJIQcYNIWbFgDgAAzZ34auoVyXkJCOvp3SFWJbN5hF8Ju1x6sKCyp0l9sI40swNJwInycYAJzz0m7kJ4qFQOJBOjLvDSndo0SKMpKSTzwliVdHAy4bxTDHg_ugnAakp8ubycs.ttf 1a5608fc557dca87bbe97ccba8974a5ac99fc87346a8745fc83d5ea06486f99b
+download_font GoogleSansFlex-Medium.ttf https://fonts.gstatic.com/s/googlesansflex/v22/t5sJIQcYNIWbFgDgAAzZ34auoVyXkJCOvp3SFWJbN5hF8Ju1x6sKCyp0l9sI40swNJwInycYAJzz0m7kJ4qFQOJBOjLvDSndo0SKMpKSTzwliVdHAy4bxTDHg_ugnAakp_mbycs.ttf 57d61bba609846324d21608a356efe817b02cfaf724dd6b1c42d35f6169f9e6a
+download_font GoogleSansFlex-SemiBold.ttf https://fonts.gstatic.com/s/googlesansflex/v22/t5sJIQcYNIWbFgDgAAzZ34auoVyXkJCOvp3SFWJbN5hF8Ju1x6sKCyp0l9sI40swNJwInycYAJzz0m7kJ4qFQOJBOjLvDSndo0SKMpKSTzwliVdHAy4bxTDHg_ugnAakpxWcycs.ttf 0416f38926b1d36df65c54f8794bb4cb2d1ff104de13268cc8af17040461e54e
+
+install -d "$font_dir"
+install -m 0644 "$temp_dir"/*.ttf "$font_dir/"
+fc-cache -f "$font_dir"

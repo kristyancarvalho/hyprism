@@ -21,6 +21,8 @@ sudo ./install.sh --user "$USER" --no-packages
 O instalador:
 
 - instala pacotes oficiais e usa `paru` ou `yay` somente quando `packages/aur.txt` contém entradas;
+- instala Papirus, Symbols Nerd Font Mono e as ferramentas do Fontconfig a partir dos repositórios oficiais do Arch;
+- baixa Google Sans Flex 400, 500 e 600 diretamente do CDN oficial do Google Fonts, em URLs versionadas e verificadas por SHA-256, sem redistribuir binários no repositório;
 - cria `~/Imagens/Wallpapers` e `~/Imagens/Screenshots` sem apagar conteúdo existente;
 - copia os arquivos runtime para `~/.local/share/hyprism`, sem depender do local original do clone;
 - cria links para `~/.config/hypr`, `~/.config/quickshell/default`, o alias `~/.config/quickshell/hyprism`, Foot, Kitty, GTK, Qt e a configuração do usuário;
@@ -51,7 +53,15 @@ O Quickshell é iniciado uma única vez pelo evento `hyprland.start`. O helper u
 
 No primeiro boot, a paleta escura embutida mantém a ilha e os widgets utilizáveis mesmo sem arquivos gerados. Ausência de bateria, Wi-Fi, Bluetooth, brilho, GPU, sensores, MPRIS, clima ou histórico de clipboard produz um estado indisponível ou oculto, sem bloquear o `shell.qml`.
 
-Ícones de aplicativos são resolvidos a partir do campo `Icon` dos arquivos `.desktop`. Indicadores, controles, notificações e menus usam o tema Adwaita instalado pelo projeto, com fallback para `application-x-executable` quando um aplicativo não publica um ícone válido. A ilha compacta mostra apenas o workspace ativo, horário e estados disponíveis; a expansão usa pontos para os workspaces, sem rótulos em algarismos romanos.
+Google Sans Flex é a família primária de texto da interface. Symbols Nerd Font Mono é usada somente para a iconografia semântica do shell. Os tamanhos, pesos, alturas, espaçamentos, raios e glifos ficam centralizados em `Design.qml`, e componentes compartilhados mantêm a linha de base e o ritmo vertical da ilha.
+
+Ícones de aplicativos são resolvidos a partir do campo `Icon` dos arquivos `.desktop` pelo tema Papirus-Dark, com fallback para `application-x-executable`. Isso vale para o launcher, o Alt+Tab, notificações e o aplicativo de mídia. Estados do sistema usam exclusivamente o mapa semântico Nerd Font; emoji não é usado como ícone de status.
+
+O `PanelWindow` da ilha mantém uma zona exclusiva constante composta pela margem superior, pela altura compacta e pelo respiro configurado. Janelas tiled e maximizadas começam abaixo dessa faixa. Launcher, controles, notificações, mídia expandida e Alt+Tab aumentam a própria superfície acima das aplicações sem alterar a zona exclusiva, portanto a expansão funciona como overlay e não reorganiza as janelas.
+
+O Alt+Tab usa os toplevels expostos pelo Quickshell e mantém uma lista MRU atualizada por eventos de foco. A primeira troca seleciona a janela focada anteriormente; repetições avançam ou recuam e soltar Alt ativa a seleção, inclusive em outro workspace. A interface mostra ícone Papirus, nome do aplicativo e título, com fallback intencional quando algum metadado está ausente.
+
+Launcher, papéis de parede, clipboard, redes, Bluetooth, central de controle, notificações, energia, mídia e Alt+Tab aceitam navegação por teclado. `Escape` fecha, `Enter` ativa, setas percorrem listas, grades e controles, e `Tab` mantém a travessia de foco onde não conflita com o alternador de janelas.
 
 A tela configurada em `config/user.json` tem prioridade quando existe. Em seguida são usadas a tela focada do Hyprland e a primeira tela enumerada pelo Quickshell. Nenhum nome como `eDP-1`, `HDMI-A-1` ou `Virtual-1` é codificado.
 
@@ -118,6 +128,10 @@ O Quickshell usa por padrão o backend `software` do Qt Quick. Esse backend rast
 
 O clima inicial está configurado para São Paulo, com fuso `America/Sao_Paulo`. Local, latitude, longitude, fuso e intervalo podem ser alterados no bloco `weather` de `config/user.json` antes de executar novamente o instalador.
 
+Os widgets de data e clima formam uma composição compacta no canto da tela. O monitor de sistema mantém 60 amostras limitadas de CPU e RAM e desenha sparklines nativas no QML. GPU, temperatura, bateria e tráfego aparecem somente quando disponíveis. O backend coleta CPU, RAM e throughput a cada segundo, estados gerais a cada três segundos e Bluetooth/temperatura a cada cinco segundos, sem executar comandos por quadro de animação.
+
+A mídia usa o serviço MPRIS nativo do Quickshell. A ilha compacta mostra artista e faixa truncados; a expansão mostra capa, título, artista, progresso, tempos e controles. O widget de mídia usa recorte proporcional da capa, os mesmos tokens de cor e controles de teclado. Sem player ou faixa válida, os dois elementos permanecem ocultos.
+
 Em uma máquina física com aceleração Qt funcional, o backend RHI pode ser testado sem editar o repositório:
 
 ```bash
@@ -167,6 +181,17 @@ journalctl --user -b --no-pager | rg -i 'quickshell|hyprism|qml'
 ```
 
 `Alt+Shift+E` tenta uma recarga IPC e, se não houver processo, inicia novamente a configuração correta. `Alt+Return`, fechamento de janelas, workspaces e `Alt+M` continuam funcionando sem Quickshell.
+
+Confira as fontes e o tema de ícones instalados:
+
+```bash
+pacman -Q papirus-icon-theme ttf-nerd-fonts-symbols-mono fontconfig
+fc-match 'Google Sans Flex'
+fc-match 'Symbols Nerd Font Mono'
+test -d /usr/share/icons/Papirus-Dark && echo 'Papirus-Dark encontrado'
+```
+
+Se os textos usarem uma fonte de fallback, execute `fc-cache -f` dentro da VM e encerre a sessão antes de testar novamente. O helper `install-google-sans-flex` verifica os três downloads antes de instalá-los em `~/.local/share/fonts/google-sans-flex`.
 
 Se o log mencionar EGL, confirme que a configuração instalada contém o fallback do VirtualBox:
 

@@ -5,9 +5,10 @@
   },
   "shell": {
     "primaryMonitor": "",
-    "islandWidth": 520,
+    "islandWidth": 660,
     "compactHeight": 50,
     "topMargin": 14,
+    "reserveGap": 10,
     "surfaceOpacity": 0.9,
     "radiusSmall": 14,
     "radiusMedium": 22,

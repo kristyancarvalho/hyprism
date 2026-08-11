@@ -9,6 +9,7 @@ Item {
     property real iconSize: 20
     property bool framed: false
     property color frameColor: "transparent"
+    property string fallbackGlyph: "application"
     implicitWidth: iconSize + (framed ? 12 : 0)
     implicitHeight: iconSize + (framed ? 12 : 0)
 
@@ -20,11 +21,19 @@ Item {
     }
 
     IconImage {
+        id: iconImage
         anchors.centerIn: parent
         width: root.iconSize
         height: root.iconSize
         implicitSize: root.iconSize
         mipmap: true
         source: root.name.startsWith("/") ? "file://" + root.name : Quickshell.iconPath(root.name, root.fallback)
+    }
+
+    StatusIcon {
+        anchors.centerIn: parent
+        visible: iconImage.status === Image.Error || iconImage.status === Image.Null
+        name: root.fallbackGlyph
+        iconSize: root.iconSize
     }
 }
