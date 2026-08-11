@@ -10,6 +10,7 @@ Item {
     property string mode: "compact"
     property string previousMode: "compact"
     property string targetScreenName: ""
+    property bool morphClosing: false
     property string osdKind: ""
     property string osdValue: ""
     property int switcherIndex: 0
@@ -43,6 +44,7 @@ Item {
     property string rootDir: Quickshell.env("HYPRISM_ROOT") || Quickshell.env("HOME") + "/.local/share/hyprism"
 
     function open(next) {
+        morphClosing = false
         if (mode !== next) previousMode = mode
         mode = next
     }
@@ -58,6 +60,11 @@ Item {
     }
 
     function close() {
+        if (mode === "compact") {
+            morphClosing = false
+            return
+        }
+        morphClosing = true
         mode = "compact"
     }
 

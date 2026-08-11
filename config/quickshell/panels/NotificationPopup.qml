@@ -19,7 +19,7 @@ PanelWindow {
     implicitWidth: 350
     implicitHeight: stack.implicitHeight
     color: "transparent"
-    exclusiveZone: 0
+    exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
