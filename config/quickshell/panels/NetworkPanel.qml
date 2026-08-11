@@ -67,27 +67,42 @@ Item {
             width: parent.width
             spacing: 8
 
-            Text {
+            Column {
                 width: parent.width - toggle.width - scanButton.width - 16
                 anchors.verticalCenter: parent.verticalCenter
-                text: "Redes"
-                color: panel.theme.colors.foreground
-                font.family: Design.fontFamily
-                font.pixelSize: Design.fontSizeLg
-                font.weight: Design.fontWeightSemibold
+
+                Text {
+                    text: controller.system.network.virtualized && !controller.system.network.wifiAvailable ? "Rede" : "Redes"
+                    color: panel.theme.colors.foreground
+                    font.family: Design.fontFamily
+                    font.pixelSize: Design.fontSizeLg
+                    font.weight: Design.fontWeightSemibold
+                }
+
+                Text {
+                    visible: controller.system.network.virtualized && controller.system.network.kind === "ethernet"
+                    text: "Adaptador virtual · Conectado"
+                    color: panel.theme.colors.mutedForeground
+                    font.family: Design.fontFamily
+                    font.pixelSize: Design.fontSizeXs
+                }
             }
 
             ShellButton {
                 id: toggle
+                visible: controller.system.network.wifiAvailable
                 theme: panel.theme
                 compact: true
-                text: controller.system.network.kind === "wifi" ? "Desligar" : "Ligar"
+                text: controller.system.network.wifiEnabled ? "Desligar" : "Ligar"
                 iconName: "wifi"
-                onClicked: panel.command(["python3", controller.rootDir + "/scripts/system/network.py", "toggle", controller.system.network.kind === "wifi" ? "off" : "on"])
+                active: controller.system.network.wifiEnabled
+                pending: controller.pendingWifi
+                onClicked: controller.toggleWifi()
             }
 
             ShellButton {
                 id: scanButton
+                visible: controller.system.network.wifiAvailable
                 theme: panel.theme
                 compact: true
                 text: "Buscar"
@@ -216,7 +231,7 @@ Item {
             Text {
                 anchors.centerIn: parent
                 visible: parent.count === 0
-                text: "Nenhuma rede Wi-Fi disponível"
+                text: controller.system.network.virtualized && controller.system.network.kind === "ethernet" ? "A rede da máquina virtual usa um adaptador virtual" : controller.system.network.wifiAvailable ? "Nenhuma rede Wi-Fi disponível" : "Wi-Fi indisponível"
                 color: panel.theme.colors.mutedForeground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeSm
@@ -241,7 +256,7 @@ Item {
     }
 
     Component.onCompleted: {
-        scan()
+        if (controller.system.network.wifiAvailable) scan()
         forceActiveFocus()
     }
 }

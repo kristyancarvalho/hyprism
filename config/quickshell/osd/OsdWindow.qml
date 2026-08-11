@@ -12,7 +12,7 @@ PanelWindow {
     screen: shellScreen
     visible: shellScreen !== null && controller.osdKind.length > 0
     anchors { top: true }
-    margins.top: controller.config.shell.topMargin + Design.barHeight + Design.safeNumber(controller.config.shell.reserveGap, 10) + 8
+    margins.top: Design.compactReservedHeight(controller.config.shell) + 8
     implicitWidth: 320
     implicitHeight: 58
     color: "transparent"

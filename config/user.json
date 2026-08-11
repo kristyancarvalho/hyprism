@@ -6,9 +6,9 @@
   "shell": {
     "primaryMonitor": "",
     "islandWidth": 660,
-    "compactHeight": 50,
-    "topMargin": 14,
-    "reserveGap": 10,
+    "compactHeight": 44,
+    "topMargin": 8,
+    "reserveGap": 4,
     "surfaceOpacity": 0.9,
     "radiusSmall": 14,
     "radiusMedium": 22,

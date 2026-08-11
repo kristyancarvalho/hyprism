@@ -20,25 +20,47 @@ ShellRoot {
     property bool widgetsLoaded: false
     property bool notificationServerReady: false
     readonly property bool hyprlandAvailable: !!Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE")
-    property var selectedScreen: null
-    function refreshSelectedScreen(): void {
+    property string notificationScreenName: ""
+    property var popupNotifications: []
+    readonly property var focusedScreen: screenByName(focusedScreenName())
+    readonly property var transientScreen: screenByName(shellController.targetScreenName) || focusedScreen
+    readonly property var osdScreen: shellController.mode === "compact" ? focusedScreen : transientScreen
+    readonly property var notificationScreen: screenByName(notificationScreenName) || focusedScreen
+
+    function screenByName(name: string): var {
         const screens = Quickshell.screens
-        if (!screens || screens.length === 0) {
-            selectedScreen = null
-            return
+        for (let i = 0; screens && i < screens.length; i++) {
+            if (screens[i].name === name) return screens[i]
         }
-        const preferred = shellController.config.shell.primaryMonitor || ""
-        for (let i = 0; preferred && preferred !== "focused" && i < screens.length; i++) {
-            if (screens[i].name === preferred) { selectedScreen = screens[i]; return }
-        }
-        const focused = hyprlandAvailable && Hyprland.focusedMonitor ? Hyprland.focusedMonitor.name : ""
-        for (let i = 0; focused && i < screens.length; i++) {
-            if (screens[i].name === focused) { selectedScreen = screens[i]; return }
-        }
-        selectedScreen = screens[0]
+        return null
     }
-    function selectedScreenName(): string {
-        return selectedScreen ? selectedScreen.name : ""
+
+    function focusedScreenName(): string {
+        const focused = hyprlandAvailable && Hyprland.focusedMonitor ? Design.safeText(Hyprland.focusedMonitor.name, "") : ""
+        if (screenByName(focused)) return focused
+        const preferred = Design.safeText(shellController.config.shell.primaryMonitor, "")
+        if (preferred !== "focused" && screenByName(preferred)) return preferred
+        return Quickshell.screens && Quickshell.screens.length > 0 ? Quickshell.screens[0].name : ""
+    }
+
+    function prepareTransient(): void {
+        shellController.targetScreenName = focusedScreenName()
+    }
+
+    function toggleTransient(mode: string): void {
+        prepareTransient()
+        shellController.toggle(mode)
+    }
+
+    function removePopup(notification): void {
+        popupNotifications = popupNotifications.filter(item => item && item !== notification)
+        notificationServer.newest = popupNotifications.length ? popupNotifications[popupNotifications.length - 1] : null
+    }
+
+    function expirePopup(): void {
+        if (!popupNotifications.length) return
+        popupNotifications = []
+        notificationServer.newest = null
     }
     function applyConfig(raw: string): void {
         const parsed = JSON.parse(raw)
@@ -49,7 +71,6 @@ ShellRoot {
                 widgets: Object.assign({}, currentShell.widgets, incomingShell.widgets || {})
             })
         }
-        refreshSelectedScreen()
     }
     function applyTheme(raw: string): void {
         shellTheme.colors = Object.assign({}, shellTheme.colors, JSON.parse(raw))
@@ -64,8 +85,8 @@ ShellRoot {
     ClipboardService { id: clipboardService; controller: shellController }
     IpcHandler {
         target: "shell"
-        function toggleControlCenter(): void { shellController.toggle("control") }
-        function toggleNetwork(): void { shellController.toggle("network") }
+        function toggleControlCenter(): void { root.toggleTransient("control") }
+        function toggleNetwork(): void { root.toggleTransient("network") }
         function togglePowerSaver(): void { shellController.togglePowerSaver() }
         function close(): void { shellController.close() }
         function themeChanged(image: string): void { shellController.showOsd("Tema", "Atualizado") }
@@ -76,7 +97,7 @@ ShellRoot {
                 pid: Quickshell.processId,
                 mode: shellController.mode,
                 screenCount: Quickshell.screens.length,
-                primaryScreen: root.selectedScreenName(),
+                primaryScreen: root.focusedScreenName(),
                 themeLoaded: true,
                 themeSource: shellTheme.sourceName,
                 islandLoaded: root.islandLoaded,
@@ -86,19 +107,19 @@ ShellRoot {
             })
         }
     }
-    IpcHandler { target: "app-launcher"; function toggle(): void { shellController.toggle("launcher") } }
-    IpcHandler { target: "wallpaper-picker"; function toggle(): void { shellController.toggle("wallpaper") } }
+    IpcHandler { target: "app-launcher"; function toggle(): void { root.toggleTransient("launcher") } }
+    IpcHandler { target: "wallpaper-picker"; function toggle(): void { root.toggleTransient("wallpaper") } }
     IpcHandler { target: "wallpaper"; function random(): void { shellController.run([shellController.rootDir + "/scripts/wallpaper", "random"]) } }
-    IpcHandler { target: "clipboard"; function toggle(): void { shellController.toggle("clipboard") } }
+    IpcHandler { target: "clipboard"; function toggle(): void { root.toggleTransient("clipboard") } }
     IpcHandler {
         target: "window-switcher"
-        function forward(): void { shellController.switcher(1) }
-        function backward(): void { shellController.switcher(-1) }
+        function forward(): void { if (shellController.mode !== "switcher") root.prepareTransient(); shellController.switcher(1) }
+        function backward(): void { if (shellController.mode !== "switcher") root.prepareTransient(); shellController.switcher(-1) }
         function commit(): void { shellController.commitSwitcher() }
     }
-    IpcHandler { target: "notifications"; function toggle(): void { shellController.toggle("control") } }
-    IpcHandler { target: "power-menu"; function toggle(): void { shellController.toggle("power") } }
-    IpcHandler { target: "emoji-picker"; function toggle(): void { shellController.toggle("emoji") } }
+    IpcHandler { target: "notifications"; function toggle(): void { root.toggleTransient("control") } }
+    IpcHandler { target: "power-menu"; function toggle(): void { root.toggleTransient("power") } }
+    IpcHandler { target: "emoji-picker"; function toggle(): void { root.toggleTransient("emoji") } }
     IpcHandler {
         target: "osd"
         function volume(value: string): void { shellController.showOsd("Volume", value) }
@@ -155,54 +176,64 @@ ShellRoot {
         onNotification: notification => {
             notification.tracked = true
             newest = notification
+            root.notificationScreenName = root.focusedScreenName()
+            root.popupNotifications = root.popupNotifications.concat([notification]).slice(-4)
             popupTimer.restart()
         }
         Component.onCompleted: root.notificationServerReady = true
     }
-    Timer { id: popupTimer; interval: 6500; onTriggered: notificationServer.newest = null }
-    Timer {
-        interval: 500
-        repeat: true
-        running: true
-        triggeredOnStart: true
-        onTriggered: root.refreshSelectedScreen()
-    }
-    Component.onCompleted: refreshSelectedScreen()
+    Timer { id: popupTimer; interval: 6500; onTriggered: root.expirePopup() }
 
-    LazyLoader {
-        active: root.selectedScreen !== null
+    Variants {
+        model: Quickshell.screens
+
         Island {
-            shellScreen: root.selectedScreen
+            required property var modelData
+            shellScreen: modelData
             controller: shellController
             theme: shellTheme
-            apps: appService
-            clipboard: clipboardService
-            notifications: notificationServer
             Component.onCompleted: root.islandLoaded = true
         }
     }
-    LazyLoader {
-        active: root.selectedScreen !== null
+
+    Variants {
+        model: Quickshell.screens
+
         DesktopWidgets {
-            shellScreen: root.selectedScreen
+            required property var modelData
+            shellScreen: modelData
             controller: shellController
             theme: shellTheme
             Component.onCompleted: root.widgetsLoaded = true
         }
     }
+
     LazyLoader {
-        active: root.selectedScreen !== null
-        NotificationPopup {
-            shellScreen: root.selectedScreen
-            notification: notificationServer.newest
+        active: root.transientScreen !== null
+        MorphOverlay {
+            shellScreen: root.transientScreen
             controller: shellController
             theme: shellTheme
+            apps: appService
+            clipboard: clipboardService
+            notifications: notificationServer
+        }
+    }
+
+    LazyLoader {
+        active: root.notificationScreen !== null
+        NotificationPopup {
+            shellScreen: root.notificationScreen
+            notifications: root.popupNotifications
+            controller: shellController
+            theme: shellTheme
+            onDismissRequested: notification => root.removePopup(notification)
         }
     }
     LazyLoader {
-        active: root.selectedScreen !== null
+        active: root.osdScreen !== null
         OsdWindow {
-            shellScreen: root.selectedScreen
+            shellScreen: root.osdScreen
             controller: shellController
             theme: shellTheme
         }

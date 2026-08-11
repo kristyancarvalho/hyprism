@@ -63,7 +63,9 @@ Item {
                 compact: true
                 text: controller.system.bluetooth.powered ? "Desligar" : "Ligar"
                 iconName: controller.bluetoothIconName()
-                onClicked: panel.command(["python3", controller.rootDir + "/scripts/system/bluetooth.py", "power", controller.system.bluetooth.powered ? "off" : "on"])
+                active: controller.system.bluetooth.powered
+                pending: controller.pendingBluetooth
+                onClicked: controller.toggleBluetooth()
             }
         }
 
