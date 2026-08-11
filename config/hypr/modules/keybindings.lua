@@ -11,7 +11,7 @@ local function script(relative)
     return shell_quote(scripts .. "/" .. relative)
 end
 
-local quickshell_ipc = "qs -p " .. shell_quote(paths.quickshell) .. " ipc call "
+local quickshell_ipc = "qs -c " .. shell_quote(paths.quickshell) .. " ipc call "
 
 local function bind(keys, command, options)
     hl.bind(keys, exec(command), options)

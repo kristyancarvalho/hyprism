@@ -1,3 +1,4 @@
+//@ pragma ShellId hyprism
 pragma ComponentBehavior: Bound
 
 import QtQuick

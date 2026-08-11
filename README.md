@@ -23,7 +23,7 @@ O instalador:
 - instala pacotes oficiais e usa `paru` ou `yay` somente quando `packages/aur.txt` contém entradas;
 - cria `~/Imagens/Wallpapers` e `~/Imagens/Screenshots` sem apagar conteúdo existente;
 - copia os arquivos runtime para `~/.local/share/hyprism`, sem depender do local original do clone;
-- cria links para `~/.config/hypr`, `~/.config/quickshell/hyprism`, Foot, Kitty, GTK, Qt e a configuração do usuário;
+- cria links para `~/.config/hypr`, `~/.config/quickshell/default`, o alias `~/.config/quickshell/hyprism`, Foot, Kitty, GTK, Qt e a configuração do usuário;
 - guarda conflitos em `~/.local/state/hyprism/backups/`;
 - verifica `hyprland.lua`, `shell.qml`, `foot.ini` e o tema de fallback do Foot;
 - não instala nem ativa um `hyprland.conf` legado.
@@ -36,7 +36,7 @@ install.sh
       ├─ config/hypr/hyprland.lua
       │   └─ modules/autostart.lua
       │       └─ scripts/system/start-shell
-      │           └─ qs -p ~/.config/quickshell/hyprism
+      │           └─ qs -c default
       │               └─ shell.qml
       └─ config/quickshell
           ├─ ilha e painéis
@@ -47,7 +47,7 @@ install.sh
 
 `config/hypr/hyprland.lua` é o ponto de entrada Lua do Hyprland 0.55 ou posterior. Os módulos separam programas, monitores, aparência, entrada, layouts, regras, workspaces, atalhos, ambiente e autostart. Não há configuração Hyprland `.conf` ativa no repositório.
 
-O Quickshell é iniciado uma única vez pelo evento `hyprland.start`. O helper usa o executável canônico `qs`, o caminho nomeado e explícito da configuração, `--no-duplicate` e a raiz runtime estável. O Hyprland já cria o processo de forma assíncrona, por isso o shell não usa uma segunda camada de daemonização. Recarregar a configuração do Hyprland não acumula processos do shell.
+O Quickshell é iniciado uma única vez pelo evento `hyprland.start`. O helper usa o executável canônico `qs`, a configuração nomeada `default`, `--no-duplicate` e a raiz runtime estável. `QS_CONFIG_NAME=default` centraliza a seleção usada pelo Hyprland e pelos scripts. O alias `hyprism` preserva compatibilidade, enquanto `qs` sem argumentos e `qs -c default` encontram o mesmo `shell.qml`. O Hyprland já cria o processo de forma assíncrona, por isso o shell não usa uma segunda camada de daemonização. Recarregar a configuração do Hyprland não acumula processos do shell.
 
 No primeiro boot, a paleta escura embutida mantém a ilha e os widgets utilizáveis mesmo sem arquivos gerados. Ausência de bateria, Wi-Fi, Bluetooth, brilho, GPU, sensores, MPRIS, clima ou histórico de clipboard produz um estado indisponível ou oculto, sem bloquear o `shell.qml`.
 
@@ -122,8 +122,9 @@ Execute estes comandos dentro da VM, depois de entrar no Hyprland:
 pacman -Q quickshell
 command -v qs
 pgrep -af '(^|/)(qs|quickshell)( |$)'
+readlink -f ~/.config/quickshell/default
 readlink -f ~/.config/quickshell/hyprism
-test -r ~/.config/quickshell/hyprism/shell.qml && echo 'shell.qml encontrado'
+test -r ~/.config/quickshell/default/shell.qml && echo 'shell.qml encontrado'
 test -x ~/.local/share/hyprism/scripts/system/start-shell && echo 'helper encontrado'
 ```
 
@@ -131,15 +132,18 @@ Confira a instância e os logs selecionando exatamente a configuração Hyprism:
 
 ```bash
 qs list -a
-qs -p ~/.config/quickshell/hyprism log -t 200
-qs -p ~/.config/quickshell/hyprism ipc call shell status
+qs -c default log -t 200
+qs -c default ipc call shell status
+sed -n '1,200p' ~/.cache/hyprism/quickshell-startup.log
 ```
 
 Para observar um erro de carregamento sem daemonizar, primeiro confirme que não há uma instância ativa e então execute na VM:
 
 ```bash
-HYPRISM_ROOT="$HOME/.local/share/hyprism" qs -p "$HOME/.config/quickshell/hyprism" --no-duplicate
+HYPRISM_ROOT="$HOME/.local/share/hyprism" qs --no-duplicate
 ```
+
+Como `default` é a configuração canônica, esse comando é equivalente a usar `qs -c default --no-duplicate`.
 
 Verifique também a configuração e o autostart do Hyprland:
 
