@@ -19,10 +19,10 @@ apply() {
   local image
   image=$(realpath -e -- "${1:?wallpaper path required}")
   [[ -r $image ]] || { printf 'Unreadable wallpaper: %s\n' "$image" >&2; return 1; }
-  if command -v swww >/dev/null && [[ -n ${WAYLAND_DISPLAY:-} ]]; then
-    swww query >/dev/null 2>&1 || (swww-daemon >/dev/null 2>&1 &)
-    for _ in {1..20}; do swww query >/dev/null 2>&1 && break; sleep .1; done
-    swww img "$image" --transition-type grow --transition-duration .55 || true
+  if command -v awww >/dev/null && [[ -n ${WAYLAND_DISPLAY:-} ]]; then
+    awww query >/dev/null 2>&1 || (awww-daemon >/dev/null 2>&1 &)
+    for _ in {1..20}; do awww query >/dev/null 2>&1 && break; sleep .1; done
+    awww img "$image" --transition-type grow --transition-duration .55 || true
   fi
   HYPRISM_CACHE_DIR="$cache_dir" "$root_dir/scripts/theme/generate-theme.py" "$image"
   printf '%s\n' "$image" >"$current_file"
@@ -32,7 +32,8 @@ apply() {
       || true
   fi
   hyprctl reload >/dev/null 2>&1 || true
-  command -v qs >/dev/null && qs ipc call shell themeChanged "$image" >/dev/null 2>&1 || true
+  qs_config="${QS_CONFIG_PATH:-${XDG_CONFIG_HOME:-$HOME/.config}/quickshell}"
+  command -v qs >/dev/null && qs -p "$qs_config" ipc call shell themeChanged "$image" >/dev/null 2>&1 || true
 }
 random() {
   mapfile -t files < <(list)

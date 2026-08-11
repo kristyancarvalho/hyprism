@@ -58,10 +58,10 @@ def gpu():
     except (IndexError, ValueError): return {'available':False,'percent':0}
 def media():
     status=command(['playerctl','status'])
-    if not status: return {'available':False,'status':'','artist':'','title':''}
-    text=command(['playerctl','metadata','--format','{{artist}}\t{{title}}'])
-    parts=text.split('\t', 1)
-    return {'available':True,'status':status,'artist':parts[0] if parts else '', 'title':parts[1] if len(parts)>1 else ''}
+    if not status: return {'available':False,'status':'','artist':'','title':'','artUrl':''}
+    text=command(['playerctl','metadata','--format','{{artist}}\t{{title}}\t{{mpris:artUrl}}'])
+    parts=text.split('\t', 2)
+    return {'available':True,'status':status,'artist':parts[0] if parts else '', 'title':parts[1] if len(parts)>1 else '', 'artUrl':parts[2] if len(parts)>2 else ''}
 while True:
     state={'audio':volume(),'microphone':volume('@DEFAULT_AUDIO_SOURCE@'),'network':network(),'bluetooth':bluetooth(),'battery':battery(),'brightness':brightness(),'memory':memory(),'cpu':cpu(),'gpu':gpu(),'media':media(),'nightMode':False,'powerSaver':False}
     print(json.dumps(state), flush=True)

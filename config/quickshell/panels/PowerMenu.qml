@@ -17,7 +17,7 @@ Item {
         Grid { columns: 3; spacing: 8
             ActionButton { theme: panel.theme; label: "Lock"; icon: "◉"; onClicked: panel.action("Lock", "hyprlock", false) }
             ActionButton { theme: panel.theme; label: "Suspend"; icon: "◐"; onClicked: panel.action("Suspend", "systemctl suspend", true) }
-            ActionButton { theme: panel.theme; label: "Logout"; icon: "↪"; onClicked: panel.action("Logout", "hyprctl dispatch exit", true) }
+            ActionButton { theme: panel.theme; label: "Logout"; icon: "↪"; onClicked: panel.action("Logout", "command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'", true) }
             ActionButton { theme: panel.theme; label: "Reboot"; icon: "↻"; onClicked: panel.action("Reboot", "systemctl reboot", true) }
             ActionButton { theme: panel.theme; label: "Shutdown"; icon: "⏻"; onClicked: panel.action("Shutdown", "systemctl poweroff", true) }
         }
