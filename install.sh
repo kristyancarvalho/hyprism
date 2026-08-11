@@ -86,6 +86,13 @@ if ((dry_run == 0)); then
   chmod +x "$runtime_root/scripts/wallpaper" "$runtime_root"/scripts/theme/*.py "$runtime_root"/scripts/system/*
 fi
 
+font_file="$target_home/.local/share/fonts/google-sans-flex/GoogleSansFlex-Regular.ttf"
+if [[ ! -s $font_file ]]; then
+  as_user "$runtime_root/scripts/system/install-google-sans-flex"
+else
+  printf 'Google Sans Flex já está instalada.\n'
+fi
+
 if [[ -L $quickshell_parent ]]; then backup_path "$quickshell_parent"; fi
 run install -d -o "$target_user" -g "$target_group" "$quickshell_parent"
 
@@ -128,6 +135,8 @@ if ((dry_run == 0)); then
     || { printf 'O ponto de entrada do Quickshell não foi instalado.\n' >&2; exit 1; }
   [[ -f $target_home/.config/foot/foot.ini && -s $theme_dir/foot.ini && -f $theme_dir/kitty.conf ]] \
     || { printf 'A configuração ou um tema de fallback do terminal está ausente.\n' >&2; exit 1; }
+  [[ -s $font_file ]] \
+    || { printf 'A fonte Google Sans Flex não foi instalada.\n' >&2; exit 1; }
 fi
 
 legacy_hypr_theme="$target_home/.cache/hyprism/theme/hyprland.conf"

@@ -1,6 +1,6 @@
 //@ pragma ShellId hyprism
 //@ pragma DefaultEnv QT_QUICK_BACKEND = software
-//@ pragma IconTheme Adwaita
+//@ pragma IconTheme Papirus-Dark
 pragma ComponentBehavior: Bound
 
 import QtQuick
