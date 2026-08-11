@@ -6,7 +6,7 @@ quickshell
 # Theme, wallpaper, and applications
 kitty
 matugen
-swww
+awww
 adwaita-icon-theme
 ttf-jetbrains-mono-nerd
 qt6ct
