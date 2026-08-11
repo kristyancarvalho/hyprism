@@ -7,7 +7,7 @@ Item {
     visible: false
     required property var controller
     function refresh() { entries.running = true }
-    function select(id) { controller.run(["sh", "-lc", "cliphist decode " + shellQuote(id) + " | wl-copy"]); controller.showOsd("Clipboard", "Copied"); controller.close() }
+    function select(id) { controller.run(["sh", "-lc", "cliphist decode " + shellQuote(id) + " | wl-copy"]); controller.showOsd("Área de transferência", "Copiado"); controller.close() }
     function remove(id) { controller.run(["sh", "-lc", "cliphist delete " + shellQuote(id)]); refresh() }
     function clear() { controller.run(["sh", "-lc", "cliphist wipe"]); controller.clipboardEntries = [] }
     function shellQuote(value) { return "'" + String(value).replace(/'/g, "'\\\"'\\\"'") + "'" }

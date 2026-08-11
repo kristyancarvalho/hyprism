@@ -6,15 +6,14 @@ Item {
     required property var controller
     required property var theme
     required property var appService
-    function quote(value) { return "'" + String(value).replace(/'/g, "'\\\"'\\\"'") + "'" }
-    function apply(path) { controller.run(["sh", "-lc", "~/.local/share/hyprism/scripts/wallpaper set " + quote(path)]); controller.close() }
+    function apply(path) { controller.run([controller.rootDir + "/scripts/wallpaper", "set", path]); controller.close() }
     focus: true
     Keys.onPressed: event => { if (event.key === Qt.Key_Escape) { controller.close(); event.accepted = true } }
     Column {
         anchors.fill: parent; anchors.margins: 18; spacing: 10
         Row { width: parent.width
-            Text { text: "Wallpapers"; color: panel.theme.colors.foreground; font { pixelSize: 17; bold: true } width: parent.width - refresh.width }
-            Button { id: refresh; text: "Refresh"; onClicked: panel.appService.refreshWallpapers() }
+            Text { text: "Papéis de parede"; color: panel.theme.colors.foreground; font { pixelSize: 17; bold: true } width: parent.width - refresh.width }
+            Button { id: refresh; text: "Atualizar"; onClicked: panel.appService.refreshWallpapers() }
         }
         GridView {
             width: parent.width; height: 352; cellWidth: 148; cellHeight: 118; clip: true; model: panel.controller.wallpaperEntries
@@ -27,7 +26,7 @@ Item {
                 }
                 MouseArea { anchors.fill: parent; onClicked: panel.apply(modelData) }
             }
-            Text { anchors.centerIn: parent; visible: parent.count === 0; text: "No wallpapers in ~/Imagens/Wallpapers"; color: panel.theme.colors.mutedForeground }
+            Text { anchors.centerIn: parent; visible: parent.count === 0; text: "Nenhum papel de parede em ~/Imagens/Wallpapers"; color: panel.theme.colors.mutedForeground }
         }
     }
     Component.onCompleted: appService.refreshWallpapers()

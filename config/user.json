@@ -1,10 +1,4 @@
 {
-  "programs": {
-    "terminal": "kitty",
-    "fileManager": "thunar",
-    "browser": "firefox",
-    "chromium": "chromium"
-  },
   "paths": {
     "wallpapers": "~/Imagens/Wallpapers",
     "screenshots": "~/Imagens/Screenshots"

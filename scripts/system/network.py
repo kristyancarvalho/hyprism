@@ -3,7 +3,7 @@ import json, subprocess, sys
 def run(args):
     try: return subprocess.run(args, text=True, capture_output=True, timeout=12).stdout.strip()
     except (OSError, subprocess.SubprocessError): return ''
-if len(sys.argv) < 2: raise SystemExit('usage: network.py {list|toggle|connect} ...')
+if len(sys.argv) < 2: raise SystemExit('uso: network.py {list|toggle|connect} ...')
 command=sys.argv[1]
 if command == 'list':
     unique={}

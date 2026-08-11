@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -23,17 +25,32 @@ ShellRoot {
             return
         }
         const preferred = shellController.config.shell.primaryMonitor || ""
+        for (let i = 0; preferred && preferred !== "focused" && i < screens.length; i++) {
+            if (screens[i].name === preferred) { selectedScreen = screens[i]; return }
+        }
         const focused = hyprlandAvailable && Hyprland.focusedMonitor ? Hyprland.focusedMonitor.name : ""
         for (let i = 0; focused && i < screens.length; i++) {
             if (screens[i].name === focused) { selectedScreen = screens[i]; return }
-        }
-        for (let i = 0; preferred && preferred !== "focused" && i < screens.length; i++) {
-            if (screens[i].name === preferred) { selectedScreen = screens[i]; return }
         }
         selectedScreen = screens[0]
     }
     function selectedScreenName(): string {
         return selectedScreen ? selectedScreen.name : ""
+    }
+    function applyConfig(raw: string): void {
+        const parsed = JSON.parse(raw)
+        const currentShell = shellController.config.shell
+        const incomingShell = parsed.shell || {}
+        shellController.config = {
+            shell: Object.assign({}, currentShell, incomingShell, {
+                widgets: Object.assign({}, currentShell.widgets, incomingShell.widgets || {})
+            })
+        }
+        refreshSelectedScreen()
+    }
+    function applyTheme(raw: string): void {
+        shellTheme.colors = Object.assign({}, shellTheme.colors, JSON.parse(raw))
+        shellTheme.generatedLoaded = true
     }
 
     Theme { id: shellTheme }
@@ -47,7 +64,7 @@ ShellRoot {
         function toggleNetwork(): void { shellController.toggle("network") }
         function togglePowerSaver(): void { shellController.togglePowerSaver() }
         function close(): void { shellController.close() }
-        function themeChanged(image: string): void { shellController.showOsd("Theme", "Updated") }
+        function themeChanged(image: string): void { shellController.showOsd("Tema", "Atualizado") }
         function reload(): void { Quickshell.reload(true) }
         function status(): string {
             return JSON.stringify({
@@ -67,7 +84,7 @@ ShellRoot {
     }
     IpcHandler { target: "app-launcher"; function toggle(): void { shellController.toggle("launcher") } }
     IpcHandler { target: "wallpaper-picker"; function toggle(): void { shellController.toggle("wallpaper") } }
-    IpcHandler { target: "wallpaper"; function random(): void { shellController.run(["sh", "-lc", shellController.rootDir + "/scripts/wallpaper random"]) } }
+    IpcHandler { target: "wallpaper"; function random(): void { shellController.run([shellController.rootDir + "/scripts/wallpaper", "random"]) } }
     IpcHandler { target: "clipboard"; function toggle(): void { shellController.toggle("clipboard") } }
     IpcHandler {
         target: "window-switcher"
@@ -81,12 +98,12 @@ ShellRoot {
     IpcHandler {
         target: "osd"
         function volume(value: string): void { shellController.showOsd("Volume", value) }
-        function brightness(value: string): void { shellController.showOsd("Brightness", value) }
-        function microphone(value: string): void { shellController.showOsd("Microphone", value) }
-        function screenshot(value: string): void { shellController.showOsd("Screenshot", value.split("/").pop()) }
-        function color(value: string): void { shellController.showOsd("Color", value) }
-        function night(value: string): void { shellController.showOsd("Night mode", value) }
-        function power(value: string): void { shellController.showOsd("Power saver", value) }
+        function brightness(value: string): void { shellController.showOsd("Brilho", value) }
+        function microphone(value: string): void { shellController.showOsd("Microfone", value) }
+        function screenshot(value: string): void { shellController.showOsd("Captura", value.split("/").pop()) }
+        function color(value: string): void { shellController.showOsd("Cor", value) }
+        function night(value: string): void { shellController.showOsd("Modo noturno", value) }
+        function power(value: string): void { shellController.showOsd("Economia de energia", value) }
     }
 
     FileView {
@@ -96,11 +113,11 @@ ShellRoot {
         watchChanges: true
         printErrors: false
         onLoaded: {
-            try { shellController.config = JSON.parse(text()) }
+            try { root.applyConfig(text()) }
             catch (error) { console.warn("hyprism config: using defaults:", error) }
         }
         onTextChanged: {
-            try { shellController.config = JSON.parse(text()) }
+            try { root.applyConfig(text()) }
             catch (error) { console.warn("hyprism config update ignored:", error) }
         }
         onFileChanged: reload()
@@ -112,11 +129,11 @@ ShellRoot {
         watchChanges: true
         printErrors: false
         onLoaded: {
-            try { shellTheme.colors = JSON.parse(text()); shellTheme.generatedLoaded = true }
+            try { root.applyTheme(text()) }
             catch (error) { console.warn("hyprism theme: using fallback:", error) }
         }
         onTextChanged: {
-            try { shellTheme.colors = JSON.parse(text()); shellTheme.generatedLoaded = true }
+            try { root.applyTheme(text()) }
             catch (error) { console.warn("hyprism theme update ignored:", error) }
         }
         onFileChanged: reload()
@@ -146,6 +163,7 @@ ShellRoot {
         triggeredOnStart: true
         onTriggered: root.refreshSelectedScreen()
     }
+    Component.onCompleted: refreshSelectedScreen()
 
     LazyLoader {
         active: root.selectedScreen !== null

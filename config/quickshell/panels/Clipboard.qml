@@ -13,8 +13,8 @@ Item {
     Column {
         anchors.fill: parent; anchors.margins: 18; spacing: 10
         Row { width: parent.width; spacing: 8
-            TextField { width: parent.width - clear.width - 8; placeholderText: "Search clipboard…"; color: panel.theme.colors.foreground; placeholderTextColor: panel.theme.colors.mutedForeground; onTextChanged: panel.query = text; background: Rectangle { radius: 10; color: panel.theme.colors.surfaceVariant } }
-            Button { id: clear; text: "Clear"; onClicked: panel.clipboard.clear() }
+            TextField { width: parent.width - clear.width - 8; placeholderText: "Pesquisar na área de transferência…"; color: panel.theme.colors.foreground; placeholderTextColor: panel.theme.colors.mutedForeground; onTextChanged: panel.query = text; background: Rectangle { radius: 10; color: panel.theme.colors.surfaceVariant } }
+            Button { id: clear; text: "Limpar"; onClicked: panel.clipboard.clear() }
         }
         ListView { width: parent.width; height: 300; model: panel.results(); clip: true; spacing: 5
             delegate: Rectangle { required property var modelData; width: ListView.view.width; height: 48; radius: 10; color: panel.theme.colors.surfaceVariant
@@ -22,7 +22,7 @@ Item {
                 Button { id: deleteButton; anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 4 } text: "×"; onClicked: panel.clipboard.remove(modelData.id) }
                 MouseArea { anchors { left: parent.left; right: deleteButton.left; top: parent.top; bottom: parent.bottom } onClicked: panel.clipboard.select(modelData.id) }
             }
-            Text { anchors.centerIn: parent; visible: parent.count === 0; text: "Clipboard history is empty"; color: panel.theme.colors.mutedForeground }
+            Text { anchors.centerIn: parent; visible: parent.count === 0; text: "A área de transferência está vazia"; color: panel.theme.colors.mutedForeground }
         }
     }
     Component.onCompleted: clipboard.refresh()

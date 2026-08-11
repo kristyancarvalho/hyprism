@@ -6,7 +6,10 @@ local programs = {
     home = home,
     root = root,
     scripts = root .. "/scripts",
-    quickshell = config_home .. "/quickshell",
+    quickshell = config_home .. "/quickshell/hyprism",
+    terminal = os.getenv("TERMINAL") or "foot",
+    file_manager = "thunar",
+    browser = "firefox",
 }
 
 package.loaded["hyprism.programs"] = programs
