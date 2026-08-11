@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+root_dir="${HYPRISM_ROOT:-$HOME/.local/share/hyprism}"
+config="${QS_CONFIG_PATH:-${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/hyprism}"
+entrypoint="$config/shell.qml"
+
+command -v qs >/dev/null 2>&1 || {
+  printf 'Quickshell não está instalado: comando qs não encontrado.\n' >&2
+  exit 127
+}
+[[ -r $entrypoint ]] || {
+  printf 'Configuração do Quickshell não encontrada: %s\n' "$entrypoint" >&2
+  exit 1
+}
+
+export HYPRISM_ROOT="$root_dir"
+exec qs -p "$config" --no-duplicate

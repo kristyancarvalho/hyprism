@@ -14,7 +14,7 @@ Item {
         stdout: SplitParser { splitMarker: "\n"; onRead: data => { try { service.controller.appEntries = JSON.parse(data) } catch (error) { console.warn("app index", error) } } }
     }
     Process {
-        id: wallpapers; command: ["sh", "-lc", service.rootDir + "/scripts/wallpaper list"]
+        id: wallpapers; command: [service.rootDir + "/scripts/wallpaper", "list"]
         stdout: SplitParser { splitMarker: "\n"; onRead: data => { if (data.length) { let next = service.controller.wallpaperEntries.slice(); next.push(data); service.controller.wallpaperEntries = next } } }
         onStarted: service.controller.wallpaperEntries = []
     }
