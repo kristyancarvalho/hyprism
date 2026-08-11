@@ -26,7 +26,7 @@ Item {
     Column {
         anchors.fill: parent; anchors.margins: 18; spacing: 10
         TextField {
-            id: search; width: parent.width; focus: true; placeholderText: "Search applications…"; color: panel.theme.colors.foreground
+            id: search; width: parent.width; focus: true; placeholderText: "Pesquisar aplicativos…"; color: panel.theme.colors.foreground
             placeholderTextColor: panel.theme.colors.mutedForeground; font.pixelSize: 15
             background: Rectangle { radius: 12; color: panel.theme.colors.surfaceVariant; border.color: panel.theme.colors.outline; border.width: 1 }
             onTextChanged: { panel.query = text; panel.selected = 0 }
@@ -46,7 +46,7 @@ Item {
                 }
                 MouseArea { anchors.fill: parent; onClicked: panel.launch(modelData); onEntered: panel.selected = index }
             }
-            Text { anchors.centerIn: parent; visible: parent.count === 0; text: "No matching applications"; color: panel.theme.colors.mutedForeground }
+            Text { anchors.centerIn: parent; visible: parent.count === 0; text: "Nenhum aplicativo encontrado"; color: panel.theme.colors.mutedForeground }
         }
     }
     Component.onCompleted: search.forceActiveFocus()

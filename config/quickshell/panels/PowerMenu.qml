@@ -13,13 +13,13 @@ Item {
     focus: true
     Keys.onPressed: event => { if (event.key === Qt.Key_Escape) { controller.close(); event.accepted = true } }
     Column { anchors.centerIn: parent; spacing: 12
-        Text { anchors.horizontalCenter: parent.horizontalCenter; text: confirming ? "Click again to confirm " + confirming.toLowerCase() : "Session controls"; color: theme.colors.foreground; font { pixelSize: 16; bold: true } }
+        Text { anchors.horizontalCenter: parent.horizontalCenter; text: confirming ? "Clique novamente para confirmar: " + confirming.toLowerCase() : "Controles da sessão"; color: theme.colors.foreground; font { pixelSize: 16; bold: true } }
         Grid { columns: 3; spacing: 8
-            ActionButton { theme: panel.theme; label: "Lock"; icon: "◉"; onClicked: panel.action("Lock", "hyprlock", false) }
-            ActionButton { theme: panel.theme; label: "Suspend"; icon: "◐"; onClicked: panel.action("Suspend", "systemctl suspend", true) }
-            ActionButton { theme: panel.theme; label: "Logout"; icon: "↪"; onClicked: panel.action("Logout", "command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'", true) }
-            ActionButton { theme: panel.theme; label: "Reboot"; icon: "↻"; onClicked: panel.action("Reboot", "systemctl reboot", true) }
-            ActionButton { theme: panel.theme; label: "Shutdown"; icon: "⏻"; onClicked: panel.action("Shutdown", "systemctl poweroff", true) }
+            ActionButton { theme: panel.theme; label: "Bloquear"; icon: "◉"; onClicked: panel.action("Bloquear", "hyprlock", false) }
+            ActionButton { theme: panel.theme; label: "Suspender"; icon: "◐"; onClicked: panel.action("Suspender", "systemctl suspend", true) }
+            ActionButton { theme: panel.theme; label: "Encerrar sessão"; icon: "↪"; onClicked: panel.action("Encerrar sessão", "command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'", true) }
+            ActionButton { theme: panel.theme; label: "Reiniciar"; icon: "↻"; onClicked: panel.action("Reiniciar", "systemctl reboot", true) }
+            ActionButton { theme: panel.theme; label: "Desligar"; icon: "⏻"; onClicked: panel.action("Desligar", "systemctl poweroff", true) }
         }
     }
 }

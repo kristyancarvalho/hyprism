@@ -27,8 +27,10 @@ PanelWindow {
 
     function roman(number) { let values = [[10,"X"],[9,"IX"],[5,"V"],[4,"IV"],[1,"I"]], result=""; for (let pair of values) while(number >= pair[0]) { result += pair[1]; number -= pair[0] } return result }
     property int availableWidth: shellScreen ? shellScreen.width : 800
-    property int desiredWidth: !controller ? 470 : controller.mode === "launcher" ? Math.min(620, availableWidth - 32) : controller.mode === "wallpaper" ? Math.min(680, availableWidth - 32) : controller.mode === "clipboard" ? Math.min(610, availableWidth - 32) : controller.mode === "control" ? Math.min(490, availableWidth - 32) : controller.mode === "network" || controller.mode === "bluetooth" ? Math.min(460, availableWidth - 32) : controller.mode === "power" ? Math.min(480, availableWidth - 32) : controller.mode === "emoji" ? Math.min(440, availableWidth - 32) : controller.mode === "switcher" ? Math.min(availableWidth - 40, 680) : controller.mode === "hover" ? Math.min(availableWidth - 32, 760) : Math.min(470, availableWidth - 32)
-    property int desiredHeight: !controller ? 42 : controller.mode === "launcher" ? 410 : controller.mode === "wallpaper" ? 430 : controller.mode === "clipboard" ? 390 : controller.mode === "control" ? 660 : controller.mode === "network" ? 400 : controller.mode === "bluetooth" ? 300 : controller.mode === "power" ? 270 : controller.mode === "emoji" ? 300 : controller.mode === "switcher" ? 145 : controller.mode === "hover" ? 54 : controller.config.shell.compactHeight
+    property int desiredWidth: Math.max(240, !controller ? 470 : controller.mode === "launcher" ? Math.min(620, availableWidth - 32) : controller.mode === "wallpaper" ? Math.min(680, availableWidth - 32) : controller.mode === "clipboard" ? Math.min(610, availableWidth - 32) : controller.mode === "control" ? Math.min(490, availableWidth - 32) : controller.mode === "network" || controller.mode === "bluetooth" ? Math.min(460, availableWidth - 32) : controller.mode === "power" ? Math.min(480, availableWidth - 32) : controller.mode === "emoji" ? Math.min(440, availableWidth - 32) : controller.mode === "switcher" ? Math.min(availableWidth - 40, 680) : controller.mode === "hover" ? Math.min(availableWidth - 32, 760) : Math.min(470, availableWidth - 32))
+    property int availableHeight: shellScreen ? shellScreen.height : 600
+    property int requestedHeight: !controller ? 42 : controller.mode === "launcher" ? 410 : controller.mode === "wallpaper" ? 430 : controller.mode === "clipboard" ? 390 : controller.mode === "control" ? 660 : controller.mode === "network" ? 400 : controller.mode === "bluetooth" ? 300 : controller.mode === "power" ? 270 : controller.mode === "emoji" ? 300 : controller.mode === "switcher" ? 145 : controller.mode === "hover" ? 54 : controller.config.shell.compactHeight
+    property int desiredHeight: Math.max(42, Math.min(requestedHeight, availableHeight - controller.config.shell.topMargin - 16))
     Glass {
         id: island
         anchors.fill: parent
@@ -49,7 +51,7 @@ PanelWindow {
         Component { id: compact
             Row { anchors.centerIn: parent; spacing: 14
                 Text { text: window.roman(Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 1); color: theme.colors.accent; font { pixelSize: 13; bold: true } }
-                Text { text: Qt.formatDateTime(controller.currentTime, "HH:mm"); color: theme.colors.foreground; font { pixelSize: 14; bold: true } }
+                Text { text: controller.formattedDate("HH:mm"); color: theme.colors.foreground; font { pixelSize: 14; bold: true } }
                 Text { text: controller.weatherIcon(controller.weather.weatherCode) + " " + (controller.weather.temperature === null ? "--°" : Math.round(controller.weather.temperature) + "°"); color: theme.colors.mutedForeground; font.pixelSize: 12 }
                 Text { text: controller.networkIcon() + " " + controller.system.network.name; color: theme.colors.mutedForeground; font.pixelSize: 12; elide: Text.ElideRight; width: 95 }
                 Text { visible: controller.system.battery.available; text: controller.batteryText(); color: theme.colors.mutedForeground; font.pixelSize: 12 }
@@ -62,12 +64,12 @@ PanelWindow {
                         MouseArea { anchors.fill: parent; onClicked: Hyprland.dispatch("hl.dsp.focus({ workspace = " + modelData + " })") }
                     }
                 }
-                Text { text: "Workspace " + window.roman(Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 1); color: theme.colors.accent; font.pixelSize: 12 }
-                Text { text: Qt.formatDateTime(controller.currentTime, "ddd, dd MMM · HH:mm"); color: theme.colors.foreground; font.pixelSize: 12 }
+                Text { text: "Área " + window.roman(Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 1); color: theme.colors.accent; font.pixelSize: 12 }
+                Text { text: controller.formattedDate("ddd, dd MMM · HH:mm"); color: theme.colors.foreground; font.pixelSize: 12 }
                 Text { text: controller.weather.city + " · " + (controller.weather.temperature === null ? "--°C" : Math.round(controller.weather.temperature) + "°C"); color: theme.colors.mutedForeground; font.pixelSize: 12 }
                 Text { text: controller.system.network.name; color: theme.colors.mutedForeground; font.pixelSize: 12; width: 110; elide: Text.ElideRight }
                 Text { text: "BT " + controller.bluetoothIcon(); color: theme.colors.mutedForeground; font.pixelSize: 12 }
-                Text { visible: controller.system.battery.available; text: controller.system.battery.percent + "% · " + controller.system.battery.status; color: theme.colors.mutedForeground; font.pixelSize: 12 }
+                Text { visible: controller.system.battery.available; text: controller.system.battery.percent + "% · " + controller.batteryStatus(); color: theme.colors.mutedForeground; font.pixelSize: 12 }
             }
         }
         Component { id: launcher; Launcher { controller: window.controller; theme: window.theme } }
