@@ -98,7 +98,7 @@ if ((dry_run == 0)); then
 fi
 
 missing=()
-for command in hyprland quickshell kitty matugen swww wl-copy cliphist nmcli wpctl grim slurp; do command -v "$command" >/dev/null || missing+=("$command"); done
+for command in hyprland quickshell kitty matugen awww wl-copy cliphist nmcli wpctl grim slurp; do command -v "$command" >/dev/null || missing+=("$command"); done
 printf '\nHyprism installed for %s.\n' "$target_user"
 printf 'Config: %s/.config/{hypr,quickshell,kitty}\n' "$target_home"
 printf 'Wallpapers: %s/Imagens/Wallpapers\nScreenshots: %s/Imagens/Screenshots\n' "$target_home" "$target_home"

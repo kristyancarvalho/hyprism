@@ -72,7 +72,7 @@ Matugen wallpaper pipeline ───┘                              └─ subt
 `~/Imagens/Wallpapers` is the source of truth. Select a thumbnail or run `hyprism-wallpaper random`; the helper avoids the active image when alternatives exist.
 
 ```text
-wallpaper → swww transition → Matugen → contrast-correct semantic tokens
+wallpaper → awww transition → Matugen → contrast-correct semantic tokens
           → Quickshell FileView live update
           → ~/.cache/hyprism/theme/kitty.conf → kitten @ set-colors
           → generated Hyprland border colours + persisted kitty theme
@@ -96,13 +96,13 @@ qs ipc call osd volume 78
 
 ## Dependencies and reproduction
 
-Official packages are one-per-line in [packages/pacman.txt](packages/pacman.txt); optional AUR packages belong in [packages/aur.txt](packages/aur.txt). The installer only invokes `paru`/`yay` if the AUR list has entries. Core backends are NetworkManager, BlueZ, PipeWire/WirePlumber, UPower, ClipHist, Swww, Matugen, and the small command-line tools documented in the package list.
+Official packages are one-per-line in [packages/pacman.txt](packages/pacman.txt); optional AUR packages belong in [packages/aur.txt](packages/aur.txt). The installer only invokes `paru`/`yay` if the AUR list has entries. Core backends are NetworkManager, BlueZ, PipeWire/WirePlumber, UPower, ClipHist, Awww, Matugen, and the small command-line tools documented in the package list.
 
 ## VirtualBox and troubleshooting
 
 VirtualBox commonly exposes Ethernet with no battery, Bluetooth, Wi-Fi, GPU metric, or brightness device. Hyprism displays Ethernet and hides or disables unsupported controls; these cases are normal. On physical hardware, install/enable `NetworkManager` and `bluetooth`, then reload the shell.
 
-Run `quickshell -p ~/.config/quickshell` from a terminal to inspect shell errors. Quickshell logs are in its runtime directory. If no wallpaper appears, verify `swww-daemon` and run `hyprism-wallpaper set /path/to/image`. If the palette is stale, check `~/.cache/hyprism/theme/theme.json` and `matugen image … --dry-run --json hex`.
+Run `quickshell -p ~/.config/quickshell` from a terminal to inspect shell errors. Quickshell logs are in its runtime directory. If no wallpaper appears, verify `awww-daemon` and run `hyprism-wallpaper set /path/to/image`. If the palette is stale, check `~/.cache/hyprism/theme/theme.json` and `matugen image … --dry-run --json hex`.
 
 ## Repository layout
 
