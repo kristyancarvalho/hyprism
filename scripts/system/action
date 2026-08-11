@@ -9,6 +9,7 @@ volume() {
   notify volume "$value"
 }
 brightness() {
+  command -v brightnessctl >/dev/null || return 1
   brightnessctl set "$1" >/dev/null
   local value; value=$(brightnessctl -m 2>/dev/null | awk -F, '{gsub("%", "", $4); print $4}')
   notify brightness "${value:-0}"
@@ -51,7 +52,11 @@ case "${1:-}" in
     else hyprctl hyprsunset identity >/dev/null 2>&1 && printf off >"$night_state" && notify night Desativado
     fi
     ;;
-  power-save) powerprofilesctl set "${2:-power-saver}" >/dev/null 2>&1 || true; notify power "$([[ ${2:-power-saver} == power-saver ]] && printf 'Economia' || printf 'Equilibrado')" ;;
+  power-save)
+    profile=${2:-power-saver}
+    powerprofilesctl set "$profile" >/dev/null 2>&1
+    notify power "$([[ $profile == power-saver ]] && printf 'Economia' || printf 'Equilibrado')"
+    ;;
   record) ${HYPRISM_RECORD_COMMAND:-wf-recorder -f "$HOME/Imagens/Screenshots/$(date +%Y%m%d_%H%M%S)_recording.mp4"} ;;
   *) printf 'Uso: %s {volume-up|volume-down|volume-mute|mic-mute|brightness-up|brightness-down|screenshot-area|screenshot-monitor|color-picker|clipboard-watch|night-mode|power-save|record}\n' "$0" >&2; exit 2 ;;
 esac

@@ -7,12 +7,16 @@ Rectangle {
     property string label: ""
     property string iconName: "settings"
     property bool active: false
+    property bool available: true
+    property bool pending: false
+    property bool hovered: pointer.containsMouse && available && !pending
     signal clicked()
-    activeFocusOnTab: true
+    activeFocusOnTab: available
     radius: Design.radiusSm
-    color: active || activeFocus ? theme.colors.accentDim : pointer.containsMouse ? theme.colors.surfaceHover : theme.colors.surfaceVariant
+    color: active && available ? theme.colors.accentDim : hovered ? theme.colors.surfaceHover : theme.colors.surfaceVariant
     border.width: activeFocus ? 2 : Design.outlineWidth
-    border.color: active || activeFocus ? theme.colors.accent : theme.colors.outline
+    border.color: active && available || activeFocus ? theme.colors.accent : theme.colors.outline
+    opacity: available ? pending ? .72 : 1 : .5
     implicitWidth: 170
     implicitHeight: 68
 
@@ -26,11 +30,11 @@ Rectangle {
             width: 36
             height: 36
             radius: 18
-            color: button.active ? button.theme.colors.accentDim : button.theme.colors.surface
+            color: button.active && button.available ? button.theme.colors.accentDim : button.theme.colors.surface
 
             StatusIcon {
                 anchors.centerIn: parent
-                name: button.iconName
+                name: button.pending ? "refresh" : button.iconName
                 iconSize: Design.iconMd
                 color: button.theme.colors.foreground
             }
@@ -39,7 +43,7 @@ Rectangle {
         Text {
             anchors.verticalCenter: parent.verticalCenter
             text: Design.safeText(button.label, "Indisponível")
-            color: button.theme.colors.foreground
+            color: button.available ? button.theme.colors.foreground : button.theme.colors.mutedForeground
             font.family: Design.fontFamily
             font.pixelSize: Design.fontSizeSm
             font.weight: Design.fontWeightMedium
@@ -51,7 +55,7 @@ Rectangle {
     }
 
     Keys.onPressed: event => {
-        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) {
+        if (button.available && !button.pending && (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space)) {
             button.clicked()
             event.accepted = true
         }
@@ -60,6 +64,7 @@ Rectangle {
     MouseArea {
         id: pointer
         anchors.fill: parent
+        enabled: button.available && !button.pending
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: {
