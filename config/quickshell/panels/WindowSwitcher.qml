@@ -14,7 +14,7 @@ Item {
                 border.width: controller.switcherIndex === index ? 2 : 1; border.color: controller.switcherIndex === index ? theme.colors.accent : theme.colors.outline
                 Column { anchors.fill: parent; anchors.margins: 12; spacing: 7
                     Text { text: "◈"; color: theme.colors.accent; font.pixelSize: 21 }
-                    Text { width: parent.width; text: modelData.appId || "Window"; color: theme.colors.foreground; font { pixelSize: 12; bold: true } elide: Text.ElideRight }
+                    Text { width: parent.width; text: modelData.appId || "Janela"; color: theme.colors.foreground; font { pixelSize: 12; bold: true } elide: Text.ElideRight }
                     Text { width: parent.width; text: modelData.title; color: theme.colors.mutedForeground; font.pixelSize: 10; elide: Text.ElideRight }
                 }
             }

@@ -1,4 +1,3 @@
--- Hyprism's Hyprland 0.55+ Lua entrypoint. Keep configuration in modules.
 local entrypoint = debug.getinfo(1, "S").source
 local config_dir = entrypoint:sub(1, 1) == "@" and entrypoint:sub(2):match("(.*/)") or nil
 

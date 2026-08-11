@@ -1,28 +1,29 @@
-# Core compositor and shell
 hyprland
 hyprlock
 quickshell
+qt6-imageformats
 
-# Theme, wallpaper, and applications
 kitty
+foot
 matugen
 awww
 adwaita-icon-theme
 ttf-jetbrains-mono-nerd
+noto-fonts-emoji
 qt6ct
 
-# Session services
 networkmanager
 bluez
 bluez-utils
 pipewire
 wireplumber
 upower
+power-profiles-daemon
 polkit-kde-agent
 
-# Shell backends
 python
 python-pillow
+python-gobject
 jq
 curl
 git
@@ -34,8 +35,9 @@ grim
 slurp
 hyprpicker
 imagemagick
+wf-recorder
+hyprsunset
 
-# Default program choices
 thunar
 firefox
 chromium

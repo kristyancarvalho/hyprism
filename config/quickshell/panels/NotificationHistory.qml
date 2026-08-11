@@ -7,8 +7,8 @@ Column {
     required property var server
     spacing: 6
     Row { width: parent.width
-        Text { text: history.server.trackedNotifications.count + " saved"; color: history.theme.colors.mutedForeground; font.pixelSize: 11; width: parent.width - clear.width }
-        Button { id: clear; text: "Clear"; onClicked: { for (let i = history.server.trackedNotifications.count - 1; i >= 0; i--) history.server.trackedNotifications.get(i).dismiss() } }
+        Text { text: history.server.trackedNotifications.count + " salvas"; color: history.theme.colors.mutedForeground; font.pixelSize: 11; width: parent.width - clear.width }
+        Button { id: clear; text: "Limpar tudo"; onClicked: { for (let i = history.server.trackedNotifications.count - 1; i >= 0; i--) history.server.trackedNotifications.get(i).dismiss() } }
     }
     Repeater { model: history.server.trackedNotifications
         Rectangle { required property var modelData; width: history.width; height: 58; radius: 10; color: history.theme.colors.surfaceVariant
@@ -17,5 +17,5 @@ Column {
             Button { id: dismiss; anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 4 } text: "×"; onClicked: modelData.dismiss() }
         }
     }
-    Text { visible: history.server.trackedNotifications.count === 0; text: "No notifications"; color: history.theme.colors.mutedForeground; font.pixelSize: 11 }
+    Text { visible: history.server.trackedNotifications.count === 0; text: "Nenhuma notificação"; color: history.theme.colors.mutedForeground; font.pixelSize: 11 }
 }

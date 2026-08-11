@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Low-frequency shell state stream; absent optional hardware is represented safely."""
 import json, os, pathlib, shutil, subprocess, time
 previous_cpu=None
 
@@ -12,12 +11,12 @@ def volume(target='@DEFAULT_AUDIO_SINK@'):
     except (IndexError, ValueError): return {'available': False, 'percent': 0, 'muted': False}
 def network():
     active = command(['nmcli','-t','-f','TYPE,NAME,DEVICE','connection','show','--active'])
-    if not active: return {'kind':'disconnected','name':'Offline','enabled':False,'signal':0}
+    if not active: return {'kind':'disconnected','name':'Desconectado','enabled':False,'signal':0}
     fields = active.splitlines()[0].split(':', 2)
     kind, name = fields[0], fields[1] if len(fields)>1 else ''
     signal = command(['nmcli','-t','-f','IN-USE,SIGNAL,SSID','device','wifi','list']).splitlines()
     strength = next((int(row.split(':')[1]) for row in signal if row.startswith('*:') and len(row.split(':')) > 1 and row.split(':')[1].isdigit()), 0)
-    return {'kind':'wifi' if kind == 'wifi' else 'ethernet','name':name or ('Ethernet' if kind == 'ethernet' else 'Network'),'enabled':True,'signal':strength}
+    return {'kind':'wifi' if kind == 'wifi' else 'ethernet','name':name or ('Ethernet' if kind == 'ethernet' else 'Rede'),'enabled':True,'signal':strength}
 def bluetooth():
     if not shutil.which('bluetoothctl'): return {'available':False,'powered':False,'connected':False,'devices':[]}
     show=command(['bluetoothctl','show'])

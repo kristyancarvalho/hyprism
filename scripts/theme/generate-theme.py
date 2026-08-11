@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Generate one contrast-correct semantic theme from Matugen output."""
 import json
 import os
 import pathlib
@@ -62,7 +61,7 @@ def palette(image):
             "error": colors["error"]["dark"]["color"],
         }
     except (OSError, KeyError, ValueError, subprocess.SubprocessError) as error:
-        print(f"hyprism theme: Matugen failed ({error}); using safe fallback", file=sys.stderr)
+        print(f"Tema do Hyprism: o Matugen falhou ({error}); usando a paleta segura", file=sys.stderr)
         return FALLBACK
 
 image = sys.argv[1] if len(sys.argv) > 1 else ""
@@ -94,6 +93,19 @@ ansi = [background, theme["error"], primary, theme["warning"], secondary, second
         muted, theme["error"], primary, theme["warning"], secondary, secondary, primary, foreground]
 kitty += [f"color{i} {color}" for i, color in enumerate(ansi)]
 write(OUT / "kitty.conf", "\n".join(kitty) + "\n")
+foot = [
+    "[colors-dark]",
+    f"foreground={foreground[1:]}",
+    f"background={background[1:]}",
+    f"cursor={background[1:]} {primary[1:]}",
+    f"selection-foreground={foreground[1:]}",
+    f"selection-background={surface_variant[1:]}",
+    f"urls={primary[1:]}",
+    "alpha=0.94",
+]
+foot += [f"regular{i}={color[1:]}" for i, color in enumerate(ansi[:8])]
+foot += [f"bright{i}={color[1:]}" for i, color in enumerate(ansi[8:])]
+write(OUT / "foot.ini", "\n".join(foot) + "\n")
 write(
     OUT / "hyprland.lua",
     "return {\n"

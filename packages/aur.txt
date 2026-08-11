@@ -1,2 +1,0 @@
-# Keep this file intentionally empty on a stock Arch install.
-# One package name per line may be added here and install.sh will use paru/yay.

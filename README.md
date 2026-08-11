@@ -1,132 +1,178 @@
 # Hyprism
 
-Hyprism is a reproducible Arch Linux Hyprland shell built around Quickshell. Its visual core is a top-centre, wallpaper-derived island: it stays compact at rest, expands on hover, and morphs into the launcher, wallpaper picker, clipboard history, control centre, Wi-Fi/Bluetooth views, Alt-Tab carousel, power menu, and emoji picker.
+Hyprism é um shell reproduzível para Arch Linux e Hyprland, construído com Quickshell. A interface principal é uma ilha morfológica centralizada no topo: compacta em repouso, expandida no hover e ampliada verticalmente para aplicativos, papéis de parede, área de transferência, notificações, controles, troca de janelas e energia.
 
-No Waybar, AGS, Eww, Rofi, Dunst, SwayNC, or Wlogout UI is used. Quickshell owns the visible desktop layer and its native notification server replaces a standalone notification daemon.
+Quickshell implementa toda a interface visível. O projeto não usa Waybar, AGS, Eww, Rofi, Dunst, SwayNC nem Wlogout.
 
-## Screenshots
+## Instalação no Arch Linux
 
-Screenshots have not been captured in this VM yet. The included raster `wallpapers/` assets are original small palette-test wallpapers, not third-party artwork.
-
-## Install
-
-Clone this repository, inspect `packages/pacman.txt`, then run:
+Revise [packages/pacman.txt](packages/pacman.txt) e [packages/aur.txt](packages/aur.txt), clone o repositório e execute:
 
 ```bash
 sudo ./install.sh --user "$USER"
 ```
 
-The installer is Arch-only and fails early on other distributions. It installs only the package lists, backs up conflicting target paths under `~/.local/state/hyprism/backups/`, and links repository-managed configuration rather than copying it. It never removes existing personal wallpapers or screenshots.
-
-For development after dependencies are present:
+Para atualizar somente os arquivos depois que as dependências já estiverem instaladas:
 
 ```bash
-./install.sh --no-packages
+sudo ./install.sh --user "$USER" --no-packages
 ```
 
-The managed paths are `~/.config/hypr`, `~/.config/quickshell`, `~/.config/kitty/kitty.conf`, GTK/Qt settings, `~/.config/hyprism/user.json`, and `~/.local/share/hyprism`. The installer verifies the Hyprland and Quickshell links, requires `hyprland.lua` and `shell.qml`, rejects an installed `hyprland.conf`, and archives the obsolete generated theme fragment if an older release left one behind. Remove the managed symlinks (restoring the timestamped backup if wanted) to uninstall; user content under `~/Imagens` is deliberately retained.
+O instalador:
 
-## Architecture
+- instala pacotes oficiais e usa `paru` ou `yay` somente quando `packages/aur.txt` contém entradas;
+- cria `~/Imagens/Wallpapers` e `~/Imagens/Screenshots` sem apagar conteúdo existente;
+- copia os arquivos runtime para `~/.local/share/hyprism`, sem depender do local original do clone;
+- cria links para `~/.config/hypr`, `~/.config/quickshell/hyprism`, Foot, Kitty, GTK, Qt e a configuração do usuário;
+- guarda conflitos em `~/.local/state/hyprism/backups/`;
+- verifica `hyprland.lua`, `shell.qml`, `foot.ini` e o tema de fallback do Foot;
+- não instala nem ativa um `hyprland.conf` legado.
+
+## Arquitetura
 
 ```text
-Hyprland bindings / IPC ─────┐
-                              ├─ Quickshell ShellController ── morphological island
-state-daemon + DBus CLIs ─────┤                              ├─ OSD + notifications
-Matugen wallpaper pipeline ───┘                              └─ subtle desktop widgets
+install.sh
+  └─ ~/.local/share/hyprism
+      ├─ config/hypr/hyprland.lua
+      │   └─ modules/autostart.lua
+      │       └─ scripts/system/start-shell
+      │           └─ qs -p ~/.config/quickshell/hyprism
+      │               └─ shell.qml
+      └─ config/quickshell
+          ├─ ilha e painéis
+          ├─ widgets de data e sistema
+          ├─ notificações e OSD
+          └─ serviços opcionais resilientes
 ```
 
-- `config/quickshell/` contains the state controller, independent services, panels, widgets, notification cards, and OSD. `ShellController` owns the single primary mode; transient OSDs do not close a panel.
-- `config/hypr/hyprland.lua` is the small Hyprland 0.55+ entrypoint. It loads focused Lua modules for environment, programs, monitors, general behavior, input, appearance, animations, layouts, rules, workspaces, bindings, and autostart. There are no repository-managed Hyprland `.conf` fragments.
-- Hyprland’s native IPC drives workspaces and toplevels. The switcher commits on `Alt_L`/`Alt_R` release, not Super release.
-- `scripts/system/state-daemon.py` provides one low-frequency state stream for audio, network, Bluetooth, battery, brightness, CPU/RAM/GPU availability, and MPRIS metadata. Optional hardware is represented as unavailable instead of failing the shell.
-- The notification server is Quickshell’s `NotificationServer`, with tracked history, dismiss/clear actions, replacement handling delegated to the daemon protocol, popup actions, and a notification section in the control centre.
+`config/hypr/hyprland.lua` é o ponto de entrada Lua do Hyprland 0.55 ou posterior. Os módulos separam programas, monitores, aparência, entrada, layouts, regras, workspaces, atalhos, ambiente e autostart. Não há configuração Hyprland `.conf` ativa no repositório.
 
-## Keybindings
+O Quickshell é iniciado uma única vez pelo evento `hyprland.start`. O helper usa o executável canônico `qs`, o caminho nomeado e explícito da configuração, `--no-duplicate` e a raiz runtime estável. O Hyprland já cria o processo de forma assíncrona, por isso o shell não usa uma segunda camada de daemonização. Recarregar a configuração do Hyprland não acumula processos do shell.
 
-`ALT` is the main modifier. Former `SUPER+ALT` semantics become `ALT+SUPER`; this avoids impossible `ALT+ALT` bindings in the VM.
+No primeiro boot, a paleta escura embutida mantém a ilha e os widgets utilizáveis mesmo sem arquivos gerados. Ausência de bateria, Wi-Fi, Bluetooth, brilho, GPU, sensores, MPRIS, clima ou histórico de clipboard produz um estado indisponível ou oculto, sem bloquear o `shell.qml`.
 
-| Key | Action |
+A tela configurada em `config/user.json` tem prioridade quando existe. Em seguida são usadas a tela focada do Hyprland e a primeira tela enumerada pelo Quickshell. Nenhum nome como `eDP-1`, `HDMI-A-1` ou `Virtual-1` é codificado.
+
+## Terminal
+
+Foot é o terminal padrão porque é um terminal Wayland pequeno, rápido e adequado ao ambiente gráfico virtual. `Alt+Return` é um atalho direto do Hyprland para o programa centralizado em `modules/programs.lua`; ele não depende do Quickshell.
+
+`config/foot/foot.ini` usa JetBrains Mono Nerd Font 11.5, padding de 10 px, cursor beam, fundo escuro com opacidade 0,94 e a mesma paleta semântica do shell. Kitty permanece instalado e configurado como alternativa, mas não é o padrão. `$TERMINAL` também aponta para `foot`.
+
+## Papel de parede e cores
+
+```text
+papel de parede
+  └─ Matugen
+      └─ paleta semântica com contraste corrigido
+          ├─ Quickshell
+          ├─ Hyprland Lua
+          ├─ Foot
+          └─ Kitty
+```
+
+`scripts/theme/generate-theme.py` é o gerador central. Ele cria:
+
+- `~/.cache/hyprism/theme/theme.json` para Quickshell;
+- `~/.cache/hyprism/theme/hyprland.lua` para bordas do Hyprland;
+- `~/.cache/hyprism/theme/foot.ini` com foreground, background, cursor, seleção e as 16 cores ANSI;
+- `~/.cache/hyprism/theme/kitty.conf` e aplicação remota nas janelas Kitty compatíveis.
+
+O instalador prepara `foot.ini` com uma paleta de fallback antes de qualquer terminal ser aberto. Novas janelas Foot leem a paleta atual. GTK permanece em Adwaita escuro e Qt usa `qt6ct` com Fusion.
+
+## Atalhos principais
+
+| Atalho | Ação |
 | --- | --- |
-| `Alt+Return`, `Alt+E`, `Alt+B` | Kitty, file manager, browser |
-| `Alt+R` | Quickshell application launcher |
-| `Alt+K`, `Alt+Super+K` | Wallpaper picker, random local wallpaper |
-| `Alt+Shift+V` | Clipboard history |
-| `Alt+Tab`, `Alt+Shift+Tab`, release Alt | Window switcher forward/back/commit |
-| `Alt+M` or `Alt+Shift+L` | Confirmed Quickshell power menu |
-| `Alt+L` | Hyprlock |
-| `Alt+Shift+N`, `Alt+Shift+I` | Network panel, power saver |
-| `Alt+Shift+Up/Down/M`, `Alt+Super+M` | Volume, output mute, microphone mute with OSD |
-| `Alt+Shift+S`, `Alt+Shift+F` | Area and focused-monitor screenshot (also copied) |
-| `Alt+Ctrl+P` | Hyprpicker, copy, colour OSD |
-| `Alt+1…0`, `Alt+Shift+1…0` | Workspaces 1–10, move window |
-| `Alt+S`, `Alt+Shift+U` | Toggle/move to `special:magic` |
-| `Alt+Arrow`, `Alt+Ctrl+Arrow` | Focus and move/swap; left/right use scrolling-layout column swap when that layout is active |
-| `Alt+Super+Arrow` | Resize active window in 30px steps |
-| `Alt+=`, `Alt+-` | Scrolling-layout column size |
-| `Alt+Shift+E` | Reload Quickshell without exiting Hyprland |
-| `Ctrl+.` | Quickshell emoji picker |
+| `Alt+Return` | Foot, diretamente pelo Hyprland |
+| `Alt+E` | Gerenciador de arquivos |
+| `Alt+B` | Navegador |
+| `Alt+R` | Aplicativos |
+| `Alt+K` | Papéis de parede |
+| `Alt+Super+K` | Papel de parede aleatório |
+| `Alt+Shift+V` | Área de transferência |
+| `Alt+Tab` / `Alt+Shift+Tab` | Troca de janelas; soltar Alt confirma |
+| `Alt+Shift+N` | Rede |
+| `Alt+Shift+I` | Economia de energia |
+| `Alt+Shift+L` | Menu de energia do Quickshell |
+| `Alt+M` | Encerrar sessão diretamente pelo Hyprland |
+| `Alt+Shift+E` | Recarregar ou iniciar o Quickshell |
+| `Alt+Ctrl+S` | Modo noturno |
+| `Alt+Ctrl+P` | Seletor de cor |
+| `Alt+Shift+S` | Captura de região |
+| `Alt+Shift+F` | Captura do monitor focado |
+| `Alt+L` | Bloqueio com Hyprlock |
+| `Alt+P` | Alternar pseudotile pela API Lua atual |
+| `Alt+W` | Fechar janela diretamente pelo Hyprland |
+| `Alt+1…0` | Workspaces 1–10 |
 
-`Alt+Shift+A` and `Alt+Shift+G` are intentionally not bound: no local AGS LLM/GitHub implementation was found to port, and Hyprism does not fabricate panels with no backend.
+## VirtualBox
 
-## Wallpaper and colour pipeline
+Uma VM normalmente oferece Ethernet e não oferece bateria, Wi-Fi, Bluetooth, brilho, GPU NVIDIA ou sensores físicos. Esses estados são válidos. A ilha continua visível, o widget de data/hora e o widget de CPU/memória são criados, e controles de hardware ausente ficam ocultos ou indisponíveis.
 
-`~/Imagens/Wallpapers` is the source of truth. Select a thumbnail or run `hyprism-wallpaper random`; the helper avoids the active image when alternatives exist.
+Foot não usa o caminho de renderização do Kitty e é o primeiro terminal a testar com `Alt+Return`. Mantenha aceleração 3D e recursos de vídeo da VM compatíveis com a versão do Hyprland usada pelo Arch.
 
-```text
-wallpaper → awww transition → Matugen → contrast-correct semantic tokens
-          → Quickshell FileView live update
-          → ~/.cache/hyprism/theme/kitty.conf → kitten @ set-colors
-          → generated Hyprland border colours + persisted kitty theme
-```
+## Solução de problemas
 
-`scripts/theme/generate-theme.py` is the sole palette generator. It uses Matugen’s dark content scheme and contrast-corrects semantic tokens, with a safe fallback palette if Matugen or an image fails. GTK stays `Adwaita-dark`; Qt uses `qt6ct`/Fusion. Set weather coordinates and all user-facing program/path/island/widget settings in `config/user.json` (installed as `~/.config/hyprism/user.json`). Leave weather coordinates unset to disable requests safely.
+### Quickshell não iniciou
 
-## Quickshell IPC
+Execute estes comandos dentro da VM, depois de entrar no Hyprland:
 
 ```bash
-qs -p ~/.config/quickshell ipc call shell toggleControlCenter
-qs -p ~/.config/quickshell ipc call app-launcher toggle
-qs -p ~/.config/quickshell ipc call wallpaper-picker toggle
-qs -p ~/.config/quickshell ipc call wallpaper random
-qs -p ~/.config/quickshell ipc call clipboard toggle
-qs -p ~/.config/quickshell ipc call window-switcher forward
-qs -p ~/.config/quickshell ipc call window-switcher commit
-qs -p ~/.config/quickshell ipc call power-menu toggle
-qs -p ~/.config/quickshell ipc call osd volume 78
-qs -p ~/.config/quickshell ipc call shell status
-qs -p ~/.config/quickshell ipc call shell reload
+pacman -Q quickshell
+command -v qs
+pgrep -af '(^|/)(qs|quickshell)( |$)'
+readlink -f ~/.config/quickshell/hyprism
+test -r ~/.config/quickshell/hyprism/shell.qml && echo 'shell.qml encontrado'
+test -x ~/.local/share/hyprism/scripts/system/start-shell && echo 'helper encontrado'
 ```
 
-When more than one Quickshell configuration is running, target Hyprism explicitly with `qs -p ~/.config/quickshell ipc call shell status`. The status response reports the PID, selected screen, theme source, island/widgets state, notification server, service stream, and active shell mode.
+Confira a instância e os logs selecionando exatamente a configuração Hyprism:
 
-## Dependencies and reproduction
+```bash
+qs list -a
+qs -p ~/.config/quickshell/hyprism log -t 200
+qs -p ~/.config/quickshell/hyprism ipc call shell status
+```
 
-Official packages are one-per-line in [packages/pacman.txt](packages/pacman.txt); optional AUR packages belong in [packages/aur.txt](packages/aur.txt). The installer only invokes `paru`/`yay` if the AUR list has entries. Core backends are NetworkManager, BlueZ, PipeWire/WirePlumber, UPower, ClipHist, Awww, Matugen, and the small command-line tools documented in the package list.
+Para observar um erro de carregamento sem daemonizar, primeiro confirme que não há uma instância ativa e então execute na VM:
 
-## VirtualBox and troubleshooting
+```bash
+HYPRISM_ROOT="$HOME/.local/share/hyprism" qs -p "$HOME/.config/quickshell/hyprism" --no-duplicate
+```
 
-VirtualBox commonly exposes Ethernet with no battery, Bluetooth, Wi-Fi, GPU metric, or brightness device. Hyprism displays Ethernet and hides or disables unsupported controls; these cases are normal. On physical hardware, install/enable `NetworkManager` and `bluetooth`, then reload the shell.
+Verifique também a configuração e o autostart do Hyprland:
 
-Run `quickshell -p ~/.config/quickshell --no-duplicate` from a terminal to inspect shell errors. Use `qs -p ~/.config/quickshell log` for the selected instance and `qs -p ~/.config/quickshell ipc call shell status` for a compact health check. If no wallpaper appears, verify `awww-daemon` and run `hyprism-wallpaper set /path/to/image`. If the palette is stale, check `~/.cache/hyprism/theme/theme.json` and `matugen image … --dry-run --json hex`.
+```bash
+Hyprland --verify-config -c ~/.config/hypr/hyprland.lua
+hyprctl configerrors
+rg -n 'start-shell|hyprland.start' ~/.config/hypr
+journalctl --user -b --no-pager | rg -i 'quickshell|hyprism|qml'
+```
 
-Hyprism does not hard-code output names. The shell follows Hyprland's focused monitor, then the optional `shell.primaryMonitor` name in `config/user.json`, then the first Quickshell screen. A missing generated palette leaves the built-in dark theme active. Missing battery, Bluetooth, Wi-Fi, brightness, GPU, MPRIS, weather, or clipboard data is represented as unavailable and cannot abort the QML tree.
+`Alt+Shift+E` tenta uma recarga IPC e, se não houver processo, inicia novamente a configuração correta. `Alt+Return`, fechamento de janelas, workspaces e `Alt+M` continuam funcionando sem Quickshell.
 
-For compositor diagnostics, run `Hyprland --verify-config -c ~/.config/hypr/hyprland.lua`, then inspect `hyprctl configerrors` and the current Hyprland log from inside the session. `Alt+P` uses the current Lua dispatcher `hl.dsp.window.pseudo({ action = "toggle" })`; the removed legacy `togglepseudo` dispatcher is not valid in the Lua configuration API.
+### Foot não abriu
 
-### Blocking regression notes
+```bash
+pacman -Q foot
+command -v foot
+foot -C
+readlink -f ~/.config/foot/foot.ini
+test -s ~/.cache/hyprism/theme/foot.ini && echo 'tema do Foot encontrado'
+```
 
-The deprecated-format warning came from the installer linking a directory whose active entrypoint was `hyprland.conf`; that file also sourced a generated `~/.cache/hyprism/theme/hyprland.conf`. Both paths are now Lua, and the installer archives the obsolete generated fragment. The pseudotile error came from carrying the legacy `togglepseudo` dispatcher into a release whose Lua API exposes the typed `window.pseudo` action.
+`foot -C` apenas valida a configuração na VM. Se o arquivo gerado estiver ausente, execute novamente o instalador ou selecione um papel de parede com `hyprism-wallpaper set CAMINHO`.
 
-The missing widgets were first and foremost a startup/instance-selection failure: no process was running the repository's Quickshell configuration, while another unrelated Quickshell configuration was alive. The old shell also relied on implicit screen selection and a full-width panel to center the island. Autostart, bindings, OSD/theme helpers, reload, and health commands now all select `~/.config/quickshell` explicitly; surfaces receive a dynamically selected screen and concrete non-zero geometry. This distinction matters when diagnosing a future regression: a running `quickshell` process is not proof that the intended `shell.qml` is running.
-
-## Repository layout
+## Estrutura do repositório
 
 ```text
-config/hypr/  modular Hyprland Lua entrypoint and modules
-config/quickshell/  shell root, services, panels, widgets, notifications, and OSD
-config/       Kitty, GTK, Qt, and user defaults
-scripts/      wallpaper/theme, state, network, Bluetooth, screenshot, OSD helpers
-packages/     editable official and AUR package lists
-wallpapers/   small original palette-test wallpapers
-install.sh    safe Arch deployment
+config/hypr/        configuração Lua modular do Hyprland
+config/quickshell/  shell, painéis, widgets, serviços, notificações e OSD
+config/foot/        configuração e tema de fallback do Foot
+config/kitty/       suporte opcional ao Kitty
+scripts/            backends, wallpaper e geração de tema
+packages/           listas reproduzíveis de pacotes oficiais e AUR
+wallpapers/         papéis de parede de teste incluídos
+install.sh          implantação Arch reproduzível
 ```

@@ -5,8 +5,6 @@ local palette = {
     inactive_border = "rgb(426172)",
 }
 
--- Wallpaper palette generation is optional. A missing or malformed file must
--- never stop Hyprland from loading the built-in dark palette.
 local palette_path = cache_home .. "/hyprism/theme/hyprland.lua"
 local loader = loadfile(palette_path)
 if loader then

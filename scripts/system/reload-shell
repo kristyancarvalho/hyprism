@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-config="${QS_CONFIG_PATH:-${XDG_CONFIG_HOME:-$HOME/.config}/quickshell}"
+config="${QS_CONFIG_PATH:-${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/hyprism}"
 if qs -p "$config" ipc call shell reload >/dev/null 2>&1; then
   exit 0
 fi
-exec quickshell -p "$config" --no-duplicate --daemonize
+exec "${HYPRISM_ROOT:-$HOME/.local/share/hyprism}/scripts/system/start-shell"
