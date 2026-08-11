@@ -23,6 +23,7 @@ polkit-kde-agent
 
 python
 python-pillow
+python-gobject
 jq
 curl
 git
