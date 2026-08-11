@@ -28,6 +28,7 @@ python-pillow
 python-gobject
 jq
 curl
+fontconfig
 git
 wl-clipboard
 cliphist

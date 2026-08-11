@@ -86,8 +86,11 @@ if ((dry_run == 0)); then
   chmod +x "$runtime_root/scripts/wallpaper" "$runtime_root"/scripts/theme/*.py "$runtime_root"/scripts/system/*
 fi
 
-font_file="$target_home/.local/share/fonts/google-sans-flex/GoogleSansFlex-Regular.ttf"
-if [[ ! -s $font_file ]]; then
+font_dir="$target_home/.local/share/fonts/google-sans-flex"
+font_regular="$font_dir/GoogleSansFlex-Regular.ttf"
+font_medium="$font_dir/GoogleSansFlex-Medium.ttf"
+font_semibold="$font_dir/GoogleSansFlex-SemiBold.ttf"
+if [[ ! -s $font_regular || ! -s $font_medium || ! -s $font_semibold ]]; then
   as_user "$runtime_root/scripts/system/install-google-sans-flex"
 else
   printf 'Google Sans Flex já está instalada.\n'
@@ -135,8 +138,14 @@ if ((dry_run == 0)); then
     || { printf 'O ponto de entrada do Quickshell não foi instalado.\n' >&2; exit 1; }
   [[ -f $target_home/.config/foot/foot.ini && -s $theme_dir/foot.ini && -f $theme_dir/kitty.conf ]] \
     || { printf 'A configuração ou um tema de fallback do terminal está ausente.\n' >&2; exit 1; }
-  [[ -s $font_file ]] \
+  [[ -s $font_regular && -s $font_medium && -s $font_semibold ]] \
     || { printf 'A fonte Google Sans Flex não foi instalada.\n' >&2; exit 1; }
+  [[ -d /usr/share/icons/Papirus-Dark ]] \
+    || { printf 'O tema de ícones Papirus-Dark não foi instalado.\n' >&2; exit 1; }
+  [[ $(as_user fc-match --format '%{family}\n' 'Google Sans Flex') == *"Google Sans Flex"* ]] \
+    || { printf 'A fonte Google Sans Flex não foi indexada pelo Fontconfig.\n' >&2; exit 1; }
+  [[ $(as_user fc-match --format '%{family}\n' 'Symbols Nerd Font Mono') == *"Symbols Nerd Font Mono"* ]] \
+    || { printf 'A fonte de ícones Nerd Font não foi indexada pelo Fontconfig.\n' >&2; exit 1; }
 fi
 
 legacy_hypr_theme="$target_home/.cache/hyprism/theme/hyprland.conf"
@@ -166,7 +175,7 @@ if ((dry_run == 0)); then
 fi
 
 missing=()
-for command in Hyprland qs foot kitty matugen awww awww-daemon python3 jq wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp hyprpicker brightnessctl wf-recorder hyprsunset powerprofilesctl; do command -v "$command" >/dev/null || missing+=("$command"); done
+for command in Hyprland qs foot kitty matugen awww awww-daemon python3 jq curl fc-cache fc-match wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp hyprpicker brightnessctl wf-recorder hyprsunset powerprofilesctl; do command -v "$command" >/dev/null || missing+=("$command"); done
 printf '\nHyprism instalado para %s.\n' "$target_user"
 printf 'Configurações: %s/.config/{hypr,quickshell/default,quickshell/hyprism,foot,kitty}\n' "$target_home"
 printf 'Papéis de parede: %s/Imagens/Wallpapers\nCapturas de tela: %s/Imagens/Screenshots\n' "$target_home" "$target_home"
