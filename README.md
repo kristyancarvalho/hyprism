@@ -112,6 +112,14 @@ Uma VM normalmente oferece Ethernet e não oferece bateria, Wi-Fi, Bluetooth, br
 
 Foot não usa o caminho de renderização do Kitty e é o primeiro terminal a testar com `Alt+Return`. Mantenha aceleração 3D e recursos de vídeo da VM compatíveis com a versão do Hyprland usada pelo Arch.
 
+O Quickshell usa por padrão o backend `software` do Qt Quick. Esse backend rasteriza a interface sem depender de uma superfície EGL e evita as falhas `Could not create EGL surface`, `eglSwapBuffers failed` e `Wayland connection experienced a fatal error` observadas com o adaptador gráfico do VirtualBox. A configuração vale apenas para o processo do Quickshell; Hyprland, Foot e os demais aplicativos mantêm seus próprios backends gráficos.
+
+Em uma máquina física com aceleração Qt funcional, o backend RHI pode ser testado sem editar o repositório:
+
+```bash
+QT_QUICK_BACKEND=rhi qs --no-duplicate
+```
+
 ## Solução de problemas
 
 ### Quickshell não iniciou
@@ -155,6 +163,15 @@ journalctl --user -b --no-pager | rg -i 'quickshell|hyprism|qml'
 ```
 
 `Alt+Shift+E` tenta uma recarga IPC e, se não houver processo, inicia novamente a configuração correta. `Alt+Return`, fechamento de janelas, workspaces e `Alt+M` continuam funcionando sem Quickshell.
+
+Se o log mencionar EGL, confirme que a configuração instalada contém o fallback do VirtualBox:
+
+```bash
+head -n 3 ~/.config/quickshell/default/shell.qml
+QT_QUICK_BACKEND=software QSG_INFO=1 qs --no-duplicate
+```
+
+O segundo comando é apenas para diagnóstico dentro da VM e deve informar o backend de software antes de carregar a interface.
 
 ### Foot não abriu
 
