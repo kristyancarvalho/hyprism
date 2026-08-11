@@ -1,22 +1,165 @@
 import QtQuick
-import QtQuick.Controls
 import "../components"
+import ".."
+
 Column {
     id: history
     required property var controller
     required property var theme
     required property var server
-    spacing: 6
-    Row { width: parent.width
-        Text { text: history.server.trackedNotifications.count + " salvas"; color: history.theme.colors.mutedForeground; font.pixelSize: 11; width: parent.width - clear.width }
-        ShellButton { id: clear; theme: history.theme; compact: true; text: "Limpar tudo"; iconName: "edit-clear"; onClicked: { for (let i = history.server.trackedNotifications.count - 1; i >= 0; i--) history.server.trackedNotifications.get(i).dismiss() } }
+    property var notifications: server && server.trackedNotifications ? server.trackedNotifications.values : []
+    property int selectedIndex: 0
+    spacing: 8
+    activeFocusOnTab: true
+
+    function dismiss(notification) {
+        if (!notification) return
+        if (server.newest === notification) server.newest = null
+        notification.tracked = false
     }
-    Repeater { model: history.server.trackedNotifications
-        Rectangle { required property var modelData; width: history.width; height: 58; radius: 10; color: history.theme.colors.surfaceVariant
-            Text { anchors { left: parent.left; right: dismiss.left; top: parent.top; margins: 8 } text: modelData.appName + " · " + modelData.summary; color: history.theme.colors.foreground; elide: Text.ElideRight; font.pixelSize: 11 }
-            Text { anchors { left: parent.left; right: dismiss.left; bottom: parent.bottom; margins: 8 } text: modelData.body; color: history.theme.colors.mutedForeground; elide: Text.ElideRight; font.pixelSize: 10 }
-            ShellButton { id: dismiss; anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 6 } theme: history.theme; compact: true; iconName: "window-close"; onClicked: modelData.dismiss() }
+
+    function clearAll() {
+        const current = notifications ? notifications.slice() : []
+        server.newest = null
+        for (let i = 0; i < current.length; i++) {
+            if (current[i]) current[i].tracked = false
+        }
+        selectedIndex = 0
+    }
+
+    Keys.onPressed: event => {
+        if (event.key === Qt.Key_Up) {
+            selectedIndex = navigation.wrap(selectedIndex, -1, notifications.length)
+            event.accepted = true
+        } else if (event.key === Qt.Key_Down) {
+            selectedIndex = navigation.wrap(selectedIndex, 1, notifications.length)
+            event.accepted = true
+        } else if (event.key === Qt.Key_Delete || event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+            dismiss(notifications[selectedIndex])
+            event.accepted = true
         }
     }
-    Text { visible: history.server.trackedNotifications.count === 0; text: "Nenhuma notificação"; color: history.theme.colors.mutedForeground; font.pixelSize: 11 }
+
+    Navigation { id: navigation }
+
+    Row {
+        width: parent.width
+
+        Text {
+            width: parent.width - clear.width
+            anchors.verticalCenter: parent.verticalCenter
+            text: Design.notificationCount(history.notifications.length)
+            color: history.theme.colors.mutedForeground
+            font.family: Design.fontFamily
+            font.pixelSize: Design.fontSizeXs
+        }
+
+        ShellButton {
+            id: clear
+            visible: history.notifications.length > 0
+            theme: history.theme
+            compact: true
+            text: "Limpar tudo"
+            iconName: "clear"
+            onClicked: history.clearAll()
+        }
+    }
+
+    Repeater {
+        model: history.notifications
+
+        Rectangle {
+            required property var modelData
+            required property int index
+            width: history.width
+            height: 66
+            radius: Design.radiusSm
+            color: history.activeFocus && history.selectedIndex === index ? history.theme.colors.surfaceActive : pointer.containsMouse ? history.theme.colors.surfaceHover : history.theme.colors.surfaceVariant
+            border.width: history.activeFocus && history.selectedIndex === index ? 2 : Design.outlineWidth
+            border.color: history.activeFocus && history.selectedIndex === index ? history.theme.colors.accent : history.theme.colors.outline
+
+            Rectangle {
+                anchors {
+                    left: parent.left
+                    leftMargin: 9
+                    verticalCenter: parent.verticalCenter
+                }
+                width: 38
+                height: 38
+                radius: 12
+                color: history.theme.colors.surface
+
+                ShellIcon {
+                    anchors.centerIn: parent
+                    name: Design.safeText(modelData.appIcon, Design.safeText(modelData.desktopEntry, "application-x-executable"))
+                    fallback: "application-x-executable"
+                    iconSize: 24
+                }
+            }
+
+            Column {
+                anchors {
+                    left: parent.left
+                    leftMargin: 56
+                    right: dismissButton.left
+                    rightMargin: 8
+                    verticalCenter: parent.verticalCenter
+                }
+                spacing: 2
+
+                Text {
+                    width: parent.width
+                    text: Design.safeText(modelData.summary, Design.safeText(modelData.appName, "Notificação"))
+                    color: history.theme.colors.foreground
+                    elide: Text.ElideRight
+                    font.family: Design.fontFamily
+                    font.pixelSize: Design.fontSizeSm
+                    font.weight: Design.fontWeightSemibold
+                }
+
+                Text {
+                    width: parent.width
+                    text: Design.safeText(modelData.body, "Sem detalhes").replace(/<[^>]*>/g, "")
+                    color: history.theme.colors.mutedForeground
+                    elide: Text.ElideRight
+                    font.family: Design.fontFamily
+                    font.pixelSize: Design.fontSizeXs
+                }
+            }
+
+            ShellButton {
+                id: dismissButton
+                anchors {
+                    right: parent.right
+                    verticalCenter: parent.verticalCenter
+                    rightMargin: 8
+                }
+                theme: history.theme
+                compact: true
+                iconName: "close"
+                onClicked: history.dismiss(modelData)
+            }
+
+            MouseArea {
+                id: pointer
+                anchors {
+                    left: parent.left
+                    right: dismissButton.left
+                    top: parent.top
+                    bottom: parent.bottom
+                }
+                hoverEnabled: true
+                onEntered: history.selectedIndex = index
+                onClicked: history.forceActiveFocus()
+            }
+        }
+    }
+
+    Text {
+        visible: history.notifications.length === 0
+        text: "Nenhuma notificação salva"
+        color: history.theme.colors.mutedForeground
+        font.family: Design.fontFamily
+        font.pixelSize: Design.fontSizeSm
+    }
 }
