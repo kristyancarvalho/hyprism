@@ -20,9 +20,9 @@ Item {
     property var appEntries: []
     property var wallpaperEntries: []
     property var clipboardEntries: []
-    property var weather: ({ city: "Tempo indisponível", temperature: null, apparentTemperature: null, weatherCode: -1 })
+    property var weather: ({ city: "São Paulo", temperature: null, apparentTemperature: null, weatherCode: -1 })
     property var system: ({ audio: { available: false, percent: 0, muted: false }, microphone: { available: false, percent: 0, muted: false }, network: { kind: "disconnected", name: "Desconectado", enabled: false, signal: 0 }, bluetooth: { available: false, powered: false, connected: false, devices: [] }, battery: { available: false, percent: 0, status: "" }, brightness: { available: false, percent: 0 }, memory: { percent: 0, used: 0, total: 0 }, cpu: { percent: 0 }, gpu: { available: false, percent: 0 }, media: { available: false, status: "", artist: "", title: "", artUrl: "" } })
-    property var config: ({ shell: { primaryMonitor: "", islandWidth: 520, compactHeight: 42, topMargin: 18, surfaceOpacity: .88, radiusSmall: 14, radiusMedium: 22, radiusLarge: 30, spacingSmall: 8, spacingMedium: 14, spacingLarge: 22, animationFast: 130, animationNormal: 210, widgets: { clock: true, weather: true, media: true, system: true } } })
+    property var config: ({ shell: { primaryMonitor: "", islandWidth: 520, compactHeight: 50, topMargin: 14, surfaceOpacity: .9, radiusSmall: 14, radiusMedium: 22, radiusLarge: 30, spacingSmall: 8, spacingMedium: 14, spacingLarge: 22, animationFast: 130, animationNormal: 210, widgets: { clock: true, weather: true, media: true, system: true } } })
     property string rootDir: Quickshell.env("HYPRISM_ROOT") || Quickshell.env("HOME") + "/.local/share/hyprism"
 
     function open(next) {
@@ -49,15 +49,30 @@ Item {
         if (window) window.activate()
         close()
     }
-    function weatherIcon(code) {
-        if (code === 0 || code === 1) return "☀"
-        if (code === 2 || code === 3) return "☁"
-        if (code >= 51 && code <= 82) return "☂"
-        if (code >= 95) return "ϟ"
-        return "◌"
+    function weatherIconName(code) {
+        if (code === 0) return "weather-clear"
+        if (code === 1 || code === 2) return "weather-few-clouds"
+        if (code === 3) return "weather-overcast"
+        if (code === 45 || code === 48) return "weather-fog"
+        if (code >= 51 && code <= 67) return "weather-showers-scattered"
+        if (code >= 71 && code <= 77) return "weather-snow"
+        if (code >= 80 && code <= 82) return "weather-showers"
+        if (code >= 95) return "weather-storm"
+        return "weather-overcast"
     }
-    function networkIcon() { return system.network.kind === "wifi" ? "◔" : system.network.kind === "ethernet" ? "↔" : "×" }
-    function bluetoothIcon() { return !system.bluetooth.available ? "—" : !system.bluetooth.powered ? "◌" : system.bluetooth.connected ? "◉" : "○" }
+    function networkIconName() { return system.network.kind === "wifi" ? "network-wireless" : system.network.kind === "ethernet" ? "network-wired" : "network-offline" }
+    function networkLabel() { return system.network.kind === "ethernet" ? "Cabo" : system.network.kind === "wifi" ? system.network.name : "Sem rede" }
+    function bluetoothIconName() { return "bluetooth" }
+    function batteryIconName() {
+        if (!system.battery.available) return "battery-missing"
+        if (system.battery.percent <= 10) return "battery-empty"
+        if (system.battery.percent <= 25) return "battery-caution"
+        if (system.battery.percent <= 50) return "battery-low"
+        if (system.battery.percent <= 80) return "battery-good"
+        return "battery-full"
+    }
+    function volumeIconName() { return system.audio.muted ? "audio-volume-muted" : system.audio.percent < 35 ? "audio-volume-low" : system.audio.percent < 70 ? "audio-volume-medium" : "audio-volume-high" }
+    function microphoneIconName() { return "audio-input-microphone" }
     function batteryText() { return system.battery.available ? system.battery.percent + "%" : "" }
     function batteryStatus() {
         if (system.battery.status === "Charging") return "Carregando"

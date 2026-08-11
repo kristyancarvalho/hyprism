@@ -17,18 +17,18 @@ Item {
         Column {
             id: body; width: parent.width; spacing: 12
             Row { width: parent.width
-                Text { width: parent.width - 120; text: controller.formattedDate("dddd · dd MMMM  HH:mm"); color: panel.theme.colors.foreground; font { pixelSize: 16; bold: true } }
-                Button { text: "Energia"; onClicked: controller.open("power") }
+                Text { width: parent.width - power.width; anchors.verticalCenter: parent.verticalCenter; text: controller.formattedDate("dddd · dd MMMM  HH:mm"); color: panel.theme.colors.foreground; font { pixelSize: 16; bold: true } }
+                ShellButton { id: power; theme: panel.theme; text: "Energia"; iconName: "system-shutdown"; compact: true; onClicked: controller.open("power") }
             }
             Grid { width: parent.width; columns: 2; spacing: 8
-                ActionButton { theme: panel.theme; label: controller.system.network.name; icon: controller.networkIcon(); active: controller.system.network.enabled; onClicked: controller.open("network") }
-                ActionButton { theme: panel.theme; label: !controller.system.bluetooth.available ? "Bluetooth indisponível" : controller.system.bluetooth.connected ? "Bluetooth conectado" : controller.system.bluetooth.powered ? "Bluetooth ligado" : "Bluetooth desligado"; icon: "ᛒ"; active: controller.system.bluetooth.powered; onClicked: controller.open("bluetooth") }
-                ActionButton { theme: panel.theme; label: "Modo noturno"; icon: "◐"; active: controller.nightMode; onClicked: controller.toggleNightMode() }
-                ActionButton { theme: panel.theme; label: "Economia de energia"; icon: "▱"; active: controller.powerSaver; onClicked: controller.togglePowerSaver() }
+                ActionButton { width: (parent.width - 8) / 2; theme: panel.theme; label: controller.networkLabel(); iconName: controller.networkIconName(); active: controller.system.network.enabled; onClicked: controller.open("network") }
+                ActionButton { width: (parent.width - 8) / 2; theme: panel.theme; label: !controller.system.bluetooth.available ? "Bluetooth indisponível" : controller.system.bluetooth.connected ? "Bluetooth conectado" : controller.system.bluetooth.powered ? "Bluetooth ligado" : "Bluetooth desligado"; iconName: controller.bluetoothIconName(); active: controller.system.bluetooth.powered; onClicked: controller.open("bluetooth") }
+                ActionButton { width: (parent.width - 8) / 2; theme: panel.theme; label: "Modo noturno"; iconName: "weather-clear-night"; active: controller.nightMode; onClicked: controller.toggleNightMode() }
+                ActionButton { width: (parent.width - 8) / 2; theme: panel.theme; label: "Economia de energia"; iconName: "battery-good"; active: controller.powerSaver; onClicked: controller.togglePowerSaver() }
             }
-            SliderRow { width: parent.width; theme: panel.theme; label: controller.system.audio.muted ? "Mudo" : "Volume"; icon: "◖"; value: controller.system.audio.percent; available: controller.system.audio.available; onChanged: value => panel.setVolume(value) }
-            SliderRow { width: parent.width; theme: panel.theme; label: "Microfone"; icon: "●"; value: controller.system.microphone.percent; available: controller.system.microphone.available; onChanged: value => panel.command("wpctl set-volume @DEFAULT_AUDIO_SOURCE@ " + value / 100) }
-            SliderRow { width: parent.width; theme: panel.theme; label: "Brilho"; icon: "☼"; value: controller.system.brightness.percent; available: controller.system.brightness.available; onChanged: value => panel.setBrightness(value) }
+            SliderRow { width: parent.width; theme: panel.theme; label: controller.system.audio.muted ? "Mudo" : "Volume"; iconName: controller.volumeIconName(); value: controller.system.audio.percent; available: controller.system.audio.available; onChanged: value => panel.setVolume(value) }
+            SliderRow { width: parent.width; theme: panel.theme; label: "Microfone"; iconName: controller.microphoneIconName(); value: controller.system.microphone.percent; available: controller.system.microphone.available; onChanged: value => panel.command("wpctl set-volume @DEFAULT_AUDIO_SOURCE@ " + value / 100) }
+            SliderRow { width: parent.width; theme: panel.theme; label: "Brilho"; iconName: "display-brightness"; value: controller.system.brightness.percent; available: controller.system.brightness.available; onChanged: value => panel.setBrightness(value) }
             Rectangle { width: parent.width; height: 1; color: panel.theme.colors.outline }
             Item { width: parent.width; height: controller.system.media && controller.system.media.available ? 74 : 0; visible: height > 0
                 Column { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 145
@@ -36,9 +36,9 @@ Item {
                     Text { text: controller.system.media ? controller.system.media.artist : ""; width: parent.width; elide: Text.ElideRight; color: panel.theme.colors.mutedForeground; font.pixelSize: 11 }
                 }
                 Row { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; spacing: 4
-                    Button { text: "‹"; onClicked: panel.command("playerctl previous") }
-                    Button { text: controller.system.media && controller.system.media.status === "Playing" ? "Ⅱ" : "▶"; onClicked: panel.command("playerctl play-pause") }
-                    Button { text: "›"; onClicked: panel.command("playerctl next") }
+                    ShellButton { theme: panel.theme; compact: true; iconName: "media-skip-backward"; onClicked: panel.command("playerctl previous") }
+                    ShellButton { theme: panel.theme; compact: true; iconName: controller.system.media && controller.system.media.status === "Playing" ? "media-playback-pause" : "media-playback-start"; onClicked: panel.command("playerctl play-pause") }
+                    ShellButton { theme: panel.theme; compact: true; iconName: "media-skip-forward"; onClicked: panel.command("playerctl next") }
                 }
             }
             Text { text: "Notificações"; color: panel.theme.colors.foreground; font { pixelSize: 14; bold: true } }
