@@ -11,8 +11,8 @@ Item {
         id: stream
         command: ["python3", service.rootDir + "/scripts/system/state-daemon.py"]
         running: true
-        stdout: SplitParser { splitMarker: "\n"; onRead: data => { try { service.controller.system = JSON.parse(data) } catch (error) { console.warn("hyprism state parse", error) } } }
-        onExited: restart.start()
+        stdout: SplitParser { splitMarker: "\n"; onRead: data => { try { service.controller.system = JSON.parse(data); service.controller.systemServiceAvailable = true } catch (error) { console.warn("hyprism state parse", error) } } }
+        onExited: { service.controller.systemServiceAvailable = false; restart.start() }
     }
     Timer { id: restart; interval: 2500; onTriggered: stream.running = true }
     Process {

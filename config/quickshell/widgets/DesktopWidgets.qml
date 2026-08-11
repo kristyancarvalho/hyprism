@@ -1,12 +1,16 @@
 import QtQuick
+import QtQuick.Controls
 import Quickshell
 import Quickshell.Wayland
 import "../components"
 
 PanelWindow {
     id: widgetWindow
+    required property var shellScreen
     required property var controller
     required property var theme
+    screen: shellScreen
+    visible: shellScreen !== null
     anchors { right: true; top: true }
     margins { top: 104; right: 24 }
     implicitWidth: 222
@@ -19,8 +23,8 @@ PanelWindow {
         id: stack; width: parent.width; spacing: 9
         Glass { theme: widgetWindow.theme; surfaceOpacity: .74; width: parent.width; height: 84; radius: 17; visible: controller.config.shell.widgets.clock
             Column { anchors.centerIn: parent; spacing: 2
-                Text { anchors.horizontalCenter: parent.horizontalCenter; text: Qt.formatDateTime(new Date(), "HH:mm"); color: theme.colors.foreground; font { pixelSize: 31; bold: true } }
-                Text { anchors.horizontalCenter: parent.horizontalCenter; text: Qt.formatDateTime(new Date(), "ddd, dd MMM"); color: theme.colors.mutedForeground; font.pixelSize: 11 }
+                Text { anchors.horizontalCenter: parent.horizontalCenter; text: Qt.formatDateTime(controller.currentTime, "HH:mm"); color: theme.colors.foreground; font { pixelSize: 31; bold: true } }
+                Text { anchors.horizontalCenter: parent.horizontalCenter; text: Qt.formatDateTime(controller.currentTime, "ddd, dd MMM"); color: theme.colors.mutedForeground; font.pixelSize: 11 }
             }
         }
         Glass { theme: widgetWindow.theme; surfaceOpacity: .74; width: parent.width; height: 70; radius: 17; visible: controller.config.shell.widgets.weather
@@ -40,10 +44,21 @@ PanelWindow {
                 Text { visible: controller.system.battery.available; text: "Battery  " + controller.system.battery.percent + "%"; color: theme.colors.mutedForeground; font.pixelSize: 10 }
             }
         }
-        Glass { theme: widgetWindow.theme; surfaceOpacity: .74; width: parent.width; height: controller.system.media && controller.system.media.available ? 70 : 0; radius: 17; visible: height > 0 && controller.config.shell.widgets.media
-            Column { anchors.fill: parent; anchors.margins: 13; spacing: 4
-                Text { text: controller.system.media ? controller.system.media.title : ""; width: parent.width; elide: Text.ElideRight; color: theme.colors.foreground; font { pixelSize: 11; bold: true } }
-                Text { text: controller.system.media ? controller.system.media.artist : ""; width: parent.width; elide: Text.ElideRight; color: theme.colors.mutedForeground; font.pixelSize: 10 }
+        Glass { theme: widgetWindow.theme; surfaceOpacity: .74; width: parent.width; height: controller.system.media && controller.system.media.available ? 92 : 0; radius: 17; visible: height > 0 && controller.config.shell.widgets.media
+            Row { anchors.fill: parent; anchors.margins: 10; spacing: 9
+                Rectangle { width: 56; height: 56; radius: 10; color: theme.colors.surfaceVariant; clip: true
+                    Image { id: mediaArt; anchors.fill: parent; source: controller.system.media.artUrl || ""; fillMode: Image.PreserveAspectCrop; visible: source.toString().length > 0 }
+                    Text { anchors.centerIn: parent; visible: !mediaArt.visible; text: "♪"; color: theme.colors.accent; font.pixelSize: 24 }
+                }
+                Column { width: parent.width - 65; spacing: 3
+                    Text { text: controller.system.media.title; width: parent.width; elide: Text.ElideRight; color: theme.colors.foreground; font { pixelSize: 11; bold: true } }
+                    Text { text: controller.system.media.artist; width: parent.width; elide: Text.ElideRight; color: theme.colors.mutedForeground; font.pixelSize: 10 }
+                    Row { spacing: 2
+                        Button { text: "‹"; width: 30; height: 27; onClicked: controller.run(["playerctl", "previous"]) }
+                        Button { text: controller.system.media.status === "Playing" ? "Ⅱ" : "▶"; width: 34; height: 27; onClicked: controller.run(["playerctl", "play-pause"]) }
+                        Button { text: "›"; width: 30; height: 27; onClicked: controller.run(["playerctl", "next"]) }
+                    }
+                }
             }
         }
     }
