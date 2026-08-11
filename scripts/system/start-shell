@@ -2,8 +2,11 @@
 set -Eeuo pipefail
 
 root_dir="${HYPRISM_ROOT:-$HOME/.local/share/hyprism}"
-config="${QS_CONFIG_PATH:-${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/hyprism}"
+config_name="${QS_CONFIG_NAME:-default}"
+config="${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/$config_name"
 entrypoint="$config/shell.qml"
+log_dir="${XDG_CACHE_HOME:-$HOME/.cache}/hyprism"
+log_file="$log_dir/quickshell-startup.log"
 
 command -v qs >/dev/null 2>&1 || {
   printf 'Quickshell não está instalado: comando qs não encontrado.\n' >&2
@@ -14,5 +17,6 @@ command -v qs >/dev/null 2>&1 || {
   exit 1
 }
 
+mkdir -p "$log_dir"
 export HYPRISM_ROOT="$root_dir"
-exec qs -p "$config" --no-duplicate
+exec qs -c "$config_name" --no-duplicate >>"$log_file" 2>&1

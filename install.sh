@@ -74,6 +74,7 @@ fi
 runtime_root="$target_home/.local/share/hyprism"
 quickshell_parent="$target_home/.config/quickshell"
 quickshell_config="$quickshell_parent/hyprism"
+quickshell_default="$quickshell_parent/default"
 
 run install -d -o "$target_user" -g "$target_group" "$target_home/.config" "$target_home/.local/bin" "$target_home/.local/share" "$target_home/Imagens/Wallpapers" "$target_home/Imagens/Screenshots"
 backup_path "$runtime_root"
@@ -89,6 +90,7 @@ if [[ -L $quickshell_parent ]]; then backup_path "$quickshell_parent"; fi
 run install -d -o "$target_user" -g "$target_group" "$quickshell_parent"
 
 link_path "$runtime_root/config/hypr" "$target_home/.config/hypr"
+link_path "$runtime_root/config/quickshell" "$quickshell_default"
 link_path "$runtime_root/config/quickshell" "$quickshell_config"
 link_path "$runtime_root/config/user.json" "$target_home/.config/hyprism/user.json"
 link_path "$runtime_root/config/foot/foot.ini" "$target_home/.config/foot/foot.ini"
@@ -116,12 +118,13 @@ if ((dry_run == 0)); then
   [[ -d $runtime_root && ! -L $runtime_root ]] \
     || { printf 'A cópia runtime está ausente ou ainda depende do clone.\n' >&2; exit 1; }
   verify_link "$runtime_root/config/hypr" "$target_home/.config/hypr"
+  verify_link "$runtime_root/config/quickshell" "$quickshell_default"
   verify_link "$runtime_root/config/quickshell" "$quickshell_config"
   [[ -f $target_home/.config/hypr/hyprland.lua ]] \
     || { printf 'O ponto de entrada Lua do Hyprland não foi instalado.\n' >&2; exit 1; }
   [[ ! -e $target_home/.config/hypr/hyprland.conf ]] \
     || { printf 'Um ponto de entrada obsoleto do Hyprland ainda está instalado.\n' >&2; exit 1; }
-  [[ -f $quickshell_config/shell.qml ]] \
+  [[ -f $quickshell_default/shell.qml && -f $quickshell_config/shell.qml ]] \
     || { printf 'O ponto de entrada do Quickshell não foi instalado.\n' >&2; exit 1; }
   [[ -f $target_home/.config/foot/foot.ini && -s $theme_dir/foot.ini && -f $theme_dir/kitty.conf ]] \
     || { printf 'A configuração ou um tema de fallback do terminal está ausente.\n' >&2; exit 1; }
@@ -156,7 +159,7 @@ fi
 missing=()
 for command in Hyprland qs foot kitty matugen awww awww-daemon python3 jq wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp hyprpicker brightnessctl wf-recorder hyprsunset powerprofilesctl; do command -v "$command" >/dev/null || missing+=("$command"); done
 printf '\nHyprism instalado para %s.\n' "$target_user"
-printf 'Configurações: %s/.config/{hypr,quickshell/hyprism,foot,kitty}\n' "$target_home"
+printf 'Configurações: %s/.config/{hypr,quickshell/default,quickshell/hyprism,foot,kitty}\n' "$target_home"
 printf 'Papéis de parede: %s/Imagens/Wallpapers\nCapturas de tela: %s/Imagens/Screenshots\n' "$target_home" "$target_home"
 if ((${#missing[@]})); then printf 'Executáveis ausentes: %s\n' "${missing[*]}" >&2; exit 1; else printf 'Todos os executáveis essenciais foram validados.\n'; fi
 printf 'Encerre a sessão e selecione o Hyprland para iniciar.\n'
