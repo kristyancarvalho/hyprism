@@ -24,7 +24,7 @@ For development after dependencies are present:
 ./install.sh --no-packages
 ```
 
-The managed paths are `~/.config/hypr`, `~/.config/quickshell`, `~/.config/kitty/kitty.conf`, GTK/Qt settings, `~/.config/hyprism/user.json`, and `~/.local/share/hyprism`. Remove those symlinks (restoring the timestamped backup if wanted) to uninstall; user content under `~/Imagens` is deliberately retained.
+The managed paths are `~/.config/hypr`, `~/.config/quickshell`, `~/.config/kitty/kitty.conf`, GTK/Qt settings, `~/.config/hyprism/user.json`, and `~/.local/share/hyprism`. The installer verifies the Hyprland and Quickshell links, requires `hyprland.lua` and `shell.qml`, rejects an installed `hyprland.conf`, and archives the obsolete generated theme fragment if an older release left one behind. Remove the managed symlinks (restoring the timestamped backup if wanted) to uninstall; user content under `~/Imagens` is deliberately retained.
 
 ## Architecture
 
@@ -36,6 +36,7 @@ Matugen wallpaper pipeline ───┘                              └─ subt
 ```
 
 - `config/quickshell/` contains the state controller, independent services, panels, widgets, notification cards, and OSD. `ShellController` owns the single primary mode; transient OSDs do not close a panel.
+- `config/hypr/hyprland.lua` is the small Hyprland 0.55+ entrypoint. It loads focused Lua modules for environment, programs, monitors, general behavior, input, appearance, animations, layouts, rules, workspaces, bindings, and autostart. There are no repository-managed Hyprland `.conf` fragments.
 - Hyprland’s native IPC drives workspaces and toplevels. The switcher commits on `Alt_L`/`Alt_R` release, not Super release.
 - `scripts/system/state-daemon.py` provides one low-frequency state stream for audio, network, Bluetooth, battery, brightness, CPU/RAM/GPU availability, and MPRIS metadata. Optional hardware is represented as unavailable instead of failing the shell.
 - The notification server is Quickshell’s `NotificationServer`, with tracked history, dismiss/clear actions, replacement handling delegated to the daemon protocol, popup actions, and a notification section in the control centre.
@@ -83,16 +84,20 @@ wallpaper → awww transition → Matugen → contrast-correct semantic tokens
 ## Quickshell IPC
 
 ```bash
-qs ipc call shell toggleControlCenter
-qs ipc call app-launcher toggle
-qs ipc call wallpaper-picker toggle
-qs ipc call wallpaper random
-qs ipc call clipboard toggle
-qs ipc call window-switcher forward
-qs ipc call window-switcher commit
-qs ipc call power-menu toggle
-qs ipc call osd volume 78
+qs -p ~/.config/quickshell ipc call shell toggleControlCenter
+qs -p ~/.config/quickshell ipc call app-launcher toggle
+qs -p ~/.config/quickshell ipc call wallpaper-picker toggle
+qs -p ~/.config/quickshell ipc call wallpaper random
+qs -p ~/.config/quickshell ipc call clipboard toggle
+qs -p ~/.config/quickshell ipc call window-switcher forward
+qs -p ~/.config/quickshell ipc call window-switcher commit
+qs -p ~/.config/quickshell ipc call power-menu toggle
+qs -p ~/.config/quickshell ipc call osd volume 78
+qs -p ~/.config/quickshell ipc call shell status
+qs -p ~/.config/quickshell ipc call shell reload
 ```
+
+When more than one Quickshell configuration is running, target Hyprism explicitly with `qs -p ~/.config/quickshell ipc call shell status`. The status response reports the PID, selected screen, theme source, island/widgets state, notification server, service stream, and active shell mode.
 
 ## Dependencies and reproduction
 
@@ -102,12 +107,24 @@ Official packages are one-per-line in [packages/pacman.txt](packages/pacman.txt)
 
 VirtualBox commonly exposes Ethernet with no battery, Bluetooth, Wi-Fi, GPU metric, or brightness device. Hyprism displays Ethernet and hides or disables unsupported controls; these cases are normal. On physical hardware, install/enable `NetworkManager` and `bluetooth`, then reload the shell.
 
-Run `quickshell -p ~/.config/quickshell` from a terminal to inspect shell errors. Quickshell logs are in its runtime directory. If no wallpaper appears, verify `awww-daemon` and run `hyprism-wallpaper set /path/to/image`. If the palette is stale, check `~/.cache/hyprism/theme/theme.json` and `matugen image … --dry-run --json hex`.
+Run `quickshell -p ~/.config/quickshell --no-duplicate` from a terminal to inspect shell errors. Use `qs -p ~/.config/quickshell log` for the selected instance and `qs -p ~/.config/quickshell ipc call shell status` for a compact health check. If no wallpaper appears, verify `awww-daemon` and run `hyprism-wallpaper set /path/to/image`. If the palette is stale, check `~/.cache/hyprism/theme/theme.json` and `matugen image … --dry-run --json hex`.
+
+Hyprism does not hard-code output names. The shell follows Hyprland's focused monitor, then the optional `shell.primaryMonitor` name in `config/user.json`, then the first Quickshell screen. A missing generated palette leaves the built-in dark theme active. Missing battery, Bluetooth, Wi-Fi, brightness, GPU, MPRIS, weather, or clipboard data is represented as unavailable and cannot abort the QML tree.
+
+For compositor diagnostics, run `Hyprland --verify-config -c ~/.config/hypr/hyprland.lua`, then inspect `hyprctl configerrors` and the current Hyprland log from inside the session. `Alt+P` uses the current Lua dispatcher `hl.dsp.window.pseudo({ action = "toggle" })`; the removed legacy `togglepseudo` dispatcher is not valid in the Lua configuration API.
+
+### Blocking regression notes
+
+The deprecated-format warning came from the installer linking a directory whose active entrypoint was `hyprland.conf`; that file also sourced a generated `~/.cache/hyprism/theme/hyprland.conf`. Both paths are now Lua, and the installer archives the obsolete generated fragment. The pseudotile error came from carrying the legacy `togglepseudo` dispatcher into a release whose Lua API exposes the typed `window.pseudo` action.
+
+The missing widgets were first and foremost a startup/instance-selection failure: no process was running the repository's Quickshell configuration, while another unrelated Quickshell configuration was alive. The old shell also relied on implicit screen selection and a full-width panel to center the island. Autostart, bindings, OSD/theme helpers, reload, and health commands now all select `~/.config/quickshell` explicitly; surfaces receive a dynamically selected screen and concrete non-zero geometry. This distinction matters when diagnosing a future regression: a running `quickshell` process is not proof that the intended `shell.qml` is running.
 
 ## Repository layout
 
 ```text
-config/       Hyprland, Quickshell, Kitty, GTK, Qt, and user defaults
+config/hypr/  modular Hyprland Lua entrypoint and modules
+config/quickshell/  shell root, services, panels, widgets, notifications, and OSD
+config/       Kitty, GTK, Qt, and user defaults
 scripts/      wallpaper/theme, state, network, Bluetooth, screenshot, OSD helpers
 packages/     editable official and AUR package lists
 wallpapers/   small original palette-test wallpapers

@@ -6,6 +6,7 @@ Item {
     id: panel
     required property var controller
     required property var theme
+    required property var notificationServer
     function command(text) { controller.run(["sh", "-lc", text]) }
     function setVolume(value) { command("wpctl set-volume @DEFAULT_AUDIO_SINK@ " + value / 100); controller.showOsd("Volume", value + "%") }
     function setBrightness(value) { command("brightnessctl set " + value + "%"); controller.showOsd("Brightness", value + "%") }
@@ -16,7 +17,7 @@ Item {
         Column {
             id: body; width: parent.width; spacing: 12
             Row { width: parent.width
-                Text { width: parent.width - 120; text: Qt.formatDateTime(new Date(), "dddd · dd MMMM  HH:mm"); color: panel.theme.colors.foreground; font { pixelSize: 16; bold: true } }
+                Text { width: parent.width - 120; text: Qt.formatDateTime(controller.currentTime, "dddd · dd MMMM  HH:mm"); color: panel.theme.colors.foreground; font { pixelSize: 16; bold: true } }
                 Button { text: "Power"; onClicked: controller.open("power") }
             }
             Grid { width: parent.width; columns: 2; spacing: 8
@@ -41,7 +42,7 @@ Item {
                 }
             }
             Text { text: "Notifications"; color: panel.theme.colors.foreground; font { pixelSize: 14; bold: true } }
-            NotificationHistory { width: parent.width; controller: panel.controller; theme: panel.theme }
+            NotificationHistory { width: parent.width; controller: panel.controller; theme: panel.theme; server: panel.notificationServer }
         }
     }
 }

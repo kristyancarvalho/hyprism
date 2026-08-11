@@ -10,7 +10,7 @@
     "screenshots": "~/Imagens/Screenshots"
   },
   "shell": {
-    "primaryMonitor": "focused",
+    "primaryMonitor": "",
     "islandWidth": 520,
     "compactHeight": 42,
     "topMargin": 18,
