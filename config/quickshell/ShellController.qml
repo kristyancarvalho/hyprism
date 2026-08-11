@@ -9,15 +9,25 @@ Item {
     visible: false
     property string mode: "compact"
     property string previousMode: "compact"
+    property string targetScreenName: ""
     property string osdKind: ""
     property string osdValue: ""
     property int switcherIndex: 0
     property var switcherWindows: []
     property var mruWindows: []
     property var mediaPlayer: null
-    property bool nightMode: false
-    property bool powerSaver: false
+    property int launcherResultCount: 0
+    property bool pendingNightMode: false
+    property bool pendingPowerSaver: false
+    property bool pendingWifi: false
+    property bool pendingBluetooth: false
+    property bool desiredNightMode: false
+    property bool desiredPowerSaver: false
+    property bool desiredWifi: false
+    property bool desiredBluetooth: false
     property bool systemServiceAvailable: false
+    readonly property bool nightMode: system.nightMode.available && system.nightMode.enabled
+    readonly property bool powerSaver: system.powerProfile.available && system.powerProfile.mode === "power-saver"
     readonly property date currentTime: systemClock.date
     property var appEntries: []
     property var wallpaperEntries: []
@@ -28,13 +38,19 @@ Item {
     property var temperatureHistory: []
     property var networkHistory: []
     property var weather: ({ city: "São Paulo", condition: "Indisponível", temperature: null, apparentTemperature: null, minimum: null, maximum: null, weatherCode: -1 })
-    property var system: ({ audio: { available: false, percent: 0, muted: false }, microphone: { available: false, percent: 0, muted: false }, network: { kind: "disconnected", name: "Desconectado", enabled: false, signal: 0, receiveKib: 0, transmitKib: 0 }, bluetooth: { available: false, powered: false, connected: false, devices: [] }, battery: { available: false, percent: 0, status: "" }, brightness: { available: false, percent: 0 }, memory: { percent: 0, used: 0, total: 0 }, cpu: { percent: 0 }, gpu: { available: false, percent: 0 }, temperature: { available: false, celsius: 0 } })
-    property var config: ({ shell: { primaryMonitor: "", islandWidth: 560, compactHeight: 50, topMargin: 14, reserveGap: 10, surfaceOpacity: .9, radiusSmall: 14, radiusMedium: 22, radiusLarge: 30, spacingSmall: 8, spacingMedium: 14, spacingLarge: 22, animationFast: 130, animationNormal: 210, widgets: { clock: true, weather: true, media: true, system: true } } })
+    property var system: ({ audio: { available: false, percent: 0, muted: false }, microphone: { available: false, percent: 0, muted: false }, network: { available: false, kind: "disconnected", name: "Desconectado", enabled: false, signal: 0, receiveKib: 0, transmitKib: 0, wifiAvailable: false, wifiEnabled: false, virtualized: false }, bluetooth: { available: false, powered: false, connected: false, devices: [] }, battery: { available: false, percent: 0, status: "" }, brightness: { available: false, percent: 0 }, nightMode: { available: false, enabled: false }, powerProfile: { available: false, mode: "" }, memory: { percent: 0, used: 0, total: 0 }, cpu: { percent: 0 }, gpu: { available: false, percent: 0 }, temperature: { available: false, celsius: 0 } })
+    property var config: ({ shell: { primaryMonitor: "", islandWidth: 560, compactHeight: Design.compactBarHeight, topMargin: Design.shellTopMargin, reserveGap: Design.compactBottomGap, surfaceOpacity: .9, radiusSmall: 14, radiusMedium: 22, radiusLarge: 30, spacingSmall: 8, spacingMedium: 14, spacingLarge: 22, animationFast: 130, animationNormal: 210, widgets: { clock: true, weather: true, media: true, system: true } } })
     property string rootDir: Quickshell.env("HYPRISM_ROOT") || Quickshell.env("HOME") + "/.local/share/hyprism"
 
     function open(next) {
         if (mode !== next) previousMode = mode
         mode = next
+    }
+
+    function openOnScreen(next, screenName) {
+        const safeName = Design.safeText(screenName, "")
+        if (safeName) targetScreenName = safeName
+        open(next)
     }
 
     function toggle(next) {
@@ -60,15 +76,39 @@ Item {
     }
 
     function toggleNightMode() {
-        nightMode = !nightMode
-        run([rootDir + "/scripts/system/action", "night-mode", nightMode ? "on" : "off"])
-        showOsd("Modo noturno", nightMode ? "Ativado" : "Desativado")
+        if (!system.nightMode.available) { showOsd("Modo noturno", "Indisponível"); return }
+        if (pendingNightMode) return
+        desiredNightMode = !nightMode
+        pendingNightMode = true
+        run([rootDir + "/scripts/system/action", "night-mode", desiredNightMode ? "on" : "off"])
+        stateRequestTimeout.restart()
     }
 
     function togglePowerSaver() {
-        powerSaver = !powerSaver
-        run([rootDir + "/scripts/system/action", "power-save", powerSaver ? "power-saver" : "balanced"])
-        showOsd("Economia de energia", powerSaver ? "Ativada" : "Desativada")
+        if (!system.powerProfile.available) { showOsd("Economia de energia", "Indisponível"); return }
+        if (pendingPowerSaver) return
+        desiredPowerSaver = !powerSaver
+        pendingPowerSaver = true
+        run([rootDir + "/scripts/system/action", "power-save", desiredPowerSaver ? "power-saver" : "balanced"])
+        stateRequestTimeout.restart()
+    }
+
+    function toggleWifi() {
+        if (!system.network.wifiAvailable) { showOsd("Wi-Fi", "Indisponível"); return }
+        if (pendingWifi) return
+        desiredWifi = !system.network.wifiEnabled
+        pendingWifi = true
+        run(["python3", rootDir + "/scripts/system/network.py", "toggle", desiredWifi ? "on" : "off"])
+        stateRequestTimeout.restart()
+    }
+
+    function toggleBluetooth() {
+        if (!system.bluetooth.available) { showOsd("Bluetooth", "Indisponível"); return }
+        if (pendingBluetooth) return
+        desiredBluetooth = !system.bluetooth.powered
+        pendingBluetooth = true
+        run(["python3", rootDir + "/scripts/system/bluetooth.py", "power", desiredBluetooth ? "on" : "off"])
+        stateRequestTimeout.restart()
     }
 
     function appendHistory(history, value) {
@@ -86,6 +126,8 @@ Item {
             bluetooth: Object.assign({}, system.bluetooth, next.bluetooth || {}),
             battery: Object.assign({}, system.battery, next.battery || {}),
             brightness: Object.assign({}, system.brightness, next.brightness || {}),
+            nightMode: Object.assign({}, system.nightMode, next.nightMode || {}),
+            powerProfile: Object.assign({}, system.powerProfile, next.powerProfile || {}),
             memory: Object.assign({}, system.memory, next.memory || {}),
             cpu: Object.assign({}, system.cpu, next.cpu || {}),
             gpu: Object.assign({}, system.gpu, next.gpu || {}),
@@ -96,6 +138,22 @@ Item {
         if (system.gpu.available) gpuHistory = appendHistory(gpuHistory, system.gpu.percent)
         if (system.temperature.available) temperatureHistory = appendHistory(temperatureHistory, system.temperature.celsius)
         networkHistory = appendHistory(networkHistory, Math.min(100, Math.log2(1 + Design.safeNumber(system.network.receiveKib, 0) + Design.safeNumber(system.network.transmitKib, 0)) * 8))
+        if (pendingNightMode && system.nightMode.available && system.nightMode.enabled === desiredNightMode) {
+            pendingNightMode = false
+            showOsd("Modo noturno", desiredNightMode ? "Ativado" : "Desativado")
+        }
+        if (pendingPowerSaver && system.powerProfile.available && powerSaver === desiredPowerSaver) {
+            pendingPowerSaver = false
+            showOsd("Economia de energia", desiredPowerSaver ? "Ativada" : "Desativada")
+        }
+        if (pendingWifi && system.network.wifiAvailable && system.network.wifiEnabled === desiredWifi) {
+            pendingWifi = false
+            showOsd("Wi-Fi", desiredWifi ? "Ativado" : "Desativado")
+        }
+        if (pendingBluetooth && system.bluetooth.available && system.bluetooth.powered === desiredBluetooth) {
+            pendingBluetooth = false
+            showOsd("Bluetooth", desiredBluetooth ? "Ativado" : "Desativado")
+        }
     }
 
     function rememberWindow(window) {
@@ -176,7 +234,8 @@ Item {
     }
 
     function networkLabel() {
-        return system.network.kind === "ethernet" ? "Cabo" : system.network.kind === "wifi" ? Design.safeText(system.network.name, "Wi-Fi") : "Sem rede"
+        if (system.network.kind === "ethernet") return system.network.virtualized ? "Rede" : "Ethernet"
+        return system.network.kind === "wifi" ? Design.safeText(system.network.name, "Wi-Fi") : "Sem rede"
     }
 
     function bluetoothIconName() {
@@ -276,6 +335,18 @@ Item {
     Process { id: commandRunner }
     SystemClock { id: systemClock; precision: SystemClock.Seconds }
     Timer { id: osdTimer; interval: 1600; onTriggered: { controller.osdKind = ""; controller.osdValue = "" } }
+    Timer {
+        id: stateRequestTimeout
+        interval: 4500
+        onTriggered: {
+            const failed = pendingNightMode || pendingPowerSaver || pendingWifi || pendingBluetooth
+            pendingNightMode = false
+            pendingPowerSaver = false
+            pendingWifi = false
+            pendingBluetooth = false
+            if (failed) showOsd("Sistema", "Não foi possível alterar o estado")
+        }
+    }
     Connections {
         target: ToplevelManager
         function onActiveToplevelChanged() {

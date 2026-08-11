@@ -16,7 +16,7 @@ PanelWindow {
         top: true
     }
     margins {
-        top: controller.config.shell.topMargin + Design.barHeight + Design.safeNumber(controller.config.shell.reserveGap, 10) + 18
+        top: Design.compactReservedHeight(controller.config.shell) + 18
         right: 20
     }
     implicitWidth: shellScreen ? Math.min(360, Math.max(310, shellScreen.width * .34)) : 340
@@ -164,92 +164,78 @@ PanelWindow {
                     spacing: 10
 
                     Rectangle {
+                        id: cpuCard
                         width: (parent.width - 10) / 2
                         height: parent.height
                         radius: Design.radiusSm
                         color: theme.colors.surfaceVariant
+                        clip: true
 
-                        Row {
+                        WidgetHeader {
+                            id: cpuHeader
                             anchors {
                                 left: parent.left
                                 right: parent.right
                                 top: parent.top
-                                margins: 10
+                                margins: Design.widgetInnerPadding
                             }
-
-                            StatusIcon { name: "cpu"; iconSize: Design.iconSm; color: theme.colors.accent }
-                            Text {
-                                width: parent.width - cpuValue.width - 20
-                                text: "Processador"
-                                color: theme.colors.foreground
-                                font.family: Design.fontFamily
-                                font.pixelSize: Design.fontSizeXs
-                                font.weight: Design.fontWeightMedium
-                            }
-                            Text {
-                                id: cpuValue
-                                text: Math.round(Design.clamp(controller.system.cpu.percent, 0, 100)) + "%"
-                                color: theme.colors.foreground
-                                font.family: Design.fontFamily
-                                font.pixelSize: Design.fontSizeXs
-                                font.weight: Design.fontWeightSemibold
-                            }
+                            theme: widgetWindow.theme
+                            iconName: "cpu"
+                            title: "Processador"
+                            value: Math.round(Design.clamp(controller.system.cpu.percent, 0, 100)) + "%"
+                            iconColor: theme.colors.accent
                         }
 
                         Sparkline {
                             anchors {
                                 left: parent.left
                                 right: parent.right
+                                top: cpuHeader.bottom
                                 bottom: parent.bottom
-                                margins: 10
+                                leftMargin: Design.widgetInnerPadding
+                                rightMargin: Design.widgetInnerPadding
+                                topMargin: 3
+                                bottomMargin: Design.widgetInnerPadding
                             }
-                            height: 58
                             samples: controller.cpuHistory
                             lineColor: theme.colors.accent
                         }
                     }
 
                     Rectangle {
+                        id: memoryCard
                         width: (parent.width - 10) / 2
                         height: parent.height
                         radius: Design.radiusSm
                         color: theme.colors.surfaceVariant
+                        clip: true
 
-                        Row {
+                        WidgetHeader {
+                            id: memoryHeader
                             anchors {
                                 left: parent.left
                                 right: parent.right
                                 top: parent.top
-                                margins: 10
+                                margins: Design.widgetInnerPadding
                             }
-
-                            StatusIcon { name: "memory"; iconSize: Design.iconSm; color: theme.colors.secondary }
-                            Text {
-                                width: parent.width - memoryValue.width - 20
-                                text: "Memória"
-                                color: theme.colors.foreground
-                                font.family: Design.fontFamily
-                                font.pixelSize: Design.fontSizeXs
-                                font.weight: Design.fontWeightMedium
-                            }
-                            Text {
-                                id: memoryValue
-                                text: Math.round(Design.clamp(controller.system.memory.percent, 0, 100)) + "%"
-                                color: theme.colors.foreground
-                                font.family: Design.fontFamily
-                                font.pixelSize: Design.fontSizeXs
-                                font.weight: Design.fontWeightSemibold
-                            }
+                            theme: widgetWindow.theme
+                            iconName: "memory"
+                            title: "Memória"
+                            value: Math.round(Design.clamp(controller.system.memory.percent, 0, 100)) + "%"
+                            iconColor: theme.colors.secondary
                         }
 
                         Sparkline {
                             anchors {
                                 left: parent.left
                                 right: parent.right
+                                top: memoryHeader.bottom
                                 bottom: parent.bottom
-                                margins: 10
+                                leftMargin: Design.widgetInnerPadding
+                                rightMargin: Design.widgetInnerPadding
+                                topMargin: 3
+                                bottomMargin: Design.widgetInnerPadding
                             }
-                            height: 58
                             samples: controller.memoryHistory
                             lineColor: theme.colors.secondary
                         }
@@ -261,32 +247,32 @@ PanelWindow {
                     height: 24
                     spacing: 12
 
-                    Row {
+                    WidgetMetric {
                         visible: controller.system.battery.available
-                        spacing: 5
-                        StatusIcon { name: controller.batteryIconName(); iconSize: Design.iconXs; color: theme.colors.mutedForeground }
-                        Text { text: controller.batteryText(); color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
+                        theme: widgetWindow.theme
+                        iconName: controller.batteryIconName()
+                        value: controller.batteryText()
                     }
 
-                    Row {
+                    WidgetMetric {
                         visible: controller.system.temperature.available
-                        spacing: 5
-                        StatusIcon { name: "temperature"; iconSize: Design.iconXs; color: theme.colors.mutedForeground }
-                        Text { text: Math.round(Design.safeNumber(controller.system.temperature.celsius, 0)) + "°C"; color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
+                        theme: widgetWindow.theme
+                        iconName: "temperature"
+                        value: Math.round(Design.safeNumber(controller.system.temperature.celsius, 0)) + "°C"
                     }
 
-                    Row {
+                    WidgetMetric {
                         visible: controller.system.gpu.available
-                        spacing: 5
-                        StatusIcon { name: "gpu"; iconSize: Design.iconXs; color: theme.colors.mutedForeground }
-                        Text { text: Math.round(Design.clamp(controller.system.gpu.percent, 0, 100)) + "%"; color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
+                        theme: widgetWindow.theme
+                        iconName: "gpu"
+                        value: Math.round(Design.clamp(controller.system.gpu.percent, 0, 100)) + "%"
                     }
 
-                    Row {
+                    WidgetMetric {
                         visible: controller.system.network.enabled
-                        spacing: 5
-                        StatusIcon { name: "networkSpeed"; iconSize: Design.iconXs; color: theme.colors.mutedForeground }
-                        Text { text: Math.round(Design.safeNumber(controller.system.network.receiveKib, 0)) + " KiB/s"; color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
+                        theme: widgetWindow.theme
+                        iconName: "networkSpeed"
+                        value: Math.round(Design.safeNumber(controller.system.network.receiveKib, 0)) + " KiB/s"
                     }
                 }
             }

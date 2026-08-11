@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import os
 import pathlib
 import shutil
 import subprocess
@@ -12,7 +13,9 @@ cached = {}
 
 def command(args, timeout=1):
     try:
-        return subprocess.run(args, text=True, capture_output=True, timeout=timeout).stdout.strip()
+        environment = dict(os.environ)
+        environment["LC_ALL"] = "C"
+        return subprocess.run(args, text=True, capture_output=True, timeout=timeout, env=environment).stdout.strip()
     except (OSError, subprocess.SubprocessError):
         return ""
 
@@ -25,17 +28,40 @@ def volume(target="@DEFAULT_AUDIO_SINK@"):
         return {"available": False, "percent": 0, "muted": False}
 
 
+def virtualized():
+    identifiers = []
+    for name in ("product_name", "sys_vendor", "board_vendor"):
+        try:
+            identifiers.append((pathlib.Path("/sys/class/dmi/id") / name).read_text().strip().lower())
+        except OSError:
+            pass
+    markers = ("virtualbox", "vmware", "qemu", "kvm", "bochs", "parallels", "microsoft corporation")
+    return any(marker in value for value in identifiers for marker in markers)
+
+
+virtual_machine = virtualized()
+
+
 def network_identity():
     active = command(["nmcli", "-t", "-f", "TYPE,NAME,DEVICE", "connection", "show", "--active"])
-    if not active:
-        return {"kind": "disconnected", "name": "Desconectado", "enabled": False, "signal": 0}
-    fields = active.splitlines()[0].split(":", 2)
-    kind = fields[0]
-    name = fields[1] if len(fields) > 1 else ""
-    device = fields[2] if len(fields) > 2 else ""
+    devices = command(["nmcli", "-t", "-f", "DEVICE,TYPE", "device", "status"])
+    wifi_available = any(len(row.split(":", 1)) > 1 and row.split(":", 1)[1] == "wifi" for row in devices.splitlines())
+    wifi_enabled = command(["nmcli", "-t", "-f", "WIFI", "general"]).lower() == "enabled"
+    selected = None
+    for row in active.splitlines():
+        fields = row.split(":", 2)
+        if fields and fields[0] in ("wifi", "802-3-ethernet", "ethernet"):
+            selected = fields
+            if fields[0] == "wifi":
+                break
+    if not selected:
+        return {"available": bool(devices), "kind": "disconnected", "name": "Desconectado", "device": "", "enabled": False, "signal": 0, "wifiAvailable": wifi_available, "wifiEnabled": wifi_enabled, "virtualized": virtual_machine}
+    kind = selected[0]
+    name = selected[1] if len(selected) > 1 else ""
+    device = selected[2] if len(selected) > 2 else ""
     signals = command(["nmcli", "-t", "-f", "IN-USE,SIGNAL,SSID", "device", "wifi", "list"]).splitlines()
     strength = next((int(row.split(":")[1]) for row in signals if row.startswith("*:") and len(row.split(":")) > 1 and row.split(":")[1].isdigit()), 0)
-    return {"kind": "wifi" if kind == "wifi" else "ethernet", "name": name or ("Ethernet" if kind == "ethernet" else "Rede"), "device": device, "enabled": True, "signal": strength}
+    return {"available": True, "kind": "wifi" if kind == "wifi" else "ethernet", "name": name or ("Rede" if virtual_machine else "Ethernet"), "device": device, "enabled": True, "signal": strength, "wifiAvailable": wifi_available, "wifiEnabled": wifi_enabled, "virtualized": virtual_machine}
 
 
 def network_rates(identity):
@@ -96,11 +122,31 @@ def battery():
 
 
 def brightness():
+    if not shutil.which("brightnessctl"):
+        return {"available": False, "percent": 0}
     value = command(["brightnessctl", "-m"])
     try:
         return {"available": True, "percent": int(value.split(",")[3].rstrip("%"))}
     except (IndexError, ValueError):
         return {"available": False, "percent": 0}
+
+
+def night_mode():
+    cache_root = pathlib.Path(os.environ.get("XDG_CACHE_HOME", pathlib.Path.home() / ".cache"))
+    state_path = cache_root / "hyprism/state/night-mode"
+    available = bool(shutil.which("hyprctl") and os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"))
+    try:
+        enabled = state_path.read_text().strip() == "on"
+    except OSError:
+        enabled = False
+    return {"available": available, "enabled": enabled if available else False}
+
+
+def power_profile():
+    if not shutil.which("powerprofilesctl"):
+        return {"available": False, "mode": ""}
+    mode = command(["powerprofilesctl", "get"])
+    return {"available": bool(mode), "mode": mode if mode in ("power-saver", "balanced", "performance") else ""}
 
 
 def memory():
@@ -156,6 +202,8 @@ while True:
         cached["networkIdentity"] = network_identity()
         cached["battery"] = battery()
         cached["brightness"] = brightness()
+        cached["nightMode"] = night_mode()
+        cached["powerProfile"] = power_profile()
         cached["gpu"] = gpu()
     if tick % 5 == 0:
         cached["bluetooth"] = bluetooth()
@@ -167,6 +215,8 @@ while True:
         "bluetooth": cached.get("bluetooth", {"available": False, "powered": False, "connected": False, "devices": []}),
         "battery": cached.get("battery", {"available": False, "percent": 0, "status": ""}),
         "brightness": cached.get("brightness", {"available": False, "percent": 0}),
+        "nightMode": cached.get("nightMode", {"available": False, "enabled": False}),
+        "powerProfile": cached.get("powerProfile", {"available": False, "mode": ""}),
         "memory": memory(),
         "cpu": cpu(),
         "gpu": cached.get("gpu", {"available": False, "percent": 0}),

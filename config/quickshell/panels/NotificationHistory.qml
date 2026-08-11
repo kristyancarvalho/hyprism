@@ -44,6 +44,7 @@ Column {
 
     Row {
         width: parent.width
+        visible: history.notifications.length > 0
 
         Text {
             width: parent.width - clear.width
@@ -156,11 +157,24 @@ Column {
         }
     }
 
-    Text {
+    Column {
         visible: history.notifications.length === 0
-        text: "Nenhuma notificação salva"
-        color: history.theme.colors.mutedForeground
-        font.family: Design.fontFamily
-        font.pixelSize: Design.fontSizeSm
+        width: parent.width
+        spacing: 4
+
+        StatusIcon {
+            anchors.horizontalCenter: parent.horizontalCenter
+            name: "notification"
+            iconSize: Design.iconMd
+            color: history.theme.colors.mutedForeground
+        }
+
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: "Nenhuma notificação salva"
+            color: history.theme.colors.mutedForeground
+            font.family: Design.fontFamily
+            font.pixelSize: Design.fontSizeSm
+        }
     }
 }

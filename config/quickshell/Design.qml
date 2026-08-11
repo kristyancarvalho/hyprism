@@ -17,15 +17,34 @@ QtObject {
     readonly property int iconSm: 17
     readonly property int iconMd: 21
     readonly property int iconLg: 30
-    readonly property int barHeight: 50
-    readonly property int barPillHeight: 32
-    readonly property int barPaddingHorizontal: 14
-    readonly property int barPillPadding: 11
-    readonly property int barItemGap: 8
-    readonly property int barIconSize: 16
-    readonly property int barFontSize: 12
-    readonly property int separatorHeight: 18
-    readonly property int separatorWidth: 1
+    readonly property int shellTopMargin: 8
+    readonly property int compactBarHeight: 44
+    readonly property int compactBottomGap: 4
+    readonly property int compactItemHeight: 30
+    readonly property int compactIconSize: 16
+    readonly property int compactTextSize: 12
+    readonly property int compactHorizontalPadding: 12
+    readonly property int compactItemSpacing: 7
+    readonly property int compactGroupSpacing: 10
+    readonly property int compactSeparatorHeight: 16
+    readonly property int compactSeparatorWidth: 1
+    readonly property int compactRadius: 18
+    readonly property int launcherMaximumVisibleResults: 6
+    readonly property int launcherResultRowHeight: 54
+    readonly property int launcherResultSpacing: 5
+    readonly property int launcherBaseHeight: 136
+    readonly property int widgetHeaderHeight: 20
+    readonly property int widgetIconSize: 16
+    readonly property int widgetInnerPadding: 10
+    readonly property int barHeight: compactBarHeight
+    readonly property int barPillHeight: compactItemHeight
+    readonly property int barPaddingHorizontal: compactHorizontalPadding
+    readonly property int barPillPadding: compactHorizontalPadding
+    readonly property int barItemGap: compactItemSpacing
+    readonly property int barIconSize: compactIconSize
+    readonly property int barFontSize: compactTextSize
+    readonly property int separatorHeight: compactSeparatorHeight
+    readonly property int separatorWidth: compactSeparatorWidth
     readonly property int radiusSm: 12
     readonly property int radiusMd: 18
     readonly property int radiusLg: 26
@@ -120,5 +139,26 @@ QtObject {
         const value = Math.max(0, Math.floor(safeNumber(count, 0)))
         if (value === 0) return "Nenhuma notificação salva"
         return value === 1 ? "1 notificação salva" : value + " notificações salvas"
+    }
+
+    function compactTopMargin(shellConfig) {
+        return Math.max(0, Math.round(safeNumber(shellConfig ? shellConfig.topMargin : shellTopMargin, shellTopMargin)))
+    }
+
+    function compactHeight(shellConfig) {
+        return Math.max(compactBarHeight, Math.round(safeNumber(shellConfig ? shellConfig.compactHeight : compactBarHeight, compactBarHeight)))
+    }
+
+    function compactGap(shellConfig) {
+        return Math.max(0, Math.round(safeNumber(shellConfig ? shellConfig.reserveGap : compactBottomGap, compactBottomGap)))
+    }
+
+    function compactReservedHeight(shellConfig) {
+        return compactTopMargin(shellConfig) + compactHeight(shellConfig) + compactGap(shellConfig)
+    }
+
+    function launcherHeight(resultCount) {
+        const visibleRows = Math.max(1, Math.min(launcherMaximumVisibleResults, Math.floor(safeNumber(resultCount, 0))))
+        return launcherBaseHeight + visibleRows * launcherResultRowHeight + Math.max(0, visibleRows - 1) * launcherResultSpacing
     }
 }

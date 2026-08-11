@@ -9,15 +9,18 @@ Rectangle {
     property bool active: false
     property bool destructive: false
     property bool compact: false
-    property bool hovered: pointer.containsMouse
+    property bool available: true
+    property bool pending: false
+    property bool hovered: pointer.containsMouse && available && !pending
     signal clicked()
-    activeFocusOnTab: true
+    activeFocusOnTab: available
     implicitWidth: content.implicitWidth + (compact ? 18 : 26)
     implicitHeight: compact ? 30 : 38
     radius: height / 2
-    color: destructive ? theme.colors.error : activeFocus || active ? theme.colors.accentDim : hovered ? theme.colors.surfaceHover : theme.colors.surfaceVariant
+    color: destructive && available ? theme.colors.error : active && available ? theme.colors.accentDim : hovered ? theme.colors.surfaceHover : theme.colors.surfaceVariant
     border.width: activeFocus ? 2 : Design.outlineWidth
     border.color: activeFocus || active ? theme.colors.accent : theme.colors.outline
+    opacity: available ? pending ? .72 : 1 : .5
 
     Row {
         id: content
@@ -27,7 +30,7 @@ Rectangle {
         StatusIcon {
             visible: button.iconName.length > 0
             anchors.verticalCenter: parent.verticalCenter
-            name: button.iconName
+            name: button.pending ? "refresh" : button.iconName
             iconSize: button.compact ? Design.iconXs : Design.iconSm
             color: button.theme.colors.foreground
         }
@@ -43,7 +46,7 @@ Rectangle {
     }
 
     Keys.onPressed: event => {
-        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) {
+        if (button.available && !button.pending && (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space)) {
             button.clicked()
             event.accepted = true
         }
@@ -52,6 +55,7 @@ Rectangle {
     MouseArea {
         id: pointer
         anchors.fill: parent
+        enabled: button.available && !button.pending
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: {
