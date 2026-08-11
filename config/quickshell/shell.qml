@@ -59,6 +59,7 @@ ShellRoot {
     Theme { id: shellTheme }
     ShellController { id: shellController }
     SystemService { controller: shellController }
+    MediaService { controller: shellController }
     AppService { id: appService; controller: shellController }
     ClipboardService { id: clipboardService; controller: shellController }
     IpcHandler {

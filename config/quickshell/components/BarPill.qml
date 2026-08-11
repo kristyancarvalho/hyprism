@@ -9,6 +9,7 @@ Rectangle {
     property bool active: false
     property bool selected: false
     property bool iconOnly: false
+    property int labelMaximumWidth: 0
     signal clicked()
     implicitWidth: content.implicitWidth + Design.barPillPadding * 2
     implicitHeight: Design.barPillHeight
@@ -32,8 +33,10 @@ Rectangle {
         BarText {
             visible: !pill.iconOnly && pill.label.length > 0
             anchors.verticalCenter: parent.verticalCenter
+            width: pill.labelMaximumWidth > 0 ? Math.min(implicitWidth, pill.labelMaximumWidth) : implicitWidth
             text: pill.label
             color: pill.selected ? pill.theme.colors.background : pill.theme.colors.foreground
+            elide: Text.ElideRight
         }
     }
 

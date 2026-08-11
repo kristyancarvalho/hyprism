@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import ".."
 
 PanelWindow {
     id: window
@@ -11,7 +12,7 @@ PanelWindow {
     screen: shellScreen
     visible: shellScreen !== null && controller.osdKind.length > 0
     anchors { top: true }
-    margins.top: controller.config.shell.topMargin + 74
+    margins.top: controller.config.shell.topMargin + Design.barHeight + Design.safeNumber(controller.config.shell.reserveGap, 10) + 8
     implicitWidth: 320
     implicitHeight: 58
     color: "transparent"
