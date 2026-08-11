@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+root_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cache_dir="${HYPRISM_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/hyprism}"
+state_dir="$cache_dir/state"
+wallpaper_dir="${HYPRISM_WALLPAPER_DIR:-$HOME/Imagens/Wallpapers}"
+current_file="$state_dir/current-wallpaper"
+mkdir -p "$state_dir" "$wallpaper_dir"
+
+supported() { [[ $1 =~ \.(png|jpe?g|webp)$ ]]; }
+current() { [[ -s $current_file ]] && cat "$current_file"; }
+list() {
+  find -P "$wallpaper_dir" -maxdepth 1 -type f -print0 2>/dev/null | while IFS= read -r -d '' file; do
+    supported "$file" && printf '%s\n' "$file"
+  done | sort
+}
+apply() {
+  local image
+  image=$(realpath -e -- "${1:?wallpaper path required}")
+  [[ -r $image ]] || { printf 'Unreadable wallpaper: %s\n' "$image" >&2; return 1; }
+  if command -v swww >/dev/null && [[ -n ${WAYLAND_DISPLAY:-} ]]; then
+    swww query >/dev/null 2>&1 || (swww-daemon >/dev/null 2>&1 &)
+    for _ in {1..20}; do swww query >/dev/null 2>&1 && break; sleep .1; done
+    swww img "$image" --transition-type grow --transition-duration .55 || true
+  fi
+  HYPRISM_CACHE_DIR="$cache_dir" "$root_dir/scripts/theme/generate-theme.py" "$image"
+  printf '%s\n' "$image" >"$current_file"
+  if command -v kitten >/dev/null; then
+    kitten @ --to "unix:${XDG_RUNTIME_DIR:-/tmp}/kitty" set-colors --all --configured "$cache_dir/theme/kitty.conf" >/dev/null 2>&1 \
+      || kitten @ set-colors --all --configured "$cache_dir/theme/kitty.conf" >/dev/null 2>&1 \
+      || true
+  fi
+  hyprctl reload >/dev/null 2>&1 || true
+  command -v qs >/dev/null && qs ipc call shell themeChanged "$image" >/dev/null 2>&1 || true
+}
+random() {
+  mapfile -t files < <(list)
+  ((${#files[@]})) || { printf 'No supported wallpaper in %s\n' "$wallpaper_dir" >&2; return 1; }
+  local active chosen candidates=()
+  active=$(current || true)
+  for file in "${files[@]}"; do [[ $file != "$active" ]] && candidates+=("$file"); done
+  ((${#candidates[@]})) || candidates=("${files[@]}")
+  chosen=${candidates[RANDOM % ${#candidates[@]}]}
+  apply "$chosen"
+}
+case "${1:-}" in
+  set) apply "${2:?usage: wallpaper set IMAGE}" ;;
+  random) random ;;
+  current) current ;;
+  list) list ;;
+  restore) [[ -s $current_file ]] && apply "$(current)" || random ;;
+  *) printf 'Usage: %s {set IMAGE|random|current|list|restore}\n' "$0" >&2; exit 2 ;;
+esac

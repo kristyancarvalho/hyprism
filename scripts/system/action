@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+notify() { command -v qs >/dev/null && qs ipc call osd "$1" "${2:-}" >/dev/null 2>&1 || true; }
+volume() {
+  wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ "$1"
+  local value; value=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf "%d", $2 * 100}')
+  notify volume "$value"
+}
+brightness() {
+  brightnessctl set "$1" >/dev/null
+  local value; value=$(brightnessctl -m 2>/dev/null | awk -F, '{gsub("%", "", $4); print $4}')
+  notify brightness "${value:-0}"
+}
+screenshot_area() {
+  local dir="$HOME/Imagens/Screenshots" file
+  mkdir -p "$dir"; file="$dir/$(date +%Y%m%d_%H%M%S)_area.png"
+  grim -g "$(slurp)" "$file" && wl-copy <"$file" && notify screenshot "$file"
+}
+screenshot_monitor() {
+  local dir="$HOME/Imagens/Screenshots" file monitor
+  mkdir -p "$dir"; file="$dir/$(date +%Y%m%d_%H%M%S)_monitor.png"
+  monitor=$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name' | head -n1)
+  grim -o "$monitor" "$file" && wl-copy <"$file" && notify screenshot "$file"
+}
+clipboard_watch() {
+  wl-paste --type text --watch cliphist store &
+  wl-paste --type image --watch cliphist store &
+}
+case "${1:-}" in
+  volume-up) volume 5%+ ;;
+  volume-down) volume 5%- ;;
+  volume-mute) wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle; notify volume "mute" ;;
+  mic-mute) wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle; notify microphone "mute" ;;
+  brightness-up) brightness 5%+ ;;
+  brightness-down) brightness 5%- ;;
+  screenshot-area) screenshot_area ;;
+  screenshot-monitor) screenshot_monitor ;;
+  color-picker)
+    color=$(hyprpicker -a 2>/dev/null || true)
+    [[ -n $color ]] && printf '%s' "$color" | wl-copy && notify color "$color"
+    ;;
+  clipboard-watch) clipboard_watch ;;
+  night-mode) hyprctl keyword decoration:dim_special "${2:-0.18}" >/dev/null 2>&1; notify night "${2:-toggle}" ;;
+  power-save) powerprofilesctl set "${2:-power-saver}" >/dev/null 2>&1 || true; notify power "${2:-power-saver}" ;;
+  record) ${HYPRISM_RECORD_COMMAND:-wf-recorder -f "$HOME/Imagens/Screenshots/$(date +%Y%m%d_%H%M%S)_recording.mp4"} ;;
+  *) printf 'Usage: %s {volume-up|volume-down|volume-mute|mic-mute|brightness-up|brightness-down|screenshot-area|screenshot-monitor|color-picker|clipboard-watch|night-mode|power-save|record}\n' "$0" >&2; exit 2 ;;
+esac
