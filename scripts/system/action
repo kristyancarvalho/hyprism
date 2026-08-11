@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-qs_config="${QS_CONFIG_PATH:-${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/hyprism}"
-notify() { command -v qs >/dev/null && qs -p "$qs_config" ipc call osd "$1" "${2:-}" >/dev/null 2>&1 || true; }
+qs_config="${QS_CONFIG_NAME:-default}"
+notify() { command -v qs >/dev/null && qs -c "$qs_config" ipc call osd "$1" "${2:-}" >/dev/null 2>&1 || true; }
 volume() {
   wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ "$1"
   local value; value=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf "%d", $2 * 100}')
