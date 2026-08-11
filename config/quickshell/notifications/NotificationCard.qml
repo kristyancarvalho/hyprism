@@ -34,6 +34,7 @@ Glass {
                 anchors.centerIn: parent
                 name: Design.safeText(card.notification ? card.notification.appIcon : "", Design.safeText(card.notification ? card.notification.desktopEntry : "", "application-x-executable"))
                 fallback: "application-x-executable"
+                fallbackGlyph: "notification"
                 iconSize: 25
             }
         }

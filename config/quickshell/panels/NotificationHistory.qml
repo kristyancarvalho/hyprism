@@ -93,6 +93,7 @@ Column {
                     anchors.centerIn: parent
                     name: Design.safeText(modelData.appIcon, Design.safeText(modelData.desktopEntry, "application-x-executable"))
                     fallback: "application-x-executable"
+                    fallbackGlyph: "notification"
                     iconSize: 24
                 }
             }

@@ -33,7 +33,7 @@ PanelWindow {
 
         Row {
             width: parent.width
-            height: 100
+            height: 96
             spacing: 10
 
             Glass {
@@ -149,7 +149,7 @@ PanelWindow {
             theme: widgetWindow.theme
             surfaceOpacity: .84
             width: parent.width
-            height: 156
+            height: 148
             radius: Design.radiusMd
             visible: controller.config.shell.widgets.system
 
@@ -160,7 +160,7 @@ PanelWindow {
 
                 Row {
                     width: parent.width
-                    height: 104
+                    height: 90
                     spacing: 10
 
                     Rectangle {
@@ -296,7 +296,7 @@ PanelWindow {
             theme: widgetWindow.theme
             surfaceOpacity: .88
             width: parent.width
-            height: controller.mediaAvailable() ? 128 : 0
+            height: controller.mediaAvailable() ? 112 : 0
             radius: Design.radiusMd
             visible: height > 0 && controller.config.shell.widgets.media
             activeFocusOnTab: true
@@ -328,8 +328,8 @@ PanelWindow {
                 spacing: 12
 
                 Rectangle {
-                    width: 92
-                    height: 92
+                    width: 86
+                    height: 86
                     anchors.verticalCenter: parent.verticalCenter
                     radius: Design.radiusSm
                     color: theme.colors.surfaceVariant
@@ -349,12 +349,13 @@ PanelWindow {
                         visible: mediaArt.status !== Image.Ready
                         name: controller.applicationIcon(controller.mediaPlayer ? controller.mediaPlayer.desktopEntry : "")
                         fallback: "application-x-executable"
+                        fallbackGlyph: "media"
                         iconSize: 42
                     }
                 }
 
                 Column {
-                    width: parent.width - 104
+                    width: parent.width - 98
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 4
 

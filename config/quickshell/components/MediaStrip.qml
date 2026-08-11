@@ -44,12 +44,13 @@ Item {
                 cache: true
             }
 
-            StatusIcon {
+            ShellIcon {
                 anchors.centerIn: parent
                 visible: artwork.status !== Image.Ready
-                name: "media"
+                name: media.controller.applicationIcon(media.controller.mediaPlayer ? media.controller.mediaPlayer.desktopEntry : "")
+                fallback: "application-x-executable"
+                fallbackGlyph: "media"
                 iconSize: Design.iconLg
-                color: media.theme.colors.mutedForeground
             }
         }
 
