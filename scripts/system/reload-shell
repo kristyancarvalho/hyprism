@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+pkill -USR2 -x quickshell 2>/dev/null || {
+  pkill -x quickshell 2>/dev/null || true
+  quickshell -p "$HOME/.config/quickshell" >/dev/null 2>&1 &
+}

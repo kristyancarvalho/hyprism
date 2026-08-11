@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+root_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+program=${1:?program required}
+config="$root_dir/config/user.json"
+key=$program
+case "$program" in file-manager) key=fileManager ;; esac
+command=$(jq -r --arg key "$key" '.programs[$key] // empty' "$config")
+[[ -n $command ]] || { printf 'No program configured for %s\n' "$program" >&2; exit 1; }
+exec sh -lc "$command"

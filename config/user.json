@@ -1,0 +1,36 @@
+{
+  "programs": {
+    "terminal": "kitty",
+    "fileManager": "thunar",
+    "browser": "firefox",
+    "chromium": "chromium"
+  },
+  "paths": {
+    "wallpapers": "~/Imagens/Wallpapers",
+    "screenshots": "~/Imagens/Screenshots"
+  },
+  "shell": {
+    "primaryMonitor": "focused",
+    "islandWidth": 520,
+    "compactHeight": 42,
+    "topMargin": 18,
+    "surfaceOpacity": 0.88,
+    "radiusSmall": 14,
+    "radiusMedium": 22,
+    "radiusLarge": 30,
+    "spacingSmall": 8,
+    "spacingMedium": 14,
+    "spacingLarge": 22,
+    "animationFast": 130,
+    "animationNormal": 210,
+    "widgets": { "clock": true, "weather": true, "media": true, "system": true }
+  },
+  "weather": {
+    "enabled": true,
+    "location": "",
+    "latitude": null,
+    "longitude": null,
+    "timezone": "auto",
+    "refreshMinutes": 30
+  }
+}
