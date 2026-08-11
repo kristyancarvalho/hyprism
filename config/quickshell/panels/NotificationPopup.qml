@@ -15,13 +15,14 @@ PanelWindow {
     anchors { right: true; top: true }
     margins { top: 18; right: 22 }
     implicitWidth: 330
-    implicitHeight: 120
+    implicitHeight: notificationCard.height
     color: "transparent"
     exclusiveZone: 0
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
     NotificationCard {
+        id: notificationCard
         anchors.top: parent.top
         notification: popup.notification
         controller: popup.controller

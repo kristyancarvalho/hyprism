@@ -51,6 +51,8 @@ O Quickshell é iniciado uma única vez pelo evento `hyprland.start`. O helper u
 
 No primeiro boot, a paleta escura embutida mantém a ilha e os widgets utilizáveis mesmo sem arquivos gerados. Ausência de bateria, Wi-Fi, Bluetooth, brilho, GPU, sensores, MPRIS, clima ou histórico de clipboard produz um estado indisponível ou oculto, sem bloquear o `shell.qml`.
 
+Ícones de aplicativos são resolvidos a partir do campo `Icon` dos arquivos `.desktop`. Indicadores, controles, notificações e menus usam o tema Adwaita instalado pelo projeto, com fallback para `application-x-executable` quando um aplicativo não publica um ícone válido. A ilha compacta mostra apenas o workspace ativo, horário e estados disponíveis; a expansão usa pontos para os workspaces, sem rótulos em algarismos romanos.
+
 A tela configurada em `config/user.json` tem prioridade quando existe. Em seguida são usadas a tela focada do Hyprland e a primeira tela enumerada pelo Quickshell. Nenhum nome como `eDP-1`, `HDMI-A-1` ou `Virtual-1` é codificado.
 
 ## Terminal
@@ -113,6 +115,8 @@ Uma VM normalmente oferece Ethernet e não oferece bateria, Wi-Fi, Bluetooth, br
 Foot não usa o caminho de renderização do Kitty e é o primeiro terminal a testar com `Alt+Return`. Mantenha aceleração 3D e recursos de vídeo da VM compatíveis com a versão do Hyprland usada pelo Arch.
 
 O Quickshell usa por padrão o backend `software` do Qt Quick. Esse backend rasteriza a interface sem depender de uma superfície EGL e evita as falhas `Could not create EGL surface`, `eglSwapBuffers failed` e `Wayland connection experienced a fatal error` observadas com o adaptador gráfico do VirtualBox. A configuração vale apenas para o processo do Quickshell; Hyprland, Foot e os demais aplicativos mantêm seus próprios backends gráficos.
+
+O clima inicial está configurado para São Paulo, com fuso `America/Sao_Paulo`. Local, latitude, longitude, fuso e intervalo podem ser alterados no bloco `weather` de `config/user.json` antes de executar novamente o instalador.
 
 Em uma máquina física com aceleração Qt funcional, o backend RHI pode ser testado sem editar o repositório:
 

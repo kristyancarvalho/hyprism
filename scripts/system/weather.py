@@ -2,7 +2,7 @@
 import json, os, pathlib, subprocess, time, urllib.parse, urllib.request
 home = pathlib.Path.home(); cache = pathlib.Path(os.environ.get('HYPRISM_CACHE_DIR', home/'.cache/hyprism'))/'state/weather.json'
 config = pathlib.Path(os.environ.get('HYPRISM_CONFIG', home/'.config/hyprism/user.json'))
-fallback={'city':'Tempo indisponível','temperature':None,'apparentTemperature':None,'weatherCode':-1,'minimum':None,'maximum':None,'updatedAt':0}
+fallback={'city':'São Paulo','temperature':None,'apparentTemperature':None,'weatherCode':-1,'minimum':None,'maximum':None,'updatedAt':0}
 try: settings=json.loads(config.read_text()).get('weather', {})
 except (OSError, ValueError): settings={}
 if not settings.get('enabled', True) or settings.get('latitude') is None or settings.get('longitude') is None:

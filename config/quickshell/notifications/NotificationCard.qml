@@ -11,14 +11,14 @@ Glass {
     visible: notification !== null
     Column { id: body; anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 13 } spacing: 3
         Row { width: parent.width
-            Text { text: notification && notification.appIcon ? "◈" : "●"; color: theme.colors.accent; width: 21; font.pixelSize: 15 }
-            Text { text: notification ? (notification.appName + " · " + notification.summary) : ""; width: parent.width - 48; color: theme.colors.foreground; elide: Text.ElideRight; font { pixelSize: 11; bold: true } }
-            Button { text: "×"; width: 24; height: 24; onClicked: notification.dismiss() }
+            ShellIcon { name: notification && notification.appIcon ? notification.appIcon : "dialog-information"; fallback: "dialog-information"; iconSize: 20 }
+            Text { anchors.verticalCenter: parent.verticalCenter; text: notification ? (notification.appName + " · " + notification.summary) : ""; width: parent.width - 54; color: theme.colors.foreground; elide: Text.ElideRight; font { pixelSize: 11; bold: true } }
+            ShellButton { theme: card.theme; compact: true; iconName: "window-close"; onClicked: notification.dismiss() }
         }
         Text { width: parent.width; text: notification ? notification.body.replace(/<[^>]*>/g, "") : ""; wrapMode: Text.Wrap; maximumLineCount: 3; elide: Text.ElideRight; color: theme.colors.mutedForeground; font.pixelSize: 11 }
         Row { visible: notification && notification.actions.length > 0; spacing: 4
             Repeater { model: notification ? notification.actions : []
-                Button { required property var modelData; text: modelData.text; onClicked: modelData.invoke() }
+                ShellButton { required property var modelData; theme: card.theme; compact: true; text: modelData.text; onClicked: modelData.invoke() }
             }
         }
     }

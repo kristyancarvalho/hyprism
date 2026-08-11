@@ -12,8 +12,8 @@ PanelWindow {
     visible: shellScreen !== null && controller.osdKind.length > 0
     anchors { top: true }
     margins.top: controller.config.shell.topMargin + 74
-    implicitWidth: 290
-    implicitHeight: 54
+    implicitWidth: 320
+    implicitHeight: 58
     color: "transparent"
     exclusiveZone: 0
     WlrLayershell.layer: WlrLayer.Overlay
