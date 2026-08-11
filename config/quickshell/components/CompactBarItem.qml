@@ -10,14 +10,17 @@ Rectangle {
     property bool selected: false
     property bool iconOnly: false
     property bool filled: true
-    property int labelMaximumWidth: 0
+    property bool clickable: false
+    property int labelMaximumWidth: -1
+    property int horizontalPadding: filled ? Design.compactPillPadding : Design.compactPlainPadding
+    property int labelWeight: selected ? Design.fontWeightSemibold : Design.fontWeightMedium
     signal clicked()
-    implicitWidth: content.implicitWidth + Design.compactHorizontalPadding * 2
+    implicitWidth: content.implicitWidth + horizontalPadding * 2
     implicitHeight: Design.compactItemHeight
     radius: height / 2
     color: !filled ? "transparent" : selected ? theme.colors.accent : active ? theme.colors.accentDim : theme.colors.surfaceElevated
     border.width: filled ? Design.outlineWidth : 0
-    border.color: selected || active ? theme.colors.accent : theme.colors.outline
+    border.color: selected || active ? theme.colors.borderFocused : theme.colors.borderSubtle
 
     Row {
         id: content
@@ -33,16 +36,17 @@ Rectangle {
 
         CompactBarLabel {
             visible: !item.iconOnly && item.label.length > 0
-            width: item.labelMaximumWidth > 0 ? Math.min(implicitWidth, item.labelMaximumWidth) : implicitWidth
+            width: item.labelMaximumWidth >= 0 ? Math.min(implicitWidth, item.labelMaximumWidth) : implicitWidth
             text: item.label
             color: item.selected ? item.theme.colors.background : item.theme.colors.foreground
             elide: Text.ElideRight
-            font.weight: item.selected ? Design.fontWeightSemibold : Design.fontWeightMedium
+            font.weight: item.labelWeight
         }
     }
 
     MouseArea {
         anchors.fill: parent
+        enabled: item.clickable
         cursorShape: Qt.PointingHandCursor
         onClicked: item.clicked()
     }
