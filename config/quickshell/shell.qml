@@ -54,12 +54,13 @@ ShellRoot {
 
     function removePopup(notification): void {
         popupNotifications = popupNotifications.filter(item => item && item !== notification)
+        notificationServer.newest = popupNotifications.length ? popupNotifications[popupNotifications.length - 1] : null
     }
 
     function expirePopup(): void {
         if (!popupNotifications.length) return
-        popupNotifications = popupNotifications.slice(1)
-        if (popupNotifications.length) popupTimer.restart()
+        popupNotifications = []
+        notificationServer.newest = null
     }
     function applyConfig(raw: string): void {
         const parsed = JSON.parse(raw)
