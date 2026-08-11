@@ -6,7 +6,11 @@ temp_dir=$(mktemp -d)
 trap 'rm -rf -- "$temp_dir"' EXIT
 
 download_font() {
-  local name=$1 url=$2 expected=$3 target="$temp_dir/$name"
+  local name url expected target
+  name=$1
+  url=$2
+  expected=$3
+  target="$temp_dir/$name"
   curl -fL --retry 3 --connect-timeout 15 "$url" -o "$target"
   printf '%s  %s\n' "$expected" "$target" | sha256sum --check --status
 }
