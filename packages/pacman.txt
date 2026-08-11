@@ -1,0 +1,41 @@
+# Core compositor and shell
+hyprland
+hyprlock
+quickshell
+
+# Theme, wallpaper, and applications
+kitty
+matugen
+swww
+adwaita-icon-theme
+ttf-jetbrains-mono-nerd
+qt6ct
+
+# Session services
+networkmanager
+bluez
+bluez-utils
+pipewire
+wireplumber
+upower
+polkit-kde-agent
+
+# Shell backends
+python
+python-pillow
+jq
+curl
+git
+wl-clipboard
+cliphist
+brightnessctl
+playerctl
+grim
+slurp
+hyprpicker
+imagemagick
+
+# Default program choices
+thunar
+firefox
+chromium

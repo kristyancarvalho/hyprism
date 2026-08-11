@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+direction=${1:?direction required}
+layout=$(hyprctl -j getoption general:layout 2>/dev/null | jq -r '.str // empty')
+if [[ $layout == scrolling ]] && [[ $direction == l || $direction == r ]]; then
+  hyprctl dispatch layoutmsg "swapcol $direction" 2>/dev/null || hyprctl dispatch movewindow "$direction"
+else
+  hyprctl dispatch movewindow "$direction"
+fi
