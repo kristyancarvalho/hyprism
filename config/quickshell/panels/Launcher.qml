@@ -9,6 +9,8 @@ Item {
     required property var theme
     property string query: ""
     property int selected: 0
+    readonly property var resultModel: results()
+    readonly property int resultCount: resultModel.length
 
     function score(app) {
         const name = Design.safeText(app ? app.name : "", "")
@@ -26,7 +28,7 @@ Item {
     }
 
     function results() {
-        return controller.appEntries.filter(app => score(app) >= 0).sort((first, second) => score(second) - score(first)).slice(0, 9)
+        return controller.appEntries.filter(app => score(app) >= 0).sort((first, second) => score(second) - score(first)).slice(0, 60)
     }
 
     function launch(app) {
@@ -35,9 +37,12 @@ Item {
         controller.close()
     }
 
-    focus: true
-    Keys.onPressed: event => {
-        const count = results().length
+    function takeInitialFocus() {
+        search.forceActiveFocus()
+    }
+
+    function handleKey(event) {
+        const count = resultCount
         if (event.key === Qt.Key_Escape) {
             controller.close()
             event.accepted = true
@@ -48,9 +53,16 @@ Item {
             selected = navigation.wrap(selected, -1, count)
             event.accepted = true
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-            launch(results()[selected])
+            launch(resultModel[selected])
             event.accepted = true
         }
+    }
+
+    focus: true
+    Keys.onPressed: event => handleKey(event)
+    onResultCountChanged: {
+        selected = navigation.clamp(selected, resultCount)
+        controller.launcherResultCount = resultCount
     }
 
     Navigation { id: navigation }
@@ -107,6 +119,7 @@ Item {
                     panel.query = text
                     panel.selected = 0
                 }
+                Keys.onPressed: event => panel.handleKey(event)
             }
 
             StatusIcon {
@@ -124,9 +137,9 @@ Item {
         ListView {
             id: resultList
             width: parent.width
-            height: Math.max(0, parent.height - header.height - search.height - 24)
+            height: Math.max(Design.launcherResultRowHeight, parent.height - header.height - search.height - 24)
             clip: true
-            model: panel.results()
+            model: panel.resultModel
             currentIndex: panel.selected
             spacing: 5
             onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
@@ -135,7 +148,7 @@ Item {
                 required property var modelData
                 required property int index
                 width: ListView.view.width
-                height: 56
+                height: Design.launcherResultRowHeight
                 radius: Design.radiusSm
                 color: panel.selected === index ? panel.theme.colors.surfaceActive : pointer.containsMouse ? panel.theme.colors.surfaceHover : "transparent"
                 border.width: panel.selected === index ? 2 : 0
@@ -203,5 +216,8 @@ Item {
         }
     }
 
-    Component.onCompleted: search.forceActiveFocus()
+    Component.onCompleted: {
+        controller.launcherResultCount = resultCount
+        takeInitialFocus()
+    }
 }
