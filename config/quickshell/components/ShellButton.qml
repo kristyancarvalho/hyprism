@@ -1,4 +1,5 @@
 import QtQuick
+import ".."
 
 Rectangle {
     id: button
@@ -8,28 +9,54 @@ Rectangle {
     property bool active: false
     property bool destructive: false
     property bool compact: false
+    property bool hovered: pointer.containsMouse
     signal clicked()
+    activeFocusOnTab: true
     implicitWidth: content.implicitWidth + (compact ? 18 : 26)
     implicitHeight: compact ? 30 : 38
     radius: height / 2
-    color: destructive ? theme.colors.error : active ? theme.colors.accentDim : theme.colors.surfaceVariant
-    border.width: 1
-    border.color: destructive || active ? theme.colors.accent : theme.colors.outline
+    color: destructive ? theme.colors.error : activeFocus || active ? theme.colors.accentDim : hovered ? theme.colors.surfaceHover : theme.colors.surfaceVariant
+    border.width: activeFocus ? 2 : Design.outlineWidth
+    border.color: activeFocus || active ? theme.colors.accent : theme.colors.outline
 
     Row {
         id: content
         anchors.centerIn: parent
         spacing: button.iconName ? 7 : 0
-        ShellIcon { visible: button.iconName.length > 0; name: button.iconName; iconSize: button.compact ? 15 : 17 }
-        Text { text: button.text; color: button.theme.colors.foreground; font { pixelSize: button.compact ? 11 : 12; weight: Font.Medium } }
+
+        StatusIcon {
+            visible: button.iconName.length > 0
+            anchors.verticalCenter: parent.verticalCenter
+            name: button.iconName
+            iconSize: button.compact ? Design.iconXs : Design.iconSm
+            color: button.theme.colors.foreground
+        }
+
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: button.text
+            color: button.theme.colors.foreground
+            font.family: Design.fontFamily
+            font.pixelSize: button.compact ? Design.fontSizeXs : Design.fontSizeSm
+            font.weight: Design.fontWeightMedium
+        }
+    }
+
+    Keys.onPressed: event => {
+        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) {
+            button.clicked()
+            event.accepted = true
+        }
     }
 
     MouseArea {
+        id: pointer
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        onClicked: button.clicked()
-        onEntered: button.opacity = .82
-        onExited: button.opacity = 1
+        onClicked: {
+            button.forceActiveFocus()
+            button.clicked()
+        }
     }
 }

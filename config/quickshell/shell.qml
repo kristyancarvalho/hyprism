@@ -1,6 +1,6 @@
 //@ pragma ShellId hyprism
 //@ pragma DefaultEnv QT_QUICK_BACKEND = software
-//@ pragma IconTheme Adwaita
+//@ pragma IconTheme Papirus-Dark
 pragma ComponentBehavior: Bound
 
 import QtQuick
@@ -59,6 +59,7 @@ ShellRoot {
     Theme { id: shellTheme }
     ShellController { id: shellController }
     SystemService { controller: shellController }
+    MediaService { controller: shellController }
     AppService { id: appService; controller: shellController }
     ClipboardService { id: clipboardService; controller: shellController }
     IpcHandler {

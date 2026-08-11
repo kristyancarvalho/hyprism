@@ -8,6 +8,8 @@ foot
 matugen
 awww
 adwaita-icon-theme
+papirus-icon-theme
+ttf-nerd-fonts-symbols-mono
 ttf-jetbrains-mono-nerd
 noto-fonts-emoji
 qt6ct
@@ -26,6 +28,7 @@ python-pillow
 python-gobject
 jq
 curl
+fontconfig
 git
 wl-clipboard
 cliphist

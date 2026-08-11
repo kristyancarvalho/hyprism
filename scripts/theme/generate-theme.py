@@ -72,11 +72,14 @@ primary = accessible(mix(raw["accent"], foreground, .10), background, 3.2)
 secondary = accessible(mix(raw.get("secondary", primary), foreground, .08), background, 3.0)
 surface = mix(background, foreground, .075)
 surface_variant = mix(background, foreground, .145)
+surface_hover = mix(surface_variant, foreground, .08)
+surface_active = mix(primary, background, .55)
 outline = mix(background, primary, .45)
 muted = mix(background, foreground, .55)
 theme = {
     "background": background, "surface": surface, "surfaceVariant": surface_variant,
-    "surfaceElevated": mix(surface_variant, foreground, .04), "foreground": foreground,
+    "surfaceElevated": mix(surface_variant, foreground, .04), "surfaceHover": surface_hover,
+    "surfaceActive": surface_active, "foreground": foreground,
     "mutedForeground": muted, "primary": primary, "secondary": secondary,
     "accent": primary, "accentDim": mix(primary, background, .55), "outline": outline,
     "border": outline, "error": accessible(raw.get("error", "#dc7179"), background, 3.2),
