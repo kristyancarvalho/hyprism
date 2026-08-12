@@ -24,7 +24,7 @@ Glass {
             width: 30
             height: 30
             anchors.verticalCenter: parent.verticalCenter
-            radius: 15
+            radius: height / 2
             color: theme.colors.surfaceVariant
 
             StatusIcon { anchors.centerIn: parent; name: osd.iconName; iconSize: Design.iconMd; color: theme.colors.foreground }
@@ -44,14 +44,14 @@ Glass {
             visible: osd.percentageValue
             width: 112
             height: 5
-            radius: 3
+            radius: height / 2
             anchors.verticalCenter: parent.verticalCenter
             color: theme.colors.surfaceVariant
 
             Rectangle {
                 width: Design.clamp(parseInt(controller.osdValue), 0, 100) * parent.width / 100
                 height: parent.height
-                radius: 3
+                radius: height / 2
                 color: theme.colors.accent
             }
         }

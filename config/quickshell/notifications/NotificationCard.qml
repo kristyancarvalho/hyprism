@@ -26,7 +26,7 @@ Glass {
         anchors.topMargin: 13
         width: 40
         height: 40
-        radius: 12
+        radius: Design.radiusSm
         color: card.theme.colors.surfaceElevated
 
         ShellIcon {
@@ -113,7 +113,7 @@ Glass {
             radius: width / 2
             color: closePointer.containsMouse ? card.theme.colors.surfaceHover : card.theme.colors.surfaceVariant
             border.width: closeButton.activeFocus ? 2 : Design.outlineWidth
-            border.color: closeButton.activeFocus ? card.theme.colors.accent : card.theme.colors.outline
+            border.color: closeButton.activeFocus ? card.theme.colors.borderFocused : card.theme.colors.borderSubtle
 
             StatusIcon {
                 anchors.centerIn: parent

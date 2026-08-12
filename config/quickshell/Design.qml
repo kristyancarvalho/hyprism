@@ -17,18 +17,34 @@ QtObject {
     readonly property int iconSm: 17
     readonly property int iconMd: 21
     readonly property int iconLg: 30
+    readonly property int spacingXs: 4
+    readonly property int spacingSm: 8
+    readonly property int spacingMd: 12
+    readonly property int spacingLg: 18
     readonly property int shellTopMargin: 8
     readonly property int compactBarHeight: 44
     readonly property int compactBottomGap: 4
+    readonly property int compactWidthMin: 620
+    readonly property int compactWidthMax: 720
     readonly property int compactItemHeight: 30
     readonly property int compactIconSize: 16
     readonly property int compactTextSize: 12
-    readonly property int compactHorizontalPadding: 12
-    readonly property int compactItemSpacing: 7
-    readonly property int compactGroupSpacing: 10
+    readonly property int compactHorizontalPadding: 16
+    readonly property int compactPillPadding: 10
+    readonly property int compactPlainPadding: 4
+    readonly property int compactItemSpacing: spacingSm
+    readonly property int compactGroupSpacing: spacingMd
     readonly property int compactSeparatorHeight: 16
     readonly property int compactSeparatorWidth: 1
-    readonly property int compactRadius: 18
+    readonly property int radiusXs: 6
+    readonly property int radiusSm: 10
+    readonly property int radiusMd: 14
+    readonly property int radiusLg: 18
+    readonly property int radiusIslandCompact: compactBarHeight / 2
+    readonly property int radiusIslandExpanded: radiusLg
+    readonly property int compactRadius: radiusIslandCompact
+    readonly property int animationFast: 130
+    readonly property int animationMorph: 210
     readonly property int launcherMaximumVisibleResults: 6
     readonly property int launcherResultRowHeight: 54
     readonly property int launcherResultSpacing: 5
@@ -39,15 +55,12 @@ QtObject {
     readonly property int barHeight: compactBarHeight
     readonly property int barPillHeight: compactItemHeight
     readonly property int barPaddingHorizontal: compactHorizontalPadding
-    readonly property int barPillPadding: compactHorizontalPadding
+    readonly property int barPillPadding: compactPillPadding
     readonly property int barItemGap: compactItemSpacing
     readonly property int barIconSize: compactIconSize
     readonly property int barFontSize: compactTextSize
     readonly property int separatorHeight: compactSeparatorHeight
     readonly property int separatorWidth: compactSeparatorWidth
-    readonly property int radiusSm: 12
-    readonly property int radiusMd: 18
-    readonly property int radiusLg: 26
     readonly property int outlineWidth: 1
     readonly property int historyLimit: 60
     readonly property var icons: ({
@@ -153,8 +166,18 @@ QtObject {
         return Math.max(0, Math.round(safeNumber(shellConfig ? shellConfig.reserveGap : compactBottomGap, compactBottomGap)))
     }
 
+    function compactRadiusFor(shellConfig) {
+        return compactHeight(shellConfig) / 2
+    }
+
     function compactReservedHeight(shellConfig) {
         return compactTopMargin(shellConfig) + compactHeight(shellConfig) + compactGap(shellConfig)
+    }
+
+    function compactWidth(shellConfig, availableWidth) {
+        const maximum = Math.max(320, safeNumber(availableWidth, compactWidthMax) - 32)
+        const requested = safeNumber(shellConfig ? shellConfig.islandWidth : compactWidthMin, compactWidthMin)
+        return Math.min(maximum, Math.max(compactWidthMin, Math.min(compactWidthMax, requested)))
     }
 
     function launcherHeight(resultCount) {

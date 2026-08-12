@@ -15,7 +15,7 @@ Rectangle {
     radius: Design.radiusSm
     color: active && available ? theme.colors.accentDim : hovered ? theme.colors.surfaceHover : theme.colors.surfaceVariant
     border.width: activeFocus ? 2 : Design.outlineWidth
-    border.color: active && available || activeFocus ? theme.colors.accent : theme.colors.outline
+    border.color: active && available || activeFocus ? theme.colors.borderFocused : theme.colors.borderNormal
     opacity: available ? pending ? .72 : 1 : .5
     implicitWidth: 170
     implicitHeight: 68
@@ -29,7 +29,7 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             width: 36
             height: 36
-            radius: 18
+            radius: height / 2
             color: button.active && button.available ? button.theme.colors.accentDim : button.theme.colors.surface
 
             StatusIcon {

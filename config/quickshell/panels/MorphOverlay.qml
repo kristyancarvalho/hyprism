@@ -13,42 +13,73 @@ PanelWindow {
     required property var apps
     required property var clipboard
     required property var notifications
+    property string displayedMode: "hover"
     readonly property bool interactive: controller.mode !== "compact" && controller.mode !== "hover"
+    readonly property string contentMode: controller.mode === "compact" ? displayedMode : controller.mode
     readonly property int availableWidth: shellScreen ? shellScreen.width : 1024
     readonly property int availableHeight: shellScreen ? shellScreen.height : 768
     readonly property int safeWidth: Math.max(320, availableWidth - 32)
     readonly property int safeHeight: Math.max(Design.compactBarHeight, availableHeight - Design.compactTopMargin(controller.config.shell) - 16)
-    readonly property int compactWidth: Math.min(safeWidth, Math.max(520, controller.config.shell.islandWidth))
-    readonly property int desiredWidth: {
-        if (controller.mode === "hover") return Math.min(safeWidth, controller.mediaAvailable() ? 900 : 760)
-        if (controller.mode === "launcher") return Math.min(safeWidth, 720)
-        if (controller.mode === "wallpaper") return Math.min(safeWidth, 880)
-        if (controller.mode === "clipboard") return Math.min(safeWidth, 700)
-        if (controller.mode === "control") return Math.min(safeWidth, 600)
-        if (controller.mode === "network" || controller.mode === "bluetooth") return Math.min(safeWidth, 560)
-        if (controller.mode === "power") return Math.min(safeWidth, 640)
-        if (controller.mode === "emoji") return Math.min(safeWidth, 540)
-        if (controller.mode === "switcher") return Math.min(safeWidth, 920)
-        return compactWidth
-    }
-    readonly property int requestedHeight: {
-        if (controller.mode === "hover") return controller.mediaAvailable() ? 88 : 64
-        if (controller.mode === "launcher") return Design.launcherHeight(controller.launcherResultCount)
-        if (controller.mode === "wallpaper") {
-            const columns = desiredWidth >= 800 ? 4 : desiredWidth >= 560 ? 3 : 2
+    readonly property int compactWidth: Design.compactWidth(controller.config.shell, availableWidth)
+    readonly property int morphDuration: Math.max(1, Math.round(Design.safeNumber(controller.config.shell.animationNormal, Design.animationMorph)))
+    readonly property var targetGeometry: geometryForMode()
+    property real morphWidth: targetGeometry.width
+    property real morphHeight: targetGeometry.height
+    property real morphRadius: targetGeometry.radius
+
+    function geometryForMode() {
+        const mode = controller.mode
+        let width = compactWidth
+        let height = Design.compactHeight(controller.config.shell)
+        let radius = Design.compactRadiusFor(controller.config.shell)
+        if (mode === "hover") {
+            width = Math.min(safeWidth, controller.mediaAvailable() ? 900 : 760)
+            height = controller.mediaAvailable() ? 88 : 64
+        } else if (mode === "launcher") {
+            width = Math.min(safeWidth, 720)
+            height = Design.launcherHeight(controller.launcherResultCount)
+            radius = Design.radiusIslandExpanded
+        } else if (mode === "wallpaper") {
+            width = Math.min(safeWidth, 880)
+            const columns = width >= 800 ? 4 : width >= 560 ? 3 : 2
             const rows = Math.max(1, Math.ceil(controller.wallpaperEntries.length / columns))
-            return Math.min(560, 104 + rows * 150)
+            height = Math.min(560, 104 + rows * 150)
+            radius = Design.radiusIslandExpanded
+        } else if (mode === "clipboard") {
+            width = Math.min(safeWidth, 700)
+            height = 500
+            radius = Design.radiusIslandExpanded
+        } else if (mode === "control") {
+            width = Math.min(safeWidth, 600)
+            height = 700
+            radius = Design.radiusIslandExpanded
+        } else if (mode === "network") {
+            width = Math.min(safeWidth, 560)
+            height = 440
+            radius = Design.radiusIslandExpanded
+        } else if (mode === "bluetooth") {
+            width = Math.min(safeWidth, 560)
+            height = controller.system.bluetooth.available ? Math.min(460, 130 + controller.system.bluetooth.devices.length * 68) : 170
+            radius = Design.radiusIslandExpanded
+        } else if (mode === "power") {
+            width = Math.min(safeWidth, 640)
+            height = 300
+            radius = Design.radiusIslandExpanded
+        } else if (mode === "emoji") {
+            width = Math.min(safeWidth, 540)
+            height = 360
+            radius = Design.radiusIslandExpanded
+        } else if (mode === "switcher") {
+            width = Math.min(safeWidth, 920)
+            height = 220
+            radius = Design.radiusIslandExpanded
         }
-        if (controller.mode === "clipboard") return 500
-        if (controller.mode === "control") return 700
-        if (controller.mode === "network") return 440
-        if (controller.mode === "bluetooth") return controller.system.bluetooth.available ? Math.min(460, 130 + controller.system.bluetooth.devices.length * 68) : 170
-        if (controller.mode === "power") return 300
-        if (controller.mode === "emoji") return 360
-        if (controller.mode === "switcher") return 220
-        return Design.compactHeight(controller.config.shell)
+        return {
+            width: Math.round(Design.clamp(width, 320, safeWidth)),
+            height: Math.round(Design.clamp(height, Design.compactBarHeight, safeHeight)),
+            radius: Math.round(Design.clamp(radius, Design.radiusSm, Design.compactRadiusFor(controller.config.shell)))
+        }
     }
-    readonly property int desiredHeight: Math.min(safeHeight, requestedHeight)
 
     function focusPanel() {
         if (!interactive || !content.item) return
@@ -58,13 +89,13 @@ PanelWindow {
     }
 
     screen: shellScreen
-    visible: shellScreen !== null && controller.mode !== "compact"
+    visible: shellScreen !== null && (controller.mode !== "compact" || controller.morphClosing)
     anchors.top: true
     margins.top: Design.compactTopMargin(controller.config.shell)
-    implicitWidth: safeWidth
-    implicitHeight: safeHeight
+    implicitWidth: Math.round(morphWidth)
+    implicitHeight: Math.round(morphHeight)
     color: "transparent"
-    exclusiveZone: 0
+    exclusionMode: ExclusionMode.Ignore
     mask: Region { item: morphSurface }
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: interactive ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
@@ -77,17 +108,11 @@ PanelWindow {
 
     Glass {
         id: morphSurface
-        anchors.top: parent.top
-        anchors.horizontalCenter: parent.horizontalCenter
-        width: window.desiredWidth
-        height: window.desiredHeight
-        radius: controller.mode === "hover" ? Design.compactRadius : Design.radiusLg
+        anchors.fill: parent
+        radius: window.morphRadius
         theme: window.theme
         surfaceOpacity: controller.config.shell.surfaceOpacity
         clip: true
-        Behavior on width { NumberAnimation { duration: controller.config.shell.animationNormal; easing.type: Easing.OutCubic } }
-        Behavior on height { NumberAnimation { duration: controller.config.shell.animationNormal; easing.type: Easing.OutCubic } }
-        Behavior on radius { NumberAnimation { duration: controller.config.shell.animationFast; easing.type: Easing.OutCubic } }
 
         HoverHandler {
             onHoveredChanged: {
@@ -104,10 +129,20 @@ PanelWindow {
         Loader {
             id: content
             anchors.fill: parent
-            sourceComponent: controller.mode === "launcher" ? launcher : controller.mode === "wallpaper" ? wallpaper : controller.mode === "clipboard" ? clipboardPanel : controller.mode === "control" ? control : controller.mode === "network" ? network : controller.mode === "bluetooth" ? bluetooth : controller.mode === "power" ? power : controller.mode === "emoji" ? emoji : controller.mode === "switcher" ? switcher : expanded
-            onLoaded: focusTimer.restart()
+            opacity: 1
+            sourceComponent: window.contentMode === "launcher" ? launcher : window.contentMode === "wallpaper" ? wallpaper : window.contentMode === "clipboard" ? clipboardPanel : window.contentMode === "control" ? control : window.contentMode === "network" ? network : window.contentMode === "bluetooth" ? bluetooth : window.contentMode === "power" ? power : window.contentMode === "emoji" ? emoji : window.contentMode === "switcher" ? switcher : expanded
+            onLoaded: {
+                opacity = 0
+                contentReveal.restart()
+                focusTimer.restart()
+            }
+            Behavior on opacity { NumberAnimation { duration: Design.animationFast; easing.type: Easing.OutCubic } }
         }
     }
+
+    Behavior on morphWidth { NumberAnimation { duration: window.morphDuration; easing.type: Easing.OutCubic } }
+    Behavior on morphHeight { NumberAnimation { duration: window.morphDuration; easing.type: Easing.OutCubic } }
+    Behavior on morphRadius { NumberAnimation { duration: window.morphDuration; easing.type: Easing.OutCubic } }
 
     Timer {
         id: hoverClose
@@ -121,9 +156,31 @@ PanelWindow {
         onTriggered: window.focusPanel()
     }
 
+    Timer {
+        id: contentReveal
+        interval: Math.max(1, Math.round(window.morphDuration * .28))
+        onTriggered: content.opacity = 1
+    }
+
+    Timer {
+        id: closeFinalize
+        interval: window.morphDuration
+        onTriggered: controller.morphClosing = false
+    }
+
     Connections {
         target: controller
-        function onModeChanged() { focusTimer.restart() }
+        function onModeChanged() {
+            if (controller.mode === "compact") {
+                content.opacity = 0
+                if (controller.morphClosing) closeFinalize.restart()
+            } else {
+                window.displayedMode = controller.mode
+                closeFinalize.stop()
+                contentReveal.restart()
+                focusTimer.restart()
+            }
+        }
     }
 
     Component {
@@ -146,7 +203,7 @@ PanelWindow {
                         property bool selected: Hyprland.focusedWorkspace && Hyprland.focusedWorkspace.id === modelData
                         width: selected ? 24 : 8
                         height: 8
-                        radius: 4
+                        radius: height / 2
                         color: selected ? theme.colors.accent : theme.colors.surfaceElevated
                         border.width: selected ? 0 : 1
                         border.color: theme.colors.outline

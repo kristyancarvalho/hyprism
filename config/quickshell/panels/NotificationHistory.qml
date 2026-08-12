@@ -87,7 +87,7 @@ Column {
                 }
                 width: 38
                 height: 38
-                radius: 12
+                radius: Design.radiusSm
                 color: history.theme.colors.surface
 
                 ShellIcon {

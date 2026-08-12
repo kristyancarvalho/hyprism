@@ -130,7 +130,7 @@ O clima inicial está configurado para São Paulo, com fuso `America/Sao_Paulo`.
 
 Os widgets de data e clima formam uma composição compacta no canto da tela. O monitor de sistema mantém 60 amostras limitadas de CPU e RAM e desenha sparklines nativas no QML. GPU, temperatura, bateria e tráfego aparecem somente quando disponíveis. O backend coleta CPU, RAM e throughput a cada segundo, estados gerais a cada três segundos e Bluetooth/temperatura a cada cinco segundos, sem executar comandos por quadro de animação.
 
-A reserva superior compacta usa 8 px de margem, 44 px de ilha e 4 px de respiro. A superfície de reserva permanece fixa durante expansões; launcher, hub, clipboard, seletor de wallpaper, Alt+Tab e menu de energia são desenhados por uma superfície de overlay com máscara limitada à forma visível. Cada tela detectada recebe sua própria ilha e seus próprios widgets. Painéis transitórios usam primeiro a tela invocadora e, para atalhos, o monitor focado pelo Hyprland.
+A reserva superior compacta usa 8 px de margem, 44 px de ilha e 4 px de respiro. A superfície de reserva permanece fixa durante expansões. O overlay ignora exclusões de outras camadas, usa a mesma origem absoluta no topo central e tem sempre o tamanho exato da forma animada; launcher, hub, clipboard, seletor de wallpaper, Alt+Tab e menu de energia crescem para baixo sem ampliar a reserva. Cada tela detectada recebe sua própria ilha e seus próprios widgets. Painéis transitórios usam primeiro a tela invocadora e, para atalhos, o monitor focado pelo Hyprland.
 
 Painéis interativos solicitam foco de teclado ao abrir e o liberam ao fechar. O launcher mostra no máximo seis linhas antes de rolar e calcula a altura a partir da quantidade filtrada. Os estados de Wi-Fi, Bluetooth, modo noturno e perfil de energia vêm do backend observado; o clique apenas inicia uma solicitação pendente e não altera a aparência ativa antecipadamente.
 
@@ -223,6 +223,8 @@ test -s ~/.cache/hyprism/theme/foot.ini && echo 'tema do Foot encontrado'
 Na VM, confirme estes pontos depois de iniciar uma sessão nova:
 
 - a área entre a ilha compacta e as janelas mede apenas a reserva compacta e não muda ao abrir painéis;
+- o topo e o centro horizontal permanecem imóveis durante hover, abertura e fechamento de todos os painéis;
+- um clique normal em qualquer área livre da ilha abre o hub, e o conteúdo expandido permanece clicável durante a animação;
 - duas telas mantêm ilhas e widgets independentes durante movimento do ponteiro, hotplug e mudança de resolução;
 - `Alt+R`, `Alt+K`, `Alt+Shift+V`, `Alt+Shift+N`, `Alt+Shift+L` e `Alt+Tab` recebem teclado imediatamente no monitor focado;
 - o launcher cresce até seis resultados visíveis, reduz ao filtrar e rola resultados adicionais sem rastro colorido;
