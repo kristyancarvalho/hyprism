@@ -96,13 +96,13 @@ Item {
                     width: Math.max(40, parent.width - 70)
                     height: 4
                     anchors.verticalCenter: parent.verticalCenter
-                    radius: height / 2
+                    radius: Design.radiusSmall
                     color: media.theme.colors.surfaceVariant
 
                     Rectangle {
                         width: parent.width * media.controller.mediaProgress()
                         height: parent.height
-                        radius: parent.radius
+                        radius: Design.radiusSmall
                         color: media.theme.colors.accent
                     }
                 }

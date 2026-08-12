@@ -5,13 +5,13 @@
   },
   "shell": {
     "primaryMonitor": "",
-    "islandWidth": 660,
+    "islandWidth": 620,
     "compactHeight": 44,
     "topMargin": 8,
     "reserveGap": 4,
     "surfaceOpacity": 0.9,
-    "animationFast": 130,
-    "animationNormal": 210,
+    "animationFast": 110,
+    "animationNormal": 150,
     "widgets": { "clock": true, "weather": true, "media": true, "system": true }
   },
   "weather": {

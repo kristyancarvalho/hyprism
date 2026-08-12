@@ -5,6 +5,7 @@ Rectangle {
     id: item
     property var theme
     property string iconName: ""
+    property string trailingIconName: ""
     property string label: ""
     property bool active: false
     property bool selected: false
@@ -17,7 +18,7 @@ Rectangle {
     signal clicked()
     implicitWidth: content.implicitWidth + horizontalPadding * 2
     implicitHeight: Design.compactItemHeight
-    radius: height / 2
+    radius: Design.radiusDefault
     color: !filled ? "transparent" : selected ? theme.colors.accent : active ? theme.colors.accentDim : theme.colors.surfaceElevated
     border.width: filled ? Design.outlineWidth : 0
     border.color: selected || active ? theme.colors.borderFocused : theme.colors.borderSubtle
@@ -41,6 +42,13 @@ Rectangle {
             color: item.selected ? item.theme.colors.background : item.theme.colors.foreground
             elide: Text.ElideRight
             font.weight: item.labelWeight
+        }
+
+        CompactBarIcon {
+            visible: item.trailingIconName.length > 0
+            name: item.trailingIconName
+            iconSize: Design.iconXs
+            color: item.theme.colors.accent
         }
     }
 

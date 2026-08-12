@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Widgets
+import ".."
 
 Item {
     id: root
@@ -16,7 +17,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         visible: root.framed
-        radius: width / 2
+        radius: Design.radiusDefault
         color: root.frameColor
     }
 
