@@ -5,7 +5,8 @@ Item {
     id: root
     property string name: "application"
     property color color: "white"
-    implicitWidth: Design.compactIconSize + 2
+    property int iconSize: Design.compactIconSize
+    implicitWidth: iconSize + 2
     implicitHeight: Design.compactItemHeight
 
     Text {
@@ -13,7 +14,7 @@ Item {
         text: Design.icon(root.name)
         color: root.color
         font.family: Design.fontFamilyIcons
-        font.pixelSize: Design.compactIconSize
+        font.pixelSize: root.iconSize
         font.weight: Font.Normal
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter

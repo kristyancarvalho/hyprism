@@ -251,6 +251,7 @@ PanelWindow {
                         visible: controller.system.battery.available
                         theme: widgetWindow.theme
                         iconName: controller.batteryIconName()
+                        trailingIconName: controller.batteryCharging() ? "charging" : ""
                         value: controller.batteryText()
                     }
 
@@ -367,13 +368,13 @@ PanelWindow {
                     Rectangle {
                         width: parent.width
                         height: 4
-                        radius: height / 2
+                        radius: Design.radiusSmall
                         color: theme.colors.surfaceVariant
 
                         Rectangle {
                             width: parent.width * controller.mediaProgress()
                             height: parent.height
-                            radius: parent.radius
+                            radius: Design.radiusSmall
                             color: theme.colors.accent
                         }
                     }
