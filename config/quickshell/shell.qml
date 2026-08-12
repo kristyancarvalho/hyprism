@@ -208,10 +208,12 @@ ShellRoot {
         }
     }
 
-    LazyLoader {
-        active: root.transientScreen !== null
+    Variants {
+        model: Quickshell.screens
+
         MorphOverlay {
-            shellScreen: root.transientScreen
+            required property var modelData
+            shellScreen: modelData
             controller: shellController
             theme: shellTheme
             apps: appService

@@ -10,7 +10,6 @@ Item {
     property string mode: "compact"
     property string previousMode: "compact"
     property string targetScreenName: ""
-    property bool morphClosing: false
     property string osdKind: ""
     property string osdValue: ""
     property int switcherIndex: 0
@@ -44,7 +43,6 @@ Item {
     property string rootDir: Quickshell.env("HYPRISM_ROOT") || Quickshell.env("HOME") + "/.local/share/hyprism"
 
     function open(next) {
-        morphClosing = false
         if (mode !== next) previousMode = mode
         mode = next
     }
@@ -61,10 +59,8 @@ Item {
 
     function close() {
         if (mode === "compact") {
-            morphClosing = false
             return
         }
-        morphClosing = true
         mode = "compact"
     }
 
@@ -252,10 +248,16 @@ Item {
 
     function batteryIconName() {
         if (!system.battery.available) return "batteryMissing"
-        if (system.battery.status === "Charging") return "batteryCharging"
-        if (Design.safeNumber(system.battery.percent, 0) <= 10) return "batteryCritical"
-        if (Design.safeNumber(system.battery.percent, 0) <= 35) return "batteryLow"
-        return "battery"
+        const percentage = Design.clamp(system.battery.percent, 0, 100)
+        if (percentage <= 10) return "battery0"
+        if (percentage <= 30) return "battery1"
+        if (percentage <= 55) return "battery2"
+        if (percentage <= 80) return "battery3"
+        return "battery4"
+    }
+
+    function batteryCharging() {
+        return system.battery.available && Design.safeText(system.battery.status, "").toLowerCase() === "charging"
     }
 
     function volumeIconName() {

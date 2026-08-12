@@ -95,13 +95,13 @@ Item {
                 y: slider.topPadding + slider.availableHeight / 2 - height / 2
                 width: slider.availableWidth
                 height: 5
-                radius: height / 2
+                radius: Design.radiusSmall
                 color: row.theme.colors.surfaceVariant
 
                 Rectangle {
                     width: slider.visualPosition * parent.width
                     height: parent.height
-                    radius: height / 2
+                    radius: Design.radiusSmall
                     color: row.theme.colors.accent
                 }
             }
@@ -110,7 +110,7 @@ Item {
                 y: slider.topPadding + slider.availableHeight / 2 - height / 2
                 width: slider.activeFocus ? 15 : 13
                 height: width
-                radius: width / 2
+                radius: Design.radiusDefault
                 color: slider.activeFocus ? row.theme.colors.accent : row.theme.colors.foreground
             }
         }

@@ -16,7 +16,7 @@ Rectangle {
     activeFocusOnTab: available
     implicitWidth: content.implicitWidth + (compact ? 18 : 26)
     implicitHeight: compact ? 30 : 38
-    radius: height / 2
+    radius: Design.radiusDefault
     color: destructive && available ? theme.colors.error : active && available ? theme.colors.accentDim : hovered ? theme.colors.surfaceHover : theme.colors.surfaceVariant
     border.width: activeFocus ? 2 : Design.outlineWidth
     border.color: activeFocus || active ? theme.colors.borderFocused : theme.colors.borderNormal

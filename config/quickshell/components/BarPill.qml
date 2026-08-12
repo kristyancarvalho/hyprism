@@ -13,7 +13,7 @@ Rectangle {
     signal clicked()
     implicitWidth: content.implicitWidth + Design.barPillPadding * 2
     implicitHeight: Design.barPillHeight
-    radius: height / 2
+    radius: Design.radiusDefault
     color: selected ? theme.colors.accent : active ? theme.colors.accentDim : theme.colors.surfaceElevated
     border.width: Design.outlineWidth
     border.color: selected || active ? theme.colors.accent : theme.colors.outline

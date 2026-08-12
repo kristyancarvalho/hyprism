@@ -29,7 +29,7 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             width: 36
             height: 36
-            radius: height / 2
+            radius: Design.radiusDefault
             color: button.active && button.available ? button.theme.colors.accentDim : button.theme.colors.surface
 
             StatusIcon {

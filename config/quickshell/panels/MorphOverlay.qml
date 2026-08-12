@@ -13,72 +13,73 @@ PanelWindow {
     required property var apps
     required property var clipboard
     required property var notifications
-    property string displayedMode: "hover"
-    readonly property bool interactive: controller.mode !== "compact" && controller.mode !== "hover"
-    readonly property string contentMode: controller.mode === "compact" ? displayedMode : controller.mode
+    readonly property bool targetScreen: controller.targetScreenName === shellScreen.name
+    readonly property string localMode: controller.mode === "compact" || !targetScreen ? "compact" : controller.mode
+    readonly property bool interactive: localMode !== "compact" && localMode !== "hover"
     readonly property int availableWidth: shellScreen ? shellScreen.width : 1024
     readonly property int availableHeight: shellScreen ? shellScreen.height : 768
     readonly property int safeWidth: Math.max(320, availableWidth - 32)
     readonly property int safeHeight: Math.max(Design.compactBarHeight, availableHeight - Design.compactTopMargin(controller.config.shell) - 16)
     readonly property int compactWidth: Design.compactWidth(controller.config.shell, availableWidth)
     readonly property int morphDuration: Math.max(1, Math.round(Design.safeNumber(controller.config.shell.animationNormal, Design.animationMorph)))
-    readonly property var targetGeometry: geometryForMode()
-    property real morphWidth: targetGeometry.width
-    property real morphHeight: targetGeometry.height
-    property real morphRadius: targetGeometry.radius
+    readonly property var desiredGeometry: geometryForMode(localMode)
+    property var morphFrom: ({ width: compactWidth, height: Design.compactHeight(controller.config.shell), radius: Design.radiusDefault })
+    property var morphTarget: ({ width: compactWidth, height: Design.compactHeight(controller.config.shell), radius: Design.radiusDefault })
+    property real morphProgress: 1
+    readonly property real morphWidth: morphFrom.width + (morphTarget.width - morphFrom.width) * morphProgress
+    readonly property real morphHeight: morphFrom.height + (morphTarget.height - morphFrom.height) * morphProgress
+    readonly property real morphRadius: morphFrom.radius + (morphTarget.radius - morphFrom.radius) * morphProgress
 
-    function geometryForMode() {
-        const mode = controller.mode
+    function geometryForMode(mode) {
         let width = compactWidth
         let height = Design.compactHeight(controller.config.shell)
-        let radius = Design.compactRadiusFor(controller.config.shell)
         if (mode === "hover") {
-            width = Math.min(safeWidth, controller.mediaAvailable() ? 900 : 760)
+            width = Math.min(safeWidth, controller.mediaAvailable() ? 860 : 700)
             height = controller.mediaAvailable() ? 88 : 64
         } else if (mode === "launcher") {
             width = Math.min(safeWidth, 720)
             height = Design.launcherHeight(controller.launcherResultCount)
-            radius = Design.radiusIslandExpanded
         } else if (mode === "wallpaper") {
             width = Math.min(safeWidth, 880)
             const columns = width >= 800 ? 4 : width >= 560 ? 3 : 2
             const rows = Math.max(1, Math.ceil(controller.wallpaperEntries.length / columns))
             height = Math.min(560, 104 + rows * 150)
-            radius = Design.radiusIslandExpanded
         } else if (mode === "clipboard") {
             width = Math.min(safeWidth, 700)
             height = 500
-            radius = Design.radiusIslandExpanded
         } else if (mode === "control") {
             width = Math.min(safeWidth, 600)
             height = 700
-            radius = Design.radiusIslandExpanded
         } else if (mode === "network") {
             width = Math.min(safeWidth, 560)
             height = 440
-            radius = Design.radiusIslandExpanded
         } else if (mode === "bluetooth") {
             width = Math.min(safeWidth, 560)
             height = controller.system.bluetooth.available ? Math.min(460, 130 + controller.system.bluetooth.devices.length * 68) : 170
-            radius = Design.radiusIslandExpanded
         } else if (mode === "power") {
             width = Math.min(safeWidth, 640)
             height = 300
-            radius = Design.radiusIslandExpanded
         } else if (mode === "emoji") {
             width = Math.min(safeWidth, 540)
             height = 360
-            radius = Design.radiusIslandExpanded
         } else if (mode === "switcher") {
             width = Math.min(safeWidth, 920)
             height = 220
-            radius = Design.radiusIslandExpanded
         }
         return {
-            width: Math.round(Design.clamp(width, 320, safeWidth)),
-            height: Math.round(Design.clamp(height, Design.compactBarHeight, safeHeight)),
-            radius: Math.round(Design.clamp(radius, Design.radiusSm, Design.compactRadiusFor(controller.config.shell)))
+            width: Math.round(Design.clamp(width, 320, Math.min(safeWidth, Design.morphSurfaceMaxWidth))),
+            height: Math.round(Design.clamp(height, Design.compactBarHeight, Math.min(safeHeight, Design.morphSurfaceMaxHeight))),
+            radius: Design.radiusDefault
         }
+    }
+
+    function startMorph(nextGeometry) {
+        const currentGeometry = { width: morphWidth, height: morphHeight, radius: morphRadius }
+        morphAnimation.stop()
+        morphFrom = currentGeometry
+        morphTarget = nextGeometry
+        morphProgress = 0
+        morphAnimation.start()
     }
 
     function focusPanel() {
@@ -89,16 +90,19 @@ PanelWindow {
     }
 
     screen: shellScreen
-    visible: shellScreen !== null && (controller.mode !== "compact" || controller.morphClosing)
+    visible: shellScreen !== null
     anchors.top: true
     margins.top: Design.compactTopMargin(controller.config.shell)
-    implicitWidth: Math.round(morphWidth)
-    implicitHeight: Math.round(morphHeight)
+    implicitWidth: Math.min(safeWidth, Design.morphSurfaceMaxWidth)
+    implicitHeight: Math.min(safeHeight, Design.morphSurfaceMaxHeight)
     color: "transparent"
+    surfaceFormat.opaque: false
     exclusionMode: ExclusionMode.Ignore
     mask: Region { item: morphSurface }
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: interactive ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    onDesiredGeometryChanged: startMorph(desiredGeometry)
 
     HyprlandFocusGrab {
         windows: [window]
@@ -108,21 +112,31 @@ PanelWindow {
 
     Glass {
         id: morphSurface
-        anchors.fill: parent
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: Math.round(window.morphWidth)
+        height: Math.round(window.morphHeight)
         radius: window.morphRadius
         theme: window.theme
         surfaceOpacity: controller.config.shell.surfaceOpacity
         clip: true
 
         HoverHandler {
+            id: shellHover
             onHoveredChanged: {
-                if (hovered) hoverClose.stop()
-                else if (controller.mode === "hover") hoverClose.restart()
+                if (hovered) {
+                    hoverClose.stop()
+                    if (controller.mode === "compact") hoverOpen.restart()
+                } else {
+                    hoverOpen.stop()
+                    if (window.localMode === "hover") hoverClose.restart()
+                }
             }
         }
 
         TapHandler {
-            enabled: controller.mode === "hover"
+            enabled: window.localMode === "compact" || window.localMode === "hover"
+            onPressedChanged: if (pressed) hoverOpen.stop()
             onTapped: controller.openOnScreen("control", window.shellScreen.name)
         }
 
@@ -130,24 +144,36 @@ PanelWindow {
             id: content
             anchors.fill: parent
             opacity: 1
-            sourceComponent: window.contentMode === "launcher" ? launcher : window.contentMode === "wallpaper" ? wallpaper : window.contentMode === "clipboard" ? clipboardPanel : window.contentMode === "control" ? control : window.contentMode === "network" ? network : window.contentMode === "bluetooth" ? bluetooth : window.contentMode === "power" ? power : window.contentMode === "emoji" ? emoji : window.contentMode === "switcher" ? switcher : expanded
+            sourceComponent: window.localMode === "launcher" ? launcher : window.localMode === "wallpaper" ? wallpaper : window.localMode === "clipboard" ? clipboardPanel : window.localMode === "control" ? control : window.localMode === "network" ? network : window.localMode === "bluetooth" ? bluetooth : window.localMode === "power" ? power : window.localMode === "emoji" ? emoji : window.localMode === "switcher" ? switcher : window.localMode === "hover" ? expanded : compactContent
             onLoaded: {
                 opacity = 0
                 contentReveal.restart()
                 focusTimer.restart()
             }
-            Behavior on opacity { NumberAnimation { duration: Design.animationFast; easing.type: Easing.OutCubic } }
+            Behavior on opacity { NumberAnimation { duration: Design.animationInstant; easing.type: Easing.OutCubic } }
         }
     }
 
-    Behavior on morphWidth { NumberAnimation { duration: window.morphDuration; easing.type: Easing.OutCubic } }
-    Behavior on morphHeight { NumberAnimation { duration: window.morphDuration; easing.type: Easing.OutCubic } }
-    Behavior on morphRadius { NumberAnimation { duration: window.morphDuration; easing.type: Easing.OutCubic } }
+    NumberAnimation {
+        id: morphAnimation
+        target: window
+        property: "morphProgress"
+        from: 0
+        to: 1
+        duration: window.morphDuration
+        easing.type: Easing.OutCubic
+    }
+
+    Timer {
+        id: hoverOpen
+        interval: Design.animationFast
+        onTriggered: if (shellHover.hovered && controller.mode === "compact") controller.openOnScreen("hover", window.shellScreen.name)
+    }
 
     Timer {
         id: hoverClose
-        interval: 650
-        onTriggered: if (controller.mode === "hover") controller.close()
+        interval: 240
+        onTriggered: if (window.localMode === "hover") controller.close()
     }
 
     Timer {
@@ -158,28 +184,23 @@ PanelWindow {
 
     Timer {
         id: contentReveal
-        interval: Math.max(1, Math.round(window.morphDuration * .28))
+        interval: 20
         onTriggered: content.opacity = 1
     }
 
-    Timer {
-        id: closeFinalize
-        interval: window.morphDuration
-        onTriggered: controller.morphClosing = false
+    Component.onCompleted: {
+        morphFrom = desiredGeometry
+        morphTarget = desiredGeometry
+        morphProgress = 1
     }
 
-    Connections {
-        target: controller
-        function onModeChanged() {
-            if (controller.mode === "compact") {
-                content.opacity = 0
-                if (controller.morphClosing) closeFinalize.restart()
-            } else {
-                window.displayedMode = controller.mode
-                closeFinalize.stop()
-                contentReveal.restart()
-                focusTimer.restart()
-            }
+    Component {
+        id: compactContent
+
+        CompactIslandContent {
+            shellScreen: window.shellScreen
+            controller: window.controller
+            theme: window.theme
         }
     }
 
@@ -189,29 +210,12 @@ PanelWindow {
         Item {
             anchors.fill: parent
 
-            Row {
+            WorkspaceStrip {
                 anchors.left: parent.left
-                anchors.leftMargin: 18
+                anchors.leftMargin: Design.spacingLg
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: 6
-
-                Repeater {
-                    model: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
-                    Rectangle {
-                        required property int modelData
-                        property bool selected: Hyprland.focusedWorkspace && Hyprland.focusedWorkspace.id === modelData
-                        width: selected ? 24 : 8
-                        height: 8
-                        radius: height / 2
-                        color: selected ? theme.colors.accent : theme.colors.surfaceElevated
-                        border.width: selected ? 0 : 1
-                        border.color: theme.colors.outline
-                        Behavior on width { NumberAnimation { duration: controller.config.shell.animationFast } }
-
-                        TapHandler { onTapped: Hyprland.dispatch("workspace " + modelData) }
-                    }
-                }
+                shellScreen: window.shellScreen
+                theme: window.theme
             }
 
             MediaStrip {
@@ -246,37 +250,40 @@ PanelWindow {
 
             Row {
                 anchors.right: parent.right
-                anchors.rightMargin: 18
+                anchors.rightMargin: Design.spacingLg
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: Design.compactItemSpacing
 
-                CompactBarPill {
+                CompactBarItem {
                     visible: controller.weather.temperature !== null
                     theme: window.theme
                     iconName: controller.weatherIconName(controller.weather.weatherCode)
                     label: Math.round(Design.safeNumber(controller.weather.temperature, 0)) + "°"
+                    filled: false
                 }
 
-                CompactBarPill {
+                CompactBarItem {
                     theme: window.theme
                     iconName: controller.networkIconName()
                     iconOnly: true
-                    active: controller.system.network.enabled
+                    filled: false
                 }
 
-                CompactBarPill {
+                CompactBarItem {
                     visible: controller.system.bluetooth.available
                     theme: window.theme
                     iconName: controller.bluetoothIconName()
                     iconOnly: true
-                    active: controller.system.bluetooth.powered
+                    filled: false
                 }
 
-                CompactBarPill {
+                CompactBarItem {
                     visible: controller.system.battery.available
                     theme: window.theme
                     iconName: controller.batteryIconName()
+                    trailingIconName: controller.batteryCharging() ? "charging" : ""
                     label: controller.batteryText()
+                    filled: false
                 }
             }
         }
