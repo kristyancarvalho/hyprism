@@ -95,13 +95,13 @@ Item {
                 y: slider.topPadding + slider.availableHeight / 2 - height / 2
                 width: slider.availableWidth
                 height: 5
-                radius: 3
+                radius: height / 2
                 color: row.theme.colors.surfaceVariant
 
                 Rectangle {
                     width: slider.visualPosition * parent.width
                     height: parent.height
-                    radius: 3
+                    radius: height / 2
                     color: row.theme.colors.accent
                 }
             }

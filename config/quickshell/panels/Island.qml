@@ -10,19 +10,19 @@ PanelWindow {
     required property var shellScreen
     required property var controller
     required property var theme
-    readonly property bool compactVisible: controller.mode === "compact" || controller.targetScreenName !== shellScreen.name
+    readonly property bool compactVisible: controller.targetScreenName !== shellScreen.name || controller.mode === "compact" && !controller.morphClosing
     screen: shellScreen
     visible: shellScreen !== null
     anchors.top: true
     margins.top: Design.compactTopMargin(controller.config.shell)
-    implicitWidth: Math.min(shellScreen ? shellScreen.width - 32 : 560, Math.max(520, controller.config.shell.islandWidth))
+    implicitWidth: Design.compactWidth(controller.config.shell, shellScreen ? shellScreen.width : Design.compactWidthMax)
     implicitHeight: Design.compactHeight(controller.config.shell)
     color: "transparent"
     exclusiveZone: Design.compactHeight(controller.config.shell) + Design.compactGap(controller.config.shell)
     mask: Region {
         width: window.compactVisible ? window.width : 0
         height: window.compactVisible ? window.height : 0
-        radius: Design.compactRadius
+        radius: Design.compactRadiusFor(controller.config.shell)
     }
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -31,7 +31,7 @@ PanelWindow {
         id: surface
         anchors.fill: parent
         visible: window.compactVisible
-        radius: Design.compactRadius
+        radius: Design.compactRadiusFor(controller.config.shell)
         theme: window.theme
         surfaceOpacity: controller.config.shell.surfaceOpacity
 
@@ -40,28 +40,34 @@ PanelWindow {
             anchors.leftMargin: Design.compactHorizontalPadding
             anchors.rightMargin: Design.compactHorizontalPadding
 
-            Row {
+            Item {
                 id: leftGroup
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
+                width: Math.max(workspaceItem.width, centerGroup.x - Design.compactGroupSpacing)
                 height: Design.compactItemHeight
-                spacing: Design.compactGroupSpacing
 
                 CompactBarPill {
+                    id: workspaceItem
+                    anchors.left: parent.left
                     theme: window.theme
                     iconName: "workspace"
                     label: Hyprland.focusedWorkspace ? String(Hyprland.focusedWorkspace.id) : "1"
                     selected: true
                 }
 
-                CompactBarPill {
+                CompactBarItem {
+                    id: mediaItem
                     visible: controller.mediaAvailable()
-                    width: visible ? Math.min(176, Math.max(118, implicitWidth)) : 0
+                    anchors.left: workspaceItem.right
+                    anchors.leftMargin: Design.compactItemSpacing
+                    anchors.right: parent.right
                     theme: window.theme
                     iconName: "media"
                     label: controller.mediaArtist() + " — " + controller.mediaTitle()
-                    labelMaximumWidth: 132
-                    onClicked: controller.mediaToggle()
+                    labelMaximumWidth: Math.max(0, width - Design.compactIconSize - Design.compactItemSpacing - horizontalPadding * 2 - 2)
+                    filled: false
+                    horizontalPadding: Design.compactPlainPadding
                 }
             }
 
@@ -75,16 +81,17 @@ PanelWindow {
                     theme: window.theme
                     filled: false
                     label: controller.formattedDate("HH:mm")
-                    selected: false
+                    horizontalPadding: Design.compactPlainPadding
+                    labelWeight: Design.fontWeightSemibold
                 }
 
-                CompactBarSeparator { theme: window.theme }
-
-                CompactBarPill {
+                CompactBarItem {
                     visible: controller.weather.temperature !== null
                     theme: window.theme
                     iconName: controller.weatherIconName(controller.weather.weatherCode)
                     label: Math.round(Design.safeNumber(controller.weather.temperature, 0)) + "°"
+                    filled: false
+                    horizontalPadding: Design.compactPlainPadding
                 }
             }
 
@@ -95,36 +102,53 @@ PanelWindow {
                 height: Design.compactItemHeight
                 spacing: Design.compactItemSpacing
 
-                CompactBarPill {
+                CompactBarSeparator { theme: window.theme }
+
+                CompactBarItem {
                     theme: window.theme
                     iconName: controller.networkIconName()
                     label: controller.networkLabel()
-                    active: controller.system.network.enabled
+                    filled: false
+                    horizontalPadding: Design.compactPlainPadding
                 }
 
-                CompactBarPill {
+                CompactBarItem {
                     visible: controller.system.bluetooth.available
                     theme: window.theme
                     iconName: controller.bluetoothIconName()
                     iconOnly: true
-                    active: controller.system.bluetooth.powered
+                    filled: false
+                    horizontalPadding: Design.compactPlainPadding
                 }
 
-                CompactBarPill {
+                CompactBarItem {
                     visible: controller.system.battery.available
                     theme: window.theme
                     iconName: controller.batteryIconName()
                     label: controller.batteryText()
+                    filled: false
+                    horizontalPadding: Design.compactPlainPadding
                 }
             }
         }
 
         HoverHandler {
-            onHoveredChanged: if (hovered && controller.mode === "compact") controller.openOnScreen("hover", window.shellScreen.name)
+            id: compactHover
+            onHoveredChanged: {
+                if (hovered && controller.mode === "compact") hoverOpen.restart()
+                else hoverOpen.stop()
+            }
         }
 
         TapHandler {
+            onPressedChanged: if (pressed) hoverOpen.stop()
             onTapped: controller.openOnScreen("control", window.shellScreen.name)
         }
+    }
+
+    Timer {
+        id: hoverOpen
+        interval: 180
+        onTriggered: if (compactHover.hovered && controller.mode === "compact") controller.openOnScreen("hover", window.shellScreen.name)
     }
 }

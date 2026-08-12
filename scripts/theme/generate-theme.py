@@ -82,7 +82,9 @@ theme = {
     "surfaceActive": surface_active, "foreground": foreground,
     "mutedForeground": muted, "primary": primary, "secondary": secondary,
     "accent": primary, "accentDim": mix(primary, background, .55), "outline": outline,
-    "border": outline, "error": accessible(raw.get("error", "#dc7179"), background, 3.2),
+    "border": outline, "borderSubtle": mix(background, outline, .58),
+    "borderNormal": outline, "borderFocused": primary,
+    "error": accessible(raw.get("error", "#dc7179"), background, 3.2),
     "warning": "#e0ae61", "success": primary, "wallpaper": image,
 }
 write(OUT / "theme.json", json.dumps(theme, indent=2) + "\n")

@@ -10,6 +10,7 @@ Item {
     property string mode: "compact"
     property string previousMode: "compact"
     property string targetScreenName: ""
+    property bool morphClosing: false
     property string osdKind: ""
     property string osdValue: ""
     property int switcherIndex: 0
@@ -39,10 +40,11 @@ Item {
     property var networkHistory: []
     property var weather: ({ city: "São Paulo", condition: "Indisponível", temperature: null, apparentTemperature: null, minimum: null, maximum: null, weatherCode: -1 })
     property var system: ({ audio: { available: false, percent: 0, muted: false }, microphone: { available: false, percent: 0, muted: false }, network: { available: false, kind: "disconnected", name: "Desconectado", enabled: false, signal: 0, receiveKib: 0, transmitKib: 0, wifiAvailable: false, wifiEnabled: false, virtualized: false }, bluetooth: { available: false, powered: false, connected: false, devices: [] }, battery: { available: false, percent: 0, status: "" }, brightness: { available: false, percent: 0 }, nightMode: { available: false, enabled: false }, powerProfile: { available: false, mode: "" }, memory: { percent: 0, used: 0, total: 0 }, cpu: { percent: 0 }, gpu: { available: false, percent: 0 }, temperature: { available: false, celsius: 0 } })
-    property var config: ({ shell: { primaryMonitor: "", islandWidth: 560, compactHeight: Design.compactBarHeight, topMargin: Design.shellTopMargin, reserveGap: Design.compactBottomGap, surfaceOpacity: .9, radiusSmall: 14, radiusMedium: 22, radiusLarge: 30, spacingSmall: 8, spacingMedium: 14, spacingLarge: 22, animationFast: 130, animationNormal: 210, widgets: { clock: true, weather: true, media: true, system: true } } })
+    property var config: ({ shell: { primaryMonitor: "", islandWidth: 560, compactHeight: Design.compactBarHeight, topMargin: Design.shellTopMargin, reserveGap: Design.compactBottomGap, surfaceOpacity: .9, animationFast: Design.animationFast, animationNormal: Design.animationMorph, widgets: { clock: true, weather: true, media: true, system: true } } })
     property string rootDir: Quickshell.env("HYPRISM_ROOT") || Quickshell.env("HOME") + "/.local/share/hyprism"
 
     function open(next) {
+        morphClosing = false
         if (mode !== next) previousMode = mode
         mode = next
     }
@@ -58,6 +60,11 @@ Item {
     }
 
     function close() {
+        if (mode === "compact") {
+            morphClosing = false
+            return
+        }
+        morphClosing = true
         mode = "compact"
     }
 

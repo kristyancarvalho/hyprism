@@ -22,7 +22,7 @@ PanelWindow {
     implicitWidth: shellScreen ? Math.min(360, Math.max(310, shellScreen.width * .34)) : 340
     implicitHeight: stack.implicitHeight
     color: "transparent"
-    exclusiveZone: 0
+    exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Bottom
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
 
@@ -367,7 +367,7 @@ PanelWindow {
                     Rectangle {
                         width: parent.width
                         height: 4
-                        radius: 2
+                        radius: height / 2
                         color: theme.colors.surfaceVariant
 
                         Rectangle {

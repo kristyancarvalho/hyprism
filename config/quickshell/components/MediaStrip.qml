@@ -96,7 +96,7 @@ Item {
                     width: Math.max(40, parent.width - 70)
                     height: 4
                     anchors.verticalCenter: parent.verticalCenter
-                    radius: 2
+                    radius: height / 2
                     color: media.theme.colors.surfaceVariant
 
                     Rectangle {
