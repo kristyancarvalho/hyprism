@@ -10,7 +10,7 @@ Item {
         anchors.centerIn: parent
         width: Design.compactSeparatorWidth
         height: Design.compactSeparatorHeight
-        radius: width / 2
+        radius: 0
         color: parent.theme ? parent.theme.colors.outline : "transparent"
     }
 }

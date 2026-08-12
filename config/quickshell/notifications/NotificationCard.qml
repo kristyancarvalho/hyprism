@@ -110,7 +110,7 @@ Glass {
             anchors.centerIn: parent
             width: 21
             height: 21
-            radius: width / 2
+            radius: Design.radiusDefault
             color: closePointer.containsMouse ? card.theme.colors.surfaceHover : card.theme.colors.surfaceVariant
             border.width: closeButton.activeFocus ? 2 : Design.outlineWidth
             border.color: closeButton.activeFocus ? card.theme.colors.borderFocused : card.theme.colors.borderSubtle

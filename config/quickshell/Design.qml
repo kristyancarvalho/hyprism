@@ -24,8 +24,8 @@ QtObject {
     readonly property int shellTopMargin: 8
     readonly property int compactBarHeight: 44
     readonly property int compactBottomGap: 4
-    readonly property int compactWidthMin: 620
-    readonly property int compactWidthMax: 720
+    readonly property int compactWidthMin: 580
+    readonly property int compactWidthMax: 680
     readonly property int compactItemHeight: 30
     readonly property int compactIconSize: 16
     readonly property int compactTextSize: 12
@@ -36,15 +36,23 @@ QtObject {
     readonly property int compactGroupSpacing: spacingMd
     readonly property int compactSeparatorHeight: 16
     readonly property int compactSeparatorWidth: 1
-    readonly property int radiusXs: 6
-    readonly property int radiusSm: 10
-    readonly property int radiusMd: 14
-    readonly property int radiusLg: 18
-    readonly property int radiusIslandCompact: compactBarHeight / 2
-    readonly property int radiusIslandExpanded: radiusLg
-    readonly property int compactRadius: radiusIslandCompact
-    readonly property int animationFast: 130
-    readonly property int animationMorph: 210
+    readonly property int radiusSmall: 4
+    readonly property int radiusDefault: 6
+    readonly property int radiusLarge: 8
+    readonly property int radiusXs: radiusSmall
+    readonly property int radiusSm: radiusDefault
+    readonly property int radiusMd: radiusDefault
+    readonly property int radiusLg: radiusLarge
+    readonly property int radiusIslandCompact: radiusDefault
+    readonly property int radiusIslandExpanded: radiusDefault
+    readonly property int compactRadius: radiusDefault
+    readonly property int animationInstant: 80
+    readonly property int animationFast: 110
+    readonly property int animationMorph: 150
+    readonly property int workspaceCellSize: 24
+    readonly property int workspaceCellSpacing: 4
+    readonly property int morphSurfaceMaxWidth: 920
+    readonly property int morphSurfaceMaxHeight: 700
     readonly property int launcherMaximumVisibleResults: 6
     readonly property int launcherResultRowHeight: 54
     readonly property int launcherResultSpacing: 5
@@ -65,7 +73,6 @@ QtObject {
     readonly property int historyLimit: 60
     readonly property var icons: ({
         application: "󰀻",
-        workspace: "󰍹",
         search: "󰍉",
         refresh: "󰑐",
         close: "󰅖",
@@ -79,10 +86,12 @@ QtObject {
         bluetooth: "󰂯",
         bluetoothConnected: "󰂱",
         bluetoothOff: "󰂲",
-        battery: "󰁹",
-        batteryLow: "󰁻",
-        batteryCritical: "󰂃",
-        batteryCharging: "󰂄",
+        battery0: "",
+        battery1: "",
+        battery2: "",
+        battery3: "",
+        battery4: "",
+        charging: "",
         batteryMissing: "󰂑",
         weatherClear: "󰖙",
         weatherPartlyCloudy: "󰖕",
@@ -167,7 +176,7 @@ QtObject {
     }
 
     function compactRadiusFor(shellConfig) {
-        return compactHeight(shellConfig) / 2
+        return radiusDefault
     }
 
     function compactReservedHeight(shellConfig) {

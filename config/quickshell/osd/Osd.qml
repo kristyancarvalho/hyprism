@@ -13,7 +13,7 @@ Glass {
     surfaceOpacity: .96
     visible: controller.osdKind.length > 0
     opacity: visible ? 1 : 0
-    Behavior on opacity { NumberAnimation { duration: 130 } }
+    Behavior on opacity { NumberAnimation { duration: Design.animationFast } }
 
     Row {
         anchors.fill: parent
@@ -24,7 +24,7 @@ Glass {
             width: 30
             height: 30
             anchors.verticalCenter: parent.verticalCenter
-            radius: height / 2
+            radius: Design.radiusDefault
             color: theme.colors.surfaceVariant
 
             StatusIcon { anchors.centerIn: parent; name: osd.iconName; iconSize: Design.iconMd; color: theme.colors.foreground }
@@ -44,14 +44,14 @@ Glass {
             visible: osd.percentageValue
             width: 112
             height: 5
-            radius: height / 2
+            radius: Design.radiusSmall
             anchors.verticalCenter: parent.verticalCenter
             color: theme.colors.surfaceVariant
 
             Rectangle {
                 width: Design.clamp(parseInt(controller.osdValue), 0, 100) * parent.width / 100
                 height: parent.height
-                radius: height / 2
+                radius: Design.radiusSmall
                 color: theme.colors.accent
             }
         }
