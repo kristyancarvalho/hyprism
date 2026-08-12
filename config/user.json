@@ -10,12 +10,6 @@
     "topMargin": 8,
     "reserveGap": 4,
     "surfaceOpacity": 0.9,
-    "radiusSmall": 14,
-    "radiusMedium": 22,
-    "radiusLarge": 30,
-    "spacingSmall": 8,
-    "spacingMedium": 14,
-    "spacingLarge": 22,
     "animationFast": 130,
     "animationNormal": 210,
     "widgets": { "clock": true, "weather": true, "media": true, "system": true }
