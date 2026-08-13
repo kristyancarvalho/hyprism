@@ -40,6 +40,20 @@ Item {
         }
     }
 
+    function focusNetworkList() {
+        if (!networks.length) return
+        networksList.forceActiveFocus(Qt.TabFocusReason)
+        networksList.positionViewAtIndex(selectedIndex, ListView.Contain)
+    }
+
+    function takeInitialFocus() {
+        forceActiveFocus(Qt.ShortcutFocusReason)
+    }
+
+    function initialFocusReady() {
+        return activeFocus || passwordField.activeFocus || networksList.activeFocus
+    }
+
     focus: true
     Keys.onPressed: event => {
         if (event.key === Qt.Key_Escape) {
@@ -121,6 +135,19 @@ Item {
             placeholderText: "Senha de " + selectedSsid + " (vazio para rede conhecida ou aberta)"
             echoMode: TextInput.Password
             onTextChanged: panel.password = text
+            Keys.priority: Keys.BeforeItem
+            Keys.onPressed: event => {
+                if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                    panel.connect(panel.selectedSsid)
+                    event.accepted = true
+                } else if (event.key === Qt.Key_Down) {
+                    panel.focusNetworkList()
+                    event.accepted = true
+                } else if (event.key === Qt.Key_Escape) {
+                    panel.controller.close()
+                    event.accepted = true
+                }
+            }
             color: panel.theme.colors.foreground
             placeholderTextColor: panel.theme.colors.mutedForeground
             font.family: Design.fontFamily
@@ -134,11 +161,13 @@ Item {
         }
 
         ListView {
+            id: networksList
             width: parent.width
             height: Math.max(120, parent.height - 62 - (passwordField.visible ? passwordField.height + 10 : 0))
             clip: true
             model: panel.networks
             currentIndex: panel.selectedIndex
+            activeFocusOnTab: true
             spacing: 6
             onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
 
@@ -259,6 +288,6 @@ Item {
 
     Component.onCompleted: {
         if (controller.system.network.wifiAvailable) scan()
-        forceActiveFocus()
+        takeInitialFocus()
     }
 }

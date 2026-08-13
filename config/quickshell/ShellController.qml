@@ -32,9 +32,11 @@ Item {
     property var appEntries: []
     property var applicationIndex: ({})
     property var wallpaperEntries: []
+    property string wallpaperCurrent: ""
     property string wallpaperQuery: ""
     property int wallpaperResultCount: 0
     property int wallpaperSelectedIndex: 0
+    property string wallpaperFocusTarget: ""
     property var clipboardEntries: []
     property var cpuHistory: []
     property var memoryHistory: []
@@ -64,7 +66,7 @@ Item {
         tasks: { enabled: true, limit: 3 },
         processes: { enabled: true, limit: 3 }
     })
-    property var config: ({ shell: { primaryMonitor: "", islandWidth: 560, compactHeight: Design.compactBarHeight, topMargin: Design.shellTopMargin, reserveGap: Design.compactBottomGap, surfaceOpacity: .9, animationFast: Design.animationFast, animationNormal: Design.animationMorph, widgetLayout: { side: "right" }, widgets: widgetDefaults } })
+    property var config: ({ shell: { primaryMonitor: "", islandWidth: 560, compactHeight: Design.compactBarHeight, topMargin: Design.shellTopMargin, reserveGap: Design.compactBottomGap, surfaceOpacity: .9, animationFast: Design.animationFast, animationNormal: Design.animationMorph, widgetLayout: { side: "right", position: "legacy" }, widgets: widgetDefaults } })
     property string rootDir: Quickshell.env("HYPRISM_ROOT") || Quickshell.shellDir + "/../.."
     readonly property bool developmentMode: Quickshell.env("HYPRISM_DEVELOPMENT") === "1"
     readonly property var panelModes: ["launcher", "wallpaper", "clipboard", "control", "network", "bluetooth", "power", "emoji", "switcher"]
@@ -79,7 +81,7 @@ Item {
             surfaceOpacity: .9,
             animationFast: Design.animationFast,
             animationNormal: Design.animationMorph,
-            widgetLayout: { side: "right" },
+            widgetLayout: { side: "right", position: "legacy" },
             widgets: mergedWidgetConfig({})
         }
     }
@@ -114,6 +116,13 @@ Item {
         return Math.max(minimum, Math.min(maximum, Math.round(value)))
     }
 
+    function widgetLayoutPosition() {
+        const layout = config && config.shell && config.shell.widgetLayout ? config.shell.widgetLayout : {}
+        const position = Design.safeText(layout.position, "legacy")
+        if (["center", "top-left", "top-right", "bottom-left", "bottom-right"].indexOf(position) >= 0) return position
+        return Design.safeText(layout.side, "right") === "left" ? "top-left" : "top-right"
+    }
+
     function openMode(next) {
         if (panelModes.indexOf(next) < 0 && next !== "hover") return
         panelFocusReady = false
@@ -141,6 +150,7 @@ Item {
     function openWallpaperPicker(screenName) {
         wallpaperQuery = ""
         wallpaperSelectedIndex = 0
+        wallpaperFocusTarget = "grid"
         openPanel("wallpaper", screenName)
     }
     function openNetwork(screenName) { openPanel("network", screenName) }

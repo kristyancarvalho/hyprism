@@ -1,6 +1,6 @@
 //@ pragma ShellId hyprism
 //@ pragma DefaultEnv QT_QUICK_BACKEND = software
-//@ pragma IconTheme Papirus-Dark
+//@ pragma IconTheme Hyprism-Papirus
 pragma ComponentBehavior: Bound
 
 import QtQuick
@@ -25,6 +25,8 @@ ShellRoot {
     readonly property bool developmentMode: Quickshell.env("HYPRISM_DEVELOPMENT") === "1"
     property string notificationScreenName: ""
     property var popupNotifications: []
+    property var popupDeadlines: ({})
+    property var notificationHistory: []
     property int popupOverflowCount: 0
     readonly property var focusedScreen: screenByName(focusedScreenName())
     readonly property var transientScreen: screenByName(shellController.targetScreenName) || focusedScreen
@@ -49,6 +51,9 @@ ShellRoot {
 
     function removePopup(notification): void {
         popupNotifications = popupNotifications.filter(item => item && item !== notification)
+        const deadlines = Object.assign({}, popupDeadlines)
+        delete deadlines[notificationKey(notification)]
+        popupDeadlines = deadlines
         if (!popupNotifications.length) popupOverflowCount = 0
         notificationServer.newest = popupNotifications.length ? popupNotifications[popupNotifications.length - 1] : null
     }
@@ -56,17 +61,70 @@ ShellRoot {
     function dismissPopup(notification): void {
         removePopup(notification)
         if (!notification) return
-        notification.dismiss()
-        notification.tracked = false
+        if (notification.dismiss) notification.dismiss()
+        if (notification.tracked !== undefined) notification.tracked = false
     }
 
     function expirePopup(notification): void {
         removePopup(notification)
-        if (notification) notification.expire()
+        if (notification && notification.expire) notification.expire()
+    }
+
+    function notificationKey(notification): string {
+        return notification ? String(notification.id) : ""
+    }
+
+    function storeNotification(notification): void {
+        if (!notification) return
+        const key = notificationKey(notification)
+        const next = notificationHistory.filter(item => item && notificationKey(item) !== key)
+        notificationHistory = [{
+            id: notification.id,
+            appName: Design.safeText(notification.appName, "Notificação"),
+            appIcon: Design.safeText(notification.appIcon, ""),
+            desktopEntry: Design.safeText(notification.desktopEntry, ""),
+            summary: Design.safeText(notification.summary, "Notificação"),
+            body: Design.safeText(notification.body, ""),
+            urgency: Design.safeNumber(notification.urgency, 1),
+            receivedAt: Date.now(),
+            source: notification
+        }].concat(next).slice(0, Design.notificationHistoryLimit)
+    }
+
+    function removeHistoryNotification(notification): void {
+        if (!notification) return
+        const key = notificationKey(notification)
+        notificationHistory = notificationHistory.filter(item => item && notificationKey(item) !== key)
+        const source = notification.source
+        if (source) removePopup(source)
+        if (source && source.dismiss && source.tracked && source.lastGeneration !== false) source.dismiss()
+        if (source && source.tracked !== undefined) source.tracked = false
+    }
+
+    function clearNotificationHistory(): void {
+        const current = notificationHistory.slice()
+        notificationHistory = []
+        const sources = current.map(notification => notification ? notification.source : null)
+        popupNotifications = popupNotifications.filter(notification => sources.indexOf(notification) < 0)
+        popupDeadlines = ({})
+        popupOverflowCount = 0
+        notificationServer.newest = null
+        for (let index = 0; index < current.length; index++) {
+            const notification = current[index]
+            if (!notification) continue
+            const source = notification.source
+            if (source && source.dismiss && source.tracked && source.lastGeneration !== false) source.dismiss()
+            if (source && source.tracked !== undefined) source.tracked = false
+        }
     }
 
     function popupLimit(): int {
         return notificationScreen && notificationScreen.height < 700 ? 3 : 4
+    }
+
+    function popupDuration(notification): int {
+        const requested = notification ? Design.safeNumber(notification.expireTimeout, 0) : 0
+        return requested > 0 ? Math.round(Design.clamp(requested, 3000, 10000)) : 6500
     }
 
     function showPopup(notification): void {
@@ -75,7 +133,25 @@ ShellRoot {
         const limit = popupLimit()
         if (next.length > limit) popupOverflowCount += next.length - limit
         popupNotifications = next.slice(-limit)
+        const previousDeadlines = popupDeadlines
+        const deadlines = {}
+        const now = Date.now()
+        for (let index = 0; index < popupNotifications.length; index++) {
+            const item = popupNotifications[index]
+            const key = notificationKey(item)
+            deadlines[key] = item === notification ? now + popupDuration(item) : Design.safeNumber(previousDeadlines[key], now + popupDuration(item))
+        }
+        popupDeadlines = deadlines
         notificationServer.newest = notification
+    }
+
+    function expireDuePopups(): void {
+        const now = Date.now()
+        const current = popupNotifications.slice()
+        for (let index = 0; index < current.length; index++) {
+            const notification = current[index]
+            if (now >= Design.safeNumber(popupDeadlines[notificationKey(notification)], now + popupDuration(notification))) expirePopup(notification)
+        }
     }
 
     function developmentNotification(identifier, index, summary, body): var {
@@ -98,6 +174,14 @@ ShellRoot {
 
     function syncTrackedPopups(): void {
         popupNotifications = popupNotifications.filter(notification => notification && notification.tracked && notification.lastGeneration !== false)
+        const deadlines = {}
+        const now = Date.now()
+        for (let index = 0; index < popupNotifications.length; index++) {
+            const notification = popupNotifications[index]
+            const key = notificationKey(notification)
+            deadlines[key] = Design.safeNumber(popupDeadlines[key], now + popupDuration(notification))
+        }
+        popupDeadlines = deadlines
         if (!popupNotifications.length) popupOverflowCount = 0
         notificationServer.newest = popupNotifications.length ? popupNotifications[popupNotifications.length - 1] : null
     }
@@ -213,10 +297,13 @@ ShellRoot {
                 wallpaperQuery: shellController.wallpaperQuery,
                 wallpaperResultCount: shellController.wallpaperResultCount,
                 wallpaperSelectedIndex: shellController.wallpaperSelectedIndex,
+                wallpaperFocusTarget: shellController.wallpaperFocusTarget,
                 popupCount: root.popupNotifications.length,
                 popupOverflowCount: root.popupOverflowCount,
+                notificationHistoryCount: root.notificationHistory.length,
                 switcherMetadata: shellController.switcherWindows.map(item => ({ address: item.address, appId: item.appId, initialClass: item.initialClass, icon: item.icon, applicationName: item.applicationName, title: item.title })),
                 widgets: root.widgetStatus(),
+                widgetLayoutPosition: shellController.widgetLayoutPosition(),
                 monitoring: shellController.monitoring,
                 taskCount: shellController.tasks.length
             })
@@ -249,26 +336,42 @@ ShellRoot {
             const total = Math.max(1, Math.min(8, count))
             for (let index = 0; index < total; index++) {
                 const sequence = Date.now() + index
-                root.showPopup(root.developmentNotification(
+                const notification = root.developmentNotification(
                     sequence,
                     index,
                     index === 1 ? "Uma notificação com título longo para validar a elipse" : "Notificação " + (index + 1),
                     index === 2 ? "Este texto ocupa mais de uma linha para validar altura, espaçamento e limite do conteúdo sem cobrir os outros cartões." : "Conteúdo de teste seguro"
-                ))
+                )
+                root.storeNotification(notification)
+                root.showPopup(notification)
             }
         }
         function mockReplacement(): void {
             if (!root.developmentMode) return
             root.notificationScreenName = root.focusedScreenName()
             const identifier = Date.now()
-            root.showPopup(root.developmentNotification(identifier, 0, "Transferência em andamento", "25% concluído"))
-            root.showPopup(root.developmentNotification(identifier, 0, "Transferência em andamento", "75% concluído"))
+            const first = root.developmentNotification(identifier, 0, "Transferência em andamento", "25% concluído")
+            const replacement = root.developmentNotification(identifier, 0, "Transferência em andamento", "75% concluído")
+            root.storeNotification(first)
+            root.showPopup(first)
+            root.storeNotification(replacement)
+            root.showPopup(replacement)
         }
         function clearNotifications(): void {
             if (!root.developmentMode) return
             root.popupNotifications = []
+            root.popupDeadlines = ({})
             root.popupOverflowCount = 0
+            root.notificationHistory = []
             notificationServer.newest = null
+        }
+        function dismissNewestToast(): void {
+            if (!root.developmentMode || !root.popupNotifications.length) return
+            root.dismissPopup(root.popupNotifications[root.popupNotifications.length - 1])
+        }
+        function clearNotificationHistory(): void {
+            if (!root.developmentMode) return
+            root.clearNotificationHistory()
         }
         function mockClipboard(): void {
             if (!root.developmentMode) return
@@ -313,6 +416,7 @@ ShellRoot {
     }
     Timer { id: configReload; interval: 90; onTriggered: root.reloadConfig() }
     Timer { id: themeReload; interval: 90; onTriggered: root.reloadTheme() }
+    Timer { interval: 250; repeat: true; running: root.popupNotifications.length > 0; onTriggered: root.expireDuePopups() }
 
     NotificationServer {
         id: notificationServer
@@ -323,9 +427,13 @@ ShellRoot {
         actionsSupported: true
         imageSupported: true
         property var newest: null
+        property var historyNotifications: root.notificationHistory
+        function removeHistory(notification: var): void { root.removeHistoryNotification(notification) }
+        function clearHistory(): void { root.clearNotificationHistory() }
         onNotification: notification => {
             notification.tracked = true
             root.notificationScreenName = root.focusedScreenName()
+            root.storeNotification(notification)
             root.showPopup(notification)
         }
         onTrackedNotificationsChanged: root.syncTrackedPopups()
@@ -380,7 +488,6 @@ ShellRoot {
             controller: shellController
             theme: shellTheme
             onDismissRequested: notification => root.dismissPopup(notification)
-            onExpireRequested: notification => root.expirePopup(notification)
         }
     }
     LazyLoader {

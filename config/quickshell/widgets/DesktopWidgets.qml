@@ -18,15 +18,21 @@ PanelWindow {
     readonly property int visibleTaskLimit: Math.min(controller.widgetNumber("tasks", "limit", 3, 1, 6), compactViewport ? 1 : 3)
     readonly property int visibleProcessLimit: Math.min(controller.widgetNumber("processes", "limit", 3, 1, 6), compactViewport ? 2 : 3)
     readonly property int cardWidth: Math.max(200, Math.floor((implicitWidth - columnGap) / 2))
+    readonly property string layoutPosition: controller.widgetLayoutPosition()
+    readonly property int usableTop: Design.compactReservedHeight(controller.config.shell) + Design.spacingLg
+    readonly property int usableHeight: shellScreen ? Math.max(0, shellScreen.height - usableTop - Design.spacingLg) : 0
+    readonly property int centeredTop: usableTop + Math.max(0, Math.floor((usableHeight - implicitHeight) / 2))
     screen: shellScreen
     visible: shellScreen !== null && !HyprlandService.monitorHasFullscreen(shellScreen)
     anchors {
-        right: Design.safeText(controller.config.shell.widgetLayout.side, "right") !== "left"
-        left: Design.safeText(controller.config.shell.widgetLayout.side, "right") === "left"
-        top: true
+        right: widgetWindow.layoutPosition === "top-right" || widgetWindow.layoutPosition === "bottom-right"
+        left: widgetWindow.layoutPosition === "top-left" || widgetWindow.layoutPosition === "bottom-left"
+        top: widgetWindow.layoutPosition !== "bottom-left" && widgetWindow.layoutPosition !== "bottom-right"
+        bottom: widgetWindow.layoutPosition === "bottom-left" || widgetWindow.layoutPosition === "bottom-right"
     }
     margins {
-        top: Design.compactReservedHeight(controller.config.shell) + Design.spacingLg
+        top: widgetWindow.layoutPosition === "center" ? widgetWindow.centeredTop : widgetWindow.usableTop
+        bottom: Design.spacingLg
         right: Design.spacingLg
         left: Design.spacingLg
     }

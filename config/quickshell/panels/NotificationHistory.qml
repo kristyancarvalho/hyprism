@@ -7,27 +7,19 @@ Column {
     required property var controller
     required property var theme
     required property var server
-    property var notifications: server && server.trackedNotifications ? server.trackedNotifications.values.filter(notification => notification && notification.lastGeneration !== false) : []
+    property var notifications: server && Array.isArray(server.historyNotifications) ? server.historyNotifications : []
     property int selectedIndex: 0
     spacing: 8
     activeFocusOnTab: true
+    onNotificationsChanged: selectedIndex = navigation.clamp(selectedIndex, notifications.length)
 
     function dismiss(notification) {
         if (!notification) return
-        if (server.newest === notification) server.newest = null
-        notification.dismiss()
-        notification.tracked = false
+        server.removeHistory(notification)
     }
 
     function clearAll() {
-        const current = notifications ? notifications.slice() : []
-        server.newest = null
-        for (let i = 0; i < current.length; i++) {
-            if (current[i]) {
-                current[i].dismiss()
-                current[i].tracked = false
-            }
-        }
+        server.clearHistory()
         selectedIndex = 0
     }
 
@@ -71,13 +63,23 @@ Column {
         }
     }
 
-    Repeater {
+    ListView {
+        id: historyList
+        width: parent.width
+        height: {
+            const visibleCount = Math.min(3, count)
+            return visibleCount * 76 + Math.max(0, visibleCount - 1) * spacing
+        }
+        spacing: 8
+        clip: true
         model: history.notifications
+        currentIndex: history.selectedIndex
+        onCurrentIndexChanged: if (currentIndex >= 0) positionViewAtIndex(currentIndex, ListView.Contain)
 
-        Rectangle {
+        delegate: Rectangle {
             required property var modelData
             required property int index
-            width: history.width
+            width: ListView.view.width
             height: 76
             radius: Design.radiusSm
             color: history.activeFocus && history.selectedIndex === index ? history.theme.colors.surfaceActive : pointer.containsMouse ? history.theme.colors.surfaceHover : history.theme.colors.surfaceVariant
