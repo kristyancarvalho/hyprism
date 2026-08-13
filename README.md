@@ -49,7 +49,7 @@ install.sh
 
 `config/hypr/hyprland.lua` é o ponto de entrada Lua do Hyprland 0.55 ou posterior. Os módulos separam programas, monitores, aparência, entrada, layouts, regras, workspaces, atalhos, ambiente e autostart. Não há configuração Hyprland `.conf` ativa no repositório.
 
-O Quickshell é iniciado uma única vez pelo evento `hyprland.start`. O helper usa o executável canônico `qs`, a configuração nomeada `default`, `--no-duplicate` e a raiz runtime estável. `QS_CONFIG_NAME=default` centraliza a seleção usada pelo Hyprland e pelos scripts. O alias `hyprism` preserva compatibilidade, enquanto `qs` sem argumentos e `qs -c default` encontram o mesmo `shell.qml`. O Hyprland já cria o processo de forma assíncrona, por isso o shell não usa uma segunda camada de daemonização. Recarregar a configuração do Hyprland não acumula processos do shell.
+O Quickshell é iniciado uma única vez pelo evento `hyprland.start`. O helper usa o executável canônico `qs`, a configuração nomeada `default`, `--no-duplicate`, uma raiz runtime estável e um locale UTF-8 já disponível no sistema. A alteração de locale fica restrita ao processo do Hyprism. `scripts/system/shell-ipc` centraliza a seleção de instância usada pelo Hyprland, OSD, wallpaper e recuperação. `QS_CONFIG_NAME=default` seleciona a instalação; `HYPRISM_QS_PATH` seleciona um caminho explícito em desenvolvimento. O alias `hyprism` preserva compatibilidade. Recarregar a configuração do Hyprland não acumula processos do shell.
 
 No primeiro boot, a paleta escura embutida mantém a ilha e os widgets utilizáveis mesmo sem arquivos gerados. Ausência de bateria, Wi-Fi, Bluetooth, brilho, GPU, sensores, MPRIS, clima ou histórico de clipboard produz um estado indisponível ou oculto, sem bloquear o `shell.qml`.
 
@@ -58,6 +58,8 @@ Google Sans Flex é a família primária de texto da interface. Symbols Nerd Fon
 Ícones de aplicativos são resolvidos a partir do campo `Icon` dos arquivos `.desktop` pelo tema Papirus-Dark, com fallback para `application-x-executable`. Isso vale para o launcher, o Alt+Tab, notificações e o aplicativo de mídia. Estados do sistema usam exclusivamente o mapa semântico Nerd Font; emoji não é usado como ícone de status.
 
 Um `PanelWindow` transparente de 1 px mantém a zona exclusiva constante composta pela margem superior, pela altura compacta e pelo respiro configurado, sem desenhar fundo, borda ou conteúdo. Janelas tiled e maximizadas começam abaixo dessa faixa. Em cada monitor, um canvas overlay transparente de tamanho fixo contém a única superfície visual da ilha. Launcher, controles, notificações, mídia expandida e Alt+Tab animam essa superfície dentro do canvas sem redimensionar a superfície Wayland, ampliar a zona exclusiva ou reorganizar as janelas.
+
+O workspace ativo de cada monitor fornece o estado real `hasFullscreen`. Nesse estado, somente a ilha persistente, seus widgets e sua reserva daquele monitor são ocultados. Outros monitores continuam normais. Um painel solicitado explicitamente continua autorizado a aparecer sobre fullscreen e mantém a mesma tela alvo.
 
 O Alt+Tab usa os toplevels expostos pelo Quickshell e mantém uma lista MRU atualizada por eventos de foco. A primeira troca seleciona a janela focada anteriormente; repetições avançam ou recuam e soltar Alt ativa a seleção, inclusive em outro workspace. A interface mostra ícone Papirus, nome do aplicativo e título, com fallback intencional quando algum metadado está ausente.
 
@@ -89,6 +91,8 @@ papel de parede
 - `~/.cache/hyprism/theme/hyprland.lua` para bordas do Hyprland;
 - `~/.cache/hyprism/theme/foot.ini` com foreground, background, cursor, seleção e as 16 cores ANSI;
 - `~/.cache/hyprism/theme/kitty.conf` e aplicação remota nas janelas Kitty compatíveis.
+
+Arquivos JSON observados pelo shell são validados antes da publicação e substituídos atomicamente. `scripts/system/publish-json` oferece o mesmo fluxo para uma configuração produzida por outra ferramenta. Os leitores aplicam debounce, mantêm o último estado válido e usam os padrões embutidos quando o arquivo ainda não existe ou está vazio.
 
 O instalador prepara `foot.ini` com uma paleta de fallback antes de qualquer terminal ser aberto. Novas janelas Foot leem a paleta atual. GTK permanece em Adwaita escuro e Qt usa `qt6ct` com Fusion.
 
@@ -136,7 +140,7 @@ As transições de opacidade usam 80 ms, respostas rápidas usam 110 ms e morphs
 
 Os workspaces aparecem como até cinco células quadradas numeradas: o workspace ativo usa preenchimento de destaque, ocupados usam superfície elevada, vizinhos vazios ficam atenuados e urgentes usam a cor semântica de erro. A seleção considera o workspace ativo, seus vizinhos e workspaces ocupados ou urgentes sem alargar indefinidamente a ilha. A bateria usa a família Font Awesome do Nerd Font entre `nf-fa-battery_0` e `nf-fa-battery_4`, com limiares de carga centralizados e um raio discreto ao carregar.
 
-Painéis interativos solicitam foco de teclado ao abrir e o liberam ao fechar. O launcher mostra no máximo seis linhas antes de rolar e calcula a altura a partir da quantidade filtrada. Os estados de Wi-Fi, Bluetooth, modo noturno e perfil de energia vêm do backend observado; o clique apenas inicia uma solicitação pendente e não altera a aparência ativa antecipadamente.
+Painéis interativos usam o foco exclusivo da superfície layer-shell e `HyprlandFocusGrab`, solicitam foco do primeiro controle depois que a superfície está estável e liberam o grab ao fechar. Clique na ilha e IPC passam pelas mesmas ações semânticas do controlador central. O launcher mostra no máximo seis linhas antes de rolar e calcula a altura a partir da quantidade filtrada. Os estados de Wi-Fi, Bluetooth, modo noturno e perfil de energia vêm do backend observado; o clique apenas inicia uma solicitação pendente e não altera a aparência ativa antecipadamente.
 
 A mídia usa o serviço MPRIS nativo do Quickshell. A ilha compacta mostra artista e faixa truncados; a expansão mostra capa, título, artista, progresso, tempos e controles. O widget de mídia usa recorte proporcional da capa, os mesmos tokens de cor e controles de teclado. Sem player ou faixa válida, os dois elementos permanecem ocultos.
 
@@ -170,6 +174,15 @@ qs -c default log -t 200
 qs -c default ipc call shell status
 sed -n '1,200p' ~/.cache/hyprism/quickshell-startup.log
 ```
+
+Para testar o clone sem instalar e sem alterar o locale do host, execute na raiz do repositório:
+
+```bash
+HYPRISM_ROOT="$PWD" scripts/system/start-shell --development
+HYPRISM_ROOT="$PWD" HYPRISM_QS_PATH="$PWD/config/quickshell/shell.qml" scripts/system/shell-ipc shell status
+```
+
+O modo de desenvolvimento usa o mesmo launcher e o caminho explícito do repositório. Se outro daemon do desktop já possuir `org.freedesktop.Notifications`, o Quickshell registrará um único conflito de DBus; isso não impede painéis, estado ou foco. Na sessão instalada do Hyprism, o Quickshell continua sendo o servidor de notificações e o projeto não inicia Dunst ou SwayNC.
 
 Para observar um erro de carregamento sem daemonizar, primeiro confirme que não há uma instância ativa e então execute na VM:
 
