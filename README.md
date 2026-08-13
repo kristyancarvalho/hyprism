@@ -55,7 +55,7 @@ No primeiro boot, a paleta escura embutida mantém a ilha e os widgets utilizáv
 
 Google Sans Flex é a família primária de texto da interface. Symbols Nerd Font Mono é usada somente para a iconografia semântica do shell. Os tamanhos, pesos, alturas, espaçamentos, raios e glifos ficam centralizados em `Design.qml`, e componentes compartilhados mantêm a linha de base e o ritmo vertical da ilha. O sistema visual usa retângulos arredondados de 9 px como forma dominante, com 6 px para elementos pequenos e 12 px para superfícies amplas. Hierarquia tonal, espaçamento e preenchimento de estado substituem contornos repetidos; bordas ficam reservadas ao foco, à seleção, à urgência e à definição externa da ilha.
 
-Ícones de aplicativos são resolvidos a partir do campo `Icon` dos arquivos `.desktop` pelo tema Papirus-Dark, com fallback para `application-x-executable`. Isso vale para o launcher, o Alt+Tab, notificações e o aplicativo de mídia. Estados do sistema usam exclusivamente o mapa semântico Nerd Font; emoji não é usado como ícone de status.
+O índice de aplicativos percorre `XDG_DATA_HOME` e `XDG_DATA_DIRS` uma vez na inicialização, lê ID, `StartupWMClass`, `Exec`, `TryExec`, nome e `Icon` dos arquivos `.desktop` e cria um cache normalizado compartilhado. O Alt+Tab tenta `class`, `initialClass` e app ID contra esses aliases; o campo `Icon` resolvido passa pelo tema Papirus-Dark do Qt, com fallback para `application-x-executable`. Launcher, Alt+Tab e mídia usam o mesmo cache. Estados do sistema usam exclusivamente o mapa semântico Nerd Font; emoji não é usado como ícone de status.
 
 Um `PanelWindow` transparente de 1 px mantém a zona exclusiva constante composta pela margem superior, pela altura compacta e pelo respiro configurado, sem desenhar fundo, borda ou conteúdo. Janelas tiled e maximizadas começam abaixo dessa faixa. Em cada monitor, um canvas overlay transparente de tamanho fixo contém a única superfície visual da ilha. Launcher, controles, notificações, mídia expandida e Alt+Tab animam essa superfície dentro do canvas sem redimensionar a superfície Wayland, ampliar a zona exclusiva ou reorganizar as janelas.
 
@@ -138,7 +138,67 @@ O Quickshell usa por padrão o backend `software` do Qt Quick. Esse backend rast
 
 O clima inicial está configurado para São Paulo, com fuso `America/Sao_Paulo`. Local, latitude, longitude, fuso e intervalo podem ser alterados no bloco `weather` de `config/user.json` antes de executar novamente o instalador.
 
-Os widgets de data e clima formam uma composição compacta no canto da tela. O monitor de sistema mantém 60 amostras limitadas de CPU e RAM e desenha sparklines nativas no QML. GPU, temperatura, bateria e tráfego aparecem somente quando disponíveis. O backend coleta CPU, RAM e throughput a cada segundo, estados gerais a cada três segundos e Bluetooth/temperatura a cada cinco segundos, sem executar comandos por quadro de animação.
+Os widgets persistentes formam duas colunas compactas no canto de cada tela e continuam abaixo de janelas normais. Data/clima, CPU/RAM, rede, armazenamento ficam na primeira coluna; uptime/carga, sensores, serviços, tarefas, processos e mídia ficam na segunda. Cards contextuais desaparecem quando não há sensores ou tarefas. CPU, RAM e rede usam sparklines nativas com históricos limitados; o wallpaper permanece visível entre superfícies translúcidas.
+
+## Widgets de monitoramento
+
+Todos os widgets ficam em `shell.widgets` de `config/user.json`. O formato antigo com booleanos continua aceito; um campo ausente recebe o padrão atual. Alterações publicadas atomicamente são aplicadas pelo hot reload. O mínimo para desativar um widget é:
+
+```json
+{
+  "shell": {
+    "widgets": {
+      "network": { "enabled": false }
+    }
+  }
+}
+```
+
+`shell.widgetLayout.side` aceita `right` ou `left` e move a composição completa para o lado escolhido sem coordenadas livres, sobreposição ou dependência do ponteiro. O padrão permanece `right` em cada monitor.
+
+| Chave | Padrão | Dados e opções |
+| --- | --- | --- |
+| `clock` | habilitado | Relógio e data em pt-BR |
+| `weather` | habilitado | Condição e temperatura da configuração de clima |
+| `media` | habilitado | Faixa MPRIS atual; oculta sem mídia |
+| `system` | habilitado | CPU e RAM com 60 amostras |
+| `network` | habilitado | Download/upload a cada 1 s; `historySamples` entre 15 e 180, `interface` com nome ou `auto` |
+| `storage` | habilitado | Uso dos mounts de `mounts`; `/home` é removido quando usa a mesma origem de `/` |
+| `sensors` | habilitado | Descoberta por `hwmon` e `thermal`; oculta quando nenhum sensor confiável existe |
+| `uptime` | habilitado | Uptime, cargas de 1/5/15 min, núcleos e total de processos |
+| `services` | habilitado | `items` monitorados; `problemOnly` oculta o card saudável |
+| `tasks` | habilitado | Até `limit` tarefas registradas por IPC; oculta quando vazia |
+| `processes` | habilitado | Top CPU e memória por `/proc` a cada 3 s; `limit` entre 1 e 6 |
+
+Rede lê contadores de `/proc/net/dev` da conexão ativa do NetworkManager ou da interface configurada. Loopback, bridges Docker, `veth` e `virbr` não são somados. Armazenamento usa `statvfs` a cada 60 s. Sensores e uptime são atualizados a cada 5 s. O monitor de serviços consulta somente estado, sem sudo ou ações, a cada 15 s. O coletor dedicado não é iniciado quando armazenamento, sensores, uptime, serviços e processos estão todos desabilitados.
+
+Itens de serviço aceitam nome visível, unit e escopo:
+
+```json
+{
+  "services": {
+    "enabled": true,
+    "problemOnly": false,
+    "items": [
+      { "name": "Rede", "unit": "NetworkManager.service", "scope": "system" },
+      { "name": "PipeWire", "unit": "pipewire.service", "scope": "user" }
+    ]
+  }
+}
+```
+
+O modelo de tarefas contém `id`, `title`, `subtitle`, `progress`, `indeterminate`, `status`, `startedAt`, `eta` em segundos e `source`. Scripts podem registrar progresso sem daemon adicional:
+
+```bash
+scripts/system/shell-ipc tasks add '{"id":"tema","title":"Aplicando tema","progress":20,"status":"running"}'
+scripts/system/shell-ipc tasks update tema '{"progress":75,"eta":30}'
+scripts/system/shell-ipc tasks finish tema
+scripts/system/shell-ipc tasks fail tema
+scripts/system/shell-ipc tasks remove tema
+scripts/system/shell-ipc tasks list
+```
+
+`finish` mantém 100% brevemente antes de remover a tarefa; `fail` preserva o erro por cinco segundos. Sem tarefas ativas, nenhum card vazio ocupa o desktop.
 
 A reserva superior compacta usa 8 px de margem, 44 px de ilha e 4 px de respiro. A superfície de reserva permanece fixa e totalmente transparente durante expansões. O overlay ignora exclusões de outras camadas, usa a mesma origem absoluta no topo central e mantém um canvas Wayland estável; a forma desenhada, seu recorte e sua máscara de entrada compartilham uma única geometria animada. Launcher, hub, clipboard, seletor de wallpaper, Alt+Tab e menu de energia crescem para baixo sem ampliar a reserva. Cada tela detectada recebe sua própria ilha visual e seus próprios widgets. Painéis transitórios usam primeiro a tela invocadora e, para atalhos, o monitor focado pelo Hyprland.
 
