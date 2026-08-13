@@ -1,6 +1,6 @@
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
-hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
-hl.env("GTK_THEME", "Adwaita:dark")
+hl.env("QT_QPA_PLATFORMTHEME", "qt5ct:qt6ct")
+hl.env("QT_STYLE_OVERRIDE", "kvantum")
 hl.env("TERMINAL", "foot")
 hl.env("QS_CONFIG_NAME", "default")
