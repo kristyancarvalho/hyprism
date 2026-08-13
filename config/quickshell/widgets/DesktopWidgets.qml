@@ -10,7 +10,7 @@ PanelWindow {
     required property var controller
     required property var theme
     screen: shellScreen
-    visible: shellScreen !== null
+    visible: shellScreen !== null && !HyprlandService.monitorHasFullscreen(shellScreen)
     anchors {
         right: true
         top: true
@@ -304,7 +304,7 @@ PanelWindow {
             Rectangle {
                 anchors.fill: parent
                 color: "transparent"
-                radius: parent.radius
+                radius: Design.radiusMd
                 border.width: parent.activeFocus ? 2 : 0
                 border.color: theme.colors.accent
             }
