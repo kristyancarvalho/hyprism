@@ -86,6 +86,9 @@ if ((dry_run == 0)); then
   chmod +x "$runtime_root/scripts/wallpaper" "$runtime_root"/scripts/theme/*.py "$runtime_root"/scripts/system/*
 fi
 
+locale -a 2>/dev/null | grep -Eiq '^C\.UTF-?8$|^C\.utf8$|^en_US\.UTF-?8$' \
+  || { printf 'O sistema precisa oferecer ao menos um locale UTF-8.\n' >&2; exit 1; }
+
 font_dir="$target_home/.local/share/fonts/google-sans-flex"
 font_regular="$font_dir/GoogleSansFlex-Regular.ttf"
 font_medium="$font_dir/GoogleSansFlex-Medium.ttf"
@@ -114,6 +117,7 @@ link_path "$runtime_root/scripts/wallpaper" "$target_home/.local/bin/hyprism-wal
 link_path "$runtime_root/scripts/system/action" "$target_home/.local/bin/hyprism-action"
 link_path "$runtime_root/scripts/system/reload-shell" "$target_home/.local/bin/hyprism-reload-shell"
 link_path "$runtime_root/scripts/system/start-shell" "$target_home/.local/bin/hyprism-start-shell"
+link_path "$runtime_root/scripts/system/shell-ipc" "$target_home/.local/bin/hyprism-shell-ipc"
 
 theme_dir="$target_home/.cache/hyprism/theme"
 run install -d -o "$target_user" -g "$target_group" "$theme_dir"
