@@ -23,8 +23,21 @@ Item {
         controller.close()
     }
 
-    focus: true
-    Keys.onPressed: event => {
+    function focusGrid() {
+        if (!results().length) return
+        grid.forceActiveFocus(Qt.TabFocusReason)
+        grid.positionViewAtIndex(selectedIndex, GridView.Contain)
+    }
+
+    function takeInitialFocus() {
+        search.forceActiveFocus(Qt.ShortcutFocusReason)
+    }
+
+    function initialFocusReady() {
+        return search.activeFocus || grid.activeFocus
+    }
+
+    function handleGridKey(event) {
         const items = results()
         if (event.key === Qt.Key_Escape) {
             controller.close()
@@ -47,6 +60,9 @@ Item {
         }
     }
 
+    focus: true
+    Keys.onPressed: event => handleGridKey(event)
+
     Navigation { id: navigation }
 
     Column {
@@ -63,6 +79,21 @@ Item {
                 panel.query = text
                 panel.selectedIndex = 0
             }
+            Keys.priority: Keys.BeforeItem
+            Keys.onPressed: event => {
+                if (event.key === Qt.Key_Down) {
+                    panel.focusGrid()
+                    event.accepted = true
+                } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                    const items = panel.results()
+                    if (items[panel.selectedIndex]) panel.copy(items[panel.selectedIndex].glyph)
+                    event.accepted = true
+                } else if (event.key === Qt.Key_Escape) {
+                    panel.controller.close()
+                    event.accepted = true
+                }
+            }
+            KeyNavigation.tab: grid
             color: theme.colors.foreground
             placeholderTextColor: theme.colors.mutedForeground
             font.family: Design.fontFamily
@@ -84,6 +115,11 @@ Item {
             cellHeight: 58
             model: panel.results()
             currentIndex: panel.selectedIndex
+            activeFocusOnTab: true
+            Keys.priority: Keys.BeforeItem
+            Keys.onPressed: event => panel.handleGridKey(event)
+            KeyNavigation.backtab: search
+            onCurrentIndexChanged: if (currentIndex >= 0) positionViewAtIndex(currentIndex, GridView.Contain)
 
             delegate: Rectangle {
                 required property var modelData
@@ -108,5 +144,5 @@ Item {
         }
     }
 
-    Component.onCompleted: search.forceActiveFocus()
+    Component.onCompleted: takeInitialFocus()
 }

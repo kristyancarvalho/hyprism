@@ -121,7 +121,7 @@ GTK 3 e GTK 4 usam `Colloid-Hyprism-Dark-Compact` como fundação estática e ca
 
 `scripts/system/install-colloid-theme` obtém [Colloid GTK Theme](https://github.com/vinceliuice/Colloid-gtk-theme) diretamente do upstream na revisão `9bf9fc5a5974ae0659f59a4281aae6f594c95bdd`, preservando a licença GPL-3.0 no checkout temporário e sem redistribuir a árvore de terceiros. O marcador de revisão faz uma reinstalação controlada somente quando a base fixada muda ou está incompleta.
 
-Qt usa `QT_QPA_PLATFORMTHEME=qt5ct:qt6ct` para preferências de ambas as gerações e `QT_STYLE_OVERRIDE=kvantum` como motor visual. `qt5ct` e `qt6ct` selecionam Hyprism-Papirus e o estilo Kvantum, enquanto `~/.config/Kvantum/kvantum.kvconfig` escolhe o tema dinâmico `Hyprism`. Novos processos Qt recebem a nova paleta imediatamente; processos já abertos podem precisar ser reiniciados.
+Qt 6 usa `QT_QPA_PLATFORMTHEME=qt6ct`, uma única chave válida de tema de plataforma. Qt 5 e Qt 6 usam `QT_STYLE_OVERRIDE=kvantum` como motor visual e compartilham o tema dinâmico `Hyprism` selecionado em `~/.config/Kvantum/kvantum.kvconfig`. As configurações de `qt5ct` e `qt6ct` mantêm Hyprism-Papirus e Kvantum selecionados para inspeção ou execução específica de cada geração, sem concatenar nomes de plugins incompatíveis. Novos processos Qt recebem a nova paleta imediatamente; processos já abertos podem precisar ser reiniciados.
 
 ## Atalhos principais
 

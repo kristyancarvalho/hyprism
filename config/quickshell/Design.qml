@@ -71,6 +71,7 @@ QtObject {
     readonly property int separatorWidth: compactSeparatorWidth
     readonly property int outlineWidth: 1
     readonly property int historyLimit: 60
+    readonly property int notificationHistoryLimit: 80
     readonly property var icons: ({
         application: "󰀻",
         search: "󰍉",
