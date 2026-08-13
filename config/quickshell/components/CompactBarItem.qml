@@ -20,8 +20,7 @@ Rectangle {
     implicitHeight: Design.compactItemHeight
     radius: Design.radiusDefault
     color: !filled ? "transparent" : selected ? theme.colors.accent : active ? theme.colors.accentDim : theme.colors.surfaceElevated
-    border.width: filled ? Design.outlineWidth : 0
-    border.color: selected || active ? theme.colors.borderFocused : theme.colors.borderSubtle
+    border.width: 0
 
     Row {
         id: content

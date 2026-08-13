@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 import Quickshell.Io
 import "../components"
 import ".."
@@ -63,13 +64,12 @@ Item {
         anchors.margins: 18
         spacing: 10
 
-        Row {
+        RowLayout {
             width: parent.width
-            spacing: 8
+            spacing: Design.spacingSm
 
             Column {
-                width: parent.width - toggle.width - scanButton.width - 16
-                anchors.verticalCenter: parent.verticalCenter
+                Layout.fillWidth: true
 
                 Text {
                     text: controller.system.network.virtualized && !controller.system.network.wifiAvailable ? "Rede" : "Redes"
@@ -90,6 +90,7 @@ Item {
 
             ShellButton {
                 id: toggle
+                Layout.preferredWidth: implicitWidth
                 visible: controller.system.network.wifiAvailable
                 theme: panel.theme
                 compact: true
@@ -102,6 +103,7 @@ Item {
 
             ShellButton {
                 id: scanButton
+                Layout.preferredWidth: implicitWidth
                 visible: controller.system.network.wifiAvailable
                 theme: panel.theme
                 compact: true
@@ -126,7 +128,7 @@ Item {
             background: Rectangle {
                 radius: Design.radiusSm
                 color: panel.theme.colors.surfaceVariant
-                border.width: passwordField.activeFocus ? 2 : 1
+                border.width: passwordField.activeFocus ? 2 : 0
                 border.color: passwordField.activeFocus ? panel.theme.colors.accent : panel.theme.colors.outline
             }
         }
@@ -147,8 +149,8 @@ Item {
                 height: 56
                 radius: Design.radiusSm
                 color: panel.selectedIndex === index ? panel.theme.colors.surfaceActive : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
-                border.width: panel.selectedIndex === index ? 2 : 1
-                border.color: panel.selectedIndex === index ? panel.theme.colors.accent : panel.theme.colors.outline
+                border.width: panel.selectedIndex === index ? 2 : 0
+                border.color: panel.theme.colors.accent
 
                 StatusIcon {
                     anchors {

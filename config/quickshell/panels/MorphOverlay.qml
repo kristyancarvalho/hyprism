@@ -125,6 +125,7 @@ PanelWindow {
         radius: window.morphRadius
         theme: window.theme
         surfaceOpacity: controller.config.shell.surfaceOpacity
+        outlined: true
         clip: true
 
         HoverHandler {

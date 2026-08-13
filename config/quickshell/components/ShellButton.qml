@@ -18,8 +18,8 @@ Rectangle {
     implicitHeight: compact ? 30 : 38
     radius: Design.radiusDefault
     color: destructive && available ? theme.colors.error : active && available ? theme.colors.accentDim : hovered ? theme.colors.surfaceHover : theme.colors.surfaceVariant
-    border.width: activeFocus ? 2 : Design.outlineWidth
-    border.color: activeFocus || active ? theme.colors.borderFocused : theme.colors.borderNormal
+    border.width: activeFocus ? 2 : 0
+    border.color: theme.colors.borderFocused
     opacity: available ? pending ? .72 : 1 : .5
 
     Row {

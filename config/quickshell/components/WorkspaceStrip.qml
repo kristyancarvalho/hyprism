@@ -63,8 +63,8 @@ Row {
             height: Design.workspaceCellSize
             radius: Design.radiusDefault
             color: urgent ? strip.theme.colors.error : active ? strip.theme.colors.accent : occupied ? strip.theme.colors.surfaceElevated : "transparent"
-            border.width: activeFocus ? 2 : active || urgent ? 0 : Design.outlineWidth
-            border.color: activeFocus ? strip.theme.colors.borderFocused : occupied ? strip.theme.colors.borderNormal : strip.theme.colors.borderSubtle
+            border.width: activeFocus ? 2 : 0
+            border.color: strip.theme.colors.borderFocused
             opacity: active || urgent || occupied ? 1 : .5
             activeFocusOnTab: true
 

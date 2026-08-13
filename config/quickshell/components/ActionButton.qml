@@ -14,8 +14,8 @@ Rectangle {
     activeFocusOnTab: available
     radius: Design.radiusSm
     color: active && available ? theme.colors.accentDim : hovered ? theme.colors.surfaceHover : theme.colors.surfaceVariant
-    border.width: activeFocus ? 2 : Design.outlineWidth
-    border.color: active && available || activeFocus ? theme.colors.borderFocused : theme.colors.borderNormal
+    border.width: activeFocus ? 2 : 0
+    border.color: theme.colors.borderFocused
     opacity: available ? pending ? .72 : 1 : .5
     implicitWidth: 170
     implicitHeight: 68
