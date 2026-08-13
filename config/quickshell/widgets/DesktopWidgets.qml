@@ -9,163 +9,169 @@ PanelWindow {
     required property var shellScreen
     required property var controller
     required property var theme
+    readonly property int columnGap: Design.spacingMd
+    readonly property bool hasClockRow: controller.widgetEnabled("clock") || controller.widgetEnabled("weather")
+    readonly property bool hasSensors: controller.widgetEnabled("sensors") && controller.monitoring.sensors.available
+    readonly property bool hasServices: controller.widgetEnabled("services") && controller.monitoring.services.available && (!controller.widgetConfig("services").problemOnly || !controller.monitoring.services.healthy)
+    readonly property bool hasTasks: controller.widgetEnabled("tasks") && controller.tasks.length > 0
+    readonly property bool compactViewport: shellScreen && shellScreen.height < 900
+    readonly property int visibleTaskLimit: Math.min(controller.widgetNumber("tasks", "limit", 3, 1, 6), compactViewport ? 1 : 3)
+    readonly property int visibleProcessLimit: Math.min(controller.widgetNumber("processes", "limit", 3, 1, 6), compactViewport ? 2 : 3)
+    readonly property int cardWidth: Math.max(200, Math.floor((implicitWidth - columnGap) / 2))
     screen: shellScreen
     visible: shellScreen !== null && !HyprlandService.monitorHasFullscreen(shellScreen)
     anchors {
-        right: true
+        right: Design.safeText(controller.config.shell.widgetLayout.side, "right") !== "left"
+        left: Design.safeText(controller.config.shell.widgetLayout.side, "right") === "left"
         top: true
     }
     margins {
-        top: Design.compactReservedHeight(controller.config.shell) + 18
-        right: 20
+        top: Design.compactReservedHeight(controller.config.shell) + Design.spacingLg
+        right: Design.spacingLg
+        left: Design.spacingLg
     }
-    implicitWidth: shellScreen ? Math.min(360, Math.max(310, shellScreen.width * .34)) : 340
-    implicitHeight: stack.implicitHeight
+    implicitWidth: shellScreen ? Math.min(shellScreen.width - Design.spacingLg * 2, Math.min(700, Math.max(570, shellScreen.width * .56))) : 680
+    implicitHeight: Math.max(primaryColumn.implicitHeight, secondaryColumn.implicitHeight)
     color: "transparent"
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Bottom
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
-    Column {
-        id: stack
-        width: parent.width
-        spacing: 10
+    function historyPeak(samples) {
+        const values = Array.isArray(samples) ? samples : []
+        let peak = 1
+        for (let index = 0; index < values.length; index++) peak = Math.max(peak, Design.safeNumber(values[index], 0))
+        return peak * 1.15
+    }
 
-        Row {
-            width: parent.width
-            height: 96
-            spacing: 10
+    Row {
+        anchors.fill: parent
+        spacing: widgetWindow.columnGap
 
-            Glass {
-                id: clockCard
-                theme: widgetWindow.theme
-                surfaceOpacity: .84
-                width: (parent.width - 10) * .44
-                height: parent.height
-                radius: Design.radiusMd
-                visible: controller.config.shell.widgets.clock
+        Column {
+            id: primaryColumn
+            width: widgetWindow.cardWidth
+            spacing: Design.spacingSm
 
-                Column {
-                    anchors.centerIn: parent
-                    spacing: 0
+            Row {
+                width: parent.width
+                height: visible ? 96 : 0
+                spacing: Design.spacingSm
+                visible: widgetWindow.hasClockRow
 
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: controller.formattedDate("HH:mm")
-                        color: theme.colors.foreground
-                        font.family: Design.fontFamily
-                        font.pixelSize: Design.fontSizeXl
-                        font.weight: Design.fontWeightSemibold
-                    }
-
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: controller.formattedDate("dddd")
-                        color: theme.colors.foreground
-                        font.family: Design.fontFamily
-                        font.pixelSize: Design.fontSizeXs
-                        font.weight: Design.fontWeightMedium
-                    }
-
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: controller.formattedDate("dd 'de' MMMM")
-                        color: theme.colors.mutedForeground
-                        font.family: Design.fontFamily
-                        font.pixelSize: 9
-                    }
-                }
-            }
-
-            Glass {
-                theme: widgetWindow.theme
-                surfaceOpacity: .84
-                width: parent.width - clockCard.width - 10
-                height: parent.height
-                radius: Design.radiusMd
-                visible: controller.config.shell.widgets.weather
-
-                Row {
-                    anchors.fill: parent
-                    anchors.margins: 13
-                    spacing: 11
-
-                    StatusIcon {
-                        anchors.verticalCenter: parent.verticalCenter
-                        name: controller.weatherIconName(controller.weather.weatherCode)
-                        iconSize: 34
-                        color: theme.colors.accent
-                    }
+                Glass {
+                    id: clockCard
+                    theme: widgetWindow.theme
+                    surfaceOpacity: .84
+                    width: controller.widgetEnabled("clock") ? (controller.widgetEnabled("weather") ? (parent.width - parent.spacing) * .44 : parent.width) : 0
+                    height: parent.height
+                    radius: Design.radiusMd
+                    visible: controller.widgetEnabled("clock")
 
                     Column {
-                        width: parent.width - 48
-                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.centerIn: parent
                         spacing: 0
 
                         Text {
-                            width: parent.width
-                            text: controller.weather.temperature === null ? "--°" : Math.round(Design.safeNumber(controller.weather.temperature, 0)) + "°C"
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: controller.formattedDate("HH:mm")
                             color: theme.colors.foreground
                             font.family: Design.fontFamily
-                            font.pixelSize: 23
+                            font.pixelSize: Design.fontSizeXl
                             font.weight: Design.fontWeightSemibold
-                            elide: Text.ElideRight
                         }
 
                         Text {
-                            width: parent.width
-                            text: controller.weatherCondition(Design.safeNumber(controller.weather.weatherCode, -1))
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: controller.formattedDate("dddd")
                             color: theme.colors.foreground
                             font.family: Design.fontFamily
                             font.pixelSize: Design.fontSizeXs
                             font.weight: Design.fontWeightMedium
-                            elide: Text.ElideRight
                         }
 
                         Text {
-                            width: parent.width
-                            text: Design.safeText(controller.weather.city, "São Paulo")
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: controller.formattedDate("dd 'de' MMMM")
                             color: theme.colors.mutedForeground
                             font.family: Design.fontFamily
                             font.pixelSize: 9
-                            elide: Text.ElideRight
+                        }
+                    }
+                }
+
+                Glass {
+                    theme: widgetWindow.theme
+                    surfaceOpacity: .84
+                    width: controller.widgetEnabled("weather") ? parent.width - clockCard.width - (clockCard.visible ? parent.spacing : 0) : 0
+                    height: parent.height
+                    radius: Design.radiusMd
+                    visible: controller.widgetEnabled("weather")
+
+                    Row {
+                        anchors.fill: parent
+                        anchors.margins: Design.widgetInnerPadding
+                        spacing: Design.spacingSm
+
+                        StatusIcon {
+                            anchors.verticalCenter: parent.verticalCenter
+                            name: controller.weatherIconName(controller.weather.weatherCode)
+                            iconSize: Design.iconLg
+                            color: theme.colors.accent
                         }
 
-                        Text {
-                            width: parent.width
-                            visible: controller.weather.minimum !== null && controller.weather.maximum !== null
-                            text: "Mín. " + Math.round(Design.safeNumber(controller.weather.minimum, 0)) + "°  ·  Máx. " + Math.round(Design.safeNumber(controller.weather.maximum, 0)) + "°"
-                            color: theme.colors.mutedForeground
-                            font.family: Design.fontFamily
-                            font.pixelSize: 9
-                            elide: Text.ElideRight
+                        Column {
+                            width: parent.width - Design.iconLg - Design.spacingMd
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Text {
+                                width: parent.width
+                                text: controller.weather.temperature === null ? "--°" : Math.round(Design.safeNumber(controller.weather.temperature, 0)) + "°C"
+                                color: theme.colors.foreground
+                                font.family: Design.fontFamily
+                                font.pixelSize: Design.fontSizeLg
+                                font.weight: Design.fontWeightSemibold
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                width: parent.width
+                                text: controller.weatherCondition(Design.safeNumber(controller.weather.weatherCode, -1))
+                                color: theme.colors.foreground
+                                font.family: Design.fontFamily
+                                font.pixelSize: Design.fontSizeXs
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                width: parent.width
+                                text: Design.safeText(controller.weather.city, "São Paulo")
+                                color: theme.colors.mutedForeground
+                                font.family: Design.fontFamily
+                                font.pixelSize: 9
+                                elide: Text.ElideRight
+                            }
                         }
                     }
                 }
             }
-        }
 
-        Glass {
-            theme: widgetWindow.theme
-            surfaceOpacity: .84
-            width: parent.width
-            height: 148
-            radius: Design.radiusMd
-            visible: controller.config.shell.widgets.system
-
-            Column {
-                anchors.fill: parent
-                anchors.margins: 13
-                spacing: 8
+            DesktopCard {
+                theme: widgetWindow.theme
+                width: parent.width
+                visible: controller.widgetEnabled("system")
+                height: visible ? implicitHeight : 0
+                iconName: "cpu"
+                title: "Sistema"
+                value: Math.round(Design.clamp(controller.system.cpu.percent, 0, 100)) + "% CPU"
+                contentHeight: 88
 
                 Row {
-                    width: parent.width
-                    height: 90
-                    spacing: 10
+                    anchors.fill: parent
+                    spacing: Design.spacingSm
 
                     Rectangle {
-                        id: cpuCard
-                        width: (parent.width - 10) / 2
+                        width: (parent.width - parent.spacing) / 2
                         height: parent.height
                         radius: Design.radiusSm
                         color: theme.colors.surfaceVariant
@@ -173,38 +179,22 @@ PanelWindow {
 
                         WidgetHeader {
                             id: cpuHeader
-                            anchors {
-                                left: parent.left
-                                right: parent.right
-                                top: parent.top
-                                margins: Design.widgetInnerPadding
-                            }
+                            anchors { left: parent.left; right: parent.right; top: parent.top; margins: Design.spacingSm }
                             theme: widgetWindow.theme
                             iconName: "cpu"
-                            title: "Processador"
+                            title: "CPU"
                             value: Math.round(Design.clamp(controller.system.cpu.percent, 0, 100)) + "%"
-                            iconColor: theme.colors.accent
                         }
 
                         Sparkline {
-                            anchors {
-                                left: parent.left
-                                right: parent.right
-                                top: cpuHeader.bottom
-                                bottom: parent.bottom
-                                leftMargin: Design.widgetInnerPadding
-                                rightMargin: Design.widgetInnerPadding
-                                topMargin: 3
-                                bottomMargin: Design.widgetInnerPadding
-                            }
+                            anchors { left: parent.left; right: parent.right; top: cpuHeader.bottom; bottom: parent.bottom; margins: Design.spacingSm; topMargin: 2 }
                             samples: controller.cpuHistory
                             lineColor: theme.colors.accent
                         }
                     }
 
                     Rectangle {
-                        id: memoryCard
-                        width: (parent.width - 10) / 2
+                        width: (parent.width - parent.spacing) / 2
                         height: parent.height
                         radius: Design.radiusSm
                         color: theme.colors.surfaceVariant
@@ -212,198 +202,337 @@ PanelWindow {
 
                         WidgetHeader {
                             id: memoryHeader
-                            anchors {
-                                left: parent.left
-                                right: parent.right
-                                top: parent.top
-                                margins: Design.widgetInnerPadding
-                            }
+                            anchors { left: parent.left; right: parent.right; top: parent.top; margins: Design.spacingSm }
                             theme: widgetWindow.theme
                             iconName: "memory"
-                            title: "Memória"
+                            title: "RAM"
                             value: Math.round(Design.clamp(controller.system.memory.percent, 0, 100)) + "%"
                             iconColor: theme.colors.secondary
                         }
 
                         Sparkline {
-                            anchors {
-                                left: parent.left
-                                right: parent.right
-                                top: memoryHeader.bottom
-                                bottom: parent.bottom
-                                leftMargin: Design.widgetInnerPadding
-                                rightMargin: Design.widgetInnerPadding
-                                topMargin: 3
-                                bottomMargin: Design.widgetInnerPadding
-                            }
+                            anchors { left: parent.left; right: parent.right; top: memoryHeader.bottom; bottom: parent.bottom; margins: Design.spacingSm; topMargin: 2 }
                             samples: controller.memoryHistory
                             lineColor: theme.colors.secondary
                         }
                     }
                 }
+            }
 
-                Row {
-                    width: parent.width
-                    height: 24
-                    spacing: 12
+            DesktopCard {
+                theme: widgetWindow.theme
+                width: parent.width
+                visible: controller.widgetEnabled("network")
+                height: visible ? implicitHeight : 0
+                iconName: "networkSpeed"
+                title: "Rede"
+                value: controller.networkLabel()
+                contentHeight: 110
 
-                    WidgetMetric {
-                        visible: controller.system.battery.available
-                        theme: widgetWindow.theme
-                        iconName: controller.batteryIconName()
-                        trailingIconName: controller.batteryCharging() ? "charging" : ""
-                        value: controller.batteryText()
+                Column {
+                    anchors.fill: parent
+                    spacing: Design.spacingSm
+
+                    Row {
+                        width: parent.width
+                        height: 51
+                        spacing: Design.spacingSm
+                        StatusIcon { name: "networkDownload"; color: theme.colors.accent; iconSize: Design.iconSm; anchors.verticalCenter: parent.verticalCenter }
+                        Column {
+                            width: 86
+                            anchors.verticalCenter: parent.verticalCenter
+                            Text { text: "Download"; color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
+                            Text { text: controller.formatRate(controller.system.network.receiveKib); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold }
+                        }
+                        Sparkline { width: parent.width - 124; height: parent.height; samples: controller.downloadHistory; maximum: widgetWindow.historyPeak(controller.downloadHistory); lineColor: theme.colors.accent }
                     }
 
-                    WidgetMetric {
-                        visible: controller.system.temperature.available
-                        theme: widgetWindow.theme
-                        iconName: "temperature"
-                        value: Math.round(Design.safeNumber(controller.system.temperature.celsius, 0)) + "°C"
+                    Row {
+                        width: parent.width
+                        height: 51
+                        spacing: Design.spacingSm
+                        StatusIcon { name: "networkUpload"; color: theme.colors.secondary; iconSize: Design.iconSm; anchors.verticalCenter: parent.verticalCenter }
+                        Column {
+                            width: 86
+                            anchors.verticalCenter: parent.verticalCenter
+                            Text { text: "Upload"; color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
+                            Text { text: controller.formatRate(controller.system.network.transmitKib); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold }
+                        }
+                        Sparkline { width: parent.width - 124; height: parent.height; samples: controller.uploadHistory; maximum: widgetWindow.historyPeak(controller.uploadHistory); lineColor: theme.colors.secondary }
                     }
+                }
+            }
 
-                    WidgetMetric {
-                        visible: controller.system.gpu.available
-                        theme: widgetWindow.theme
-                        iconName: "gpu"
-                        value: Math.round(Design.clamp(controller.system.gpu.percent, 0, 100)) + "%"
-                    }
+            DesktopCard {
+                theme: widgetWindow.theme
+                width: parent.width
+                visible: controller.widgetEnabled("storage") && controller.monitoring.storage.available
+                height: visible ? implicitHeight : 0
+                iconName: "storage"
+                title: "Armazenamento"
+                contentHeight: Math.max(38, storageRepeater.count * 42)
 
-                    WidgetMetric {
-                        visible: controller.system.network.enabled
-                        theme: widgetWindow.theme
-                        iconName: "networkSpeed"
-                        value: Math.round(Design.safeNumber(controller.system.network.receiveKib, 0)) + " KiB/s"
+                Column {
+                    anchors.fill: parent
+                    spacing: Design.spacingXs
+
+                    Repeater {
+                        id: storageRepeater
+                        model: controller.monitoring.storage.mounts || []
+
+                        Column {
+                            required property var modelData
+                            width: parent.width
+                            height: 38
+                            spacing: 3
+                            Row {
+                                width: parent.width
+                                Text { width: parent.width * .24; text: Design.safeText(modelData.mount, "/"); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold }
+                                Text { width: parent.width * .76; horizontalAlignment: Text.AlignRight; text: controller.formatBytes(modelData.usedBytes) + " / " + controller.formatBytes(modelData.totalBytes) + "  ·  " + Math.round(Design.clamp(modelData.percent, 0, 100)) + "%"; color: modelData.percent >= 92 ? theme.colors.error : modelData.percent >= 80 ? theme.colors.warning : theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
+                            }
+                            Rectangle {
+                                width: parent.width
+                                height: 4
+                                radius: Design.radiusSmall
+                                color: theme.colors.surfaceVariant
+                                Rectangle { width: parent.width * Design.clamp(modelData.percent, 0, 100) / 100; height: parent.height; radius: parent.radius; color: modelData.percent >= 92 ? theme.colors.error : modelData.percent >= 80 ? theme.colors.warning : theme.colors.accent }
+                            }
+                        }
                     }
                 }
             }
         }
 
-        Glass {
-            theme: widgetWindow.theme
-            surfaceOpacity: .88
-            width: parent.width
-            height: controller.mediaAvailable() ? 112 : 0
-            radius: Design.radiusMd
-            visible: height > 0 && controller.config.shell.widgets.media
-            activeFocusOnTab: true
+        Column {
+            id: secondaryColumn
+            width: widgetWindow.cardWidth
+            spacing: Design.spacingSm
 
-            Keys.onPressed: event => {
-                if (event.key === Qt.Key_Space || event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                    controller.mediaToggle()
-                    event.accepted = true
-                } else if (event.key === Qt.Key_Left) {
-                    controller.mediaPrevious()
-                    event.accepted = true
-                } else if (event.key === Qt.Key_Right) {
-                    controller.mediaNext()
-                    event.accepted = true
+            DesktopCard {
+                theme: widgetWindow.theme
+                width: parent.width
+                visible: controller.widgetEnabled("uptime") && controller.monitoring.uptime.available
+                height: visible ? implicitHeight : 0
+                iconName: "uptime"
+                title: "Sistema"
+                value: "Ativo há " + controller.formatUptime(controller.monitoring.uptime.uptimeSeconds)
+                contentHeight: 50
+
+                Row {
+                    anchors.fill: parent
+                    spacing: Design.spacingSm
+                    Repeater {
+                        model: [
+                            { label: "1 min", value: controller.monitoring.uptime.load1 },
+                            { label: "5 min", value: controller.monitoring.uptime.load5 },
+                            { label: "15 min", value: controller.monitoring.uptime.load15 }
+                        ]
+                        Rectangle {
+                            required property var modelData
+                            width: (parent.width - Design.spacingSm * 2) / 3
+                            height: parent.height
+                            radius: Design.radiusSm
+                            color: theme.colors.surfaceVariant
+                            Column {
+                                anchors.centerIn: parent
+                                Text { anchors.horizontalCenter: parent.horizontalCenter; text: Number(modelData.value).toFixed(2).replace(".", ","); color: modelData.value > controller.monitoring.uptime.cores ? theme.colors.warning : theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeSm; font.weight: Design.fontWeightSemibold }
+                                Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.label; color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
+                            }
+                        }
+                    }
                 }
             }
 
-            Rectangle {
-                anchors.fill: parent
-                color: "transparent"
-                radius: Design.radiusMd
-                border.width: parent.activeFocus ? 2 : 0
-                border.color: theme.colors.accent
-            }
-
-            Row {
-                anchors.fill: parent
-                anchors.margins: 13
-                spacing: 12
-
-                Rectangle {
-                    width: 86
-                    height: 86
-                    anchors.verticalCenter: parent.verticalCenter
-                    radius: Design.radiusSm
-                    color: theme.colors.surfaceVariant
-                    clip: true
-
-                    Image {
-                        id: mediaArt
-                        anchors.fill: parent
-                        source: controller.mediaArtUrl()
-                        fillMode: Image.PreserveAspectCrop
-                        asynchronous: true
-                        cache: true
-                    }
-
-                    ShellIcon {
-                        anchors.centerIn: parent
-                        visible: mediaArt.status !== Image.Ready
-                        name: controller.applicationIcon(controller.mediaPlayer ? controller.mediaPlayer.desktopEntry : "")
-                        fallback: "application-x-executable"
-                        fallbackGlyph: "media"
-                        iconSize: 42
-                    }
-                }
+            DesktopCard {
+                theme: widgetWindow.theme
+                width: parent.width
+                visible: widgetWindow.hasSensors
+                height: visible ? implicitHeight : 0
+                iconName: "temperature"
+                title: "Sensores"
+                contentHeight: Math.max(30, sensorRepeater.count * 28)
 
                 Column {
-                    width: parent.width - 98
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 4
-
-                    Text {
-                        width: parent.width
-                        text: controller.mediaTitle()
-                        elide: Text.ElideRight
-                        color: theme.colors.foreground
-                        font.family: Design.fontFamily
-                        font.pixelSize: Design.fontSizeSm
-                        font.weight: Design.fontWeightSemibold
+                    anchors.fill: parent
+                    Repeater {
+                        id: sensorRepeater
+                        model: (controller.monitoring.sensors.items || []).slice(0, widgetWindow.compactViewport ? 2 : 4)
+                        Row {
+                            required property var modelData
+                            width: parent.width
+                            height: 28
+                            Text { width: parent.width - 60; text: Design.safeText(modelData.label, "Temperatura"); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; elide: Text.ElideRight }
+                            Text { width: 60; horizontalAlignment: Text.AlignRight; text: Math.round(Design.safeNumber(modelData.celsius, 0)) + "°C"; color: modelData.celsius >= 90 ? theme.colors.error : modelData.celsius >= 78 ? theme.colors.warning : theme.colors.accent; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold }
+                        }
                     }
+                }
+            }
+
+            DesktopCard {
+                theme: widgetWindow.theme
+                width: parent.width
+                visible: widgetWindow.hasServices
+                height: visible ? implicitHeight : 0
+                iconName: "services"
+                title: "Serviços"
+                value: controller.monitoring.services.healthy ? "Tudo normal" : "Atenção necessária"
+                contentHeight: controller.monitoring.services.healthy ? 28 : Math.max(28, serviceRepeater.count * 27)
+
+                Column {
+                    anchors.fill: parent
 
                     Text {
+                        visible: controller.monitoring.services.healthy
                         width: parent.width
-                        text: controller.mediaArtist()
-                        elide: Text.ElideRight
+                        height: parent.height
+                        text: "Todos os serviços monitorados estão ativos"
                         color: theme.colors.mutedForeground
                         font.family: Design.fontFamily
                         font.pixelSize: Design.fontSizeXs
+                        verticalAlignment: Text.AlignVCenter
                     }
+
+                    Repeater {
+                        id: serviceRepeater
+                        model: controller.monitoring.services.healthy ? [] : (controller.monitoring.services.items || []).filter(item => item.state !== "running")
+                        Row {
+                            required property var modelData
+                            width: parent.width
+                            height: 27
+                            Text { width: parent.width - 100; text: Design.safeText(modelData.name, "Serviço"); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; elide: Text.ElideRight }
+                            Text { width: 100; horizontalAlignment: Text.AlignRight; text: controller.serviceStateText(modelData.state); color: modelData.state === "failed" ? theme.colors.error : theme.colors.warning; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold }
+                        }
+                    }
+                }
+            }
+
+            DesktopCard {
+                theme: widgetWindow.theme
+                width: parent.width
+                visible: widgetWindow.hasTasks
+                height: visible ? implicitHeight : 0
+                iconName: "tasks"
+                title: "Tarefas"
+                value: controller.tasks.length + (controller.tasks.length === 1 ? " ativa" : " ativas")
+                contentHeight: Math.min(widgetWindow.visibleTaskLimit, controller.tasks.length) * 58
+
+                Column {
+                    anchors.fill: parent
+                    spacing: Design.spacingXs
+                    Repeater {
+                        model: controller.tasks.slice(0, widgetWindow.visibleTaskLimit)
+                        Column {
+                            required property var modelData
+                            width: parent.width
+                            height: 54
+                            spacing: 3
+                            Row {
+                                width: parent.width
+                                Text { width: parent.width - 52; text: Design.safeText(modelData.title, "Tarefa"); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold; elide: Text.ElideRight }
+                                Text { width: 52; horizontalAlignment: Text.AlignRight; text: modelData.indeterminate ? "…" : Math.round(Design.clamp(modelData.progress, 0, 100)) + "%"; color: modelData.status === "failed" ? theme.colors.error : theme.colors.accent; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs }
+                            }
+                            Rectangle {
+                                width: parent.width
+                                height: 4
+                                radius: Design.radiusSmall
+                                color: theme.colors.surfaceVariant
+                                Rectangle { width: modelData.indeterminate ? parent.width * .35 : parent.width * Design.clamp(modelData.progress, 0, 100) / 100; height: parent.height; radius: parent.radius; color: modelData.status === "failed" ? theme.colors.error : theme.colors.accent }
+                            }
+                            Text { width: parent.width; text: modelData.eta > 0 ? Math.ceil(modelData.eta / 60) + " min restante" : Design.safeText(modelData.subtitle, "Em andamento"); color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9; elide: Text.ElideRight }
+                        }
+                    }
+                }
+            }
+
+            DesktopCard {
+                theme: widgetWindow.theme
+                width: parent.width
+                visible: controller.widgetEnabled("processes") && controller.monitoring.processes.available
+                height: visible ? implicitHeight : 0
+                iconName: "processes"
+                title: "Processos"
+                value: controller.monitoring.uptime.processCount > 0 ? controller.monitoring.uptime.processCount + " ativos" : ""
+                contentHeight: 34 + widgetWindow.visibleProcessLimit * 28
+
+                Row {
+                    anchors.fill: parent
+                    spacing: Design.spacingMd
+
+                    Column {
+                        width: (parent.width - parent.spacing) / 2
+                        height: parent.height
+                        spacing: 3
+                        Text { text: "CPU"; color: theme.colors.accent; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold }
+                        Repeater {
+                            model: (controller.monitoring.processes.cpu || []).slice(0, widgetWindow.visibleProcessLimit)
+                            Row {
+                                required property var modelData
+                                width: parent.width
+                                height: 28
+                                Text { width: parent.width - 42; text: Design.safeText(modelData.name, "Processo"); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: 9; elide: Text.ElideRight }
+                                Text { width: 42; horizontalAlignment: Text.AlignRight; text: Math.round(Design.safeNumber(modelData.cpuPercent, 0)) + "%"; color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
+                            }
+                        }
+                    }
+
+                    Column {
+                        width: (parent.width - parent.spacing) / 2
+                        height: parent.height
+                        spacing: 3
+                        Text { text: "Memória"; color: theme.colors.secondary; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold }
+                        Repeater {
+                            model: (controller.monitoring.processes.memory || []).slice(0, widgetWindow.visibleProcessLimit)
+                            Row {
+                                required property var modelData
+                                width: parent.width
+                                height: 28
+                                Text { width: parent.width - 58; text: Design.safeText(modelData.name, "Processo"); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: 9; elide: Text.ElideRight }
+                                Text { width: 58; horizontalAlignment: Text.AlignRight; text: controller.formatBytes(modelData.memoryBytes); color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Glass {
+                theme: widgetWindow.theme
+                surfaceOpacity: .88
+                width: parent.width
+                height: visible ? 112 : 0
+                radius: Design.radiusMd
+                visible: controller.widgetEnabled("media") && controller.mediaAvailable()
+
+                Row {
+                    anchors.fill: parent
+                    anchors.margins: Design.widgetInnerPadding
+                    spacing: Design.spacingMd
 
                     Rectangle {
-                        width: parent.width
-                        height: 4
-                        radius: Design.radiusSmall
+                        width: 86
+                        height: 86
+                        anchors.verticalCenter: parent.verticalCenter
+                        radius: Design.radiusSm
                         color: theme.colors.surfaceVariant
+                        clip: true
 
-                        Rectangle {
-                            width: parent.width * controller.mediaProgress()
-                            height: parent.height
-                            radius: Design.radiusSmall
-                            color: theme.colors.accent
-                        }
+                        Image { id: mediaArt; anchors.fill: parent; source: controller.mediaArtUrl(); fillMode: Image.PreserveAspectCrop; asynchronous: true; cache: true }
+                        ShellIcon { anchors.centerIn: parent; visible: mediaArt.status !== Image.Ready; name: controller.applicationIcon(controller.mediaPlayer ? controller.mediaPlayer.desktopEntry : ""); fallback: "application-x-executable"; fallbackGlyph: "media"; iconSize: 42 }
                     }
 
-                    Row {
-                        width: parent.width
-
-                        Text {
-                            width: parent.width - duration.width
-                            text: Design.formatDuration(controller.mediaPlayer ? controller.mediaPlayer.position : 0)
-                            color: theme.colors.mutedForeground
-                            font.family: Design.fontFamily
-                            font.pixelSize: 9
+                    Column {
+                        width: parent.width - 98
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: Design.spacingXs
+                        Text { width: parent.width; text: controller.mediaTitle(); elide: Text.ElideRight; color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeSm; font.weight: Design.fontWeightSemibold }
+                        Text { width: parent.width; text: controller.mediaArtist(); elide: Text.ElideRight; color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs }
+                        Rectangle { width: parent.width; height: 4; radius: Design.radiusSmall; color: theme.colors.surfaceVariant; Rectangle { width: parent.width * controller.mediaProgress(); height: parent.height; radius: parent.radius; color: theme.colors.accent } }
+                        Row {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            spacing: Design.spacingXs
+                            ShellButton { theme: widgetWindow.theme; compact: true; iconName: "previous"; onClicked: controller.mediaPrevious() }
+                            ShellButton { theme: widgetWindow.theme; compact: true; iconName: controller.mediaPlayer && controller.mediaPlayer.isPlaying ? "pause" : "play"; onClicked: controller.mediaToggle() }
+                            ShellButton { theme: widgetWindow.theme; compact: true; iconName: "next"; onClicked: controller.mediaNext() }
                         }
-                        Text {
-                            id: duration
-                            text: Design.formatDuration(controller.mediaPlayer ? controller.mediaPlayer.length : 0)
-                            color: theme.colors.mutedForeground
-                            font.family: Design.fontFamily
-                            font.pixelSize: 9
-                        }
-                    }
-
-                    Row {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        spacing: 5
-                        ShellButton { theme: widgetWindow.theme; compact: true; iconName: "previous"; onClicked: controller.mediaPrevious() }
-                        ShellButton { theme: widgetWindow.theme; compact: true; iconName: controller.mediaPlayer && controller.mediaPlayer.isPlaying ? "pause" : "play"; onClicked: controller.mediaToggle() }
-                        ShellButton { theme: widgetWindow.theme; compact: true; iconName: "next"; onClicked: controller.mediaNext() }
                     }
                 }
             }
