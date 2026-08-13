@@ -16,6 +16,7 @@ PanelWindow {
     readonly property bool targetScreen: controller.targetScreenName === shellScreen.name
     readonly property string localMode: controller.mode === "compact" || !targetScreen ? "compact" : controller.mode
     readonly property bool interactive: localMode !== "compact" && localMode !== "hover"
+    readonly property bool fullscreenActive: HyprlandService.monitorHasFullscreen(shellScreen)
     readonly property int availableWidth: shellScreen ? shellScreen.width : 1024
     readonly property int availableHeight: shellScreen ? shellScreen.height : 768
     readonly property int safeWidth: Math.max(320, availableWidth - 32)
@@ -26,6 +27,7 @@ PanelWindow {
     property var morphFrom: ({ width: compactWidth, height: Design.compactHeight(controller.config.shell), radius: Design.radiusDefault })
     property var morphTarget: ({ width: compactWidth, height: Design.compactHeight(controller.config.shell), radius: Design.radiusDefault })
     property real morphProgress: 1
+    property bool acceptsFocusDismissal: false
     readonly property real morphWidth: morphFrom.width + (morphTarget.width - morphFrom.width) * morphProgress
     readonly property real morphHeight: morphFrom.height + (morphTarget.height - morphFrom.height) * morphProgress
     readonly property real morphRadius: morphFrom.radius + (morphTarget.radius - morphFrom.radius) * morphProgress
@@ -84,13 +86,13 @@ PanelWindow {
 
     function focusPanel() {
         if (!interactive || !content.item) return
-        window.requestActivate()
         if (content.item.takeInitialFocus) content.item.takeInitialFocus()
         else content.item.forceActiveFocus()
+        controller.panelFocusReady = content.item.initialFocusReady ? content.item.initialFocusReady() : content.item.activeFocus
     }
 
     screen: shellScreen
-    visible: shellScreen !== null
+    visible: shellScreen !== null && (!fullscreenActive || interactive)
     anchors.top: true
     margins.top: Design.compactTopMargin(controller.config.shell)
     implicitWidth: Math.min(safeWidth, Design.morphSurfaceMaxWidth)
@@ -105,9 +107,13 @@ PanelWindow {
     onDesiredGeometryChanged: startMorph(desiredGeometry)
 
     HyprlandFocusGrab {
+        id: focusGrab
         windows: [window]
-        active: window.visible && window.interactive
-        onCleared: if (window.interactive) controller.close()
+        onCleared: {
+            if (!window.interactive) return
+            if (window.acceptsFocusDismissal) controller.close()
+            else focusActivation.restart()
+        }
     }
 
     Glass {
@@ -137,7 +143,7 @@ PanelWindow {
         TapHandler {
             enabled: window.localMode === "compact" || window.localMode === "hover"
             onPressedChanged: if (pressed) hoverOpen.stop()
-            onTapped: controller.openOnScreen("control", window.shellScreen.name)
+            onTapped: controller.openHub(window.shellScreen.name)
         }
 
         Loader {
@@ -167,7 +173,7 @@ PanelWindow {
     Timer {
         id: hoverOpen
         interval: Design.animationFast
-        onTriggered: if (shellHover.hovered && controller.mode === "compact") controller.openOnScreen("hover", window.shellScreen.name)
+        onTriggered: if (shellHover.hovered && controller.mode === "compact" && !window.fullscreenActive) controller.openPanel("hover", window.shellScreen.name)
     }
 
     Timer {
@@ -183,6 +189,22 @@ PanelWindow {
     }
 
     Timer {
+        id: focusActivation
+        interval: 40
+        onTriggered: {
+            if (!window.interactive) return
+            focusGrab.active = true
+            window.focusPanel()
+        }
+    }
+
+    Timer {
+        id: focusDismissalReady
+        interval: 240
+        onTriggered: if (window.interactive) window.acceptsFocusDismissal = true
+    }
+
+    Timer {
         id: contentReveal
         interval: 20
         onTriggered: content.opacity = 1
@@ -192,6 +214,20 @@ PanelWindow {
         morphFrom = desiredGeometry
         morphTarget = desiredGeometry
         morphProgress = 1
+    }
+
+    onFullscreenActiveChanged: if (fullscreenActive && localMode === "hover") controller.close()
+    onInteractiveChanged: {
+        if (interactive) {
+            acceptsFocusDismissal = false
+            focusActivation.restart()
+            focusDismissalReady.restart()
+        } else {
+            acceptsFocusDismissal = false
+            focusActivation.stop()
+            focusDismissalReady.stop()
+            focusGrab.active = false
+        }
     }
 
     Component {

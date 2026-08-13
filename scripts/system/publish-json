@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+source_file=${1:?arquivo JSON de origem obrigatório}
+destination=${2:?destino obrigatório}
+destination_dir=$(dirname -- "$destination")
+mkdir -p "$destination_dir"
+temporary=$(mktemp --tmpdir="$destination_dir" .hyprism-json.XXXXXX)
+trap 'rm -f -- "$temporary"' EXIT
+jq -e . "$source_file" >"$temporary"
+chmod 0644 "$temporary"
+mv -f -- "$temporary" "$destination"
+trap - EXIT

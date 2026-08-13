@@ -1,7 +1,17 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-config_name="${QS_CONFIG_NAME:-default}"
-if qs -c "$config_name" ipc call shell reload >/dev/null 2>&1; then
+root_dir="${HYPRISM_ROOT:-$HOME/.local/share/hyprism}"
+if "$root_dir/scripts/system/shell-ipc" shell reload >/dev/null 2>&1; then
   exit 0
 fi
-exec "${HYPRISM_ROOT:-$HOME/.local/share/hyprism}/scripts/system/start-shell"
+config_name="${QS_CONFIG_NAME:-default}"
+config_path="${HYPRISM_QS_PATH:-}"
+selector=(-c "$config_name")
+if [[ -n $config_path ]]; then
+  selector=(-p "$config_path")
+fi
+mapfile -t instance_pids < <(qs "${selector[@]}" list -j 2>/dev/null | jq -r '.[].pid' 2>/dev/null || true)
+for instance_pid in "${instance_pids[@]}"; do
+  qs kill --pid "$instance_pid" >/dev/null 2>&1 || true
+done
+exec "$root_dir/scripts/system/start-shell"

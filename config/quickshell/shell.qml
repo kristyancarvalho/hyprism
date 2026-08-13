@@ -19,6 +19,8 @@ ShellRoot {
     property bool islandLoaded: false
     property bool widgetsLoaded: false
     property bool notificationServerReady: false
+    property string configError: ""
+    property string themeError: ""
     readonly property bool hyprlandAvailable: !!Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE")
     property string notificationScreenName: ""
     property var popupNotifications: []
@@ -43,15 +45,6 @@ ShellRoot {
         return Quickshell.screens && Quickshell.screens.length > 0 ? Quickshell.screens[0].name : ""
     }
 
-    function prepareTransient(): void {
-        shellController.targetScreenName = focusedScreenName()
-    }
-
-    function toggleTransient(mode: string): void {
-        prepareTransient()
-        shellController.toggle(mode)
-    }
-
     function removePopup(notification): void {
         popupNotifications = popupNotifications.filter(item => item && item !== notification)
         notificationServer.newest = popupNotifications.length ? popupNotifications[popupNotifications.length - 1] : null
@@ -63,7 +56,10 @@ ShellRoot {
         notificationServer.newest = null
     }
     function applyConfig(raw: string): void {
-        const parsed = JSON.parse(raw)
+        const source = Design.safeText(raw, "")
+        if (!source) return
+        const parsed = JSON.parse(source)
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("a raiz deve ser um objeto JSON")
         const currentShell = shellController.config.shell
         const incomingShell = parsed.shell || {}
         shellController.config = {
@@ -71,10 +67,40 @@ ShellRoot {
                 widgets: Object.assign({}, currentShell.widgets, incomingShell.widgets || {})
             })
         }
+        configError = ""
     }
     function applyTheme(raw: string): void {
-        shellTheme.colors = Object.assign({}, shellTheme.colors, JSON.parse(raw))
+        const source = Design.safeText(raw, "")
+        if (!source) return
+        const parsed = JSON.parse(source)
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("a raiz deve ser um objeto JSON")
+        shellTheme.colors = Object.assign({}, shellTheme.colors, parsed)
         shellTheme.generatedLoaded = true
+        themeError = ""
+    }
+    function reloadConfig(): void {
+        try { applyConfig(configFile.text()) }
+        catch (error) {
+            const message = String(error)
+            if (message !== configError) console.warn("hyprism config inválida; mantendo o último estado válido:", message)
+            configError = message
+        }
+    }
+    function reloadTheme(): void {
+        try { applyTheme(themeFile.text()) }
+        catch (error) {
+            const message = String(error)
+            if (message !== themeError) console.warn("hyprism theme inválido; mantendo o último estado válido:", message)
+            themeError = message
+        }
+    }
+    function fullscreenScreens(): var {
+        const names = []
+        const screens = Quickshell.screens || []
+        for (let index = 0; index < screens.length; index++) {
+            if (HyprlandService.monitorHasFullscreen(screens[index])) names.push(screens[index].name)
+        }
+        return names
     }
 
     Theme { id: shellTheme }
@@ -85,9 +111,25 @@ ShellRoot {
     ClipboardService { id: clipboardService; controller: shellController }
     IpcHandler {
         target: "shell"
-        function toggleControlCenter(): void { root.toggleTransient("control") }
-        function toggleNetwork(): void { root.toggleTransient("network") }
+        function openHub(): void { shellController.openHub(root.focusedScreenName()) }
+        function toggleHub(): void { shellController.toggleHub(root.focusedScreenName()) }
+        function toggleLauncher(): void { shellController.toggleLauncher(root.focusedScreenName()) }
+        function toggleClipboard(): void { shellController.toggleClipboard(root.focusedScreenName()) }
+        function toggleWallpaperPicker(): void { shellController.toggleWallpaperPicker(root.focusedScreenName()) }
+        function toggleNetwork(): void { shellController.toggleNetwork(root.focusedScreenName()) }
+        function togglePowerMenu(): void { shellController.togglePowerMenu(root.focusedScreenName()) }
+        function toggleEmojiPicker(): void { shellController.toggleEmojiPicker(root.focusedScreenName()) }
+        function switcherForward(): void {
+            if (shellController.mode !== "switcher") shellController.targetScreenName = root.focusedScreenName()
+            shellController.switcher(1)
+        }
+        function switcherBackward(): void {
+            if (shellController.mode !== "switcher") shellController.targetScreenName = root.focusedScreenName()
+            shellController.switcher(-1)
+        }
+        function switcherCommit(): void { shellController.commitSwitcher() }
         function togglePowerSaver(): void { shellController.togglePowerSaver() }
+        function randomWallpaper(): void { shellController.run([shellController.rootDir + "/scripts/wallpaper", "random"]) }
         function close(): void { shellController.close() }
         function themeChanged(image: string): void { shellController.showOsd("Tema", "Atualizado") }
         function reload(): void { Quickshell.reload(true) }
@@ -96,10 +138,17 @@ ShellRoot {
                 running: true,
                 pid: Quickshell.processId,
                 mode: shellController.mode,
+                targetScreen: shellController.targetScreenName,
+                panelFocusReady: shellController.panelFocusReady,
+                fullscreenScreens: root.fullscreenScreens(),
                 screenCount: Quickshell.screens.length,
                 primaryScreen: root.focusedScreenName(),
                 themeLoaded: true,
                 themeSource: shellTheme.sourceName,
+                themeAccent: shellTheme.colors.accent,
+                islandWidth: shellController.config.shell.islandWidth,
+                configError: root.configError,
+                themeError: root.themeError,
                 islandLoaded: root.islandLoaded,
                 widgetsLoaded: root.widgetsLoaded,
                 notificationServer: root.notificationServerReady,
@@ -107,19 +156,6 @@ ShellRoot {
             })
         }
     }
-    IpcHandler { target: "app-launcher"; function toggle(): void { root.toggleTransient("launcher") } }
-    IpcHandler { target: "wallpaper-picker"; function toggle(): void { root.toggleTransient("wallpaper") } }
-    IpcHandler { target: "wallpaper"; function random(): void { shellController.run([shellController.rootDir + "/scripts/wallpaper", "random"]) } }
-    IpcHandler { target: "clipboard"; function toggle(): void { root.toggleTransient("clipboard") } }
-    IpcHandler {
-        target: "window-switcher"
-        function forward(): void { if (shellController.mode !== "switcher") root.prepareTransient(); shellController.switcher(1) }
-        function backward(): void { if (shellController.mode !== "switcher") root.prepareTransient(); shellController.switcher(-1) }
-        function commit(): void { shellController.commitSwitcher() }
-    }
-    IpcHandler { target: "notifications"; function toggle(): void { root.toggleTransient("control") } }
-    IpcHandler { target: "power-menu"; function toggle(): void { root.toggleTransient("power") } }
-    IpcHandler { target: "emoji-picker"; function toggle(): void { root.toggleTransient("emoji") } }
     IpcHandler {
         target: "osd"
         function volume(value: string): void { shellController.showOsd("Volume", value) }
@@ -132,37 +168,29 @@ ShellRoot {
     }
 
     FileView {
+        id: configFile
         path: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/hyprism/user.json"
         blockLoading: true
         preload: true
         watchChanges: true
         printErrors: false
-        onLoaded: {
-            try { root.applyConfig(text()) }
-            catch (error) { console.warn("hyprism config: using defaults:", error) }
-        }
-        onTextChanged: {
-            try { root.applyConfig(text()) }
-            catch (error) { console.warn("hyprism config update ignored:", error) }
-        }
+        onLoaded: configReload.restart()
+        onTextChanged: configReload.restart()
         onFileChanged: reload()
     }
     FileView {
+        id: themeFile
         path: shellTheme.cacheDir + "/theme/theme.json"
         blockLoading: true
         preload: true
         watchChanges: true
         printErrors: false
-        onLoaded: {
-            try { root.applyTheme(text()) }
-            catch (error) { console.warn("hyprism theme: using fallback:", error) }
-        }
-        onTextChanged: {
-            try { root.applyTheme(text()) }
-            catch (error) { console.warn("hyprism theme update ignored:", error) }
-        }
+        onLoaded: themeReload.restart()
+        onTextChanged: themeReload.restart()
         onFileChanged: reload()
     }
+    Timer { id: configReload; interval: 90; onTriggered: root.reloadConfig() }
+    Timer { id: themeReload; interval: 90; onTriggered: root.reloadTheme() }
 
     NotificationServer {
         id: notificationServer

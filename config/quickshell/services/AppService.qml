@@ -6,7 +6,7 @@ Item {
     id: service
     visible: false
     required property var controller
-    property string rootDir: Quickshell.env("HYPRISM_ROOT") || Quickshell.env("HOME") + "/.local/share/hyprism"
+    readonly property string rootDir: controller.rootDir
     function refreshApps() { apps.running = true }
     function refreshWallpapers() { wallpapers.running = true }
     Process {

@@ -32,8 +32,7 @@ apply() {
       || true
   fi
   hyprctl reload >/dev/null 2>&1 || true
-  qs_config="${QS_CONFIG_NAME:-default}"
-  command -v qs >/dev/null && qs -c "$qs_config" ipc call shell themeChanged "$image" >/dev/null 2>&1 || true
+  command -v qs >/dev/null && "$root_dir/scripts/system/shell-ipc" shell themeChanged "$image" >/dev/null 2>&1 || true
 }
 random() {
   mapfile -t files < <(list)

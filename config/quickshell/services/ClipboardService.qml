@@ -12,7 +12,7 @@ Item {
     function clear() { controller.run(["sh", "-lc", "cliphist wipe"]); controller.clipboardEntries = [] }
     function shellQuote(value) { return "'" + String(value).replace(/'/g, "'\\\"'\\\"'") + "'" }
     Process {
-        id: entries; command: ["cliphist", "list"]
+        id: entries; command: ["sh", "-lc", "command -v cliphist >/dev/null 2>&1 && cliphist list"]
         stdout: SplitParser {
             splitMarker: "\n"
             onRead: data => {

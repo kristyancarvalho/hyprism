@@ -26,6 +26,7 @@ Item {
     property bool desiredWifi: false
     property bool desiredBluetooth: false
     property bool systemServiceAvailable: false
+    property bool panelFocusReady: false
     readonly property bool nightMode: system.nightMode.available && system.nightMode.enabled
     readonly property bool powerSaver: system.powerProfile.available && system.powerProfile.mode === "power-saver"
     readonly property date currentTime: systemClock.date
@@ -40,28 +41,52 @@ Item {
     property var weather: ({ city: "São Paulo", condition: "Indisponível", temperature: null, apparentTemperature: null, minimum: null, maximum: null, weatherCode: -1 })
     property var system: ({ audio: { available: false, percent: 0, muted: false }, microphone: { available: false, percent: 0, muted: false }, network: { available: false, kind: "disconnected", name: "Desconectado", enabled: false, signal: 0, receiveKib: 0, transmitKib: 0, wifiAvailable: false, wifiEnabled: false, virtualized: false }, bluetooth: { available: false, powered: false, connected: false, devices: [] }, battery: { available: false, percent: 0, status: "" }, brightness: { available: false, percent: 0 }, nightMode: { available: false, enabled: false }, powerProfile: { available: false, mode: "" }, memory: { percent: 0, used: 0, total: 0 }, cpu: { percent: 0 }, gpu: { available: false, percent: 0 }, temperature: { available: false, celsius: 0 } })
     property var config: ({ shell: { primaryMonitor: "", islandWidth: 560, compactHeight: Design.compactBarHeight, topMargin: Design.shellTopMargin, reserveGap: Design.compactBottomGap, surfaceOpacity: .9, animationFast: Design.animationFast, animationNormal: Design.animationMorph, widgets: { clock: true, weather: true, media: true, system: true } } })
-    property string rootDir: Quickshell.env("HYPRISM_ROOT") || Quickshell.env("HOME") + "/.local/share/hyprism"
+    property string rootDir: Quickshell.env("HYPRISM_ROOT") || Quickshell.shellDir + "/../.."
+    readonly property var panelModes: ["launcher", "wallpaper", "clipboard", "control", "network", "bluetooth", "power", "emoji", "switcher"]
 
-    function open(next) {
+    function openMode(next) {
+        if (panelModes.indexOf(next) < 0 && next !== "hover") return
+        panelFocusReady = false
         if (mode !== next) previousMode = mode
         mode = next
     }
 
-    function openOnScreen(next, screenName) {
+    function openPanel(next, screenName) {
         const safeName = Design.safeText(screenName, "")
         if (safeName) targetScreenName = safeName
-        open(next)
+        openMode(next)
     }
 
-    function toggle(next) {
-        mode === next ? close() : open(next)
+    function togglePanel(next, screenName) {
+        if (mode === next) {
+            close()
+            return
+        }
+        openPanel(next, screenName)
     }
+
+    function openHub(screenName) { openPanel("control", screenName) }
+    function openLauncher(screenName) { openPanel("launcher", screenName) }
+    function openClipboard(screenName) { openPanel("clipboard", screenName) }
+    function openWallpaperPicker(screenName) { openPanel("wallpaper", screenName) }
+    function openNetwork(screenName) { openPanel("network", screenName) }
+    function openBluetooth(screenName) { openPanel("bluetooth", screenName) }
+    function openPowerMenu(screenName) { openPanel("power", screenName) }
+    function openEmojiPicker(screenName) { openPanel("emoji", screenName) }
+    function toggleHub(screenName) { togglePanel("control", screenName) }
+    function toggleLauncher(screenName) { togglePanel("launcher", screenName) }
+    function toggleClipboard(screenName) { togglePanel("clipboard", screenName) }
+    function toggleWallpaperPicker(screenName) { togglePanel("wallpaper", screenName) }
+    function toggleNetwork(screenName) { togglePanel("network", screenName) }
+    function togglePowerMenu(screenName) { togglePanel("power", screenName) }
+    function toggleEmojiPicker(screenName) { togglePanel("emoji", screenName) }
 
     function close() {
         if (mode === "compact") {
             return
         }
         mode = "compact"
+        panelFocusReady = false
     }
 
     function returnToPrevious() {
@@ -191,7 +216,7 @@ Item {
             switcherWindows = orderedWindows()
             if (!switcherWindows.length) return
             previousMode = mode
-            mode = "switcher"
+            openMode("switcher")
             switcherIndex = step < 0 ? switcherWindows.length - 1 : Math.min(1, switcherWindows.length - 1)
             return
         }
@@ -203,7 +228,7 @@ Item {
         const window = switcherWindows[switcherIndex]
         if (window) {
             if (window.minimized) window.minimized = false
-            window.activate()
+            HyprlandService.focusWindow(window)
         }
         close()
     }

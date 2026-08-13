@@ -15,9 +15,20 @@ FALLBACK = {"background": "#091015", "foreground": "#e0e8ee", "accent": "#82b1d3
 def write(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temp = tempfile.mkstemp(prefix=".hyprism-", dir=path.parent)
-    with os.fdopen(fd, "w", encoding="utf-8") as handle:
-        handle.write(value)
-    os.replace(temp, path)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(value)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temp, path)
+    except BaseException:
+        pathlib.Path(temp).unlink(missing_ok=True)
+        raise
+
+def write_json(path, value):
+    serialized = json.dumps(value, indent=2, ensure_ascii=False) + "\n"
+    json.loads(serialized)
+    write(path, serialized)
 
 def rgb(value):
     value = value.lstrip("#")
@@ -51,7 +62,7 @@ def palette(image):
     try:
         call = ["matugen", "image", image, "--source-color-index", "0", "-t", "scheme-content", "--dry-run", "--json", "hex"]
         raw = json.loads(subprocess.run(call, check=True, capture_output=True, text=True).stdout)
-        write(OUT / "matugen.json", json.dumps(raw, indent=2) + "\n")
+        write_json(OUT / "matugen.json", raw)
         colors = raw["colors"]
         return {
             "background": colors["background"]["dark"]["color"],
@@ -87,7 +98,7 @@ theme = {
     "error": accessible(raw.get("error", "#dc7179"), background, 3.2),
     "warning": "#e0ae61", "success": primary, "wallpaper": image,
 }
-write(OUT / "theme.json", json.dumps(theme, indent=2) + "\n")
+write_json(OUT / "theme.json", theme)
 kitty = [
     f"foreground {foreground}", f"background {background}", f"cursor {primary}",
     f"cursor_text_color {background}", f"selection_foreground {foreground}",
