@@ -12,7 +12,7 @@
     "surfaceOpacity": 0.9,
     "animationFast": 110,
     "animationNormal": 150,
-    "widgetLayout": { "side": "right" },
+    "widgetLayout": { "position": "center", "side": "right" },
     "widgets": {
       "clock": { "enabled": true },
       "weather": { "enabled": true },
