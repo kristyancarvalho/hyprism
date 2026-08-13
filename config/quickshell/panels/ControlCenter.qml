@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 import "../components"
 import ".."
 
@@ -100,21 +101,23 @@ Item {
             width: parent.width
             spacing: 12
 
-            Row {
+            RowLayout {
                 width: parent.width
+                spacing: Design.spacingMd
 
                 Text {
-                    width: parent.width - power.width
-                    anchors.verticalCenter: parent.verticalCenter
+                    Layout.fillWidth: true
                     text: controller.formattedDate("dddd · dd MMMM  HH:mm")
                     color: panel.theme.colors.foreground
                     font.family: Design.fontFamily
                     font.pixelSize: Design.fontSizeLg
                     font.weight: Design.fontWeightSemibold
+                    elide: Text.ElideRight
                 }
 
                 ShellButton {
                     id: power
+                    Layout.preferredWidth: implicitWidth
                     theme: panel.theme
                     text: "Energia"
                     iconName: "power"
@@ -216,7 +219,7 @@ Item {
                 onChanged: value => panel.setBrightness(value)
             }
 
-            Rectangle { width: parent.width; height: 1; color: panel.theme.colors.outline }
+            Rectangle { width: parent.width; height: 1; color: panel.theme.colors.borderSubtle; opacity: .55 }
 
             MediaStrip {
                 width: parent.width
@@ -228,6 +231,7 @@ Item {
 
             Row {
                 width: parent.width
+                spacing: Design.spacingXs
 
                 StatusIcon { name: "notification"; iconSize: Design.iconSm; color: panel.theme.colors.accent }
                 Text {

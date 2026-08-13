@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Layouts
 import "../components"
 import ".."
 
@@ -43,21 +44,23 @@ Item {
         anchors.margins: 18
         spacing: 10
 
-        Row {
+        RowLayout {
             width: parent.width
+            spacing: Design.spacingSm
 
             Text {
-                width: parent.width - power.width
-                anchors.verticalCenter: parent.verticalCenter
+                Layout.fillWidth: true
                 text: !controller.system.bluetooth.available ? "Bluetooth indisponível" : "Bluetooth"
                 color: panel.theme.colors.foreground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeLg
                 font.weight: Design.fontWeightSemibold
+                elide: Text.ElideRight
             }
 
             ShellButton {
                 id: power
+                Layout.preferredWidth: implicitWidth
                 visible: controller.system.bluetooth.available
                 theme: panel.theme
                 compact: true
@@ -79,8 +82,8 @@ Item {
                 height: 58
                 radius: Design.radiusSm
                 color: panel.selectedIndex === index ? panel.theme.colors.surfaceActive : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
-                border.width: panel.selectedIndex === index ? 2 : 1
-                border.color: panel.selectedIndex === index ? panel.theme.colors.accent : panel.theme.colors.outline
+                border.width: panel.selectedIndex === index ? 2 : 0
+                border.color: panel.theme.colors.accent
 
                 StatusIcon {
                     anchors {

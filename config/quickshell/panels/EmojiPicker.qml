@@ -70,7 +70,7 @@ Item {
             background: Rectangle {
                 radius: Design.radiusSm
                 color: theme.colors.surfaceVariant
-                border.width: search.activeFocus ? 2 : 1
+                border.width: search.activeFocus ? 2 : 0
                 border.color: search.activeFocus ? theme.colors.accent : theme.colors.outline
             }
         }
@@ -92,8 +92,8 @@ Item {
                 height: 50
                 radius: Design.radiusSm
                 color: panel.selectedIndex === index ? theme.colors.surfaceActive : pointer.containsMouse ? theme.colors.surfaceHover : theme.colors.surfaceVariant
-                border.width: panel.selectedIndex === index ? 2 : 1
-                border.color: panel.selectedIndex === index ? theme.colors.accent : theme.colors.outline
+                border.width: panel.selectedIndex === index ? 2 : 0
+                border.color: theme.colors.accent
 
                 Text { anchors.centerIn: parent; text: modelData.glyph; font.pixelSize: 24 }
 

@@ -27,8 +27,18 @@ QtObject {
         Hyprland.dispatch("hl.dsp.window.move({ workspace = " + id + " })")
     }
 
-    function focusWindow(window) {
-        if (window) window.activate()
+    function normalizedAddress(address) {
+        const raw = Design.safeText(address, "")
+        if (/^0x[0-9a-f]+$/i.test(raw)) return raw
+        if (/^[0-9a-f]+$/i.test(raw)) return "0x" + raw
+        return ""
+    }
+
+    function focusWindow(address) {
+        const normalized = normalizedAddress(address)
+        if (!normalized) return false
+        Hyprland.dispatch("hl.dsp.focus({ window = \"address:" + normalized + "\" })")
+        return true
     }
 
     function monitorFor(screen) {

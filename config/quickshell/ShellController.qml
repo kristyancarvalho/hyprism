@@ -2,7 +2,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
-import Quickshell.Wayland
 
 Item {
     id: controller
@@ -186,7 +185,7 @@ Item {
 
     function rememberWindow(window) {
         if (!window) return
-        const available = ToplevelManager.toplevels.values || []
+        const available = Hyprland.toplevels.values || []
         const next = [window]
         for (let i = 0; i < mruWindows.length; i++) {
             const candidate = mruWindows[i]
@@ -199,7 +198,7 @@ Item {
     }
 
     function orderedWindows() {
-        const available = ToplevelManager.toplevels.values || []
+        const available = Hyprland.toplevels.values || []
         const ordered = []
         for (let i = 0; i < mruWindows.length; i++) {
             if (mruWindows[i] && available.indexOf(mruWindows[i]) >= 0 && ordered.indexOf(mruWindows[i]) < 0) ordered.push(mruWindows[i])
@@ -210,10 +209,34 @@ Item {
         return ordered
     }
 
+    function switcherEntry(window) {
+        if (!window) return null
+        const address = HyprlandService.normalizedAddress(window.address)
+        if (!address) return null
+        const ipc = window.lastIpcObject || {}
+        return {
+            window: window,
+            address: address,
+            appId: Design.safeText(ipc.class, Design.safeText(ipc.initialClass, "")),
+            title: Design.safeText(window.title, "Sem título"),
+            minimized: false
+        }
+    }
+
+    function switcherEntries() {
+        const windows = orderedWindows()
+        const entries = []
+        for (let index = 0; index < windows.length; index++) {
+            const entry = switcherEntry(windows[index])
+            if (entry) entries.push(entry)
+        }
+        return entries
+    }
+
     function switcher(step) {
         if (mode !== "switcher") {
-            rememberWindow(ToplevelManager.activeToplevel)
-            switcherWindows = orderedWindows()
+            rememberWindow(Hyprland.activeToplevel)
+            switcherWindows = switcherEntries()
             if (!switcherWindows.length) return
             previousMode = mode
             openMode("switcher")
@@ -225,10 +248,9 @@ Item {
 
     function commitSwitcher() {
         if (mode !== "switcher") return
-        const window = switcherWindows[switcherIndex]
-        if (window) {
-            if (window.minimized) window.minimized = false
-            HyprlandService.focusWindow(window)
+        const selected = switcherWindows[switcherIndex]
+        if (selected) {
+            HyprlandService.focusWindow(selected.address)
         }
         close()
     }
@@ -382,10 +404,10 @@ Item {
         }
     }
     Connections {
-        target: ToplevelManager
+        target: Hyprland
         function onActiveToplevelChanged() {
-            controller.rememberWindow(ToplevelManager.activeToplevel)
+            controller.rememberWindow(Hyprland.activeToplevel)
         }
     }
-    Component.onCompleted: rememberWindow(ToplevelManager.activeToplevel)
+    Component.onCompleted: rememberWindow(Hyprland.activeToplevel)
 }

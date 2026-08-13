@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 import "../components"
 import ".."
 
@@ -76,12 +77,13 @@ Item {
         anchors.margins: 22
         spacing: 12
 
-        Row {
+        RowLayout {
             id: header
             width: parent.width
+            spacing: Design.spacingMd
 
             Text {
-                width: parent.width - hint.width
+                Layout.fillWidth: true
                 text: "Aplicativos"
                 color: panel.theme.colors.foreground
                 font.family: Design.fontFamily
@@ -91,6 +93,7 @@ Item {
 
             Text {
                 id: hint
+                Layout.preferredWidth: implicitWidth
                 text: "↑ ↓ navegar  ·  Enter abrir"
                 color: panel.theme.colors.mutedForeground
                 font.family: Design.fontFamily
@@ -117,7 +120,7 @@ Item {
                     radius: Design.radiusSm
                     color: panel.theme.colors.surfaceVariant
                     border.color: search.activeFocus ? panel.theme.colors.accent : panel.theme.colors.outline
-                    border.width: search.activeFocus ? 2 : 1
+                    border.width: search.activeFocus ? 2 : 0
                 }
                 onTextChanged: {
                     panel.query = text

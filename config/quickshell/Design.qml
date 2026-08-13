@@ -36,9 +36,9 @@ QtObject {
     readonly property int compactGroupSpacing: spacingMd
     readonly property int compactSeparatorHeight: 16
     readonly property int compactSeparatorWidth: 1
-    readonly property int radiusSmall: 4
-    readonly property int radiusDefault: 6
-    readonly property int radiusLarge: 8
+    readonly property int radiusSmall: 6
+    readonly property int radiusDefault: 9
+    readonly property int radiusLarge: 12
     readonly property int radiusXs: radiusSmall
     readonly property int radiusSm: radiusDefault
     readonly property int radiusMd: radiusDefault
@@ -78,6 +78,7 @@ QtObject {
         close: "󰅖",
         clear: "󰆴",
         clipboard: "󰅌",
+        image: "󰋩",
         wifi: "󰖩",
         wifiOff: "󰖪",
         ethernet: "󰈀",
