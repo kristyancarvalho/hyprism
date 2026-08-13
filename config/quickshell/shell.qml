@@ -106,11 +106,12 @@ ShellRoot {
         if (!source) return
         const parsed = JSON.parse(source)
         if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("a raiz deve ser um objeto JSON")
-        const currentShell = shellController.config.shell
         const incomingShell = parsed.shell || {}
+        const defaultShell = shellController.defaultShellConfig()
         shellController.config = {
-            shell: Object.assign({}, currentShell, incomingShell, {
-                widgets: Object.assign({}, currentShell.widgets, incomingShell.widgets || {})
+            shell: Object.assign({}, defaultShell, incomingShell, {
+                widgetLayout: Object.assign({}, defaultShell.widgetLayout, incomingShell.widgetLayout || {}),
+                widgets: shellController.mergedWidgetConfig(incomingShell.widgets || {})
             })
         }
         configError = ""
@@ -148,10 +149,17 @@ ShellRoot {
         }
         return names
     }
+    function widgetStatus(): var {
+        const result = {}
+        const names = Object.keys(shellController.widgetDefaults)
+        for (let index = 0; index < names.length; index++) result[names[index]] = shellController.widgetEnabled(names[index])
+        return result
+    }
 
     Theme { id: shellTheme }
     ShellController { id: shellController }
     SystemService { controller: shellController }
+    MonitoringService { controller: shellController }
     MediaService { controller: shellController }
     AppService { id: appService; controller: shellController }
     ClipboardService { id: clipboardService; controller: shellController }
@@ -203,9 +211,22 @@ ShellRoot {
                 switcherIndex: shellController.switcherIndex,
                 switcherAddress: shellController.switcherWindows[shellController.switcherIndex] ? shellController.switcherWindows[shellController.switcherIndex].address : "",
                 popupCount: root.popupNotifications.length,
-                popupOverflowCount: root.popupOverflowCount
+                popupOverflowCount: root.popupOverflowCount,
+                switcherMetadata: shellController.switcherWindows.map(item => ({ address: item.address, appId: item.appId, initialClass: item.initialClass, icon: item.icon, applicationName: item.applicationName, title: item.title })),
+                widgets: root.widgetStatus(),
+                monitoring: shellController.monitoring,
+                taskCount: shellController.tasks.length
             })
         }
+    }
+    IpcHandler {
+        target: "tasks"
+        function add(payload: string): string { return shellController.upsertTask(payload) }
+        function update(identifier: string, payload: string): void { shellController.updateTask(identifier, payload) }
+        function finish(identifier: string): void { shellController.finishTask(identifier, false) }
+        function fail(identifier: string): void { shellController.finishTask(identifier, true) }
+        function remove(identifier: string): void { shellController.removeTask(identifier) }
+        function list(): string { return JSON.stringify(shellController.tasks) }
     }
     IpcHandler {
         target: "osd"
@@ -254,6 +275,10 @@ ShellRoot {
                 { id: "3", type: "text", text: "Outro item de texto", searchText: "outro item texto", mime: "text/plain;charset=utf-8", thumbnail: "", width: 0, height: 0 },
                 { id: "4", type: "image", text: "Imagem · 1200×800", searchText: "imagem png 1200×800", mime: "image/png", thumbnail: "file://" + shellController.rootDir + "/wallpapers/ember.png", width: 1200, height: 800 }
             ]
+        }
+        function mockTask(): void {
+            if (!root.developmentMode) return
+            shellController.upsertTask(JSON.stringify({ id: "development", title: "Preparando tema", subtitle: "Aplicando nova paleta", progress: 64, status: "running", eta: 45, source: "Hyprism" }))
         }
     }
 

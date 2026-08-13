@@ -85,7 +85,7 @@ Item {
 
                     ShellIcon {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        name: controller.applicationIcon(modelData ? modelData.appId : "")
+                        name: modelData ? modelData.icon : "application-x-executable"
                         fallback: "application-x-executable"
                         iconSize: 38
                         framed: true
@@ -94,7 +94,7 @@ Item {
 
                     Text {
                         width: parent.width
-                        text: controller.applicationName(modelData ? modelData.appId : "")
+                        text: modelData ? modelData.applicationName : "Janela"
                         color: panel.theme.colors.foreground
                         font.family: Design.fontFamily
                         font.pixelSize: Design.fontSizeSm
