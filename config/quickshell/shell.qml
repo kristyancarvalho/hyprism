@@ -210,6 +210,9 @@ ShellRoot {
                 switcherCount: shellController.switcherWindows.length,
                 switcherIndex: shellController.switcherIndex,
                 switcherAddress: shellController.switcherWindows[shellController.switcherIndex] ? shellController.switcherWindows[shellController.switcherIndex].address : "",
+                wallpaperQuery: shellController.wallpaperQuery,
+                wallpaperResultCount: shellController.wallpaperResultCount,
+                wallpaperSelectedIndex: shellController.wallpaperSelectedIndex,
                 popupCount: root.popupNotifications.length,
                 popupOverflowCount: root.popupOverflowCount,
                 switcherMetadata: shellController.switcherWindows.map(item => ({ address: item.address, appId: item.appId, initialClass: item.initialClass, icon: item.icon, applicationName: item.applicationName, title: item.title })),
@@ -275,6 +278,10 @@ ShellRoot {
                 { id: "3", type: "text", text: "Outro item de texto", searchText: "outro item texto", mime: "text/plain;charset=utf-8", thumbnail: "", width: 0, height: 0 },
                 { id: "4", type: "image", text: "Imagem · 1200×800", searchText: "imagem png 1200×800", mime: "image/png", thumbnail: "file://" + shellController.rootDir + "/wallpapers/ember.png", width: 1200, height: 800 }
             ]
+        }
+        function wallpaperSearch(query: string): void {
+            if (!root.developmentMode) return
+            shellController.wallpaperQuery = query
         }
         function mockTask(): void {
             if (!root.developmentMode) return

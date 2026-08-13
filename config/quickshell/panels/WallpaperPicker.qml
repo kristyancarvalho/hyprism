@@ -3,49 +3,94 @@ import QtQuick.Layouts
 import "../components"
 import ".."
 
-Item {
+FocusScope {
     id: panel
     required property var controller
     required property var theme
     required property var appService
-    property int selectedIndex: 0
+    readonly property var filteredWallpapers: filterWallpapers(controller.wallpaperEntries, controller.wallpaperQuery)
 
-    function apply(path) {
-        if (!Design.safeText(path, "")) return
+    function normalized(value) {
+        const lowered = Design.safeText(value, "").toLowerCase()
+        const decomposed = lowered.normalize ? lowered.normalize("NFD") : lowered
+        return decomposed.replace(/[\u0300-\u036f]/g, "").replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim()
+    }
+
+    function filterWallpapers(entries, query) {
+        const source = Array.isArray(entries) ? entries : []
+        const terms = normalized(query).split(" ").filter(term => term.length > 0)
+        if (!terms.length) return source.slice()
+        return source.filter(path => {
+            const filename = normalized(Design.safeText(path, "").split("/").pop().replace(/\.[^.]+$/, ""))
+            return terms.every(term => filename.indexOf(term) >= 0)
+        })
+    }
+
+    function clampSelection() {
+        const count = filteredWallpapers.length
+        controller.wallpaperResultCount = count
+        controller.wallpaperSelectedIndex = count > 0 ? Math.max(0, Math.min(controller.wallpaperSelectedIndex, count - 1)) : 0
+    }
+
+    function moveSelection(horizontal, vertical) {
+        const count = filteredWallpapers.length
+        if (!count) return
+        controller.wallpaperSelectedIndex = navigation.grid(controller.wallpaperSelectedIndex, horizontal, vertical, grid.columns, count)
+        grid.positionViewAtIndex(controller.wallpaperSelectedIndex, GridView.Contain)
+    }
+
+    function applySelected() {
+        const index = controller.wallpaperSelectedIndex
+        if (index < 0 || index >= filteredWallpapers.length) return
+        const path = Design.safeText(filteredWallpapers[index], "")
+        if (!path) return
+        if (controller.developmentMode) {
+            controller.showOsd("Papel de parede", path.split("/").pop())
+            return
+        }
         controller.run([controller.rootDir + "/scripts/wallpaper", "set", path])
         controller.close()
     }
 
-    focus: true
-    Keys.onPressed: event => {
-        const count = controller.wallpaperEntries.length
+    function handleKey(event) {
         if (event.key === Qt.Key_Escape) {
             controller.close()
             event.accepted = true
         } else if (event.key === Qt.Key_Left) {
-            selectedIndex = navigation.grid(selectedIndex, -1, 0, grid.columns, count)
+            moveSelection(-1, 0)
             event.accepted = true
         } else if (event.key === Qt.Key_Right) {
-            selectedIndex = navigation.grid(selectedIndex, 1, 0, grid.columns, count)
+            moveSelection(1, 0)
             event.accepted = true
         } else if (event.key === Qt.Key_Up) {
-            selectedIndex = navigation.grid(selectedIndex, 0, -1, grid.columns, count)
+            moveSelection(0, -1)
             event.accepted = true
         } else if (event.key === Qt.Key_Down) {
-            selectedIndex = navigation.grid(selectedIndex, 0, 1, grid.columns, count)
+            moveSelection(0, 1)
             event.accepted = true
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-            apply(controller.wallpaperEntries[selectedIndex])
+            applySelected()
             event.accepted = true
         }
     }
+
+    function takeInitialFocus() {
+        Qt.callLater(() => searchInput.forceActiveFocus(Qt.ShortcutFocusReason))
+    }
+
+    function initialFocusReady() {
+        return searchInput.activeFocus
+    }
+
+    focus: true
+    Keys.onPressed: event => handleKey(event)
 
     Navigation { id: navigation }
 
     Column {
         anchors.fill: parent
-        anchors.margins: 22
-        spacing: 14
+        anchors.margins: Design.spacingLg
+        spacing: Design.spacingMd
 
         RowLayout {
             id: header
@@ -63,7 +108,6 @@ Item {
             }
 
             ShellButton {
-                id: refresh
                 Layout.preferredWidth: implicitWidth
                 theme: panel.theme
                 text: "Atualizar"
@@ -73,17 +117,90 @@ Item {
             }
         }
 
+        Rectangle {
+            id: searchBox
+            width: parent.width
+            height: 42
+            radius: Design.radiusSm
+            color: searchInput.activeFocus ? panel.theme.colors.surfaceActive : panel.theme.colors.surfaceVariant
+            border.width: searchInput.activeFocus ? 1 : 0
+            border.color: panel.theme.colors.accent
+
+            StatusIcon {
+                id: searchIcon
+                anchors.left: parent.left
+                anchors.leftMargin: Design.spacingMd
+                anchors.verticalCenter: parent.verticalCenter
+                name: "search"
+                iconSize: Design.iconSm
+                color: panel.theme.colors.mutedForeground
+            }
+
+            TextInput {
+                id: searchInput
+                anchors {
+                    left: searchIcon.right
+                    right: clearButton.left
+                    top: parent.top
+                    bottom: parent.bottom
+                    leftMargin: Design.spacingSm
+                    rightMargin: Design.spacingSm
+                }
+                text: panel.controller.wallpaperQuery
+                color: panel.theme.colors.foreground
+                selectionColor: panel.theme.colors.accent
+                selectedTextColor: panel.theme.colors.background
+                font.family: Design.fontFamily
+                font.pixelSize: Design.fontSizeSm
+                verticalAlignment: TextInput.AlignVCenter
+                clip: true
+                onTextChanged: if (text !== panel.controller.wallpaperQuery) panel.controller.wallpaperQuery = text
+                Keys.priority: Keys.BeforeItem
+                Keys.onPressed: event => panel.handleKey(event)
+            }
+
+            Text {
+                anchors {
+                    left: searchInput.left
+                    right: searchInput.right
+                    verticalCenter: parent.verticalCenter
+                }
+                visible: searchInput.text.length === 0
+                text: "Pesquisar papel de parede..."
+                color: panel.theme.colors.mutedForeground
+                font.family: Design.fontFamily
+                font.pixelSize: Design.fontSizeSm
+                elide: Text.ElideRight
+            }
+
+            ShellButton {
+                id: clearButton
+                anchors.right: parent.right
+                anchors.rightMargin: Design.spacingXs
+                anchors.verticalCenter: parent.verticalCenter
+                visible: searchInput.text.length > 0
+                width: visible ? 34 : 0
+                theme: panel.theme
+                iconName: "close"
+                compact: true
+                onClicked: {
+                    panel.controller.wallpaperQuery = ""
+                    searchInput.forceActiveFocus(Qt.MouseFocusReason)
+                }
+            }
+        }
+
         GridView {
             id: grid
             property int columns: width >= 760 ? 4 : width >= 500 ? 3 : 2
             width: parent.width
-            height: Math.max(0, parent.height - header.height - 14)
+            height: Math.max(0, parent.height - header.height - searchBox.height - parent.spacing * 2)
             cellWidth: width / columns
-            cellHeight: Math.max(118, Math.min(158, cellWidth * .66))
+            cellHeight: Math.max(112, Math.min(142, cellWidth * .66))
             clip: true
-            model: panel.controller.wallpaperEntries
-            currentIndex: panel.selectedIndex
-            onCurrentIndexChanged: positionViewAtIndex(currentIndex, GridView.Contain)
+            model: panel.filteredWallpapers
+            currentIndex: panel.controller.wallpaperSelectedIndex
+            onCurrentIndexChanged: if (currentIndex >= 0) positionViewAtIndex(currentIndex, GridView.Contain)
 
             delegate: Item {
                 required property var modelData
@@ -93,10 +210,10 @@ Item {
 
                 Rectangle {
                     anchors.fill: parent
-                    anchors.margins: 6
+                    anchors.margins: Design.spacingXs
                     radius: Design.radiusSm
                     color: panel.theme.colors.surfaceVariant
-                    border.width: panel.selectedIndex === index ? 2 : 0
+                    border.width: panel.controller.wallpaperSelectedIndex === index ? 2 : 0
                     border.color: panel.theme.colors.accent
                     clip: true
 
@@ -110,27 +227,18 @@ Item {
 
                     Rectangle {
                         anchors.fill: parent
-                        color: pointer.containsMouse && panel.selectedIndex !== index ? panel.theme.colors.surfaceHover : "transparent"
+                        color: pointer.containsMouse && panel.controller.wallpaperSelectedIndex !== index ? panel.theme.colors.surfaceHover : "transparent"
                         opacity: .28
                     }
 
                     Rectangle {
-                        anchors {
-                            left: parent.left
-                            right: parent.right
-                            bottom: parent.bottom
-                        }
+                        anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
                         height: 30
                         color: "#b0000000"
                     }
 
                     Text {
-                        anchors {
-                            left: parent.left
-                            right: parent.right
-                            bottom: parent.bottom
-                            margins: 8
-                        }
+                        anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: Design.spacingSm }
                         text: Design.safeText(modelData, "Papel de parede").split("/").pop().replace(/\.[^.]+$/, "")
                         color: "white"
                         elide: Text.ElideRight
@@ -145,15 +253,18 @@ Item {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onEntered: panel.selectedIndex = index
-                    onClicked: panel.apply(modelData)
+                    onEntered: panel.controller.wallpaperSelectedIndex = index
+                    onClicked: {
+                        panel.controller.wallpaperSelectedIndex = index
+                        panel.applySelected()
+                    }
                 }
             }
 
             Text {
                 anchors.centerIn: parent
                 visible: parent.count === 0
-                text: "Nenhum papel de parede em ~/Imagens/Wallpapers"
+                text: panel.controller.wallpaperQuery.length ? "Nenhum papel de parede encontrado" : "Nenhum papel de parede em ~/Imagens/Wallpapers"
                 color: panel.theme.colors.mutedForeground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeSm
@@ -161,8 +272,10 @@ Item {
         }
     }
 
+    onFilteredWallpapersChanged: clampSelection()
     Component.onCompleted: {
         appService.refreshWallpapers()
-        forceActiveFocus()
+        clampSelection()
+        takeInitialFocus()
     }
 }

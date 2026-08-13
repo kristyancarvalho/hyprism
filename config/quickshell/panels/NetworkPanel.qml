@@ -95,7 +95,7 @@ Item {
                 theme: panel.theme
                 compact: true
                 text: controller.system.network.wifiEnabled ? "Desligar" : "Ligar"
-                iconName: "wifi"
+                iconName: controller.system.network.wifiEnabled ? controller.networkIconName() : "wifiDisconnected"
                 active: controller.system.network.wifiEnabled
                 pending: controller.pendingWifi
                 onClicked: controller.toggleWifi()
@@ -158,7 +158,7 @@ Item {
                         leftMargin: 13
                         verticalCenter: parent.verticalCenter
                     }
-                    name: "wifi"
+                    name: controller.wifiIconForSignal(modelData.signal)
                     iconSize: Design.iconMd
                     color: panel.theme.colors.accent
                 }

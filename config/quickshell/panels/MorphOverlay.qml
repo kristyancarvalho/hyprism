@@ -43,9 +43,9 @@ PanelWindow {
             height = Design.launcherHeight(controller.launcherResultCount)
         } else if (mode === "wallpaper") {
             width = Math.min(safeWidth, 880)
-            const columns = width >= 800 ? 4 : width >= 560 ? 3 : 2
-            const rows = Math.max(1, Math.ceil(controller.wallpaperEntries.length / columns))
-            height = Math.min(560, 104 + rows * 150)
+            const columns = width >= 796 ? 4 : width >= 536 ? 3 : 2
+            const rows = Math.max(1, Math.ceil(controller.wallpaperResultCount / columns))
+            height = Math.min(560, 154 + rows * 142)
         } else if (mode === "clipboard") {
             width = Math.min(safeWidth, 700)
             height = 500
@@ -302,7 +302,7 @@ PanelWindow {
                 CompactBarItem {
                     theme: window.theme
                     iconName: controller.networkIconName()
-                    iconOnly: true
+                    label: controller.networkLabel()
                     filled: false
                 }
 
@@ -310,7 +310,8 @@ PanelWindow {
                     visible: controller.system.bluetooth.available
                     theme: window.theme
                     iconName: controller.bluetoothIconName()
-                    iconOnly: true
+                    label: controller.bluetoothExpandedText()
+                    labelMaximumWidth: 180
                     filled: false
                 }
 
@@ -319,7 +320,7 @@ PanelWindow {
                     theme: window.theme
                     iconName: controller.batteryIconName()
                     trailingIconName: controller.batteryCharging() ? "charging" : ""
-                    label: controller.batteryText()
+                    label: controller.batteryExpandedText()
                     filled: false
                 }
             }

@@ -32,6 +32,9 @@ Item {
     property var appEntries: []
     property var applicationIndex: ({})
     property var wallpaperEntries: []
+    property string wallpaperQuery: ""
+    property int wallpaperResultCount: 0
+    property int wallpaperSelectedIndex: 0
     property var clipboardEntries: []
     property var cpuHistory: []
     property var memoryHistory: []
@@ -63,6 +66,7 @@ Item {
     })
     property var config: ({ shell: { primaryMonitor: "", islandWidth: 560, compactHeight: Design.compactBarHeight, topMargin: Design.shellTopMargin, reserveGap: Design.compactBottomGap, surfaceOpacity: .9, animationFast: Design.animationFast, animationNormal: Design.animationMorph, widgetLayout: { side: "right" }, widgets: widgetDefaults } })
     property string rootDir: Quickshell.env("HYPRISM_ROOT") || Quickshell.shellDir + "/../.."
+    readonly property bool developmentMode: Quickshell.env("HYPRISM_DEVELOPMENT") === "1"
     readonly property var panelModes: ["launcher", "wallpaper", "clipboard", "control", "network", "bluetooth", "power", "emoji", "switcher"]
 
     function defaultShellConfig() {
@@ -134,7 +138,11 @@ Item {
     function openHub(screenName) { openPanel("control", screenName) }
     function openLauncher(screenName) { openPanel("launcher", screenName) }
     function openClipboard(screenName) { openPanel("clipboard", screenName) }
-    function openWallpaperPicker(screenName) { openPanel("wallpaper", screenName) }
+    function openWallpaperPicker(screenName) {
+        wallpaperQuery = ""
+        wallpaperSelectedIndex = 0
+        openPanel("wallpaper", screenName)
+    }
     function openNetwork(screenName) { openPanel("network", screenName) }
     function openBluetooth(screenName) { openPanel("bluetooth", screenName) }
     function openPowerMenu(screenName) { openPanel("power", screenName) }
@@ -142,7 +150,10 @@ Item {
     function toggleHub(screenName) { togglePanel("control", screenName) }
     function toggleLauncher(screenName) { togglePanel("launcher", screenName) }
     function toggleClipboard(screenName) { togglePanel("clipboard", screenName) }
-    function toggleWallpaperPicker(screenName) { togglePanel("wallpaper", screenName) }
+    function toggleWallpaperPicker(screenName) {
+        if (mode === "wallpaper") close()
+        else openWallpaperPicker(screenName)
+    }
     function toggleNetwork(screenName) { togglePanel("network", screenName) }
     function togglePowerMenu(screenName) { togglePanel("power", screenName) }
     function toggleEmojiPicker(screenName) { togglePanel("emoji", screenName) }
@@ -473,7 +484,17 @@ Item {
     }
 
     function networkIconName() {
-        return system.network.kind === "wifi" ? "wifi" : system.network.kind === "ethernet" ? "ethernet" : "networkOff"
+        if (system.network.kind !== "wifi") return system.network.kind === "ethernet" ? "ethernet" : "wifiDisconnected"
+        if (!system.network.enabled) return "wifiDisconnected"
+        return wifiIconForSignal(system.network.signal)
+    }
+
+    function wifiIconForSignal(value) {
+        const signal = Design.clamp(value, 0, 100)
+        if (signal <= 0) return "wifiOutline"
+        if (signal < 34) return "wifiWeak"
+        if (signal < 67) return "wifiMedium"
+        return "wifiStrong"
     }
 
     function networkLabel() {
@@ -482,8 +503,18 @@ Item {
     }
 
     function bluetoothIconName() {
+        if (!system.bluetooth.available) return "bluetoothOff"
         if (!system.bluetooth.powered) return "bluetoothOff"
         return system.bluetooth.connected ? "bluetoothConnected" : "bluetooth"
+    }
+
+    function bluetoothExpandedText() {
+        if (!system.bluetooth.available) return "Indisponível"
+        if (!system.bluetooth.powered) return "Desligado"
+        const devices = Array.isArray(system.bluetooth.devices) ? system.bluetooth.devices.filter(device => device && device.connected) : []
+        if (!devices.length) return "Ligado · Desconectado"
+        const first = Design.safeText(devices[0].name, "Dispositivo conectado")
+        return devices.length === 1 ? first + " · Conectado" : first + " · +" + (devices.length - 1)
     }
 
     function batteryIconName() {
@@ -511,6 +542,12 @@ Item {
 
     function batteryText() {
         return system.battery.available ? Math.round(Design.safeNumber(system.battery.percent, 0)) + "%" : ""
+    }
+
+    function batteryExpandedText() {
+        if (!system.battery.available) return ""
+        const percentage = batteryText()
+        return batteryCharging() ? percentage + " · Carregando" : percentage
     }
 
     function batteryStatus() {

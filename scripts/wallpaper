@@ -6,6 +6,7 @@ cache_dir="${HYPRISM_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/hyprism}"
 state_dir="$cache_dir/state"
 wallpaper_dir="${HYPRISM_WALLPAPER_DIR:-$HOME/Imagens/Wallpapers}"
 current_file="$state_dir/current-wallpaper"
+lock_wallpaper="$state_dir/lock-wallpaper"
 mkdir -p "$state_dir" "$wallpaper_dir"
 
 supported() { [[ $1 =~ \.(png|jpe?g|webp)$ ]]; }
@@ -16,7 +17,7 @@ list() {
   done | sort
 }
 apply() {
-  local image
+  local image state_candidate link_candidate
   image=$(realpath -e -- "${1:?caminho do papel de parede obrigatório}")
   [[ -r $image ]] || { printf 'Papel de parede ilegível: %s\n' "$image" >&2; return 1; }
   if command -v awww >/dev/null && [[ -n ${WAYLAND_DISPLAY:-} ]]; then
@@ -25,7 +26,12 @@ apply() {
     awww img "$image" --transition-type grow --transition-duration .55 || true
   fi
   HYPRISM_CACHE_DIR="$cache_dir" "$root_dir/scripts/theme/generate-theme.py" "$image"
-  printf '%s\n' "$image" >"$current_file"
+  state_candidate=$(mktemp "$state_dir/.current-wallpaper.XXXXXX")
+  printf '%s\n' "$image" >"$state_candidate"
+  mv -f -- "$state_candidate" "$current_file"
+  link_candidate="$state_dir/.lock-wallpaper.$$"
+  ln -s -- "$image" "$link_candidate"
+  mv -Tf -- "$link_candidate" "$lock_wallpaper"
   if command -v kitten >/dev/null; then
     kitten @ --to "unix:${XDG_RUNTIME_DIR:-/tmp}/kitty" set-colors --all --configured "$cache_dir/theme/kitty.conf" >/dev/null 2>&1 \
       || kitten @ set-colors --all --configured "$cache_dir/theme/kitty.conf" >/dev/null 2>&1 \

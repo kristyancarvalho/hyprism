@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+revision=9bf9fc5a5974ae0659f59a4281aae6f594c95bdd
+theme_root="${XDG_DATA_HOME:-$HOME/.local/share}/themes"
+source_dir=$(mktemp -d)
+trap 'rm -rf -- "$source_dir"' EXIT
+
+git -C "$source_dir" init --quiet
+git -C "$source_dir" remote add origin https://github.com/vinceliuice/Colloid-gtk-theme.git
+git -C "$source_dir" fetch --quiet --depth 1 origin "$revision"
+[[ $(git -C "$source_dir" rev-parse FETCH_HEAD) == "$revision" ]]
+git -C "$source_dir" checkout --quiet --detach FETCH_HEAD
+"$source_dir/install.sh" -d "$theme_root" -n Colloid-Hyprism -c dark -s compact --tweaks rimless
+printf '%s\n' "$revision" >"$theme_root/Colloid-Hyprism-Dark-Compact/.hyprism-revision"

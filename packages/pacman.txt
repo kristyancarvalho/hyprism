@@ -13,6 +13,11 @@ ttf-nerd-fonts-symbols-mono
 ttf-jetbrains-mono-nerd
 noto-fonts-emoji
 qt6ct
+qt5ct
+kvantum
+kvantum-qt5
+sassc
+gnome-themes-extra
 
 networkmanager
 bluez
