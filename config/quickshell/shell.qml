@@ -1,6 +1,6 @@
 //@ pragma ShellId hyprism
 //@ pragma DefaultEnv QT_QUICK_BACKEND = software
-//@ pragma IconTheme Papirus-Dark
+//@ pragma IconTheme Hyprism-Papirus
 pragma ComponentBehavior: Bound
 
 import QtQuick
@@ -25,6 +25,7 @@ ShellRoot {
     readonly property bool developmentMode: Quickshell.env("HYPRISM_DEVELOPMENT") === "1"
     property string notificationScreenName: ""
     property var popupNotifications: []
+    property var notificationHistory: []
     property int popupOverflowCount: 0
     readonly property var focusedScreen: screenByName(focusedScreenName())
     readonly property var transientScreen: screenByName(shellController.targetScreenName) || focusedScreen
@@ -56,13 +57,60 @@ ShellRoot {
     function dismissPopup(notification): void {
         removePopup(notification)
         if (!notification) return
-        notification.dismiss()
-        notification.tracked = false
+        if (notification.dismiss) notification.dismiss()
+        if (notification.tracked !== undefined) notification.tracked = false
     }
 
     function expirePopup(notification): void {
         removePopup(notification)
-        if (notification) notification.expire()
+        if (notification && notification.expire) notification.expire()
+    }
+
+    function notificationKey(notification): string {
+        return notification ? String(notification.id) : ""
+    }
+
+    function storeNotification(notification): void {
+        if (!notification) return
+        const key = notificationKey(notification)
+        const next = notificationHistory.filter(item => item && notificationKey(item) !== key)
+        notificationHistory = next.concat([{
+            id: notification.id,
+            appName: Design.safeText(notification.appName, "Notificação"),
+            appIcon: Design.safeText(notification.appIcon, ""),
+            desktopEntry: Design.safeText(notification.desktopEntry, ""),
+            summary: Design.safeText(notification.summary, "Notificação"),
+            body: Design.safeText(notification.body, ""),
+            urgency: Design.safeNumber(notification.urgency, 1),
+            receivedAt: Date.now(),
+            source: notification
+        }])
+    }
+
+    function removeHistoryNotification(notification): void {
+        if (!notification) return
+        const key = notificationKey(notification)
+        notificationHistory = notificationHistory.filter(item => item && notificationKey(item) !== key)
+        const source = notification.source
+        if (source) removePopup(source)
+        if (source && source.dismiss && source.tracked && source.lastGeneration !== false) source.dismiss()
+        if (source && source.tracked !== undefined) source.tracked = false
+    }
+
+    function clearNotificationHistory(): void {
+        const current = notificationHistory.slice()
+        notificationHistory = []
+        const sources = current.map(notification => notification ? notification.source : null)
+        popupNotifications = popupNotifications.filter(notification => sources.indexOf(notification) < 0)
+        popupOverflowCount = 0
+        notificationServer.newest = null
+        for (let index = 0; index < current.length; index++) {
+            const notification = current[index]
+            if (!notification) continue
+            const source = notification.source
+            if (source && source.dismiss && source.tracked && source.lastGeneration !== false) source.dismiss()
+            if (source && source.tracked !== undefined) source.tracked = false
+        }
     }
 
     function popupLimit(): int {
@@ -213,10 +261,13 @@ ShellRoot {
                 wallpaperQuery: shellController.wallpaperQuery,
                 wallpaperResultCount: shellController.wallpaperResultCount,
                 wallpaperSelectedIndex: shellController.wallpaperSelectedIndex,
+                wallpaperFocusTarget: shellController.wallpaperFocusTarget,
                 popupCount: root.popupNotifications.length,
                 popupOverflowCount: root.popupOverflowCount,
+                notificationHistoryCount: root.notificationHistory.length,
                 switcherMetadata: shellController.switcherWindows.map(item => ({ address: item.address, appId: item.appId, initialClass: item.initialClass, icon: item.icon, applicationName: item.applicationName, title: item.title })),
                 widgets: root.widgetStatus(),
+                widgetLayoutPosition: shellController.widgetLayoutPosition(),
                 monitoring: shellController.monitoring,
                 taskCount: shellController.tasks.length
             })
@@ -249,26 +300,41 @@ ShellRoot {
             const total = Math.max(1, Math.min(8, count))
             for (let index = 0; index < total; index++) {
                 const sequence = Date.now() + index
-                root.showPopup(root.developmentNotification(
+                const notification = root.developmentNotification(
                     sequence,
                     index,
                     index === 1 ? "Uma notificação com título longo para validar a elipse" : "Notificação " + (index + 1),
                     index === 2 ? "Este texto ocupa mais de uma linha para validar altura, espaçamento e limite do conteúdo sem cobrir os outros cartões." : "Conteúdo de teste seguro"
-                ))
+                )
+                root.storeNotification(notification)
+                root.showPopup(notification)
             }
         }
         function mockReplacement(): void {
             if (!root.developmentMode) return
             root.notificationScreenName = root.focusedScreenName()
             const identifier = Date.now()
-            root.showPopup(root.developmentNotification(identifier, 0, "Transferência em andamento", "25% concluído"))
-            root.showPopup(root.developmentNotification(identifier, 0, "Transferência em andamento", "75% concluído"))
+            const first = root.developmentNotification(identifier, 0, "Transferência em andamento", "25% concluído")
+            const replacement = root.developmentNotification(identifier, 0, "Transferência em andamento", "75% concluído")
+            root.storeNotification(first)
+            root.showPopup(first)
+            root.storeNotification(replacement)
+            root.showPopup(replacement)
         }
         function clearNotifications(): void {
             if (!root.developmentMode) return
             root.popupNotifications = []
             root.popupOverflowCount = 0
+            root.notificationHistory = []
             notificationServer.newest = null
+        }
+        function dismissNewestToast(): void {
+            if (!root.developmentMode || !root.popupNotifications.length) return
+            root.dismissPopup(root.popupNotifications[root.popupNotifications.length - 1])
+        }
+        function clearNotificationHistory(): void {
+            if (!root.developmentMode) return
+            root.clearNotificationHistory()
         }
         function mockClipboard(): void {
             if (!root.developmentMode) return
@@ -323,9 +389,13 @@ ShellRoot {
         actionsSupported: true
         imageSupported: true
         property var newest: null
+        property var historyNotifications: root.notificationHistory
+        function removeHistory(notification: var): void { root.removeHistoryNotification(notification) }
+        function clearHistory(): void { root.clearNotificationHistory() }
         onNotification: notification => {
             notification.tracked = true
             root.notificationScreenName = root.focusedScreenName()
+            root.storeNotification(notification)
             root.showPopup(notification)
         }
         onTrackedNotificationsChanged: root.syncTrackedPopups()
