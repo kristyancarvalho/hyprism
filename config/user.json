@@ -12,7 +12,28 @@
     "surfaceOpacity": 0.9,
     "animationFast": 110,
     "animationNormal": 150,
-    "widgets": { "clock": true, "weather": true, "media": true, "system": true }
+    "widgetLayout": { "side": "right" },
+    "widgets": {
+      "clock": { "enabled": true },
+      "weather": { "enabled": true },
+      "media": { "enabled": true },
+      "system": { "enabled": true },
+      "network": { "enabled": true, "historySamples": 60, "interface": "auto" },
+      "storage": { "enabled": true, "mounts": ["/", "/home"] },
+      "sensors": { "enabled": true },
+      "uptime": { "enabled": true },
+      "services": {
+        "enabled": true,
+        "problemOnly": false,
+        "items": [
+          { "name": "Rede", "unit": "NetworkManager.service", "scope": "system" },
+          { "name": "Bluetooth", "unit": "bluetooth.service", "scope": "system" },
+          { "name": "PipeWire", "unit": "pipewire.service", "scope": "user" }
+        ]
+      },
+      "tasks": { "enabled": true, "limit": 3 },
+      "processes": { "enabled": true, "limit": 3 }
+    }
   },
   "weather": {
     "enabled": true,

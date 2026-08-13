@@ -129,6 +129,13 @@ QtObject {
         cpu: "󰻠",
         gpu: "󰢮",
         networkSpeed: "󰓅",
+        networkDownload: "󰇚",
+        networkUpload: "󰕒",
+        storage: "󰋊",
+        uptime: "󰔚",
+        services: "󰒋",
+        tasks: "󰄬",
+        processes: "󰧑",
         calendar: "󰃭"
     })
 

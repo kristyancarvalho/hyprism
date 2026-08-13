@@ -11,7 +11,7 @@ Item {
     function refreshWallpapers() { wallpapers.running = true }
     Process {
         id: apps; command: ["python3", service.rootDir + "/scripts/system/desktop-index.py"]
-        stdout: SplitParser { splitMarker: "\n"; onRead: data => { try { service.controller.appEntries = JSON.parse(data) } catch (error) { console.warn("app index", error) } } }
+        stdout: SplitParser { splitMarker: "\n"; onRead: data => { try { service.controller.setApplicationEntries(JSON.parse(data)) } catch (error) { console.warn("índice de aplicativos inválido", error) } } }
     }
     Process {
         id: wallpapers; command: [service.rootDir + "/scripts/wallpaper", "list"]
