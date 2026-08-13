@@ -4,6 +4,7 @@ import os
 import pathlib
 import shutil
 import subprocess
+import sys
 import time
 
 previous_cpu = None
@@ -42,7 +43,7 @@ def virtualized():
 virtual_machine = virtualized()
 
 
-def network_identity():
+def network_identity(preferred="auto"):
     active = command(["nmcli", "-t", "-f", "TYPE,NAME,DEVICE", "connection", "show", "--active"])
     devices = command(["nmcli", "-t", "-f", "DEVICE,TYPE", "device", "status"])
     wifi_available = any(len(row.split(":", 1)) > 1 and row.split(":", 1)[1] == "wifi" for row in devices.splitlines())
@@ -50,10 +51,13 @@ def network_identity():
     selected = None
     for row in active.splitlines():
         fields = row.split(":", 2)
-        if fields and fields[0] in ("wifi", "802-3-ethernet", "ethernet"):
+        if fields and fields[0] in ("wifi", "802-11-wireless", "802-3-ethernet", "ethernet"):
             selected = fields
-            if fields[0] == "wifi":
+            if fields[0] in ("wifi", "802-11-wireless"):
                 break
+    if preferred and preferred != "auto":
+        preferred_connection = next((row.split(":", 2) for row in active.splitlines() if len(row.split(":", 2)) > 2 and row.split(":", 2)[2] == preferred), None)
+        selected = preferred_connection or ["wifi" if preferred.startswith("wl") else "ethernet", preferred, preferred]
     if not selected:
         return {"available": bool(devices), "kind": "disconnected", "name": "Desconectado", "device": "", "enabled": False, "signal": 0, "wifiAvailable": wifi_available, "wifiEnabled": wifi_enabled, "virtualized": virtual_machine}
     kind = selected[0]
@@ -61,7 +65,7 @@ def network_identity():
     device = selected[2] if len(selected) > 2 else ""
     signals = command(["nmcli", "-t", "-f", "IN-USE,SIGNAL,SSID", "device", "wifi", "list"]).splitlines()
     strength = next((int(row.split(":")[1]) for row in signals if row.startswith("*:") and len(row.split(":")) > 1 and row.split(":")[1].isdigit()), 0)
-    return {"available": True, "kind": "wifi" if kind == "wifi" else "ethernet", "name": name or ("Rede" if virtual_machine else "Ethernet"), "device": device, "enabled": True, "signal": strength, "wifiAvailable": wifi_available, "wifiEnabled": wifi_enabled, "virtualized": virtual_machine}
+    return {"available": True, "kind": "wifi" if kind in ("wifi", "802-11-wireless") else "ethernet", "name": name or ("Rede" if virtual_machine else "Ethernet"), "device": device, "enabled": True, "signal": strength, "wifiAvailable": wifi_available, "wifiEnabled": wifi_enabled, "virtualized": virtual_machine}
 
 
 def network_rates(identity):
@@ -195,11 +199,12 @@ def temperature():
 
 
 tick = 0
+preferred_interface = sys.argv[1] if len(sys.argv) > 1 else "auto"
 while True:
     if tick % 3 == 0:
         cached["audio"] = volume()
         cached["microphone"] = volume("@DEFAULT_AUDIO_SOURCE@")
-        cached["networkIdentity"] = network_identity()
+        cached["networkIdentity"] = network_identity(preferred_interface)
         cached["battery"] = battery()
         cached["brightness"] = brightness()
         cached["nightMode"] = night_mode()
