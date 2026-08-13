@@ -61,8 +61,7 @@ target_group=$(id -gn "$target_user")
 if ((install_packages)); then
   [[ $(id -u) -eq 0 ]] || { printf 'Execute com sudo para instalar pacotes ou use --no-packages.\n' >&2; exit 1; }
   mapfile -t official < <(package_lines "$repo_dir/packages/pacman.txt")
-  mapfile -t missing < <(pacman -T "${official[@]}" 2>/dev/null || true)
-  if ((${#missing[@]})); then run pacman -S --needed --noconfirm "${missing[@]}"; else printf 'Os pacotes oficiais já estão instalados.\n'; fi
+  run pacman -Syu --needed --noconfirm "${official[@]}"
   mapfile -t aur < <(package_lines "$repo_dir/packages/aur.txt")
   if ((${#aur[@]})); then
     helper=$(command -v paru || command -v yay || true)
@@ -99,6 +98,12 @@ else
   printf 'Google Sans Flex já está instalada.\n'
 fi
 
+for image in "$repo_dir"/wallpapers/*.{png,jpg,jpeg,webp}; do
+  [[ -f $image ]] || continue
+  destination="$target_home/Imagens/Wallpapers/$(basename "$image")"
+  if [[ ! -e $destination ]]; then run install -m 0644 -o "$target_user" -g "$target_group" "$image" "$destination"; fi
+done
+
 colloid_revision=9bf9fc5a5974ae0659f59a4281aae6f594c95bdd
 colloid_theme="$target_home/.local/share/themes/Colloid-Hyprism-Dark-Compact"
 if [[ ! -s $colloid_theme/gtk-3.0/gtk.css || ! -s $colloid_theme/gtk-4.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" ]]; then
@@ -130,9 +135,15 @@ link_path "$runtime_root/scripts/system/start-shell" "$target_home/.local/bin/hy
 link_path "$runtime_root/scripts/system/shell-ipc" "$target_home/.local/bin/hyprism-shell-ipc"
 
 theme_dir="$target_home/.cache/hyprism/theme"
-run install -d -o "$target_user" -g "$target_group" "$theme_dir"
-if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/gtk-3.0.css || ! -s $theme_dir/gtk-4.0.css || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig ]]; then
-  as_user env HYPRISM_CACHE_DIR="$target_home/.cache/hyprism" "$runtime_root/scripts/theme/generate-theme.py"
+state_dir="$target_home/.cache/hyprism/state"
+run install -d -o "$target_user" -g "$target_group" "$theme_dir" "$state_dir"
+first_wallpaper=$(find -P "$target_home/Imagens/Wallpapers" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print -quit)
+if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/gtk-3.0.css || ! -s $theme_dir/gtk-4.0.css || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig || ! -s $theme_dir/icons/Hyprism-Papirus/index.theme || ! -e $state_dir/lock-wallpaper ]]; then
+  if [[ -n ${first_wallpaper:-} ]]; then
+    as_user env HYPRISM_ROOT="$runtime_root" "$runtime_root/scripts/wallpaper" set "$first_wallpaper"
+  else
+    as_user env HYPRISM_CACHE_DIR="$target_home/.cache/hyprism" "$runtime_root/scripts/theme/generate-theme.py"
+  fi
 fi
 if [[ ! -s $theme_dir/foot.ini ]]; then
   run install -m 0644 -o "$target_user" -g "$target_group" "$runtime_root/config/foot/fallback.ini" "$theme_dir/foot.ini"
@@ -143,10 +154,15 @@ fi
 link_path "$theme_dir/gtk-3.0.css" "$target_home/.config/gtk-3.0/gtk.css"
 link_path "$theme_dir/gtk-4.0.css" "$target_home/.config/gtk-4.0/gtk.css"
 link_path "$theme_dir/kvantum/Hyprism" "$target_home/.config/Kvantum/Hyprism"
+link_path "$theme_dir/icons/Hyprism-Papirus" "$target_home/.local/share/icons/Hyprism-Papirus"
+
+if ((dry_run == 0)); then
+  as_user env HYPRISM_CACHE_DIR="$target_home/.cache/hyprism" "$runtime_root/scripts/system/validate-hyprlock" "$target_home/.config/hypr/hyprlock.conf"
+fi
 
 if ((dry_run == 0)) && command -v gsettings >/dev/null; then
   as_user gsettings set org.gnome.desktop.interface gtk-theme Colloid-Hyprism-Dark-Compact
-  as_user gsettings set org.gnome.desktop.interface icon-theme Papirus-Dark
+  as_user gsettings set org.gnome.desktop.interface icon-theme Hyprism-Papirus
   as_user gsettings set org.gnome.desktop.interface color-scheme prefer-dark
 fi
 
@@ -166,12 +182,14 @@ if ((dry_run == 0)); then
     || { printf 'A configuração ou um tema de fallback está ausente.\n' >&2; exit 1; }
   [[ -s $colloid_theme/gtk-3.0/gtk.css && -s $colloid_theme/gtk-4.0/gtk.css ]] \
     || { printf 'O tema Colloid-Hyprism não foi instalado.\n' >&2; exit 1; }
-  [[ -s $target_home/.config/gtk-3.0/gtk.css && -s $target_home/.config/gtk-4.0/gtk.css && -s $target_home/.config/Kvantum/Hyprism/Hyprism.kvconfig ]] \
+  [[ -s $target_home/.config/gtk-3.0/gtk.css && -s $target_home/.config/gtk-4.0/gtk.css && -s $target_home/.config/Kvantum/Hyprism/Hyprism.kvconfig && -s $target_home/.local/share/icons/Hyprism-Papirus/index.theme ]] \
     || { printf 'Os temas dinâmicos GTK ou Kvantum não foram publicados.\n' >&2; exit 1; }
   [[ -s $font_regular && -s $font_medium && -s $font_semibold ]] \
     || { printf 'A fonte Google Sans Flex não foi instalada.\n' >&2; exit 1; }
-  [[ -d /usr/share/icons/Papirus-Dark ]] \
-    || { printf 'O tema de ícones Papirus-Dark não foi instalado.\n' >&2; exit 1; }
+  [[ -d /usr/share/icons/Papirus-Dark && -d /usr/share/icons/Papirus ]] \
+    || { printf 'O tema de ícones Papirus não foi instalado.\n' >&2; exit 1; }
+  [[ -s $theme_dir/hyprlock-colors.conf && -e $state_dir/lock-wallpaper ]] \
+    || { printf 'Os recursos iniciais do Hyprlock não foram gerados.\n' >&2; exit 1; }
   [[ $(as_user fc-match --format '%{family}\n' 'Google Sans Flex') == *"Google Sans Flex"* ]] \
     || { printf 'A fonte Google Sans Flex não foi indexada pelo Fontconfig.\n' >&2; exit 1; }
   [[ $(as_user fc-match --format '%{family}\n' 'Symbols Nerd Font Mono') == *"Symbols Nerd Font Mono"* ]] \
@@ -186,19 +204,7 @@ if [[ -f $legacy_hypr_theme ]]; then
   printf 'Configuração obsoleta do Hyprland arquivada em %s\n' "$legacy_backup"
 fi
 
-for image in "$repo_dir"/wallpapers/*.{png,jpg,jpeg,webp}; do
-  [[ -f $image ]] || continue
-  destination="$target_home/Imagens/Wallpapers/$(basename "$image")"
-  if [[ ! -e $destination ]]; then run install -m 0644 -o "$target_user" -g "$target_group" "$image" "$destination"; fi
-done
-
 if ((dry_run == 0)); then
-  first_wallpaper=$(find -P "$target_home/Imagens/Wallpapers" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print -quit)
-  if [[ -n ${first_wallpaper:-} ]]; then
-    as_user env HYPRISM_ROOT="$runtime_root" "$runtime_root/scripts/wallpaper" set "$first_wallpaper"
-  else
-    printf 'Nenhum papel de parede disponível; a paleta inicial de fallback foi mantida.\n'
-  fi
   if command -v systemctl >/dev/null && [[ $(id -u) -eq 0 ]]; then
     systemctl enable NetworkManager.service bluetooth.service
   fi
