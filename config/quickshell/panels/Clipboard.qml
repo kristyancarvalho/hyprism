@@ -10,14 +10,14 @@ Item {
     required property var clipboard
     property string query: ""
     property int selectedIndex: 0
+    readonly property var filteredEntries: results()
 
     function results() {
         return controller.clipboardEntries.filter(item => Design.safeText(item ? item.searchText : "", Design.safeText(item ? item.text : "", "")).toLowerCase().indexOf(query.toLowerCase()) >= 0)
     }
 
-    focus: true
-    Keys.onPressed: event => {
-        const items = results()
+    function handleKey(event) {
+        const items = filteredEntries
         if (event.key === Qt.Key_Escape) {
             controller.close()
             event.accepted = true
@@ -35,6 +35,18 @@ Item {
             event.accepted = true
         }
     }
+
+    function takeInitialFocus() {
+        search.forceActiveFocus(Qt.ShortcutFocusReason)
+    }
+
+    function initialFocusReady() {
+        return search.activeFocus
+    }
+
+    focus: true
+    Keys.onPressed: event => handleKey(event)
+    onFilteredEntriesChanged: selectedIndex = navigation.clamp(selectedIndex, filteredEntries.length)
 
     Navigation { id: navigation }
 
@@ -70,6 +82,8 @@ Item {
                     panel.query = text
                     panel.selectedIndex = 0
                 }
+                Keys.priority: Keys.BeforeItem
+                Keys.onPressed: event => panel.handleKey(event)
                 background: Rectangle {
                     radius: Design.radiusSm
                     color: panel.theme.colors.surfaceVariant
@@ -90,7 +104,7 @@ Item {
         ListView {
             width: parent.width
             height: Math.max(120, parent.height - 104)
-            model: panel.results()
+            model: panel.filteredEntries
             currentIndex: panel.selectedIndex
             clip: true
             spacing: 6
@@ -235,6 +249,6 @@ Item {
 
     Component.onCompleted: {
         clipboard.refresh()
-        search.forceActiveFocus()
+        takeInitialFocus()
     }
 }

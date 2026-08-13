@@ -7,7 +7,6 @@ Glass {
     required property var notification
     required property var controller
     signal dismissed()
-    signal expired()
     width: 360
     height: Math.min(144, Math.max(86, content.implicitHeight + 24))
     radius: Design.radiusMd
@@ -25,12 +24,6 @@ Glass {
         const visibleActions = []
         for (let index = 0; index < Math.min(2, actions.length); index++) visibleActions.push(actions[index])
         return visibleActions
-    }
-
-    Timer {
-        interval: card.notification && Design.safeNumber(card.notification.expireTimeout, 0) > 0 ? Design.clamp(card.notification.expireTimeout, 3000, 10000) : 6500
-        running: card.visible
-        onTriggered: card.expired()
     }
 
     Rectangle {

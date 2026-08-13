@@ -13,7 +13,6 @@ PanelWindow {
     property int overflowCount: 0
     property bool suppressed: false
     signal dismissRequested(var notification)
-    signal expireRequested(var notification)
 
     function notificationKey(notification) {
         return notification ? String(notification.id) : ""
@@ -74,7 +73,6 @@ PanelWindow {
             controller: popup.controller
             theme: popup.theme
             onDismissed: popup.dismissRequested(notification)
-            onExpired: popup.expireRequested(notification)
         }
 
         add: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Design.animationFast; easing.type: Easing.OutCubic } }

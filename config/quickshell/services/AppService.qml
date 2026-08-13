@@ -9,8 +9,8 @@ Item {
     readonly property string rootDir: controller.rootDir
     function refreshApps() { apps.running = true }
     function refreshWallpapers() {
+        wallpapers.running = false
         currentWallpaper.running = true
-        wallpapers.running = true
     }
     Process {
         id: apps; command: ["python3", service.rootDir + "/scripts/system/desktop-index.py"]
@@ -25,6 +25,7 @@ Item {
         id: currentWallpaper; command: [service.rootDir + "/scripts/wallpaper", "current"]
         stdout: SplitParser { splitMarker: "\n"; onRead: data => service.controller.wallpaperCurrent = data }
         onStarted: service.controller.wallpaperCurrent = ""
+        onExited: wallpapers.running = true
     }
     Component.onCompleted: refreshApps()
 }
