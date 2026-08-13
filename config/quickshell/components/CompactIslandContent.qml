@@ -96,8 +96,7 @@ Item {
                 visible: compact.controller.system.battery.available
                 theme: compact.theme
                 iconName: compact.controller.batteryIconName()
-                trailingIconName: compact.controller.batteryCharging() ? "charging" : ""
-                label: compact.controller.batteryText()
+                iconOnly: true
                 filled: false
                 horizontalPadding: Design.compactPlainPadding
             }

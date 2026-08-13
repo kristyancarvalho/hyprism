@@ -28,7 +28,7 @@ bind(mod .. " + SHIFT + I", quickshell_ipc .. "togglePowerSaver")
 bind(mod .. " + SHIFT + E", script("system/reload-shell"))
 bind(mod .. " + SHIFT + L", quickshell_ipc .. "togglePowerMenu")
 bind(mod .. " + M", "command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'")
-bind(mod .. " + L", "hyprlock")
+bind(mod .. " + L", "hyprlock --config " .. shell_quote(paths.home .. "/.config/hypr/hyprlock.conf"))
 bind("CTRL + period", quickshell_ipc .. "toggleEmojiPicker")
 
 hl.bind(mod .. " + W", hl.dsp.window.close())

@@ -99,6 +99,14 @@ else
   printf 'Google Sans Flex já está instalada.\n'
 fi
 
+colloid_revision=9bf9fc5a5974ae0659f59a4281aae6f594c95bdd
+colloid_theme="$target_home/.local/share/themes/Colloid-Hyprism-Dark-Compact"
+if [[ ! -s $colloid_theme/gtk-3.0/gtk.css || ! -s $colloid_theme/gtk-4.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" ]]; then
+  as_user env XDG_DATA_HOME="$target_home/.local/share" "$runtime_root/scripts/system/install-colloid-theme"
+else
+  printf 'Colloid-Hyprism já está instalado.\n'
+fi
+
 if [[ -L $quickshell_parent ]]; then backup_path "$quickshell_parent"; fi
 run install -d -o "$target_user" -g "$target_group" "$quickshell_parent"
 
@@ -110,7 +118,9 @@ link_path "$runtime_root/config/foot/foot.ini" "$target_home/.config/foot/foot.i
 link_path "$runtime_root/config/kitty/kitty.conf" "$target_home/.config/kitty/kitty.conf"
 link_path "$runtime_root/config/gtk-3.0/settings.ini" "$target_home/.config/gtk-3.0/settings.ini"
 link_path "$runtime_root/config/gtk-4.0/settings.ini" "$target_home/.config/gtk-4.0/settings.ini"
+link_path "$runtime_root/config/qt5ct/qt5ct.conf" "$target_home/.config/qt5ct/qt5ct.conf"
 link_path "$runtime_root/config/qt6ct/qt6ct.conf" "$target_home/.config/qt6ct/qt6ct.conf"
+link_path "$runtime_root/config/Kvantum/kvantum.kvconfig" "$target_home/.config/Kvantum/kvantum.kvconfig"
 link_path "$runtime_root/config/environment.d/90-hyprism.conf" "$target_home/.config/environment.d/90-hyprism.conf"
 
 link_path "$runtime_root/scripts/wallpaper" "$target_home/.local/bin/hyprism-wallpaper"
@@ -121,11 +131,23 @@ link_path "$runtime_root/scripts/system/shell-ipc" "$target_home/.local/bin/hypr
 
 theme_dir="$target_home/.cache/hyprism/theme"
 run install -d -o "$target_user" -g "$target_group" "$theme_dir"
+if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/gtk-3.0.css || ! -s $theme_dir/gtk-4.0.css || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig ]]; then
+  as_user env HYPRISM_CACHE_DIR="$target_home/.cache/hyprism" "$runtime_root/scripts/theme/generate-theme.py"
+fi
 if [[ ! -s $theme_dir/foot.ini ]]; then
   run install -m 0644 -o "$target_user" -g "$target_group" "$runtime_root/config/foot/fallback.ini" "$theme_dir/foot.ini"
 fi
 if [[ ! -e $theme_dir/kitty.conf ]]; then
   run install -m 0644 -o "$target_user" -g "$target_group" /dev/null "$theme_dir/kitty.conf"
+fi
+link_path "$theme_dir/gtk-3.0.css" "$target_home/.config/gtk-3.0/gtk.css"
+link_path "$theme_dir/gtk-4.0.css" "$target_home/.config/gtk-4.0/gtk.css"
+link_path "$theme_dir/kvantum/Hyprism" "$target_home/.config/Kvantum/Hyprism"
+
+if ((dry_run == 0)) && command -v gsettings >/dev/null; then
+  as_user gsettings set org.gnome.desktop.interface gtk-theme Colloid-Hyprism-Dark-Compact
+  as_user gsettings set org.gnome.desktop.interface icon-theme Papirus-Dark
+  as_user gsettings set org.gnome.desktop.interface color-scheme prefer-dark
 fi
 
 if ((dry_run == 0)); then
@@ -140,8 +162,12 @@ if ((dry_run == 0)); then
     || { printf 'Um ponto de entrada obsoleto do Hyprland ainda está instalado.\n' >&2; exit 1; }
   [[ -f $quickshell_default/shell.qml && -f $quickshell_config/shell.qml ]] \
     || { printf 'O ponto de entrada do Quickshell não foi instalado.\n' >&2; exit 1; }
-  [[ -f $target_home/.config/foot/foot.ini && -s $theme_dir/foot.ini && -f $theme_dir/kitty.conf ]] \
-    || { printf 'A configuração ou um tema de fallback do terminal está ausente.\n' >&2; exit 1; }
+  [[ -f $target_home/.config/foot/foot.ini && -s $theme_dir/foot.ini && -f $theme_dir/kitty.conf && -s $theme_dir/hyprlock-colors.conf ]] \
+    || { printf 'A configuração ou um tema de fallback está ausente.\n' >&2; exit 1; }
+  [[ -s $colloid_theme/gtk-3.0/gtk.css && -s $colloid_theme/gtk-4.0/gtk.css ]] \
+    || { printf 'O tema Colloid-Hyprism não foi instalado.\n' >&2; exit 1; }
+  [[ -s $target_home/.config/gtk-3.0/gtk.css && -s $target_home/.config/gtk-4.0/gtk.css && -s $target_home/.config/Kvantum/Hyprism/Hyprism.kvconfig ]] \
+    || { printf 'Os temas dinâmicos GTK ou Kvantum não foram publicados.\n' >&2; exit 1; }
   [[ -s $font_regular && -s $font_medium && -s $font_semibold ]] \
     || { printf 'A fonte Google Sans Flex não foi instalada.\n' >&2; exit 1; }
   [[ -d /usr/share/icons/Papirus-Dark ]] \
@@ -171,7 +197,7 @@ if ((dry_run == 0)); then
   if [[ -n ${first_wallpaper:-} ]]; then
     as_user env HYPRISM_ROOT="$runtime_root" "$runtime_root/scripts/wallpaper" set "$first_wallpaper"
   else
-    printf 'Nenhum papel de parede disponível; a paleta será gerada na primeira seleção.\n'
+    printf 'Nenhum papel de parede disponível; a paleta inicial de fallback foi mantida.\n'
   fi
   if command -v systemctl >/dev/null && [[ $(id -u) -eq 0 ]]; then
     systemctl enable NetworkManager.service bluetooth.service
@@ -179,9 +205,9 @@ if ((dry_run == 0)); then
 fi
 
 missing=()
-for command in Hyprland qs foot kitty matugen awww awww-daemon python3 jq curl fc-cache fc-match wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp hyprpicker brightnessctl wf-recorder hyprsunset powerprofilesctl; do command -v "$command" >/dev/null || missing+=("$command"); done
+for command in Hyprland hyprlock qs foot kitty matugen awww awww-daemon python3 jq curl git sassc kvantummanager qt5ct qt6ct fc-cache fc-match wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp hyprpicker brightnessctl wf-recorder hyprsunset powerprofilesctl; do command -v "$command" >/dev/null || missing+=("$command"); done
 printf '\nHyprism instalado para %s.\n' "$target_user"
-printf 'Configurações: %s/.config/{hypr,quickshell/default,quickshell/hyprism,foot,kitty}\n' "$target_home"
+printf 'Configurações: %s/.config/{hypr,quickshell/default,quickshell/hyprism,foot,kitty,gtk-3.0,gtk-4.0,Kvantum,qt5ct,qt6ct}\n' "$target_home"
 printf 'Papéis de parede: %s/Imagens/Wallpapers\nCapturas de tela: %s/Imagens/Screenshots\n' "$target_home" "$target_home"
 if ((${#missing[@]})); then printf 'Executáveis ausentes: %s\n' "${missing[*]}" >&2; exit 1; else printf 'Todos os executáveis essenciais foram validados.\n'; fi
 printf 'Encerre a sessão e selecione o Hyprland para iniciar.\n'
