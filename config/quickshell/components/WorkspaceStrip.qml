@@ -1,5 +1,4 @@
 import QtQuick
-import Quickshell.Hyprland
 import ".."
 
 Row {
@@ -7,16 +6,12 @@ Row {
     required property var shellScreen
     required property var theme
     property int workspaceCount: 10
-    readonly property var shellMonitor: shellScreen ? Hyprland.monitorFor(shellScreen) : null
-    readonly property var activeWorkspace: shellMonitor && shellMonitor.activeWorkspace ? shellMonitor.activeWorkspace : Hyprland.focusedWorkspace
+    readonly property var shellMonitor: HyprlandService.monitorFor(shellScreen)
+    readonly property var activeWorkspace: shellMonitor ? shellMonitor.activeWorkspace : null
     spacing: Design.workspaceCellSpacing
 
     function workspaceFor(workspaceId) {
-        const values = Hyprland.workspaces && Hyprland.workspaces.values ? Hyprland.workspaces.values : []
-        for (let i = 0; i < values.length; i++) {
-            if (values[i] && values[i].id === workspaceId) return values[i]
-        }
-        return null
+        return HyprlandService.workspaceFor(workspaceId)
     }
 
     function hasWindows(workspace) {
@@ -86,7 +81,7 @@ Row {
 
             Keys.onPressed: event => {
                 if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) {
-                    Hyprland.dispatch("workspace " + cell.modelData)
+                    HyprlandService.switchWorkspace(cell.modelData)
                     event.accepted = true
                 }
             }
@@ -96,7 +91,7 @@ Row {
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
                     cell.forceActiveFocus()
-                    Hyprland.dispatch("workspace " + cell.modelData)
+                    HyprlandService.switchWorkspace(cell.modelData)
                 }
             }
         }

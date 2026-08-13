@@ -53,6 +53,14 @@ Item {
         forceActiveFocus()
     }
 
+    function initialFocusReady() {
+        const items = controls()
+        for (let index = 0; index < items.length; index++) {
+            if (items[index].activeFocus || items[index].controlFocused) return true
+        }
+        return activeFocus
+    }
+
     focus: true
     Keys.onPressed: event => {
         if (event.key === Qt.Key_Escape) {
@@ -111,7 +119,7 @@ Item {
                     text: "Energia"
                     iconName: "power"
                     compact: true
-                    onClicked: controller.open("power")
+                    onClicked: controller.openPowerMenu(controller.targetScreenName)
                 }
             }
 
@@ -129,7 +137,7 @@ Item {
                     active: controller.system.network.enabled
                     available: controller.system.network.available
                     onActiveFocusChanged: if (activeFocus) panel.selectedAction = 0
-                    onClicked: controller.open("network")
+                    onClicked: controller.openNetwork(controller.targetScreenName)
                 }
 
                 ActionButton {
@@ -142,7 +150,7 @@ Item {
                     available: controller.system.bluetooth.available
                     pending: controller.pendingBluetooth
                     onActiveFocusChanged: if (activeFocus) panel.selectedAction = 1
-                    onClicked: controller.open("bluetooth")
+                    onClicked: controller.openBluetooth(controller.targetScreenName)
                 }
 
                 ActionButton {

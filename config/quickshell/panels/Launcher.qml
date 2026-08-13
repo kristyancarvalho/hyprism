@@ -41,6 +41,10 @@ Item {
         search.forceActiveFocus()
     }
 
+    function initialFocusReady() {
+        return search.activeFocus
+    }
+
     function handleKey(event) {
         const count = resultCount
         if (event.key === Qt.Key_Escape) {

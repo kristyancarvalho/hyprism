@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+config_name="${QS_CONFIG_NAME:-default}"
+config_path="${HYPRISM_QS_PATH:-}"
+selector=(-c "$config_name")
+if [[ -n $config_path ]]; then
+  selector=(-p "$config_path")
+fi
+exec qs "${selector[@]}" ipc call "$@"
