@@ -7,27 +7,18 @@ Column {
     required property var controller
     required property var theme
     required property var server
-    property var notifications: server && server.trackedNotifications ? server.trackedNotifications.values.filter(notification => notification && notification.lastGeneration !== false) : []
+    property var notifications: server && Array.isArray(server.historyNotifications) ? server.historyNotifications : []
     property int selectedIndex: 0
     spacing: 8
     activeFocusOnTab: true
 
     function dismiss(notification) {
         if (!notification) return
-        if (server.newest === notification) server.newest = null
-        notification.dismiss()
-        notification.tracked = false
+        server.removeHistory(notification)
     }
 
     function clearAll() {
-        const current = notifications ? notifications.slice() : []
-        server.newest = null
-        for (let i = 0; i < current.length; i++) {
-            if (current[i]) {
-                current[i].dismiss()
-                current[i].tracked = false
-            }
-        }
+        server.clearHistory()
         selectedIndex = 0
     }
 

@@ -64,6 +64,7 @@ PanelWindow {
         spacing: 8
         clip: true
         interactive: false
+        cacheBuffer: 1000
         model: popupModel
 
         delegate: NotificationCard {

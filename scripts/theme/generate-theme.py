@@ -4,9 +4,11 @@ import json
 import os
 import pathlib
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
+import xml.etree.ElementTree as ElementTree
 from PIL import Image
 
 
@@ -14,6 +16,7 @@ HOME = pathlib.Path.home()
 CACHE = pathlib.Path(os.environ.get("HYPRISM_CACHE_DIR", HOME / ".cache/hyprism"))
 OUT = CACHE / "theme"
 KVANTUM_BASE = pathlib.Path(os.environ.get("HYPRISM_KVANTUM_BASE", "/usr/share/Kvantum/KvArcDark"))
+PAPIRUS_BASE = pathlib.Path(os.environ.get("HYPRISM_PAPIRUS_BASE", "/usr/share/icons/Papirus"))
 FALLBACK = {
     "background": "#091015",
     "foreground": "#e0e8ee",
@@ -91,16 +94,20 @@ def accessible_text(candidate, background, target):
 
 
 def faithful_accent(candidate, background, target=3.2):
-    if contrast(candidate, background) >= target:
-        return candidate.lower()
     red, green, blue = (channel / 255 for channel in rgb(candidate))
     hue, lightness, saturation = colorsys.rgb_to_hls(red, green, blue)
-    for step in range(1, 36):
-        adjusted_lightness = min(.86, lightness + step * .015)
-        adjusted = hexrgb(tuple(channel * 255 for channel in colorsys.hls_to_rgb(hue, adjusted_lightness, saturation)))
+    minimum = .5 if saturation < .16 else .48
+    adjusted_lightness = max(minimum, min(.72, lightness))
+    adjusted_saturation = min(.84, saturation)
+    adjusted = hexrgb(tuple(channel * 255 for channel in colorsys.hls_to_rgb(hue, adjusted_lightness, adjusted_saturation)))
+    if contrast(adjusted, background) >= target:
+        return adjusted
+    for step in range(1, 22):
+        corrected_lightness = min(.78, adjusted_lightness + step * .012)
+        adjusted = hexrgb(tuple(channel * 255 for channel in colorsys.hls_to_rgb(hue, corrected_lightness, adjusted_saturation)))
         if contrast(adjusted, background) >= target:
             return adjusted
-    return hexrgb(tuple(channel * 255 for channel in colorsys.hls_to_rgb(hue, .86, saturation)))
+    return adjusted
 
 
 def wallpaper_source_color(image):
@@ -142,6 +149,7 @@ def theme_from(raw, image):
     surface = mix(background, foreground, .075)
     surface_variant = mix(background, foreground, .145)
     outline = mix(background, foreground, .24)
+    accent_foreground = background if contrast(accent, background) >= 4.5 else foreground
     return {
         "background": background,
         "surface": surface,
@@ -154,6 +162,7 @@ def theme_from(raw, image):
         "primary": accent,
         "secondary": secondary,
         "accent": accent,
+        "accentForeground": accent_foreground,
         "accentDim": mix(accent, background, .58),
         "outline": outline,
         "border": outline,
@@ -234,40 +243,43 @@ def render_hyprlock(theme):
 
 
 def render_gtk(theme, version):
+    gtk_view = mix(theme["background"], theme["foreground"], .025)
+    gtk_elevated = mix(theme["background"], theme["foreground"], .055)
+    gtk_separator = mix(theme["background"], theme["foreground"], .14)
     definitions = {
         "theme_bg_color": theme["background"],
         "theme_fg_color": theme["foreground"],
-        "theme_base_color": theme["surface"],
+        "theme_base_color": gtk_view,
         "theme_text_color": theme["foreground"],
         "theme_selected_bg_color": theme["accent"],
-        "theme_selected_fg_color": theme["background"],
+        "theme_selected_fg_color": theme["accentForeground"],
         "accent_bg_color": theme["accent"],
-        "accent_fg_color": theme["background"],
+        "accent_fg_color": theme["accentForeground"],
         "accent_color": theme["accent"],
         "window_bg_color": theme["background"],
         "window_fg_color": theme["foreground"],
-        "view_bg_color": theme["surface"],
+        "view_bg_color": gtk_view,
         "view_fg_color": theme["foreground"],
-        "headerbar_bg_color": theme["surfaceElevated"],
+        "headerbar_bg_color": gtk_elevated,
         "headerbar_fg_color": theme["foreground"],
-        "sidebar_bg_color": theme["surfaceVariant"],
+        "sidebar_bg_color": gtk_view,
         "sidebar_fg_color": theme["foreground"],
-        "card_bg_color": theme["surfaceVariant"],
+        "card_bg_color": gtk_elevated,
         "card_fg_color": theme["foreground"],
-        "dialog_bg_color": theme["surfaceElevated"],
+        "dialog_bg_color": gtk_elevated,
         "dialog_fg_color": theme["foreground"],
-        "popover_bg_color": theme["surfaceElevated"],
+        "popover_bg_color": gtk_elevated,
         "popover_fg_color": theme["foreground"],
-        "borders": theme["borderSubtle"],
+        "borders": gtk_separator,
         "error_bg_color": theme["error"],
         "error_fg_color": theme["background"],
     }
     lines = [f"@define-color {name} {color};" for name, color in definitions.items()]
     lines.extend([
-        "window, .background { background-color: @window_bg_color; color: @window_fg_color; }",
-        "headerbar, .titlebar { background-color: @headerbar_bg_color; color: @headerbar_fg_color; border-color: @borders; }",
-        ".sidebar, navigationview, navigationpage { background-color: @sidebar_bg_color; color: @sidebar_fg_color; }",
-        "entry, textview, treeview, listview { background-color: @view_bg_color; color: @view_fg_color; }",
+        "window, .background { background-color: @window_bg_color; background-image: none; color: @window_fg_color; }",
+        "headerbar, .titlebar, toolbar, .toolbar, menubar, .menubar { background-color: @headerbar_bg_color; background-image: none; color: @headerbar_fg_color; border-color: @borders; }",
+        ".sidebar, placessidebar, stacksidebar, navigationview, navigationpage { background-color: @sidebar_bg_color; background-image: none; color: @sidebar_fg_color; }",
+        ".view, iconview, entry, textview, treeview, listview, list, listbox, scrolledwindow, viewport { background-color: @view_bg_color; background-image: none; color: @view_fg_color; }",
         "selection, *:selected { background-color: @accent_bg_color; color: @accent_fg_color; }",
         "*:focus-visible { outline-color: @accent_color; }",
         "button:checked, switch:checked, check:checked { background-color: @accent_bg_color; color: @accent_fg_color; }",
@@ -275,6 +287,101 @@ def render_gtk(theme, version):
     if version == 4:
         lines.append(".error, .destructive-action { color: @error_bg_color; }")
     return "\n".join(lines) + "\n"
+
+
+def papirus_output_name(name):
+    if name == "folder-blue.svg":
+        return "folder.svg"
+    if name.startswith("folder-blue-"):
+        return "folder-" + name[len("folder-blue-"):]
+    if name == "user-blue-home.svg":
+        return "user-home.svg"
+    if name == "user-blue-desktop.svg":
+        return "user-desktop.svg"
+    return ""
+
+
+def papirus_sources():
+    if not PAPIRUS_BASE.is_dir():
+        raise ValueError(f"Papirus ausente em {PAPIRUS_BASE}")
+    sources = []
+    for path in PAPIRUS_BASE.rglob("*.svg"):
+        output_name = papirus_output_name(path.name)
+        if output_name and path.parent.name == "places":
+            sources.append((path, path.parent.parent.name, output_name))
+    if not sources:
+        raise ValueError("assets de pasta do Papirus não encontrados")
+    return sources
+
+
+def render_papirus_svg(content, theme):
+    replacements = {
+        "#5294e2": theme["accent"],
+        "#4877b1": mix(theme["accent"], "#000000", .18),
+        "#1d344f": mix(theme["accent"], "#000000", .62),
+    }
+    for source, destination in replacements.items():
+        content = re.sub(re.escape(source), destination, content, flags=re.IGNORECASE)
+    ElementTree.fromstring(content)
+    return content
+
+
+def papirus_index(directories):
+    lines = [
+        "[Icon Theme]",
+        "Name=Hyprism-Papirus",
+        "Comment=Pastas Papirus com o acento dinâmico do Hyprism",
+        "Inherits=Papirus-Dark,Papirus,hicolor",
+        "Example=folder",
+        "Directories=" + ",".join(f"{directory}/places" for directory in directories),
+        "",
+    ]
+    for directory in directories:
+        size_text = directory.split("x", 1)[0]
+        size = int(size_text) if size_text.isdigit() else 16
+        scale = 2 if directory.endswith("@2x") else 1
+        lines.extend([
+            f"[{directory}/places]",
+            "Context=Places",
+            f"Size={size}",
+            f"Scale={scale}",
+            "Type=Fixed",
+            "",
+        ])
+    return "\n".join(lines)
+
+
+def publish_papirus(theme):
+    icon_root = OUT / "icons"
+    icon_root.mkdir(parents=True, exist_ok=True)
+    temporary = pathlib.Path(tempfile.mkdtemp(prefix=".Hyprism-Papirus-", dir=icon_root))
+    try:
+        directories = set()
+        exact_hits = 0
+        for source, directory, output_name in papirus_sources():
+            destination = temporary / directory / "places" / output_name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            rendered = render_papirus_svg(source.read_text(encoding="utf-8"), theme)
+            exact_hits += rendered.lower().count(theme["accent"].lower())
+            destination.write_text(rendered, encoding="utf-8")
+            directories.add(directory)
+        if exact_hits == 0:
+            raise ValueError("o acento exato não foi aplicado aos ícones")
+        (temporary / "index.theme").write_text(papirus_index(sorted(directories)), encoding="utf-8")
+        cache_tool = shutil.which("gtk-update-icon-cache")
+        if cache_tool:
+            subprocess.run([cache_tool, "-f", "-t", str(temporary)], check=True, capture_output=True, timeout=30)
+        link_candidate = icon_root / f".Hyprism-Papirus-link-{os.getpid()}"
+        link_candidate.symlink_to(temporary.name)
+        os.replace(link_candidate, icon_root / "Hyprism-Papirus")
+        generations = sorted((path for path in icon_root.glob(".Hyprism-Papirus-*") if path.is_dir()), key=lambda path: path.stat().st_mtime, reverse=True)
+        for previous in generations[2:]:
+            shutil.rmtree(previous)
+        return True
+    except (OSError, ValueError, subprocess.SubprocessError, ElementTree.ParseError) as error:
+        shutil.rmtree(temporary, ignore_errors=True)
+        print(f"Tema do Hyprism: Papirus preservado após falha ({error})", file=sys.stderr)
+        return False
 
 
 def replace_ini_value(content, key, value):
@@ -359,26 +466,32 @@ def validate_colors(content):
         raise ValueError("valor não resolvido")
 
 
-image = sys.argv[1] if len(sys.argv) > 1 else ""
-try:
-    raw, matugen = matugen_palette(image) if image else (FALLBACK, {"fallback": True})
-except (OSError, KeyError, ValueError, json.JSONDecodeError, subprocess.SubprocessError) as error:
-    print(f"Tema do Hyprism: o Matugen falhou ({error}); mantendo os artefatos atuais", file=sys.stderr)
-    raise SystemExit(1)
+def main():
+    image = sys.argv[1] if len(sys.argv) > 1 else ""
+    try:
+        raw, matugen = matugen_palette(image) if image else (FALLBACK, {"fallback": True})
+    except (OSError, KeyError, ValueError, json.JSONDecodeError, subprocess.SubprocessError) as error:
+        print(f"Tema do Hyprism: o Matugen falhou ({error}); mantendo os artefatos atuais", file=sys.stderr)
+        raise SystemExit(1)
 
-theme = theme_from(raw, image)
-publish(OUT / "matugen.json", json_text(matugen), json.loads)
-publish(OUT / "theme.json", json_text(theme), json.loads)
-publish(OUT / "kitty.conf", render_kitty(theme), validate_colors)
-publish(OUT / "foot.ini", render_foot(theme), validate_colors)
-publish(OUT / "hyprland.lua", render_hyprland(theme), validate_colors)
-publish(OUT / "hyprlock-colors.conf", render_hyprlock(theme), validate_colors)
-publish(OUT / "gtk-3.0.css", render_gtk(theme, 3), validate_colors)
-publish(OUT / "gtk-4.0.css", render_gtk(theme, 4), validate_colors)
-try:
-    kvantum_svg, kvantum_config, kvantum_colors = render_kvantum(theme)
-    publish(OUT / "kvantum/Hyprism/Hyprism.svg", kvantum_svg, validate_colors)
-    publish(OUT / "kvantum/Hyprism/Hyprism.kvconfig", kvantum_config, validate_colors)
-    publish(OUT / "kvantum/Hyprism/Hyprism.colors", kvantum_colors, validate_colors)
-except (OSError, ValueError) as error:
-    print(f"Tema do Hyprism: Kvantum preservado após falha ({error})", file=sys.stderr)
+    theme = theme_from(raw, image)
+    publish(OUT / "matugen.json", json_text(matugen), json.loads)
+    publish(OUT / "theme.json", json_text(theme), json.loads)
+    publish(OUT / "kitty.conf", render_kitty(theme), validate_colors)
+    publish(OUT / "foot.ini", render_foot(theme), validate_colors)
+    publish(OUT / "hyprland.lua", render_hyprland(theme), validate_colors)
+    publish(OUT / "hyprlock-colors.conf", render_hyprlock(theme), validate_colors)
+    publish(OUT / "gtk-3.0.css", render_gtk(theme, 3), validate_colors)
+    publish(OUT / "gtk-4.0.css", render_gtk(theme, 4), validate_colors)
+    publish_papirus(theme)
+    try:
+        kvantum_svg, kvantum_config, kvantum_colors = render_kvantum(theme)
+        publish(OUT / "kvantum/Hyprism/Hyprism.svg", kvantum_svg, validate_colors)
+        publish(OUT / "kvantum/Hyprism/Hyprism.kvconfig", kvantum_config, validate_colors)
+        publish(OUT / "kvantum/Hyprism/Hyprism.colors", kvantum_colors, validate_colors)
+    except (OSError, ValueError) as error:
+        print(f"Tema do Hyprism: Kvantum preservado após falha ({error})", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    main()

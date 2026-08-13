@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+config=${1:?configuração do Hyprlock obrigatória}
+cache_dir=${HYPRISM_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/hyprism}
+colors="$cache_dir/theme/hyprlock-colors.conf"
+wallpaper="$cache_dir/state/lock-wallpaper"
+[[ -s $config ]] || { printf 'Configuração do Hyprlock ausente: %s\n' "$config" >&2; exit 1; }
+[[ -s $colors ]] || { printf 'Paleta do Hyprlock ausente: %s\n' "$colors" >&2; exit 1; }
+[[ -e $wallpaper && -r $wallpaper ]] || { printf 'Papel de parede do Hyprlock ausente: %s\n' "$wallpaper" >&2; exit 1; }
+grep -Eq '^\$hyprism_[a-z_]+ = rgb\([0-9a-fA-F]{6}\)$' "$colors" || { printf 'Paleta do Hyprlock inválida.\n' >&2; exit 1; }
+grep -Eiq 'undefined|null|nan|\{\{' "$config" "$colors" && { printf 'Valor não resolvido na configuração do Hyprlock.\n' >&2; exit 1; }
+grep -Eq '^source = ~/.cache/hyprism/theme/hyprlock-colors.conf$' "$config" || { printf 'Fragmento de cores do Hyprlock não referenciado.\n' >&2; exit 1; }
+grep -Eq '^    path = ~/.cache/hyprism/state/lock-wallpaper$' "$config" || { printf 'Wallpaper do Hyprlock não referenciado.\n' >&2; exit 1; }
+awk 'BEGIN { depth = 0 } /\{/ { depth++ } /\}/ { depth-- } depth < 0 { exit 1 } END { exit depth != 0 }' "$config" || { printf 'Blocos desbalanceados na configuração do Hyprlock.\n' >&2; exit 1; }
+printf 'Configuração do Hyprlock validada sem iniciar o bloqueio.\n'
