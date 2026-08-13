@@ -7,16 +7,30 @@ Glass {
     required property var notification
     required property var controller
     signal dismissed()
-    width: 350
-    height: Math.max(84, content.implicitHeight + 26)
+    signal expired()
+    width: 360
+    height: Math.min(144, Math.max(86, content.implicitHeight + 24))
     radius: Design.radiusMd
     surfaceOpacity: .96
-    border.color: notification && notification.urgency === 2 ? theme.colors.error : theme.colors.outline
+    outlined: notification && notification.urgency === 2
+    outlineColor: theme.colors.error
     visible: notification !== null
 
     function dismiss() {
-        if (notification) notification.tracked = false
         dismissed()
+    }
+
+    function actionModel() {
+        const actions = notification && notification.actions ? notification.actions : []
+        const visibleActions = []
+        for (let index = 0; index < Math.min(2, actions.length); index++) visibleActions.push(actions[index])
+        return visibleActions
+    }
+
+    Timer {
+        interval: card.notification && Design.safeNumber(card.notification.expireTimeout, 0) > 0 ? Design.clamp(card.notification.expireTimeout, 3000, 10000) : 6500
+        running: card.visible
+        onTriggered: card.expired()
     }
 
     Rectangle {
@@ -72,7 +86,7 @@ Glass {
             visible: text.length > 0
             text: Design.safeText(card.notification ? card.notification.body : "", "").replace(/<[^>]*>/g, "")
             wrapMode: Text.Wrap
-            maximumLineCount: 3
+            maximumLineCount: 2
             elide: Text.ElideRight
             color: card.theme.colors.mutedForeground
             font.family: Design.fontFamily
@@ -84,7 +98,7 @@ Glass {
             spacing: 4
 
             Repeater {
-                model: card.notification && card.notification.actions ? card.notification.actions : []
+                model: card.actionModel()
 
                 ShellButton {
                     required property var modelData
@@ -112,8 +126,8 @@ Glass {
             height: 21
             radius: Design.radiusDefault
             color: closePointer.containsMouse ? card.theme.colors.surfaceHover : card.theme.colors.surfaceVariant
-            border.width: closeButton.activeFocus ? 2 : Design.outlineWidth
-            border.color: closeButton.activeFocus ? card.theme.colors.borderFocused : card.theme.colors.borderSubtle
+            border.width: closeButton.activeFocus ? 2 : 0
+            border.color: card.theme.colors.borderFocused
 
             StatusIcon {
                 anchors.centerIn: parent
