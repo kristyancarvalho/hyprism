@@ -23,9 +23,11 @@ O instalador:
 - instala pacotes oficiais e usa `paru` ou `yay` somente quando `packages/aur.txt` contém entradas;
 - instala Papirus, Symbols Nerd Font Mono e as ferramentas do Fontconfig a partir dos repositórios oficiais do Arch;
 - baixa Google Sans Flex 400, 500 e 600 diretamente do CDN oficial do Google Fonts, em URLs versionadas e verificadas por SHA-256, sem redistribuir binários no repositório;
+- instala o Colloid no escopo do usuário a partir de uma revisão upstream fixada e cria a variante `Colloid-Hyprism-Dark-Compact`;
+- provisiona Hyprlock, Kvantum para Qt 5/6, `qt5ct`, `qt6ct` e as ferramentas de compilação do tema GTK;
 - cria `~/Imagens/Wallpapers` e `~/Imagens/Screenshots` sem apagar conteúdo existente;
 - copia os arquivos runtime para `~/.local/share/hyprism`, sem depender do local original do clone;
-- cria links para `~/.config/hypr`, `~/.config/quickshell/default`, o alias `~/.config/quickshell/hyprism`, Foot, Kitty, GTK, Qt e a configuração do usuário;
+- cria links para `~/.config/hypr`, `~/.config/quickshell/default`, o alias `~/.config/quickshell/hyprism`, Foot, Kitty, GTK 3/4, Kvantum, Qt 5/6 e a configuração do usuário;
 - guarda conflitos em `~/.local/state/hyprism/backups/`;
 - verifica `hyprland.lua`, `shell.qml`, `foot.ini` e o tema de fallback do Foot;
 - não instala nem ativa um `hyprland.conf` legado.
@@ -65,6 +67,10 @@ O Alt+Tab usa os toplevels do Hyprland expostos pelo Quickshell e mantém uma li
 
 Launcher, papéis de parede, clipboard, redes, Bluetooth, central de controle, notificações, energia, mídia e Alt+Tab aceitam navegação por teclado. `Escape` fecha, `Enter` ativa, setas percorrem listas, grades e controles, e `Tab` mantém a travessia de foco onde não conflita com o alternador de janelas.
 
+Na ilha compacta, a bateria mostra somente um dos cinco glifos semânticos de nível e o Bluetooth mostra somente seu estado; percentual, carregamento e dispositivo conectado aparecem na expansão. A rede mantém ícone e nome no modo compacto: SSID real no Wi-Fi, `Ethernet` em hardware físico e `Rede` para Ethernet virtualizada. O Wi-Fi usa exclusivamente a família `nf-md-wifi_strength_*`, com estados outline, fraco, médio, forte e desconectado centralizados em `Design.qml`.
+
+O seletor de papéis de parede recebe foco exclusivo assim que `Alt+K` o abre. A busca `Pesquisar papel de parede...` compara nomes sem diferenciar maiúsculas, acentos, hífens, sublinhados e espaços. As setas navegam espacialmente pela grade, `Enter` aplica somente uma seleção filtrada válida e `Escape` fecha. A altura acompanha a quantidade de linhas até o limite da tela; as miniaturas continuam assíncronas e armazenadas pelo cache de imagens do Qt.
+
 O histórico de clipboard registra texto e imagem com os watchers MIME do `wl-paste` e armazena os bytes originais no `cliphist`. O painel classifica o preview, gera miniaturas PNG proporcionais de até 420×240 em `~/.cache/hyprism/clipboard`, mantém no máximo 64 miniaturas e usa um ícone neutro quando a prévia falha. Restaurar uma imagem executa `cliphist decode` diretamente para `wl-copy --type image/...`; o caminho da miniatura nunca é copiado como texto.
 
 Notificações flutuantes formam uma lista centralizada de até quatro cartões, ou três em telas baixas. Cada cartão expira individualmente, títulos e corpos têm limites de linhas, alterações com o mesmo ID substituem a geração anterior e excedentes permanecem no histórico com um contador compacto. O Hub suprime temporariamente a pilha flutuante para preservar seus controles, sem descartar o histórico.
@@ -83,24 +89,35 @@ Foot é o terminal padrão porque é um terminal Wayland pequeno, rápido e adeq
 
 ```text
 papel de parede
-  └─ Matugen
-      └─ paleta semântica com contraste corrigido
+  └─ extração da cor-fonte fiel
+      └─ Matugen para superfícies semânticas
           ├─ Quickshell
           ├─ Hyprland Lua
-          ├─ Foot
-          └─ Kitty
+          ├─ Hyprlock
+          ├─ Foot e Kitty
+          ├─ GTK 3/4 sobre Colloid-Hyprism
+          └─ Kvantum para Qt 5/6
 ```
 
-`scripts/theme/generate-theme.py` é o gerador central. Ele cria:
+`scripts/theme/generate-theme.py` é o gerador central. Uma miniatura limitada do wallpaper fornece a cor representativa mais relevante; a correção de contraste altera somente a luminosidade necessária e preserva matiz e saturação. O `primary` tonal do Material não é usado como destaque do Hyprism. Matugen continua responsável por fundo, superfícies, texto, cores de apoio e erro. O gerador cria:
 
 - `~/.cache/hyprism/theme/theme.json` para Quickshell;
 - `~/.cache/hyprism/theme/hyprland.lua` para bordas do Hyprland;
+- `~/.cache/hyprism/theme/hyprlock-colors.conf` para a tela de bloqueio;
 - `~/.cache/hyprism/theme/foot.ini` com foreground, background, cursor, seleção e as 16 cores ANSI;
-- `~/.cache/hyprism/theme/kitty.conf` e aplicação remota nas janelas Kitty compatíveis.
+- `~/.cache/hyprism/theme/kitty.conf` e aplicação remota nas janelas Kitty compatíveis;
+- `~/.cache/hyprism/theme/gtk-3.0.css` e `gtk-4.0.css` como camada dinâmica sobre Colloid;
+- `~/.cache/hyprism/theme/kvantum/Hyprism/` com SVG, configuração e esquema de cores do Kvantum.
 
-Arquivos JSON observados pelo shell são validados antes da publicação e substituídos atomicamente. `scripts/system/publish-json` oferece o mesmo fluxo para uma configuração produzida por outra ferramenta. Os leitores aplicam debounce, mantêm o último estado válido e usam os padrões embutidos quando o arquivo ainda não existe ou está vazio.
+Todos os artefatos são gerados por completo em um arquivo temporário, validados contra conteúdo vazio ou não resolvido e publicados por substituição atômica. Uma falha em Matugen preserva toda a paleta anterior; uma falha de um consumidor preserva seu último arquivo válido e não corrompe os demais. `scripts/system/publish-json` oferece o mesmo fluxo para uma configuração JSON produzida por outra ferramenta. Os leitores do shell aplicam debounce, mantêm o último estado válido e usam os padrões embutidos quando o arquivo ainda não existe ou está vazio.
 
-O instalador prepara `foot.ini` com uma paleta de fallback antes de qualquer terminal ser aberto. Novas janelas Foot leem a paleta atual. GTK permanece em Adwaita escuro e Qt usa `qt6ct` com Fusion.
+O instalador gera uma paleta escura de fallback antes da primeira seleção e depois executa a mesma pipeline para o primeiro wallpaper disponível. Hyprlock usa `~/.cache/hyprism/state/lock-wallpaper`, atualizado atomicamente junto com a paleta, e sua configuração permanece em `~/.config/hypr/hyprlock.conf`. `Alt+L` chama Hyprlock diretamente pelo Hyprland e não depende do Quickshell.
+
+GTK 3 e GTK 4 usam `Colloid-Hyprism-Dark-Compact` como fundação estática e carregam as cores dinâmicas pelos arquivos `gtk.css` do usuário. O instalador seleciona Papirus-Dark e a preferência escura pelo arquivo de configuração e por GSettings. Essa camada também fornece variáveis de cor para aplicações libadwaita sem forçar `GTK_THEME`; aplicações que armazenam seu próprio esquema ou já estavam abertas podem precisar ser reabertas.
+
+`scripts/system/install-colloid-theme` obtém [Colloid GTK Theme](https://github.com/vinceliuice/Colloid-gtk-theme) diretamente do upstream na revisão `9bf9fc5a5974ae0659f59a4281aae6f594c95bdd`, preservando a licença GPL-3.0 no checkout temporário e sem redistribuir a árvore de terceiros. O marcador de revisão faz uma reinstalação controlada somente quando a base fixada muda ou está incompleta.
+
+Qt usa `QT_QPA_PLATFORMTHEME=qt5ct:qt6ct` para preferências de ambas as gerações e `QT_STYLE_OVERRIDE=kvantum` como motor visual. `qt5ct` e `qt6ct` selecionam Papirus-Dark e o estilo Kvantum, enquanto `~/.config/Kvantum/kvantum.kvconfig` escolhe o tema dinâmico `Hyprism`. Novos processos Qt recebem a nova paleta imediatamente; processos já abertos podem precisar ser reiniciados.
 
 ## Atalhos principais
 
