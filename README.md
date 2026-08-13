@@ -57,7 +57,7 @@ No primeiro boot, a paleta escura embutida mantém a ilha e os widgets utilizáv
 
 Google Sans Flex é a família primária de texto da interface. Symbols Nerd Font Mono é usada somente para a iconografia semântica do shell. Os tamanhos, pesos, alturas, espaçamentos, raios e glifos ficam centralizados em `Design.qml`, e componentes compartilhados mantêm a linha de base e o ritmo vertical da ilha. O sistema visual usa retângulos arredondados de 9 px como forma dominante, com 6 px para elementos pequenos e 12 px para superfícies amplas. Hierarquia tonal, espaçamento e preenchimento de estado substituem contornos repetidos; bordas ficam reservadas ao foco, à seleção, à urgência e à definição externa da ilha.
 
-O índice de aplicativos percorre `XDG_DATA_HOME` e `XDG_DATA_DIRS` uma vez na inicialização, lê ID, `StartupWMClass`, `Exec`, `TryExec`, nome e `Icon` dos arquivos `.desktop` e cria um cache normalizado compartilhado. O Alt+Tab tenta `class`, `initialClass` e app ID contra esses aliases; o campo `Icon` resolvido passa pelo tema Papirus-Dark do Qt, com fallback para `application-x-executable`. Launcher, Alt+Tab e mídia usam o mesmo cache. Estados do sistema usam exclusivamente o mapa semântico Nerd Font; emoji não é usado como ícone de status.
+O índice de aplicativos percorre `XDG_DATA_HOME` e `XDG_DATA_DIRS` uma vez na inicialização, lê ID, `StartupWMClass`, `Exec`, `TryExec`, nome e `Icon` dos arquivos `.desktop` e cria um cache normalizado compartilhado. O Alt+Tab tenta `class`, `initialClass` e app ID contra esses aliases; o campo `Icon` resolvido passa pelo tema Hyprism-Papirus, que herda os aplicativos normais do Papirus-Dark, com fallback para `application-x-executable`. Launcher, Alt+Tab e mídia usam o mesmo cache. Estados do sistema usam exclusivamente o mapa semântico Nerd Font; emoji não é usado como ícone de status.
 
 Um `PanelWindow` transparente de 1 px mantém a zona exclusiva constante composta pela margem superior, pela altura compacta e pelo respiro configurado, sem desenhar fundo, borda ou conteúdo. Janelas tiled e maximizadas começam abaixo dessa faixa. Em cada monitor, um canvas overlay transparente de tamanho fixo contém a única superfície visual da ilha. Launcher, controles, notificações, mídia expandida e Alt+Tab animam essa superfície dentro do canvas sem redimensionar a superfície Wayland, ampliar a zona exclusiva ou reorganizar as janelas.
 
@@ -96,10 +96,11 @@ papel de parede
           ├─ Hyprlock
           ├─ Foot e Kitty
           ├─ GTK 3/4 sobre Colloid-Hyprism
+          ├─ pastas do Hyprism-Papirus
           └─ Kvantum para Qt 5/6
 ```
 
-`scripts/theme/generate-theme.py` é o gerador central. Uma miniatura limitada do wallpaper fornece a cor representativa mais relevante; a correção de contraste altera somente a luminosidade necessária e preserva matiz e saturação. O `primary` tonal do Material não é usado como destaque do Hyprism. Matugen continua responsável por fundo, superfícies, texto, cores de apoio e erro. O gerador cria:
+`scripts/theme/generate-theme.py` é o gerador central. Uma miniatura limitada do wallpaper fornece a cor representativa mais relevante; a transformação HLS mantém o matiz, limita apenas saturação extrema e posiciona a luminosidade numa faixa útil de 0,48 a 0,72 antes da correção mínima de contraste. O resultado fica mais claro que a cor-fonte escura sem se transformar num pastel Material. O `primary` tonal do Material não é usado como destaque do Hyprism. Matugen continua responsável por fundo, superfícies, texto, cores de apoio e erro. O gerador cria:
 
 - `~/.cache/hyprism/theme/theme.json` para Quickshell;
 - `~/.cache/hyprism/theme/hyprland.lua` para bordas do Hyprland;
@@ -107,17 +108,20 @@ papel de parede
 - `~/.cache/hyprism/theme/foot.ini` com foreground, background, cursor, seleção e as 16 cores ANSI;
 - `~/.cache/hyprism/theme/kitty.conf` e aplicação remota nas janelas Kitty compatíveis;
 - `~/.cache/hyprism/theme/gtk-3.0.css` e `gtk-4.0.css` como camada dinâmica sobre Colloid;
+- `~/.cache/hyprism/theme/icons/Hyprism-Papirus` como tema herdado de ícones, contendo somente pastas recoloridas;
 - `~/.cache/hyprism/theme/kvantum/Hyprism/` com SVG, configuração e esquema de cores do Kvantum.
 
 Todos os artefatos são gerados por completo em um arquivo temporário, validados contra conteúdo vazio ou não resolvido e publicados por substituição atômica. Uma falha em Matugen preserva toda a paleta anterior; uma falha de um consumidor preserva seu último arquivo válido e não corrompe os demais. `scripts/system/publish-json` oferece o mesmo fluxo para uma configuração JSON produzida por outra ferramenta. Os leitores do shell aplicam debounce, mantêm o último estado válido e usam os padrões embutidos quando o arquivo ainda não existe ou está vazio.
 
-O instalador gera uma paleta escura de fallback antes da primeira seleção e depois executa a mesma pipeline para o primeiro wallpaper disponível. Hyprlock usa `~/.cache/hyprism/state/lock-wallpaper`, atualizado atomicamente junto com a paleta, e sua configuração permanece em `~/.config/hypr/hyprlock.conf`. `Alt+L` chama Hyprlock diretamente pelo Hyprland e não depende do Quickshell.
+O instalador copia os wallpapers incluídos e executa a pipeline inicial antes de considerar Hyprlock pronto. Assim, `~/.cache/hyprism/theme/hyprlock-colors.conf` e `~/.cache/hyprism/state/lock-wallpaper` já existem no primeiro bloqueio. `scripts/system/validate-hyprlock` verifica arquivos, cores, referências e blocos sem iniciar o lockscreen. A configuração permanece em `~/.config/hypr/hyprlock.conf`; `Alt+L` chama Hyprlock diretamente pelo Hyprland e não depende do Quickshell. A instalação oficial usa uma única transação `pacman -Syu` para não misturar versões de Hyprlock, Hyprland, aquamarine e Mesa.
 
-GTK 3 e GTK 4 usam `Colloid-Hyprism-Dark-Compact` como fundação estática e carregam as cores dinâmicas pelos arquivos `gtk.css` do usuário. O instalador seleciona Papirus-Dark e a preferência escura pelo arquivo de configuração e por GSettings. Essa camada também fornece variáveis de cor para aplicações libadwaita sem forçar `GTK_THEME`; aplicações que armazenam seu próprio esquema ou já estavam abertas podem precisar ser reabertas.
+GTK 3 e GTK 4 usam `Colloid-Hyprism-Dark-Compact` como fundação estática e carregam as cores dinâmicas pelos arquivos `gtk.css` do usuário. A camada reduz os papéis Material a um fundo dominante, uma view apenas 2,5% acima e uma superfície elevada 5,5% acima; sidebar e view compartilham a mesma cor, e seleção usa exatamente o acento canônico. Essa camada também fornece variáveis de cor para aplicações libadwaita sem forçar `GTK_THEME`; aplicações que armazenam seu próprio esquema ou já estavam abertas podem precisar ser reabertas.
+
+`Hyprism-Papirus` herda `Papirus-Dark`, `Papirus` e `hicolor`. O gerador seleciona os SVGs `folder-blue` do Papirus como templates, substitui o corpo `#5294e2` pelo hexadecimal canônico exato e deriva somente sombra e dobra desse mesmo valor. Downloads, Documentos, Imagens, Música, Vídeos, Desktop, Público e demais overlays continuam intactos; os ícones de aplicativos permanecem herdados e não são recoloridos. A geração ocorre numa nova árvore, a referência ativa é trocada atomicamente e somente duas gerações são retidas para cobrir leitores concorrentes sem crescimento ilimitado. Aplicativos já abertos podem exigir reabertura para limpar seu cache de ícones.
 
 `scripts/system/install-colloid-theme` obtém [Colloid GTK Theme](https://github.com/vinceliuice/Colloid-gtk-theme) diretamente do upstream na revisão `9bf9fc5a5974ae0659f59a4281aae6f594c95bdd`, preservando a licença GPL-3.0 no checkout temporário e sem redistribuir a árvore de terceiros. O marcador de revisão faz uma reinstalação controlada somente quando a base fixada muda ou está incompleta.
 
-Qt usa `QT_QPA_PLATFORMTHEME=qt5ct:qt6ct` para preferências de ambas as gerações e `QT_STYLE_OVERRIDE=kvantum` como motor visual. `qt5ct` e `qt6ct` selecionam Papirus-Dark e o estilo Kvantum, enquanto `~/.config/Kvantum/kvantum.kvconfig` escolhe o tema dinâmico `Hyprism`. Novos processos Qt recebem a nova paleta imediatamente; processos já abertos podem precisar ser reiniciados.
+Qt usa `QT_QPA_PLATFORMTHEME=qt5ct:qt6ct` para preferências de ambas as gerações e `QT_STYLE_OVERRIDE=kvantum` como motor visual. `qt5ct` e `qt6ct` selecionam Hyprism-Papirus e o estilo Kvantum, enquanto `~/.config/Kvantum/kvantum.kvconfig` escolhe o tema dinâmico `Hyprism`. Novos processos Qt recebem a nova paleta imediatamente; processos já abertos podem precisar ser reiniciados.
 
 ## Atalhos principais
 
@@ -155,7 +159,7 @@ O Quickshell usa por padrão o backend `software` do Qt Quick. Esse backend rast
 
 O clima inicial está configurado para São Paulo, com fuso `America/Sao_Paulo`. Local, latitude, longitude, fuso e intervalo podem ser alterados no bloco `weather` de `config/user.json` antes de executar novamente o instalador.
 
-Os widgets persistentes formam duas colunas compactas no canto de cada tela e continuam abaixo de janelas normais. Data/clima, CPU/RAM, rede, armazenamento ficam na primeira coluna; uptime/carga, sensores, serviços, tarefas, processos e mídia ficam na segunda. Cards contextuais desaparecem quando não há sensores ou tarefas. CPU, RAM e rede usam sparklines nativas com históricos limitados; o wallpaper permanece visível entre superfícies translúcidas.
+Os widgets persistentes formam duas colunas compactas tratadas como uma única composição e continuam abaixo de janelas normais. Na instalação nova, o grupo fica centralizado na área útil abaixo da reserva superior; data/clima, CPU/RAM, rede, armazenamento ficam na primeira coluna, enquanto uptime/carga, sensores, serviços, tarefas, processos e mídia ficam na segunda. Cards contextuais desaparecem quando não há sensores ou tarefas, e as colunas recalculam a própria altura sem deixar slots vazios. CPU, RAM e rede usam sparklines nativas com históricos limitados; o wallpaper permanece visível ao redor das superfícies translúcidas.
 
 ## Widgets de monitoramento
 
@@ -171,7 +175,7 @@ Todos os widgets ficam em `shell.widgets` de `config/user.json`. O formato antig
 }
 ```
 
-`shell.widgetLayout.side` aceita `right` ou `left` e move a composição completa para o lado escolhido sem coordenadas livres, sobreposição ou dependência do ponteiro. O padrão permanece `right` em cada monitor.
+`shell.widgetLayout.position` aceita `center`, `top-left`, `top-right`, `bottom-left` e `bottom-right`. O padrão do arquivo instalado é `center` em cada monitor. Configurações antigas sem `position` continuam usando `shell.widgetLayout.side`: `left` corresponde a `top-left`, e os demais valores a `top-right`. O centro considera a reserva compacta e a geometria da própria tela, sem coordenadas globais entre monitores.
 
 | Chave | Padrão | Dados e opções |
 | --- | --- | --- |
@@ -225,6 +229,10 @@ Os workspaces aparecem como até cinco células quadradas numeradas: o workspace
 
 Painéis interativos usam o foco exclusivo da superfície layer-shell e `HyprlandFocusGrab`, solicitam foco do primeiro controle depois que a superfície está estável e liberam o grab ao fechar. Clique na ilha e IPC passam pelas mesmas ações semânticas do controlador central. O launcher mostra no máximo seis linhas antes de rolar e calcula a altura a partir da quantidade filtrada. Os estados de Wi-Fi, Bluetooth, modo noturno e perfil de energia vêm do backend observado; o clique apenas inicia uma solicitação pendente e não altera a aparência ativa antecipadamente.
 
+O seletor de wallpaper abre com foco no wallpaper atual ou no primeiro resultado. Setas navegam usando a quantidade responsiva de colunas, Enter aplica, Escape fecha, Tab leva deterministicamente à busca e seta para baixo retorna ao grid. A busca por nome ignora caixa, acentos, hífens e underscores; sem resultado, mantém o campo editável e mostra `Nenhum papel de parede encontrado`.
+
+Notificações recebidas criam uma fotografia independente no histórico e mantêm o objeto do protocolo apenas no stack temporário. Expiração ou fechamento remove o toast e sinaliza o emissor sem apagar a fotografia. IDs de replacement atualizam a mesma entrada. `Limpar tudo` remove o histórico e os toasts correspondentes, mas o servidor continua aceitando novas notificações.
+
 A mídia usa o serviço MPRIS nativo do Quickshell. A ilha compacta mostra artista e faixa truncados; a expansão mostra capa, título, artista, progresso, tempos e controles. O widget de mídia usa recorte proporcional da capa, os mesmos tokens de cor e controles de teclado. Sem player ou faixa válida, os dois elementos permanecem ocultos.
 
 Em uma máquina física com aceleração Qt funcional, o backend RHI pode ser testado sem editar o repositório:
@@ -272,6 +280,8 @@ Somente quando `start-shell --development` define o escopo local, os modelos vis
 ```bash
 HYPRISM_QS_PATH="$PWD/config/quickshell/shell.qml" scripts/system/shell-ipc development mockNotifications 5
 HYPRISM_QS_PATH="$PWD/config/quickshell/shell.qml" scripts/system/shell-ipc development mockReplacement
+HYPRISM_QS_PATH="$PWD/config/quickshell/shell.qml" scripts/system/shell-ipc development dismissNewestToast
+HYPRISM_QS_PATH="$PWD/config/quickshell/shell.qml" scripts/system/shell-ipc development clearNotificationHistory
 HYPRISM_QS_PATH="$PWD/config/quickshell/shell.qml" scripts/system/shell-ipc development mockClipboard
 ```
 
@@ -303,6 +313,7 @@ pacman -Q papirus-icon-theme ttf-nerd-fonts-symbols-mono fontconfig
 fc-match 'Google Sans Flex'
 fc-match 'Symbols Nerd Font Mono'
 test -d /usr/share/icons/Papirus-Dark && echo 'Papirus-Dark encontrado'
+test -s ~/.local/share/icons/Hyprism-Papirus/index.theme && echo 'Hyprism-Papirus encontrado'
 ```
 
 Se os textos usarem uma fonte de fallback, execute `fc-cache -f` dentro da VM e encerre a sessão antes de testar novamente. O helper `install-google-sans-flex` verifica os três downloads antes de instalá-los em `~/.local/share/fonts/google-sans-flex`.
