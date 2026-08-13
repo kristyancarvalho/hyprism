@@ -39,6 +39,7 @@ if [[ $(locale charmap 2>/dev/null || true) != UTF-8 ]]; then
 fi
 if ((development)); then
   export HYPRISM_QS_PATH="$config_path"
+  export HYPRISM_DEVELOPMENT=1
   exec qs "${selector[@]}" --no-duplicate
 fi
 exec qs "${selector[@]}" --no-duplicate >>"$log_file" 2>&1

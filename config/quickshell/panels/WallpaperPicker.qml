@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Layouts
 import "../components"
 import ".."
 
@@ -46,22 +47,24 @@ Item {
         anchors.margins: 22
         spacing: 14
 
-        Row {
+        RowLayout {
             id: header
             width: parent.width
+            spacing: Design.spacingMd
 
             Text {
-                width: parent.width - refresh.width
-                anchors.verticalCenter: parent.verticalCenter
+                Layout.fillWidth: true
                 text: "Papéis de parede"
                 color: panel.theme.colors.foreground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeLg
                 font.weight: Design.fontWeightSemibold
+                elide: Text.ElideRight
             }
 
             ShellButton {
                 id: refresh
+                Layout.preferredWidth: implicitWidth
                 theme: panel.theme
                 text: "Atualizar"
                 iconName: "refresh"
@@ -93,8 +96,8 @@ Item {
                     anchors.margins: 6
                     radius: Design.radiusSm
                     color: panel.theme.colors.surfaceVariant
-                    border.width: panel.selectedIndex === index ? 3 : pointer.containsMouse ? 2 : 1
-                    border.color: panel.selectedIndex === index || pointer.containsMouse ? panel.theme.colors.accent : panel.theme.colors.outline
+                    border.width: panel.selectedIndex === index ? 2 : 0
+                    border.color: panel.theme.colors.accent
                     clip: true
 
                     Image {
@@ -103,6 +106,12 @@ Item {
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         cache: true
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        color: pointer.containsMouse && panel.selectedIndex !== index ? panel.theme.colors.surfaceHover : "transparent"
+                        opacity: .28
                     }
 
                     Rectangle {

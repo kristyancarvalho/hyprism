@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Layouts
 import "../components"
 import ".."
 
@@ -29,11 +30,12 @@ Item {
         anchors.margins: 16
         spacing: 10
 
-        Row {
+        RowLayout {
             width: parent.width
+            spacing: Design.spacingMd
 
             Text {
-                width: parent.width - hint.width
+                Layout.fillWidth: true
                 text: "Trocar janela"
                 color: panel.theme.colors.foreground
                 font.family: Design.fontFamily
@@ -43,6 +45,7 @@ Item {
 
             Text {
                 id: hint
+                Layout.preferredWidth: implicitWidth
                 text: "← → navegar  ·  solte Alt para abrir"
                 color: panel.theme.colors.mutedForeground
                 font.family: Design.fontFamily
@@ -72,8 +75,8 @@ Item {
                 height: ListView.view.height
                 radius: Design.radiusMd
                 color: selected ? panel.theme.colors.surfaceActive : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
-                border.width: selected ? 2 : Design.outlineWidth
-                border.color: selected ? panel.theme.colors.accent : panel.theme.colors.outline
+                border.width: selected ? 2 : 0
+                border.color: panel.theme.colors.accent
 
                 Column {
                     anchors.fill: parent

@@ -53,7 +53,7 @@ O Quickshell é iniciado uma única vez pelo evento `hyprland.start`. O helper u
 
 No primeiro boot, a paleta escura embutida mantém a ilha e os widgets utilizáveis mesmo sem arquivos gerados. Ausência de bateria, Wi-Fi, Bluetooth, brilho, GPU, sensores, MPRIS, clima ou histórico de clipboard produz um estado indisponível ou oculto, sem bloquear o `shell.qml`.
 
-Google Sans Flex é a família primária de texto da interface. Symbols Nerd Font Mono é usada somente para a iconografia semântica do shell. Os tamanhos, pesos, alturas, espaçamentos, raios e glifos ficam centralizados em `Design.qml`, e componentes compartilhados mantêm a linha de base e o ritmo vertical da ilha. O sistema visual usa retângulos arredondados de 6 px como forma dominante, com 4 px apenas em trilhas muito pequenas e 8 px reservado a exceções amplas.
+Google Sans Flex é a família primária de texto da interface. Symbols Nerd Font Mono é usada somente para a iconografia semântica do shell. Os tamanhos, pesos, alturas, espaçamentos, raios e glifos ficam centralizados em `Design.qml`, e componentes compartilhados mantêm a linha de base e o ritmo vertical da ilha. O sistema visual usa retângulos arredondados de 9 px como forma dominante, com 6 px para elementos pequenos e 12 px para superfícies amplas. Hierarquia tonal, espaçamento e preenchimento de estado substituem contornos repetidos; bordas ficam reservadas ao foco, à seleção, à urgência e à definição externa da ilha.
 
 Ícones de aplicativos são resolvidos a partir do campo `Icon` dos arquivos `.desktop` pelo tema Papirus-Dark, com fallback para `application-x-executable`. Isso vale para o launcher, o Alt+Tab, notificações e o aplicativo de mídia. Estados do sistema usam exclusivamente o mapa semântico Nerd Font; emoji não é usado como ícone de status.
 
@@ -61,9 +61,15 @@ Um `PanelWindow` transparente de 1 px mantém a zona exclusiva constante compost
 
 O workspace ativo de cada monitor fornece o estado real `hasFullscreen`. Nesse estado, somente a ilha persistente, seus widgets e sua reserva daquele monitor são ocultados. Outros monitores continuam normais. Um painel solicitado explicitamente continua autorizado a aparecer sobre fullscreen e mantém a mesma tela alvo.
 
-O Alt+Tab usa os toplevels expostos pelo Quickshell e mantém uma lista MRU atualizada por eventos de foco. A primeira troca seleciona a janela focada anteriormente; repetições avançam ou recuam e soltar Alt ativa a seleção, inclusive em outro workspace. A interface mostra ícone Papirus, nome do aplicativo e título, com fallback intencional quando algum metadado está ausente.
+O Alt+Tab usa os toplevels do Hyprland expostos pelo Quickshell e mantém uma lista MRU atualizada por eventos de foco. Cada entrada guarda o endereço hexadecimal canônico da janela. A primeira troca seleciona a janela focada anteriormente; repetições avançam ou recuam e soltar Alt chama `hl.dsp.focus` com `address:`, inclusive em outro workspace ou monitor. A interface mostra ícone Papirus, nome do aplicativo e título, com fallback intencional quando algum metadado está ausente.
 
 Launcher, papéis de parede, clipboard, redes, Bluetooth, central de controle, notificações, energia, mídia e Alt+Tab aceitam navegação por teclado. `Escape` fecha, `Enter` ativa, setas percorrem listas, grades e controles, e `Tab` mantém a travessia de foco onde não conflita com o alternador de janelas.
+
+O histórico de clipboard registra texto e imagem com os watchers MIME do `wl-paste` e armazena os bytes originais no `cliphist`. O painel classifica o preview, gera miniaturas PNG proporcionais de até 420×240 em `~/.cache/hyprism/clipboard`, mantém no máximo 64 miniaturas e usa um ícone neutro quando a prévia falha. Restaurar uma imagem executa `cliphist decode` diretamente para `wl-copy --type image/...`; o caminho da miniatura nunca é copiado como texto.
+
+Notificações flutuantes formam uma lista centralizada de até quatro cartões, ou três em telas baixas. Cada cartão expira individualmente, títulos e corpos têm limites de linhas, alterações com o mesmo ID substituem a geração anterior e excedentes permanecem no histórico com um contador compacto. O Hub suprime temporariamente a pilha flutuante para preservar seus controles, sem descartar o histórico.
+
+O layout tiled usa `gaps_in = 4` e `gaps_out = 10`. A reserva superior da ilha continua independente desses espaços e o fullscreen continua removendo somente a superfície persistente e a reserva do monitor afetado.
 
 A tela configurada em `config/user.json` tem prioridade quando existe. Em seguida são usadas a tela focada do Hyprland e a primeira tela enumerada pelo Quickshell. Nenhum nome como `eDP-1`, `HDMI-A-1` ou `Virtual-1` é codificado.
 
@@ -136,7 +142,7 @@ Os widgets de data e clima formam uma composição compacta no canto da tela. O 
 
 A reserva superior compacta usa 8 px de margem, 44 px de ilha e 4 px de respiro. A superfície de reserva permanece fixa e totalmente transparente durante expansões. O overlay ignora exclusões de outras camadas, usa a mesma origem absoluta no topo central e mantém um canvas Wayland estável; a forma desenhada, seu recorte e sua máscara de entrada compartilham uma única geometria animada. Launcher, hub, clipboard, seletor de wallpaper, Alt+Tab e menu de energia crescem para baixo sem ampliar a reserva. Cada tela detectada recebe sua própria ilha visual e seus próprios widgets. Painéis transitórios usam primeiro a tela invocadora e, para atalhos, o monitor focado pelo Hyprland.
 
-As transições de opacidade usam 80 ms, respostas rápidas usam 110 ms e morphs de geometria usam 150 ms. Um único progresso interpola largura, altura e raio, sem animações concorrentes do `PanelWindow`, do fundo e do recorte. A ilha compacta, painéis, cards, botões, notificações, widgets, launcher, OSD e Alt+Tab usam raio predominante de 6 px.
+As transições de opacidade usam 80 ms, respostas rápidas usam 110 ms e morphs de geometria usam 150 ms. Um único progresso interpola largura, altura e raio, sem animações concorrentes do `PanelWindow`, do fundo e do recorte. A ilha compacta, painéis, cards, botões, notificações, widgets, launcher, OSD e Alt+Tab usam raio predominante de 9 px.
 
 Os workspaces aparecem como até cinco células quadradas numeradas: o workspace ativo usa preenchimento de destaque, ocupados usam superfície elevada, vizinhos vazios ficam atenuados e urgentes usam a cor semântica de erro. A seleção considera o workspace ativo, seus vizinhos e workspaces ocupados ou urgentes sem alargar indefinidamente a ilha. A bateria usa a família Font Awesome do Nerd Font entre `nf-fa-battery_0` e `nf-fa-battery_4`, com limiares de carga centralizados e um raio discreto ao carregar.
 
@@ -183,6 +189,16 @@ HYPRISM_ROOT="$PWD" HYPRISM_QS_PATH="$PWD/config/quickshell/shell.qml" scripts/s
 ```
 
 O modo de desenvolvimento usa o mesmo launcher e o caminho explícito do repositório. Se outro daemon do desktop já possuir `org.freedesktop.Notifications`, o Quickshell registrará um único conflito de DBus; isso não impede painéis, estado ou foco. Na sessão instalada do Hyprism, o Quickshell continua sendo o servidor de notificações e o projeto não inicia Dunst ou SwayNC.
+
+Somente quando `start-shell --development` define o escopo local, os modelos visuais descartáveis podem ser acionados sem assumir o serviço de notificações nem depender do banco real do clipboard:
+
+```bash
+HYPRISM_QS_PATH="$PWD/config/quickshell/shell.qml" scripts/system/shell-ipc development mockNotifications 5
+HYPRISM_QS_PATH="$PWD/config/quickshell/shell.qml" scripts/system/shell-ipc development mockReplacement
+HYPRISM_QS_PATH="$PWD/config/quickshell/shell.qml" scripts/system/shell-ipc development mockClipboard
+```
+
+Esses endpoints ignoram chamadas na sessão instalada.
 
 Para observar um erro de carregamento sem daemonizar, primeiro confirme que não há uma instância ativa e então execute na VM:
 

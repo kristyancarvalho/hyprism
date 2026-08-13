@@ -15,8 +15,7 @@ Rectangle {
     implicitHeight: Design.barPillHeight
     radius: Design.radiusDefault
     color: selected ? theme.colors.accent : active ? theme.colors.accentDim : theme.colors.surfaceElevated
-    border.width: Design.outlineWidth
-    border.color: selected || active ? theme.colors.accent : theme.colors.outline
+    border.width: 0
 
     Row {
         id: content

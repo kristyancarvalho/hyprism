@@ -22,8 +22,10 @@ ShellRoot {
     property string configError: ""
     property string themeError: ""
     readonly property bool hyprlandAvailable: !!Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE")
+    readonly property bool developmentMode: Quickshell.env("HYPRISM_DEVELOPMENT") === "1"
     property string notificationScreenName: ""
     property var popupNotifications: []
+    property int popupOverflowCount: 0
     readonly property var focusedScreen: screenByName(focusedScreenName())
     readonly property var transientScreen: screenByName(shellController.targetScreenName) || focusedScreen
     readonly property var osdScreen: shellController.mode === "compact" ? focusedScreen : transientScreen
@@ -47,13 +49,57 @@ ShellRoot {
 
     function removePopup(notification): void {
         popupNotifications = popupNotifications.filter(item => item && item !== notification)
+        if (!popupNotifications.length) popupOverflowCount = 0
         notificationServer.newest = popupNotifications.length ? popupNotifications[popupNotifications.length - 1] : null
     }
 
-    function expirePopup(): void {
-        if (!popupNotifications.length) return
-        popupNotifications = []
-        notificationServer.newest = null
+    function dismissPopup(notification): void {
+        removePopup(notification)
+        if (!notification) return
+        notification.dismiss()
+        notification.tracked = false
+    }
+
+    function expirePopup(notification): void {
+        removePopup(notification)
+        if (notification) notification.expire()
+    }
+
+    function popupLimit(): int {
+        return notificationScreen && notificationScreen.height < 700 ? 3 : 4
+    }
+
+    function showPopup(notification): void {
+        const existing = popupNotifications.filter(item => item && item.id !== notification.id && item.lastGeneration !== false)
+        const next = existing.concat([notification])
+        const limit = popupLimit()
+        if (next.length > limit) popupOverflowCount += next.length - limit
+        popupNotifications = next.slice(-limit)
+        notificationServer.newest = notification
+    }
+
+    function developmentNotification(identifier, index, summary, body): var {
+        return {
+            id: identifier,
+            tracked: true,
+            lastGeneration: true,
+            expireTimeout: 10000,
+            appName: index % 2 === 0 ? "Hyprism" : "Aplicativo de teste",
+            appIcon: "",
+            desktopEntry: "",
+            summary: summary,
+            body: body,
+            urgency: index === 3 ? 2 : 1,
+            actions: [],
+            dismiss: function() { this.tracked = false },
+            expire: function() {}
+        }
+    }
+
+    function syncTrackedPopups(): void {
+        popupNotifications = popupNotifications.filter(notification => notification && notification.tracked && notification.lastGeneration !== false)
+        if (!popupNotifications.length) popupOverflowCount = 0
+        notificationServer.newest = popupNotifications.length ? popupNotifications[popupNotifications.length - 1] : null
     }
     function applyConfig(raw: string): void {
         const source = Design.safeText(raw, "")
@@ -152,7 +198,12 @@ ShellRoot {
                 islandLoaded: root.islandLoaded,
                 widgetsLoaded: root.widgetsLoaded,
                 notificationServer: root.notificationServerReady,
-                systemService: shellController.systemServiceAvailable
+                systemService: shellController.systemServiceAvailable,
+                switcherCount: shellController.switcherWindows.length,
+                switcherIndex: shellController.switcherIndex,
+                switcherAddress: shellController.switcherWindows[shellController.switcherIndex] ? shellController.switcherWindows[shellController.switcherIndex].address : "",
+                popupCount: root.popupNotifications.length,
+                popupOverflowCount: root.popupOverflowCount
             })
         }
     }
@@ -165,6 +216,45 @@ ShellRoot {
         function color(value: string): void { shellController.showOsd("Cor", value) }
         function night(value: string): void { shellController.showOsd("Modo noturno", value) }
         function power(value: string): void { shellController.showOsd("Economia de energia", value) }
+    }
+    IpcHandler {
+        target: "development"
+        function mockNotifications(count: int): void {
+            if (!root.developmentMode) return
+            root.notificationScreenName = root.focusedScreenName()
+            const total = Math.max(1, Math.min(8, count))
+            for (let index = 0; index < total; index++) {
+                const sequence = Date.now() + index
+                root.showPopup(root.developmentNotification(
+                    sequence,
+                    index,
+                    index === 1 ? "Uma notificação com título longo para validar a elipse" : "Notificação " + (index + 1),
+                    index === 2 ? "Este texto ocupa mais de uma linha para validar altura, espaçamento e limite do conteúdo sem cobrir os outros cartões." : "Conteúdo de teste seguro"
+                ))
+            }
+        }
+        function mockReplacement(): void {
+            if (!root.developmentMode) return
+            root.notificationScreenName = root.focusedScreenName()
+            const identifier = Date.now()
+            root.showPopup(root.developmentNotification(identifier, 0, "Transferência em andamento", "25% concluído"))
+            root.showPopup(root.developmentNotification(identifier, 0, "Transferência em andamento", "75% concluído"))
+        }
+        function clearNotifications(): void {
+            if (!root.developmentMode) return
+            root.popupNotifications = []
+            root.popupOverflowCount = 0
+            notificationServer.newest = null
+        }
+        function mockClipboard(): void {
+            if (!root.developmentMode) return
+            shellController.clipboardEntries = [
+                { id: "1", type: "text", text: "Trecho de texto copiado para validar a lista", searchText: "trecho texto", mime: "text/plain;charset=utf-8", thumbnail: "", width: 0, height: 0 },
+                { id: "2", type: "image", text: "Imagem · 1920×1080", searchText: "imagem png 1920×1080", mime: "image/png", thumbnail: "file://" + shellController.rootDir + "/wallpapers/abyss.png", width: 1920, height: 1080 },
+                { id: "3", type: "text", text: "Outro item de texto", searchText: "outro item texto", mime: "text/plain;charset=utf-8", thumbnail: "", width: 0, height: 0 },
+                { id: "4", type: "image", text: "Imagem · 1200×800", searchText: "imagem png 1200×800", mime: "image/png", thumbnail: "file://" + shellController.rootDir + "/wallpapers/ember.png", width: 1200, height: 800 }
+            ]
+        }
     }
 
     FileView {
@@ -203,14 +293,12 @@ ShellRoot {
         property var newest: null
         onNotification: notification => {
             notification.tracked = true
-            newest = notification
             root.notificationScreenName = root.focusedScreenName()
-            root.popupNotifications = root.popupNotifications.concat([notification]).slice(-4)
-            popupTimer.restart()
+            root.showPopup(notification)
         }
+        onTrackedNotificationsChanged: root.syncTrackedPopups()
         Component.onCompleted: root.notificationServerReady = true
     }
-    Timer { id: popupTimer; interval: 6500; onTriggered: root.expirePopup() }
 
     Variants {
         model: Quickshell.screens
@@ -255,9 +343,12 @@ ShellRoot {
         NotificationPopup {
             shellScreen: root.notificationScreen
             notifications: root.popupNotifications
+            overflowCount: root.popupOverflowCount
+            suppressed: shellController.mode === "control"
             controller: shellController
             theme: shellTheme
-            onDismissRequested: notification => root.removePopup(notification)
+            onDismissRequested: notification => root.dismissPopup(notification)
+            onExpireRequested: notification => root.expirePopup(notification)
         }
     }
     LazyLoader {

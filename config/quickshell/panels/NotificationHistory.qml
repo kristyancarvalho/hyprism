@@ -7,7 +7,7 @@ Column {
     required property var controller
     required property var theme
     required property var server
-    property var notifications: server && server.trackedNotifications ? server.trackedNotifications.values : []
+    property var notifications: server && server.trackedNotifications ? server.trackedNotifications.values.filter(notification => notification && notification.lastGeneration !== false) : []
     property int selectedIndex: 0
     spacing: 8
     activeFocusOnTab: true
@@ -15,6 +15,7 @@ Column {
     function dismiss(notification) {
         if (!notification) return
         if (server.newest === notification) server.newest = null
+        notification.dismiss()
         notification.tracked = false
     }
 
@@ -22,7 +23,10 @@ Column {
         const current = notifications ? notifications.slice() : []
         server.newest = null
         for (let i = 0; i < current.length; i++) {
-            if (current[i]) current[i].tracked = false
+            if (current[i]) {
+                current[i].dismiss()
+                current[i].tracked = false
+            }
         }
         selectedIndex = 0
     }
@@ -45,9 +49,10 @@ Column {
     Row {
         width: parent.width
         visible: history.notifications.length > 0
+        spacing: Design.spacingSm
 
         Text {
-            width: parent.width - clear.width
+            width: parent.width - clear.width - parent.spacing
             anchors.verticalCenter: parent.verticalCenter
             text: Design.notificationCount(history.notifications.length)
             color: history.theme.colors.mutedForeground
@@ -73,11 +78,11 @@ Column {
             required property var modelData
             required property int index
             width: history.width
-            height: 66
+            height: 76
             radius: Design.radiusSm
             color: history.activeFocus && history.selectedIndex === index ? history.theme.colors.surfaceActive : pointer.containsMouse ? history.theme.colors.surfaceHover : history.theme.colors.surfaceVariant
-            border.width: history.activeFocus && history.selectedIndex === index ? 2 : Design.outlineWidth
-            border.color: history.activeFocus && history.selectedIndex === index ? history.theme.colors.accent : history.theme.colors.outline
+            border.width: history.activeFocus && history.selectedIndex === index ? 2 : 0
+            border.color: history.theme.colors.accent
 
             Rectangle {
                 anchors {
@@ -108,6 +113,16 @@ Column {
                     verticalCenter: parent.verticalCenter
                 }
                 spacing: 2
+
+                Text {
+                    width: parent.width
+                    text: Design.safeText(modelData.appName, "Notificação")
+                    color: history.theme.colors.mutedForeground
+                    elide: Text.ElideRight
+                    font.family: Design.fontFamily
+                    font.pixelSize: 9
+                    font.weight: Design.fontWeightMedium
+                }
 
                 Text {
                     width: parent.width
@@ -161,13 +176,6 @@ Column {
         visible: history.notifications.length === 0
         width: parent.width
         spacing: 4
-
-        StatusIcon {
-            anchors.horizontalCenter: parent.horizontalCenter
-            name: "notification"
-            iconSize: Design.iconMd
-            color: history.theme.colors.mutedForeground
-        }
 
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
