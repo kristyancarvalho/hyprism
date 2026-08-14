@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+root_dir="${HYPRISM_ROOT:-$HOME/.local/share/hyprism}"
+cache_dir="${HYPRISM_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/hyprism}"
+fallback="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/hyprlock.conf"
+[[ -s $fallback ]] || fallback="$root_dir/config/hypr/hyprlock.conf"
+generated="$cache_dir/theme/hyprlock.conf"
+wallpaper="$cache_dir/state/lock-wallpaper"
+selected=$fallback
+
+if [[ -s $generated && -e $wallpaper && -r $wallpaper ]] \
+  && [[ $(grep -Ec '^\$hyprism_(background|surface|surface_active|foreground|muted|accent|error) = rgb\([0-9a-fA-F]{6}\)$' "$generated") -eq 7 ]] \
+  && ! grep -Eiq 'undefined|null|nan|\{\{' "$generated"; then
+  selected=$generated
+fi
+
+exec hyprlock --config "$selected"

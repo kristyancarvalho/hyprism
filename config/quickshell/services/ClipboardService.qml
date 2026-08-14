@@ -7,18 +7,36 @@ Item {
     id: service
     visible: false
     required property var controller
-    function refresh() { entries.running = true }
+    property bool refreshPending: false
+    readonly property string eventPath: (Quickshell.env("XDG_CACHE_HOME") || Quickshell.env("HOME") + "/.cache") + "/hyprism/state/clipboard-event"
+    function refresh() {
+        if (entries.running) {
+            refreshPending = true
+            return
+        }
+        entries.running = true
+    }
     function select(item) {
         if (!item) return
         const mime = Design.safeText(item.mime, item.type === "image" ? "image/png" : "text/plain;charset=utf-8")
-        controller.run(["sh", "-lc", "cliphist decode " + shellQuote(item.id) + " | wl-copy --type " + shellQuote(mime)])
+        controller.run([service.controller.rootDir + "/scripts/system/action", "clipboard-restore", String(item.id), mime])
         controller.showOsd("Área de transferência", item.type === "image" ? "Imagem copiada" : "Texto copiado")
         controller.close()
     }
-    function remove(id) { controller.run(["sh", "-lc", "printf '%s\\n' " + shellQuote(id) + " | cliphist delete"]); refreshDelay.restart() }
-    function clear() { controller.run(["sh", "-lc", "cliphist wipe"]); controller.clipboardEntries = [] }
-    function shellQuote(value) { return "'" + String(value).replace(/'/g, "'\\\"'\\\"'") + "'" }
-    Timer { id: refreshDelay; interval: 120; onTriggered: service.refresh() }
+    function remove(id) { controller.run([service.controller.rootDir + "/scripts/system/action", "clipboard-delete", String(id)]); refreshDelay.restart() }
+    function clear() { controller.run([service.controller.rootDir + "/scripts/system/action", "clipboard-clear"]); controller.clipboardEntries = []; refreshDelay.restart() }
+    Timer { id: refreshDelay; interval: 90; onTriggered: service.refresh() }
+    FileView {
+        id: clipboardEvent
+        path: service.eventPath
+        blockLoading: true
+        preload: true
+        watchChanges: true
+        printErrors: false
+        onLoaded: refreshDelay.restart()
+        onTextChanged: refreshDelay.restart()
+        onFileChanged: reload()
+    }
     Process {
         id: entries
         command: ["python3", service.controller.rootDir + "/scripts/system/clipboard-history.py"]
@@ -27,6 +45,12 @@ Item {
             onRead: data => {
                 try { service.controller.clipboardEntries = JSON.parse(data) }
                 catch (error) { service.controller.clipboardEntries = [] }
+            }
+        }
+        onExited: {
+            if (service.refreshPending) {
+                service.refreshPending = false
+                refreshDelay.restart()
             }
         }
     }

@@ -1,0 +1,123 @@
+$accent-light: {{colors.primary.light.hex}};
+$accent-dark: {{colors.primary.dark.hex}};
+$on-accent-light: {{colors.on_primary.light.hex}};
+$on-accent-dark: {{colors.on_primary.dark.hex}};
+$accent-container-light: {{colors.primary_container.light.hex}};
+$accent-container-dark: {{colors.primary_container.dark.hex}};
+$on-accent-container-light: {{colors.on_primary_container.light.hex}};
+$on-accent-container-dark: {{colors.on_primary_container.dark.hex}};
+
+$bg-light: {{colors.background.light.hex}};
+$bg-dark: {{colors.background.dark.hex}};
+$on-bg-light: {{colors.on_background.light.hex}};
+$on-bg-dark: {{colors.on_background.dark.hex}};
+
+$surface-light: {{colors.surface.light.hex}};
+$surface-dark: {{colors.surface.dark.hex}};
+$on-surface-light: {{colors.on_surface.light.hex}};
+$on-surface-dark: {{colors.on_surface.dark.hex}};
+$surface-variant-light: {{colors.surface_variant.light.hex}};
+$surface-variant-dark: {{colors.surface_variant.dark.hex}};
+$on-surface-variant-light: {{colors.on_surface_variant.light.hex}};
+$on-surface-variant-dark: {{colors.on_surface_variant.dark.hex}};
+
+$surface-lowest-light: {{colors.surface_container_lowest.light.hex}};
+$surface-lowest-dark: {{colors.surface_container_lowest.dark.hex}};
+$surface-low-light: {{colors.surface_container_low.light.hex}};
+$surface-low-dark: {{colors.surface_container_low.dark.hex}};
+$surface-container-light: {{colors.surface_container.light.hex}};
+$surface-container-dark: {{colors.surface_container.dark.hex}};
+$surface-high-light: {{colors.surface_container_high.light.hex}};
+$surface-high-dark: {{colors.surface_container_high.dark.hex}};
+$surface-highest-light: {{colors.surface_container_highest.light.hex}};
+$surface-highest-dark: {{colors.surface_container_highest.dark.hex}};
+
+$outline-light: {{colors.outline.light.hex}};
+$outline-dark: {{colors.outline.dark.hex}};
+$outline-variant-light: {{colors.outline_variant.light.hex}};
+$outline-variant-dark: {{colors.outline_variant.dark.hex}};
+
+$inverse-surface-light: {{colors.inverse_surface.light.hex}};
+$inverse-surface-dark: {{colors.inverse_surface.dark.hex}};
+$inverse-on-surface-light: {{colors.inverse_on_surface.light.hex}};
+$inverse-on-surface-dark: {{colors.inverse_on_surface.dark.hex}};
+$inverse-primary-light: {{colors.inverse_primary.light.hex}};
+$inverse-primary-dark: {{colors.inverse_primary.dark.hex}};
+
+$secondary-light: {{colors.secondary.light.hex}};
+$secondary-dark: {{colors.secondary.dark.hex}};
+$on-secondary-light: {{colors.on_secondary.light.hex}};
+$on-secondary-dark: {{colors.on_secondary.dark.hex}};
+$secondary-container-light: {{colors.secondary_container.light.hex}};
+$secondary-container-dark: {{colors.secondary_container.dark.hex}};
+$on-secondary-container-light: {{colors.on_secondary_container.light.hex}};
+$on-secondary-container-dark: {{colors.on_secondary_container.dark.hex}};
+
+$tertiary-light: {{colors.tertiary.light.hex}};
+$tertiary-dark: {{colors.tertiary.dark.hex}};
+$on-tertiary-light: {{colors.on_tertiary.light.hex}};
+$on-tertiary-dark: {{colors.on_tertiary.dark.hex}};
+$tertiary-container-light: {{colors.tertiary_container.light.hex}};
+$tertiary-container-dark: {{colors.tertiary_container.dark.hex}};
+$on-tertiary-container-light: {{colors.on_tertiary_container.light.hex}};
+$on-tertiary-container-dark: {{colors.on_tertiary_container.dark.hex}};
+
+$error-light: {{colors.error.light.hex}};
+$error-dark: {{colors.error.dark.hex}};
+$on-error-light: {{colors.on_error.light.hex}};
+$on-error-dark: {{colors.on_error.dark.hex}};
+$error-container-light: {{colors.error_container.light.hex}};
+$error-container-dark: {{colors.error_container.dark.hex}};
+$on-error-container-light: {{colors.on_error_container.light.hex}};
+$on-error-container-dark: {{colors.on_error_container.dark.hex}};
+
+$shadow-light: {{colors.shadow.light.hex}};
+$shadow-dark: {{colors.shadow.dark.hex}};
+$scrim-light: {{colors.scrim.light.hex}};
+$scrim-dark: {{colors.scrim.dark.hex}};
+
+$red-light: $error-dark;
+$red-dark: $error-dark;
+$pink-light: $tertiary-dark;
+$pink-dark: $tertiary-dark;
+$purple-light: $tertiary-container-dark;
+$purple-dark: $tertiary-container-dark;
+$blue-light: $accent-dark;
+$blue-dark: $accent-dark;
+$teal-light: $secondary-dark;
+$teal-dark: $secondary-dark;
+$green-light: $secondary-container-dark;
+$green-dark: $secondary-container-dark;
+$yellow-light: $inverse-primary-dark;
+$yellow-dark: $inverse-primary-dark;
+$orange-light: $error-container-dark;
+$orange-dark: $error-container-dark;
+
+$grey-050: $surface-highest-dark;
+$grey-100: $surface-highest-dark;
+$grey-150: $surface-high-dark;
+$grey-200: $surface-container-dark;
+$grey-250: $surface-high-dark;
+$grey-300: $surface-highest-dark;
+$grey-350: $outline-variant-dark;
+$grey-400: $outline-dark;
+$grey-450: $outline-dark;
+$grey-500: $outline-variant-dark;
+$grey-550: $surface-highest-dark;
+$grey-600: $surface-high-dark;
+$grey-650: $surface-container-dark;
+$grey-700: $surface-low-dark;
+$grey-750: $surface-lowest-dark;
+$grey-800: $surface-dark;
+$grey-850: $bg-dark;
+$grey-900: $shadow-dark;
+$grey-950: #030303;
+
+$white: #FFFFFF;
+$black: #000000;
+$button-close: #fd5f51;
+$button-max: #38c76a;
+$button-min: #fdbe04;
+$links: {{colors.primary.dark.hex}};
+$default-light: $accent-dark;
+$default-dark: $accent-dark;

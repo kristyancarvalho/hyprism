@@ -2,9 +2,18 @@ hl.config({ animations = { enabled = true } })
 
 hl.curve("hyprism", {
     type = "bezier",
-    points = { { 0.2, 0.0 }, { 0.0, 1.0 } },
+    points = { { 0.2, 0.8 }, { 0.2, 1.0 } },
 })
 
-hl.animation({ leaf = "windows", enabled = true, speed = 5, bezier = "hyprism", style = "popin 85%" })
-hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "hyprism", style = "slide" })
-hl.animation({ leaf = "fade", enabled = true, speed = 4, bezier = "hyprism" })
+hl.animation({ leaf = "windows", enabled = true, speed = 2.4, bezier = "hyprism" })
+hl.animation({ leaf = "windowsIn", enabled = true, speed = 1.8, bezier = "hyprism", style = "popin 94%" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.4, bezier = "hyprism", style = "popin 96%" })
+hl.animation({ leaf = "fade", enabled = true, speed = 1.4, bezier = "hyprism" })
+hl.animation({ leaf = "fadeIn", enabled = true, speed = 1.2, bezier = "hyprism" })
+hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.0, bezier = "hyprism" })
+hl.animation({ leaf = "layers", enabled = true, speed = 1.8, bezier = "hyprism" })
+hl.animation({ leaf = "layersIn", enabled = true, speed = 1.4, bezier = "hyprism", style = "fade" })
+hl.animation({ leaf = "layersOut", enabled = true, speed = 1.1, bezier = "hyprism", style = "fade" })
+hl.animation({ leaf = "workspaces", enabled = true, speed = 2.2, bezier = "hyprism", style = "slide" })
+hl.animation({ leaf = "workspacesIn", enabled = true, speed = 1.8, bezier = "hyprism", style = "slide" })
+hl.animation({ leaf = "workspacesOut", enabled = true, speed = 1.8, bezier = "hyprism", style = "slide" })
