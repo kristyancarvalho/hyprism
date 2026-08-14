@@ -49,6 +49,11 @@ QtObject {
     readonly property int animationInstant: 80
     readonly property int animationFast: 110
     readonly property int animationMorph: 150
+    readonly property int easingEnter: Easing.OutQuart
+    readonly property int easingExit: Easing.InCubic
+    readonly property int easingMorph: Easing.OutQuart
+    readonly property int easingMove: Easing.InOutCubic
+    readonly property int recordingDotCompactSize: 11
     readonly property int workspaceCellSize: 24
     readonly property int workspaceCellSpacing: 4
     readonly property int morphSurfaceMaxWidth: 920
