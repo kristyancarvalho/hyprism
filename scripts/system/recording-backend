@@ -7,6 +7,7 @@ target=${3:-}
 recordings_dir="$HOME/Vídeos/gravacoes"
 runtime_dir="${HYPRISM_RECORDING_RUNTIME_DIR:-${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}/hyprism-runtime-$UID}/hyprism}"
 lock_file="$runtime_dir/recording.lock"
+log_dir="${XDG_CACHE_HOME:-$HOME/.cache}/hyprism"
 
 command -v wf-recorder >/dev/null || { printf 'wf-recorder não está instalado.\n' >&2; exit 127; }
 command -v flock >/dev/null || { printf 'flock não está disponível.\n' >&2; exit 127; }
@@ -29,7 +30,7 @@ case "$mode" in
   tela)
     command -v hyprctl >/dev/null || { printf 'hyprctl não está disponível.\n' >&2; exit 127; }
     command -v jq >/dev/null || { printf 'jq não está disponível.\n' >&2; exit 127; }
-    hyprctl -j monitors | jq -e --arg monitor "$target" '.[] | select(.name == $monitor)' >/dev/null \
+    hyprctl -j monitors | jq -e --arg monitor "$target" '.[] | select(.name == $monitor)' >/dev/null 2>&1 \
       || { printf 'O monitor selecionado não é válido.\n' >&2; exit 2; }
     arguments+=(-o "$target")
     ;;
@@ -39,7 +40,8 @@ case "$mode" in
     ;;
 esac
 
-wf-recorder "${arguments[@]}" &
+recorder_error=$(mktemp "$runtime_dir/.wf-recorder.XXXXXX")
+wf-recorder "${arguments[@]}" 2>"$recorder_error" &
 recorder_pid=$!
 forwarded=0
 forward_signal() {
@@ -56,8 +58,14 @@ while true; do
 done
 set -e
 if ((status == 0)) && [[ -s $output ]]; then
+  rm -f "$recorder_error"
   printf 'SALVA:%s\n' "$output"
   exit 0
 fi
+((status == 0)) && status=1
+mkdir -p -m 0700 "$log_dir"
+chmod 0600 "$recorder_error"
+mv -f "$recorder_error" "$log_dir/recording-error.log"
 ((forwarded)) && printf 'O gravador não confirmou a finalização do arquivo.\n' >&2
+printf 'wf-recorder falhou; consulte %s/recording-error.log.\n' "$log_dir" >&2
 exit "$status"
