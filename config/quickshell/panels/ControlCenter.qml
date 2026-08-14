@@ -235,7 +235,7 @@ Item {
                         Layout.preferredWidth: 8
                         Layout.preferredHeight: 8
                         radius: 4
-                        color: panel.theme.colors.error
+                        color: panel.theme.colors.warning
                     }
 
                     Text {

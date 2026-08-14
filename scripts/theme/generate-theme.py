@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import tomllib
 import xml.etree.ElementTree as ElementTree
 from PIL import Image
 
@@ -17,6 +18,7 @@ ROOT = pathlib.Path(os.environ.get("HYPRISM_ROOT", pathlib.Path(__file__).resolv
 CACHE = pathlib.Path(os.environ.get("HYPRISM_CACHE_DIR", HOME / ".cache/hyprism"))
 OUT = CACHE / "theme"
 COLLOID_TEMPLATE = ROOT / "config/matugen/templates/colloid-gtk-theme.scss"
+MATUGEN_TEMPLATES = ROOT / "config/matugen/templates"
 HYPRLOCK_BASE = ROOT / "config/hypr/hyprlock.conf"
 KVANTUM_BASE = pathlib.Path(os.environ.get("HYPRISM_KVANTUM_BASE", "/usr/share/Kvantum/KvArcDark"))
 PAPIRUS_BASE = pathlib.Path(os.environ.get("HYPRISM_PAPIRUS_BASE", "/usr/share/icons/Papirus"))
@@ -31,10 +33,17 @@ FALLBACK = {
 }
 SDDM_STATE = pathlib.Path(os.environ.get("HYPRISM_SDDM_STATE_DIR", "/var/lib/hyprism/sddm"))
 SDDM_STATE_EXPLICIT = "HYPRISM_SDDM_STATE_DIR" in os.environ
+NVIM_THEME = pathlib.Path(os.environ.get("HYPRISM_NVIM_THEME_PATH", HOME / ".config/nvim/lua/themes/matugen.lua"))
 
 
 def write(path, value, mode=None):
     path.parent.mkdir(parents=True, exist_ok=True)
+    encoded = value.encode("utf-8")
+    try:
+        if path.is_file() and path.read_bytes() == encoded:
+            return False
+    except OSError:
+        pass
     descriptor, temporary = tempfile.mkstemp(prefix=".hyprism-", dir=path.parent)
     try:
         with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
@@ -44,6 +53,7 @@ def write(path, value, mode=None):
         if mode is not None:
             os.chmod(temporary, mode)
         os.replace(temporary, path)
+        return True
     except BaseException:
         pathlib.Path(temporary).unlink(missing_ok=True)
         raise
@@ -55,8 +65,7 @@ def publish(path, value, validator=None):
             raise ValueError("conteúdo vazio")
         if validator:
             validator(value)
-        write(path, value)
-        return True
+        return write(path, value)
     except (OSError, ValueError, TypeError) as error:
         print(f"Tema do Hyprism: {path.name} preservado após falha ({error})", file=sys.stderr)
         return False
@@ -117,6 +126,16 @@ def faithful_accent(candidate, background, target=3.2):
         if contrast(adjusted, background) >= target:
             return adjusted
     return adjusted
+
+
+def warning_color(candidate, background):
+    red, green, blue = (channel / 255 for channel in rgb(candidate))
+    _, lightness, saturation = colorsys.rgb_to_hls(red, green, blue)
+    hue = 10 / 360
+    adjusted_lightness = max(.53, min(.64, lightness))
+    adjusted_saturation = max(.58, min(.76, saturation))
+    adjusted = hexrgb(tuple(channel * 255 for channel in colorsys.hls_to_rgb(hue, adjusted_lightness, adjusted_saturation)))
+    return faithful_accent(adjusted, background, 3.2)
 
 
 def wallpaper_source_color(image):
@@ -183,7 +202,7 @@ def theme_from(raw, image):
         "borderNormal": outline,
         "borderFocused": accent,
         "error": accessible_text(raw.get("error", FALLBACK["error"]), background, 3.2),
-        "warning": faithful_accent("#d49b32", background, 3.2),
+        "warning": warning_color(raw.get("error", FALLBACK["error"]), background),
         "success": faithful_accent("#45a66d", background, 3.2),
         "wallpaper": image,
         "sourceAccent": raw["accent"],
@@ -225,7 +244,7 @@ def render_foot(theme):
         f'selection-foreground={theme["foreground"][1:]}',
         f'selection-background={theme["surfaceVariant"][1:]}',
         f'urls={theme["accent"][1:]}',
-        "alpha=0.94",
+        "alpha=0.88",
     ]
     colors = terminal_colors(theme)
     lines.extend(f"regular{index}={color[1:]}" for index, color in enumerate(colors[:8]))
@@ -387,6 +406,84 @@ def render_colloid(matugen, theme):
     if any(name not in rendered for name in required):
         raise ValueError("variáveis obrigatórias do Colloid ausentes")
     return rendered
+
+
+def render_matugen_template(name, matugen, theme):
+    template = (MATUGEN_TEMPLATES / name).read_text(encoding="utf-8")
+    pattern = re.compile(r"\{\{colors\.([a-z0-9_]+)\.(light|dark|default)\.hex\}\}")
+    fallback_roles = {
+        "background": theme["background"],
+        "primary": theme["accent"],
+        "on_primary": theme["accentForeground"],
+        "primary_container": theme["surfaceActive"],
+        "on_primary_container": theme["foreground"],
+        "secondary": theme["secondary"],
+        "on_secondary": theme["background"],
+        "secondary_container": theme["secondaryContainer"],
+        "on_secondary_container": theme["foreground"],
+        "tertiary": theme["success"],
+        "on_tertiary": theme["background"],
+        "tertiary_container": theme["surfaceActive"],
+        "on_tertiary_container": theme["foreground"],
+        "error": theme["error"],
+        "on_error": theme["background"],
+        "error_container": mix(theme["error"], theme["background"], .58),
+        "on_error_container": theme["foreground"],
+        "primary_fixed_dim": theme["accentDim"],
+        "on_primary_fixed_variant": theme["foreground"],
+        "surface": theme["background"],
+        "surface_container_low": theme["surface"],
+        "surface_container": theme["surfaceVariant"],
+        "surface_container_high": theme["surfaceElevated"],
+        "surface_container_highest": theme["surfaceHover"],
+        "on_surface": theme["foreground"],
+        "on_surface_variant": theme["mutedForeground"],
+        "outline": theme["outline"],
+        "outline_variant": theme["inactiveBorder"],
+    }
+
+    def color(match):
+        role, mode = match.groups()
+        try:
+            variants = matugen["colors"][role]
+            value = variants.get(mode, variants.get("dark", variants.get("default")))["color"]
+        except (KeyError, TypeError, AttributeError):
+            if role not in fallback_roles:
+                raise ValueError(f"cor Matugen ausente: {role}.{mode}")
+            value = fallback_roles[role]
+        rgb(value)
+        return value
+
+    rendered = pattern.sub(color, template)
+    validate_colors(rendered)
+    return rendered
+
+
+def validate_starship(content):
+    validate_colors(content)
+    tomllib.loads(content)
+
+
+def validate_nvchad(content):
+    validate_colors(content)
+    if "M.base_30" not in content or "M.base_16" not in content or not content.rstrip().endswith("return M"):
+        raise ValueError("tema NvChad incompleto")
+
+
+def reload_tmux(path):
+    executable = shutil.which("tmux")
+    if not executable or os.environ.get("HYPRISM_SKIP_TMUX_RELOAD") == "1":
+        return
+    try:
+        sessions = subprocess.run([executable, "list-sessions"], capture_output=True, text=True, timeout=3, check=False)
+        if sessions.returncode != 0:
+            return
+        result = subprocess.run([executable, "source-file", str(path)], capture_output=True, text=True, timeout=5, check=False)
+        if result.returncode != 0:
+            detail = (result.stderr or result.stdout).strip()
+            raise ValueError(detail or "tmux rejeitou o tema")
+    except (OSError, subprocess.SubprocessError, ValueError) as error:
+        print(f"Tema do Hyprism: tmux ativo preservado após falha ({error})", file=sys.stderr)
 
 
 def update_colloid(palette_path):
@@ -600,6 +697,24 @@ def main():
     publish(OUT / "hyprlock.conf", render_hyprlock_config(theme), validate_colors)
     publish(OUT / "sddm/theme.conf", render_sddm(theme), validate_colors)
     publish_sddm(theme, image)
+    try:
+        starship = render_matugen_template("starship.toml", matugen, theme)
+        publish(OUT / "starship.toml", starship, validate_starship)
+    except (OSError, ValueError, TypeError, tomllib.TOMLDecodeError) as error:
+        print(f"Tema do Hyprism: Starship preservado após falha ({error})", file=sys.stderr)
+    try:
+        tmux = render_matugen_template("tmux.conf", matugen, theme)
+        tmux_path = OUT / "tmux.conf"
+        if publish(tmux_path, tmux, validate_colors):
+            reload_tmux(tmux_path)
+    except (OSError, ValueError, TypeError) as error:
+        print(f"Tema do Hyprism: tmux preservado após falha ({error})", file=sys.stderr)
+    try:
+        nvchad = render_matugen_template("nvchad.lua", matugen, theme)
+        publish(OUT / "nvim/matugen.lua", nvchad, validate_nvchad)
+        publish(NVIM_THEME, nvchad, validate_nvchad)
+    except (OSError, ValueError, TypeError) as error:
+        print(f"Tema do Hyprism: NvChad preservado após falha ({error})", file=sys.stderr)
     try:
         colloid_palette = OUT / "colloid/_color-palette-matugen.scss"
         if publish(colloid_palette, render_colloid(matugen, theme), validate_colors):

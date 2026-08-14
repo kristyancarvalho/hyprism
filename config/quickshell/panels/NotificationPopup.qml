@@ -75,9 +75,9 @@ PanelWindow {
             onDismissed: popup.dismissRequested(notification)
         }
 
-        add: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Design.animationFast; easing.type: Easing.OutCubic } }
-        remove: Transition { NumberAnimation { property: "opacity"; to: 0; duration: Design.animationFast; easing.type: Easing.OutCubic } }
-        displaced: Transition { NumberAnimation { property: "y"; duration: Design.animationMorph; easing.type: Easing.OutCubic } }
+        add: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Design.animationFast; easing.type: Design.easingEnter } }
+        remove: Transition { NumberAnimation { property: "opacity"; to: 0; duration: Design.animationFast; easing.type: Design.easingExit } }
+        displaced: Transition { NumberAnimation { property: "y"; duration: Design.animationMorph; easing.type: Design.easingMove } }
     }
 
     Rectangle {
