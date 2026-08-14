@@ -3,6 +3,7 @@ hyprlock
 sddm
 quickshell
 qt6-imageformats
+qt6-virtualkeyboard
 
 kitty
 foot

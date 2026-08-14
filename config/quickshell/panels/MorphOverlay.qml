@@ -214,6 +214,15 @@ PanelWindow {
         onTriggered: content.opacity = 1
     }
 
+    Timer {
+        id: recordingSurfaceRelease
+        interval: 0
+        onTriggered: {
+            if (!window.interactive && window.targetScreen && controller.recordingSelecting)
+                controller.confirmRecordingSurfaceReleased()
+        }
+    }
+
     Component.onCompleted: {
         morphFrom = desiredGeometry
         morphTarget = desiredGeometry
@@ -231,6 +240,7 @@ PanelWindow {
             focusActivation.stop()
             focusDismissalReady.stop()
             focusGrab.active = false
+            if (targetScreen && controller.recordingSelecting) recordingSurfaceRelease.restart()
         }
     }
 
@@ -293,16 +303,17 @@ PanelWindow {
                 anchors.centerIn: parent
                 spacing: Design.spacingSm
 
-                StatusIcon {
+                Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
-                    name: "recording"
-                    iconSize: Design.iconSm
                     color: theme.colors.error
+                    width: 8
+                    height: 8
+                    radius: 4
                 }
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: "Gravando · " + controller.recordingElapsedText()
+                    text: controller.recordingElapsedText()
                     color: theme.colors.foreground
                     font.family: Design.fontFamily
                     font.pixelSize: Design.fontSizeSm

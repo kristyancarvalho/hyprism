@@ -403,6 +403,10 @@ ShellRoot {
             if (!root.developmentMode) return
             shellController.openRecording(root.focusedScreenName())
         }
+        function selectRecordingRegion(): void {
+            if (!root.developmentMode) return
+            shellController.startRegionRecording()
+        }
         function mockRecording(mode: string): void {
             if (!root.developmentMode) return
             recordingService.startDevelopment(mode)

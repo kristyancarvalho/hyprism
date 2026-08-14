@@ -215,6 +215,10 @@ if ((dry_run == 0)); then
     || { printf 'Os recursos iniciais do Hyprlock não foram gerados.\n' >&2; exit 1; }
   [[ -s $sddm_theme_dir/Main.qml && -s $sddm_theme_dir/metadata.desktop && -L $sddm_theme_dir/theme.conf && -s $sddm_state_dir/theme.conf && -s $sddm_state_dir/current-wallpaper.jpg && -s $sddm_dropin ]] \
     || { printf 'O tema dinâmico do SDDM não foi instalado corretamente.\n' >&2; exit 1; }
+  [[ -d /usr/lib/qt6/qml/QtQuick/VirtualKeyboard ]] \
+    || { printf 'O teclado virtual do SDDM não foi instalado.\n' >&2; exit 1; }
+  grep -qx 'InputMethod=qtvirtualkeyboard' "$sddm_dropin" \
+    || { printf 'O método de entrada virtual do SDDM não foi configurado.\n' >&2; exit 1; }
   [[ $(stat -c '%U:%G:%a' "$sddm_state_dir") == "$target_user:$target_group:755" ]] \
     || { printf 'As permissões do estado dinâmico do SDDM são inválidas.\n' >&2; exit 1; }
   [[ $(as_user fc-match --format '%{family}\n' 'Google Sans Flex') == *"Google Sans Flex"* ]] \

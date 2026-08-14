@@ -141,7 +141,6 @@ QtObject {
         tasks: "󰄬",
         processes: "󰧑",
         calendar: "󰃭",
-        recording: "󰑋",
         recordRegion: "󰩭",
         recordMonitor: "󰍹"
     })
