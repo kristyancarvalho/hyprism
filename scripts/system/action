@@ -108,6 +108,5 @@ case "${1:-}" in
     powerprofilesctl set "$profile" >/dev/null 2>&1
     notify power "$([[ $profile == power-saver ]] && printf 'Economia' || printf 'Equilibrado')"
     ;;
-  record) ${HYPRISM_RECORD_COMMAND:-wf-recorder -f "$HOME/Imagens/Screenshots/$(date +%Y%m%d_%H%M%S)_recording.mp4"} ;;
-  *) printf 'Uso: %s {volume-up|volume-down|volume-mute|mic-mute|brightness-up|brightness-down|screenshot-area|screenshot-monitor|color-picker|clipboard-watch|clipboard-store|clipboard-restore|clipboard-delete|clipboard-clear|night-mode|power-save|record}\n' "$0" >&2; exit 2 ;;
+  *) printf 'Uso: %s {volume-up|volume-down|volume-mute|mic-mute|brightness-up|brightness-down|screenshot-area|screenshot-monitor|color-picker|clipboard-watch|clipboard-store|clipboard-restore|clipboard-delete|clipboard-clear|night-mode|power-save}\n' "$0" >&2; exit 2 ;;
 esac

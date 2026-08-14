@@ -247,6 +247,7 @@ ShellRoot {
     MediaService { controller: shellController }
     AppService { id: appService; controller: shellController }
     ClipboardService { id: clipboardService; controller: shellController }
+    RecordingService { id: recordingService; controller: shellController }
     IpcHandler {
         target: "shell"
         function openHub(): void { shellController.openHub(root.focusedScreenName()) }
@@ -257,6 +258,7 @@ ShellRoot {
         function toggleNetwork(): void { shellController.toggleNetwork(root.focusedScreenName()) }
         function togglePowerMenu(): void { shellController.togglePowerMenu(root.focusedScreenName()) }
         function toggleEmojiPicker(): void { shellController.toggleEmojiPicker(root.focusedScreenName()) }
+        function toggleRecording(): void { shellController.toggleRecording(root.focusedScreenName()) }
         function switcherForward(): void {
             if (shellController.mode !== "switcher") shellController.targetScreenName = root.focusedScreenName()
             shellController.switcher(1)
@@ -305,7 +307,14 @@ ShellRoot {
                 widgets: root.widgetStatus(),
                 widgetLayoutPosition: shellController.widgetLayoutPosition(),
                 monitoring: shellController.monitoring,
-                taskCount: shellController.tasks.length
+                taskCount: shellController.tasks.length,
+                recording: shellController.recording,
+                recordingPending: shellController.recordingPending,
+                recordingSelecting: shellController.recordingSelecting,
+                recordingMode: shellController.recordingMode,
+                recordingElapsed: shellController.recordingElapsed,
+                recordingOutputPath: shellController.recordingOutputPath,
+                recordingProcessId: shellController.recordingProcessId
             })
         }
     }
@@ -389,6 +398,18 @@ ShellRoot {
         function mockTask(): void {
             if (!root.developmentMode) return
             shellController.upsertTask(JSON.stringify({ id: "development", title: "Preparando tema", subtitle: "Aplicando nova paleta", progress: 64, status: "running", eta: 45, source: "Hyprism" }))
+        }
+        function openRecordingSelector(): void {
+            if (!root.developmentMode) return
+            shellController.openRecording(root.focusedScreenName())
+        }
+        function mockRecording(mode: string): void {
+            if (!root.developmentMode) return
+            recordingService.startDevelopment(mode)
+        }
+        function stopMockRecording(): void {
+            if (!root.developmentMode) return
+            recordingService.stop()
         }
     }
 
