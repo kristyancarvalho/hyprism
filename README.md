@@ -76,11 +76,11 @@ O histórico de clipboard registra texto e imagem com dois watchers MIME do `wl-
 
 ## Gravação de tela
 
-`Alt+Shift+R` abre o seletor morfológico quando o gravador está ocioso. Setas esquerda e direita alternam entre `Região` e `Tela inteira`, `Enter` ou espaço iniciam e `Escape` cancela. A região é selecionada pelo `slurp` somente depois que o painel fecha. Tela inteira passa ao `wf-recorder` o nome do monitor focado fornecido pela integração Hyprland; ela nunca usa um nome fixo nem grava o desktop virtual combinado.
+`Alt+Shift+R` abre o seletor morfológico quando o gravador está ocioso. Setas esquerda e direita alternam entre `Região` e `Tela inteira`, `Enter` ou espaço iniciam e `Escape` cancela. Em `Região`, o serviço primeiro fecha o seletor; a superfície-alvo confirma que retirou o foco exclusivo e desativou o grab do Hyprland, então o próximo ciclo do event loop inicia o `slurp` de forma assíncrona. Uma seleção válida no formato `x,y LARGURAxALTURA` é enviada ao `wf-recorder -g`; cancelar não cria arquivo nem ativa o estado de gravação. Tela inteira passa ao `wf-recorder` o nome do monitor focado fornecido pela integração Hyprland; ela nunca usa um nome fixo nem grava o desktop virtual combinado.
 
 `RecordingService` concentra `recording`, modo, início, tempo decorrido, saída e ações. Um supervisor segura `$XDG_RUNTIME_DIR/hyprism/recording.lock`, inicia um único filho `wf-recorder` e encaminha `SIGINT` apenas a esse PID. Outro gravador do usuário não é procurado nem encerrado. Se o Quickshell for substituído durante a gravação, a destruição do processo supervisionado encaminha o encerramento ao filho e o lock impede uma segunda instância concorrente.
 
-Durante a gravação, o ícone Nerd Font vermelho da ilha compacta pulsa apenas por opacidade. A expansão mostra `Gravando` e o tempo decorrido; o Hub oferece `Parar` com mouse e teclado. Pressionar `Alt+Shift+R` novamente envia a parada imediatamente. Arquivos H.264 são encapsulados como MP4 e gravados em `~/Vídeos/gravacoes` com nomes como `20260814_032501_184_tela.mp4` e `20260814_032501_184_regiao.mp4`; os milissegundos evitam colisão sem prejudicar a ordenação. Sucesso ou falha produz feedback do próprio Hyprism em pt-BR.
+Durante a gravação, somente um ponto vermelho de 7 px aparece na ilha compacta e pulsa entre opacidade `1` e `0,4` em ciclos suaves de 1,4 s, sem texto, ícone, pill ou animação de geometria. A expansão e o Hub mostram o tempo decorrido com a ação `Parar`. Pressionar `Alt+Shift+R` novamente envia a parada imediatamente. Arquivos H.264 são encapsulados como MP4 e gravados em `~/Vídeos/gravacoes` com nomes como `20260814_032501_184_tela.mp4` e `20260814_032501_184_regiao.mp4`; os milissegundos evitam colisão sem prejudicar a ordenação. Sucesso ou falha produz feedback do próprio Hyprism em pt-BR.
 
 Notificações flutuantes formam uma lista centralizada de até quatro cartões, ou três em telas baixas. Cada cartão expira individualmente, títulos e corpos têm limites de linhas, alterações com o mesmo ID substituem a geração anterior e excedentes permanecem no histórico com um contador compacto. O Hub suprime temporariamente a pilha flutuante para preservar seus controles, sem descartar o histórico.
 
@@ -129,9 +129,11 @@ Todos os artefatos são gerados por completo em um arquivo temporário, validado
 
 ## SDDM / KSDDM
 
-O tema em `themes/ksddm-hyprism` deriva do fork [KSDDM](https://github.com/kristyancarvalho/ksddm), commit `9ed05b7c894e3c8f5d63a88524ab71f7c6a2e1ee`, originalmente baseado no SilentSDDM. A importação é vendorizada sem `.git`, mantém GPL-3.0 e a atribuição em `ORIGIN.md`, e reduz a interface a usuário, sessão, senha, entrada, suspensão, reinício e desligamento. Google Sans Flex, superfícies escuras, raio moderado e o acento canônico alinham o greeter ao shell sem levar widgets do desktop ao login.
+O tema em `themes/ksddm-hyprism` deriva do fork [KSDDM](https://github.com/kristyancarvalho/ksddm), commit `9ed05b7c894e3c8f5d63a88524ab71f7c6a2e1ee`, originalmente baseado no SilentSDDM. A importação é vendorizada sem `.git`, mantém GPL-3.0 e a atribuição em `ORIGIN.md`. O estado inicial volta ao conceito Silent: wallpaper com leve dim e somente `Aperte qualquer tecla`. Tecla, clique ou toque revela em 130 ms o usuário, a senha já focada e `Entrar`; `Escape` limpa a senha e volta ao wallpaper.
 
-O instalador copia o tema para `/usr/share/sddm/themes/hyprism-ksddm` e seleciona somente `Current=hyprism-ksddm` em `/etc/sddm.conf.d/20-hyprism.conf`; nenhum `/etc/sddm.conf` completo é substituído. `/var/lib/hyprism` permanece root-owned. Somente `/var/lib/hyprism/sddm`, com modo `0755`, pertence ao usuário configurado e contém `current-wallpaper.jpg` e `theme.conf`; `/usr/share/sddm` nunca fica gravável pelo usuário.
+O formulário usa blur localizado e uma superfície escura translúcida. O Matugen fica restrito ao foco, seleção, botão ativo e pequenos realces; o wallpaper continua dominante. Sessão, teclado e energia ficam nas margens apenas no estado revelado. O teclado virtual reutiliza `QtQuick.VirtualKeyboard.InputPanel` do fork, provisionado por `qt6-virtualkeyboard`, enquanto o drop-in define `InputMethod=qtvirtualkeyboard` e `QT_IM_MODULE=qtvirtualkeyboard`. O botão compacto de teclado alterna o painel real e devolve foco à senha.
+
+O instalador copia o tema para `/usr/share/sddm/themes/hyprism-ksddm` e publica somente as seções `[General]` do método de entrada e `[Theme]` em `/etc/sddm.conf.d/20-hyprism.conf`; nenhum `/etc/sddm.conf` completo é substituído. `/var/lib/hyprism` permanece root-owned. Somente `/var/lib/hyprism/sddm`, com modo `0755`, pertence ao usuário configurado e contém `current-wallpaper.jpg` e `theme.conf`; `/usr/share/sddm` nunca fica gravável pelo usuário.
 
 Toda aplicação de wallpaper, inclusive a opção aleatória, atravessa `scripts/wallpaper` e o mesmo `generate-theme.py`. O gerador converte o primeiro frame aceito pelo Pillow para JPEG RGB de qualidade 94, valida o arquivo temporário, aplica modo `0644` e faz rename atômico para `/var/lib/hyprism/sddm/current-wallpaper.jpg`. As cores do mesmo tema são publicadas atomicamente no diretório de estado. O greeter usa esse caminho estável, portanto não depende da leitura de `~/Imagens` e não exige sudo por troca. O SDDM não é reiniciado; a nova imagem aparece na próxima tela de login. Para staging, `HYPRISM_SDDM_STATE_DIR=/tmp/hyprism-sddm-test` redireciona os dois artefatos.
 
@@ -384,7 +386,7 @@ qs -c default ipc call shell status | jq '{recording,recordingPending,recordingS
 Sem reiniciar o SDDM dentro de uma sessão ativa, valide:
 
 ```bash
-pacman -Q sddm
+pacman -Q sddm qt6-virtualkeyboard
 cat /etc/sddm.conf.d/20-hyprism.conf
 readlink -f /usr/share/sddm/themes/hyprism-ksddm/theme.conf
 stat -c '%U:%G:%a %n' /var/lib/hyprism/sddm
@@ -392,7 +394,7 @@ file /var/lib/hyprism/sddm/current-wallpaper.jpg
 grep -E '^(background|accent-color|surface-color)=' /var/lib/hyprism/sddm/theme.conf
 ```
 
-O diretório de estado deve pertencer ao usuário instalado, usar modo `755` e conter arquivos `644`; o tema em `/usr/share/sddm/themes` e o drop-in continuam root-owned.
+O diretório de estado deve pertencer ao usuário instalado, usar modo `755` e conter arquivos `644`; o tema em `/usr/share/sddm/themes` e o drop-in continuam root-owned. O drop-in deve conter `InputMethod=qtvirtualkeyboard`, `GreeterEnvironment=QT_IM_MODULE=qtvirtualkeyboard` e `Current=hyprism-ksddm`.
 
 ### Verificação manual da estabilização
 
