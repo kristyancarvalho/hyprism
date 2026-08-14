@@ -51,6 +51,24 @@ Item {
             spacing: Design.compactItemSpacing
 
             CompactBarItem {
+                visible: compact.controller.recording
+                theme: compact.theme
+                iconName: "recording"
+                iconOnly: true
+                filled: false
+                horizontalPadding: Design.compactPlainPadding
+                iconColor: compact.theme.colors.error
+                opacity: 1
+
+                SequentialAnimation on opacity {
+                    running: compact.controller.recording
+                    loops: Animation.Infinite
+                    NumberAnimation { from: 1; to: .35; duration: 650; easing.type: Easing.InOutSine }
+                    NumberAnimation { from: .35; to: 1; duration: 650; easing.type: Easing.InOutSine }
+                }
+            }
+
+            CompactBarItem {
                 theme: compact.theme
                 filled: false
                 label: compact.controller.formattedDate("HH:mm")

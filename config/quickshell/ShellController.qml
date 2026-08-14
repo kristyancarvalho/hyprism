@@ -26,6 +26,14 @@ Item {
     property bool desiredBluetooth: false
     property bool systemServiceAvailable: false
     property bool panelFocusReady: false
+    property var recordingService: null
+    readonly property bool recording: recordingService ? recordingService.recording : false
+    readonly property bool recordingPending: recordingService ? recordingService.pending : false
+    readonly property bool recordingSelecting: recordingService ? recordingService.selecting : false
+    readonly property string recordingMode: recordingService ? Design.safeText(recordingService.mode, "") : ""
+    readonly property int recordingElapsed: recordingService ? Math.max(0, Design.safeNumber(recordingService.elapsed, 0)) : 0
+    readonly property string recordingOutputPath: recordingService ? Design.safeText(recordingService.outputPath, "") : ""
+    readonly property string recordingProcessId: recordingService && recordingService.ownedProcessId ? String(recordingService.ownedProcessId) : ""
     readonly property bool nightMode: system.nightMode.available && system.nightMode.enabled
     readonly property bool powerSaver: system.powerProfile.available && system.powerProfile.mode === "power-saver"
     readonly property date currentTime: systemClock.date
@@ -69,7 +77,7 @@ Item {
     property var config: ({ shell: { primaryMonitor: "", islandWidth: 560, compactHeight: Design.compactBarHeight, topMargin: Design.shellTopMargin, reserveGap: Design.compactBottomGap, surfaceOpacity: .9, animationFast: Design.animationFast, animationNormal: Design.animationMorph, widgetLayout: { side: "right", position: "legacy" }, widgets: widgetDefaults } })
     property string rootDir: Quickshell.env("HYPRISM_ROOT") || Quickshell.shellDir + "/../.."
     readonly property bool developmentMode: Quickshell.env("HYPRISM_DEVELOPMENT") === "1"
-    readonly property var panelModes: ["launcher", "wallpaper", "clipboard", "control", "network", "bluetooth", "power", "emoji", "switcher"]
+    readonly property var panelModes: ["launcher", "wallpaper", "clipboard", "control", "network", "bluetooth", "power", "emoji", "switcher", "recordingSelector"]
 
     function defaultShellConfig() {
         return {
@@ -157,6 +165,7 @@ Item {
     function openBluetooth(screenName) { openPanel("bluetooth", screenName) }
     function openPowerMenu(screenName) { openPanel("power", screenName) }
     function openEmojiPicker(screenName) { openPanel("emoji", screenName) }
+    function openRecording(screenName) { openPanel("recordingSelector", screenName) }
     function toggleHub(screenName) { togglePanel("control", screenName) }
     function toggleLauncher(screenName) { togglePanel("launcher", screenName) }
     function toggleClipboard(screenName) { togglePanel("clipboard", screenName) }
@@ -167,6 +176,30 @@ Item {
     function toggleNetwork(screenName) { togglePanel("network", screenName) }
     function togglePowerMenu(screenName) { togglePanel("power", screenName) }
     function toggleEmojiPicker(screenName) { togglePanel("emoji", screenName) }
+
+    function toggleRecording(screenName) {
+        if (recording || recordingPending || recordingSelecting) {
+            stopRecording()
+            return
+        }
+        togglePanel("recordingSelector", screenName)
+    }
+
+    function startRegionRecording() {
+        if (recordingService) recordingService.startRegion()
+    }
+
+    function startMonitorRecording() {
+        if (recordingService) recordingService.startMonitor(targetScreenName)
+    }
+
+    function stopRecording() {
+        if (recordingService) recordingService.stop()
+    }
+
+    function recordingElapsedText() {
+        return Design.formatRecordingDuration(recordingElapsed)
+    }
 
     function close() {
         if (mode === "compact") {
