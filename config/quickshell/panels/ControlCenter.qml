@@ -231,15 +231,16 @@ Item {
                     anchors.margins: Design.spacingSm
                     spacing: Design.spacingSm
 
-                    StatusIcon {
-                        name: "recording"
-                        iconSize: Design.iconSm
+                    Rectangle {
+                        Layout.preferredWidth: 8
+                        Layout.preferredHeight: 8
+                        radius: 4
                         color: panel.theme.colors.error
                     }
 
                     Text {
                         Layout.fillWidth: true
-                        text: "Gravando · " + controller.recordingElapsedText()
+                        text: controller.recordingElapsedText()
                         color: panel.theme.colors.foreground
                         font.family: Design.fontFamily
                         font.pixelSize: Design.fontSizeSm

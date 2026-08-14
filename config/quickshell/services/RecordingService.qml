@@ -10,6 +10,7 @@ Item {
     property bool recording: false
     property bool pending: false
     property bool selecting: false
+    property bool awaitingSurfaceRelease: false
     property bool stopRequested: false
     property bool saved: false
     property bool developmentRecording: false
@@ -38,6 +39,7 @@ Item {
         recording = false
         pending = false
         selecting = false
+        awaitingSurfaceRelease = false
         stopRequested = false
         developmentRecording = false
         startedAt = 0
@@ -64,12 +66,18 @@ Item {
 
     function startRegion() {
         if (recorder.running || slurp.running || recording || pending || selecting) return
-        controller.close()
         mode = "regiao"
         outputPath = ""
         lastError = ""
         selecting = true
-        regionDelay.restart()
+        awaitingSurfaceRelease = true
+        controller.close()
+    }
+
+    function confirmSurfaceReleased() {
+        if (!selecting || !awaitingSurfaceRelease || slurp.running) return
+        awaitingSurfaceRelease = false
+        regionLaunch.restart()
     }
 
     function startMonitor(monitorName) {
@@ -120,8 +128,8 @@ Item {
     }
 
     Timer {
-        id: regionDelay
-        interval: Design.animationMorph
+        id: regionLaunch
+        interval: 0
         onTriggered: {
             if (!service.selecting) return
             slurp.running = true
@@ -149,6 +157,7 @@ Item {
         onExited: (exitCode, exitStatus) => {
             const wasSelecting = service.selecting
             service.selecting = false
+            service.awaitingSurfaceRelease = false
             if (!wasSelecting) return
             const geometry = Design.safeText(geometryOutput.text, "")
             if (exitCode === 0 && /^-?\d+,-?\d+\s+\d+x\d+$/.test(geometry)) {
