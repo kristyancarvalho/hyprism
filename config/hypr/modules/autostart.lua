@@ -6,8 +6,8 @@ end
 
 hl.on("hyprland.start", function()
     hl.exec_cmd("awww-daemon")
-    hl.exec_cmd(shell_quote(paths.scripts .. "/system/start-shell"))
     hl.exec_cmd(shell_quote(paths.scripts .. "/system/action") .. " clipboard-watch")
+    hl.exec_cmd(shell_quote(paths.scripts .. "/system/start-shell"))
     hl.exec_cmd(shell_quote(paths.scripts .. "/wallpaper") .. " restore")
 
     local polkit = "/usr/lib/polkit-kde-authentication-agent-1"

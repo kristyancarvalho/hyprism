@@ -1,15 +1,135 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-revision=9bf9fc5a5974ae0659f59a4281aae6f594c95bdd
-theme_root="${XDG_DATA_HOME:-$HOME/.local/share}/themes"
-source_dir=$(mktemp -d)
-trap 'rm -rf -- "$source_dir"' EXIT
+revision=6c2dc65865628bda9fdc8157a30cd5eda6fd41f9
+repository=https://github.com/vinceliuice/Colloid-gtk-theme.git
+theme_name=Colloid-Hyprism
+installed_name=Colloid-Hyprism-Dark-Matugen
+root_dir="${HYPRISM_ROOT:-$HOME/.local/share/hyprism}"
+cache_dir="${HYPRISM_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/hyprism}"
+palette="${1:-$cache_dir/theme/colloid/_color-palette-matugen.scss}"
+theme_root="${HYPRISM_COLLOID_DEST:-${XDG_DATA_HOME:-$HOME/.local/share}/themes}"
+source_root="$cache_dir/colloid/source-$revision"
+source_patch="$root_dir/config/matugen/colloid-matugen.patch"
+lock_file="$cache_dir/colloid/install.lock"
+libadwaita_target="$cache_dir/theme/colloid-gtk-4.0"
+source_candidate=
+previous_source=
+build_root=
+backup_root=
+publishing=0
+cleanup() {
+  [[ -z $source_candidate || ! -d $source_candidate ]] || rm -rf -- "$source_candidate"
+  [[ -z $previous_source || ! -d $previous_source ]] || rm -rf -- "$previous_source"
+  [[ -z $build_root || ! -d $build_root ]] || rm -rf -- "$build_root"
+  [[ -z $backup_root || ! -d $backup_root ]] || rm -rf -- "$backup_root"
+}
+rollback() {
+  ((publishing)) || return 0
+  set +e
+  for suffix in '' -hdpi -xhdpi; do
+    target="$theme_root/$installed_name$suffix"
+    previous="$backup_root/$installed_name$suffix"
+    [[ ! -e $target ]] || rm -rf -- "$target"
+    [[ ! -e $previous ]] || mv "$previous" "$target"
+  done
+  [[ ! -e $libadwaita_target ]] || rm -rf -- "$libadwaita_target"
+  [[ ! -e $backup_root/colloid-gtk-4.0 ]] || mv "$backup_root/colloid-gtk-4.0" "$libadwaita_target"
+  printf 'A publicação do Colloid falhou; o tema anterior foi restaurado.\n' >&2
+}
+trap cleanup EXIT
+trap rollback ERR
+mkdir -p "$cache_dir/colloid" "$theme_root" "$(dirname "$libadwaita_target")"
+exec 9>"$lock_file"
+flock 9
 
-git -C "$source_dir" init --quiet
-git -C "$source_dir" remote add origin https://github.com/vinceliuice/Colloid-gtk-theme.git
-git -C "$source_dir" fetch --quiet --depth 1 origin "$revision"
-[[ $(git -C "$source_dir" rev-parse FETCH_HEAD) == "$revision" ]]
-git -C "$source_dir" checkout --quiet --detach FETCH_HEAD
-"$source_dir/install.sh" -d "$theme_root" -n Colloid-Hyprism -c dark -s compact --tweaks rimless
-printf '%s\n' "$revision" >"$theme_root/Colloid-Hyprism-Dark-Compact/.hyprism-revision"
+[[ -s $palette ]] || { printf 'Paleta Matugen do Colloid ausente: %s\n' "$palette" >&2; exit 1; }
+grep -Eiq 'undefined|null|nan|\{\{' "$palette" && { printf 'Paleta Matugen do Colloid contém valores não resolvidos.\n' >&2; exit 1; }
+for variable in accent-dark bg-dark surface-container-dark grey-050 grey-950 default-dark; do
+  grep -Eq "^\\\$$variable:" "$palette" || { printf 'Variável obrigatória ausente na paleta do Colloid: %s\n' "$variable" >&2; exit 1; }
+done
+
+patch_hash=$(sha256sum "$source_patch" | awk '{print $1}')
+if [[ ! -x $source_root/install.sh ]] || [[ $(git -C "$source_root" rev-parse HEAD 2>/dev/null || true) != "$revision" ]] || [[ $(cat "$source_root/.hyprism-matugen-patch" 2>/dev/null || true) != "$patch_hash" ]]; then
+  source_candidate=$(mktemp -d "$cache_dir/colloid/.source.XXXXXX")
+  git -C "$source_candidate" init --quiet
+  git -C "$source_candidate" remote add origin "$repository"
+  git -C "$source_candidate" fetch --quiet --depth 1 origin "$revision"
+  [[ $(git -C "$source_candidate" rev-parse FETCH_HEAD) == "$revision" ]] || { printf 'A revisão baixada do Colloid não corresponde à revisão fixada.\n' >&2; exit 1; }
+  git -C "$source_candidate" checkout --quiet --detach FETCH_HEAD
+  [[ -x $source_candidate/install.sh ]] || { printf 'A fonte do Colloid está incompleta.\n' >&2; exit 1; }
+  git -C "$source_candidate" apply --check "$source_patch"
+  git -C "$source_candidate" apply "$source_patch"
+  printf '%s\n' "$patch_hash" >"$source_candidate/.hyprism-matugen-patch"
+  grep -q "matugen)" "$source_candidate/install.sh" || { printf 'A fonte do Colloid não contém a integração Matugen esperada.\n' >&2; exit 1; }
+  if [[ -e $source_root ]]; then
+    previous_source=$(mktemp -d "$cache_dir/colloid/.source-anterior.XXXXXX")
+    rmdir "$previous_source"
+    mv "$source_root" "$previous_source"
+  fi
+  mv "$source_candidate" "$source_root"
+  source_candidate=
+  [[ -z $previous_source || ! -d $previous_source ]] || rm -rf -- "$previous_source"
+  previous_source=
+fi
+
+palette_hash=$(sha256sum "$palette" | awk '{print $1}')
+active_theme="$theme_root/$installed_name"
+if [[ -s $active_theme/.hyprism-palette.sha256 ]] \
+  && [[ $(cat "$active_theme/.hyprism-palette.sha256") == "$palette_hash" ]] \
+  && [[ $(cat "$active_theme/.hyprism-revision" 2>/dev/null || true) == "$revision" ]] \
+  && [[ -s $active_theme/gtk-2.0/gtkrc ]] \
+  && [[ -s $active_theme/gtk-3.0/gtk.css ]] \
+  && [[ -s $active_theme/gtk-4.0/gtk.css ]] \
+  && [[ -s $libadwaita_target/gtk.css ]]; then
+  printf 'GTK: cores inalteradas; compilação do Colloid dispensada.\n'
+  exit 0
+fi
+
+install -m 0644 "$palette" "$source_root/src/sass/_color-palette-matugen.scss"
+build_root=$(mktemp -d "$theme_root/.hyprism-colloid.XXXXXX")
+build_dest="$build_root/themes"
+build_home="$build_root/home"
+mkdir -p "$build_dest" "$build_home/.config"
+build_log="$build_root/build.log"
+if ! HOME="$build_home" XDG_DATA_HOME="$build_home/.local/share" "$source_root/install.sh" \
+  --dest "$build_dest" \
+  --name "$theme_name" \
+  --color dark \
+  --libadwaita fixed \
+  --tweaks matugen rimless \
+  >"$build_log" 2>&1; then
+  printf 'Falha ao compilar o tema GTK com Colloid; o tema anterior foi preservado.\n' >&2
+  tail -n 12 "$build_log" | sed 's/^/  /' >&2
+  exit 1
+fi
+
+staged_theme="$build_dest/$installed_name"
+staged_libadwaita="$build_home/.config/gtk-4.0"
+[[ -s $staged_theme/gtk-2.0/gtkrc ]] || { printf 'A compilação do Colloid não gerou GTK 2.\n' >&2; exit 1; }
+[[ -s $staged_theme/gtk-3.0/gtk.css ]] || { printf 'A compilação do Colloid não gerou GTK 3.\n' >&2; exit 1; }
+[[ -s $staged_theme/gtk-4.0/gtk.css ]] || { printf 'A compilação do Colloid não gerou GTK 4.\n' >&2; exit 1; }
+[[ -s $staged_libadwaita/gtk.css && -d $staged_libadwaita/assets ]] || { printf 'A compilação do Colloid não gerou o tema fixo do libadwaita.\n' >&2; exit 1; }
+printf '%s\n' "$palette_hash" >"$staged_theme/.hyprism-palette.sha256"
+printf '%s\n' "$revision" >"$staged_theme/.hyprism-revision"
+
+backup_root=$(mktemp -d "$theme_root/.hyprism-colloid-anterior.XXXXXX")
+publishing=1
+for suffix in '' -hdpi -xhdpi; do
+  target="$theme_root/$installed_name$suffix"
+  staged="$build_dest/$installed_name$suffix"
+  [[ -e $target ]] && mv "$target" "$backup_root/$installed_name$suffix"
+  [[ -e $staged ]] && mv "$staged" "$target"
+done
+if [[ -e $libadwaita_target ]]; then
+  mv "$libadwaita_target" "$backup_root/colloid-gtk-4.0"
+fi
+mv "$staged_libadwaita" "$libadwaita_target"
+publishing=0
+
+if command -v gsettings >/dev/null 2>&1; then
+  gsettings set org.gnome.desktop.interface gtk-theme "$installed_name" >/dev/null 2>&1 || true
+  gsettings set org.gnome.desktop.interface color-scheme prefer-dark >/dev/null 2>&1 || true
+fi
+
+printf 'GTK: Colloid recompilado com Matugen e publicado como %s.\n' "$installed_name"

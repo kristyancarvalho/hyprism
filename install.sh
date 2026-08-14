@@ -104,13 +104,9 @@ for image in "$repo_dir"/wallpapers/*.{png,jpg,jpeg,webp}; do
   if [[ ! -e $destination ]]; then run install -m 0644 -o "$target_user" -g "$target_group" "$image" "$destination"; fi
 done
 
-colloid_revision=9bf9fc5a5974ae0659f59a4281aae6f594c95bdd
-colloid_theme="$target_home/.local/share/themes/Colloid-Hyprism-Dark-Compact"
-if [[ ! -s $colloid_theme/gtk-3.0/gtk.css || ! -s $colloid_theme/gtk-4.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" ]]; then
-  as_user env XDG_DATA_HOME="$target_home/.local/share" "$runtime_root/scripts/system/install-colloid-theme"
-else
-  printf 'Colloid-Hyprism já está instalado.\n'
-fi
+colloid_revision=6c2dc65865628bda9fdc8157a30cd5eda6fd41f9
+colloid_name=Colloid-Hyprism-Dark-Matugen
+colloid_theme="$target_home/.local/share/themes/$colloid_name"
 
 if [[ -L $quickshell_parent ]]; then backup_path "$quickshell_parent"; fi
 run install -d -o "$target_user" -g "$target_group" "$quickshell_parent"
@@ -123,6 +119,7 @@ link_path "$runtime_root/config/foot/foot.ini" "$target_home/.config/foot/foot.i
 link_path "$runtime_root/config/kitty/kitty.conf" "$target_home/.config/kitty/kitty.conf"
 link_path "$runtime_root/config/gtk-3.0/settings.ini" "$target_home/.config/gtk-3.0/settings.ini"
 link_path "$runtime_root/config/gtk-4.0/settings.ini" "$target_home/.config/gtk-4.0/settings.ini"
+link_path "$runtime_root/config/gtk-2.0/gtkrc" "$target_home/.gtkrc-2.0"
 link_path "$runtime_root/config/qt5ct/qt5ct.conf" "$target_home/.config/qt5ct/qt5ct.conf"
 link_path "$runtime_root/config/qt6ct/qt6ct.conf" "$target_home/.config/qt6ct/qt6ct.conf"
 link_path "$runtime_root/config/Kvantum/kvantum.kvconfig" "$target_home/.config/Kvantum/kvantum.kvconfig"
@@ -133,12 +130,13 @@ link_path "$runtime_root/scripts/system/action" "$target_home/.local/bin/hyprism
 link_path "$runtime_root/scripts/system/reload-shell" "$target_home/.local/bin/hyprism-reload-shell"
 link_path "$runtime_root/scripts/system/start-shell" "$target_home/.local/bin/hyprism-start-shell"
 link_path "$runtime_root/scripts/system/shell-ipc" "$target_home/.local/bin/hyprism-shell-ipc"
+link_path "$runtime_root/scripts/system/lock" "$target_home/.local/bin/hyprism-lock"
 
 theme_dir="$target_home/.cache/hyprism/theme"
 state_dir="$target_home/.cache/hyprism/state"
 run install -d -o "$target_user" -g "$target_group" "$theme_dir" "$state_dir"
 first_wallpaper=$(find -P "$target_home/Imagens/Wallpapers" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print -quit)
-if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/gtk-3.0.css || ! -s $theme_dir/gtk-4.0.css || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig || ! -s $theme_dir/icons/Hyprism-Papirus/index.theme || ! -e $state_dir/lock-wallpaper ]]; then
+if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/hyprlock.conf || ! -s $theme_dir/colloid/_color-palette-matugen.scss || ! -s $theme_dir/colloid-gtk-4.0/gtk.css || ! -s $colloid_theme/gtk-3.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig || ! -s $theme_dir/icons/Hyprism-Papirus/index.theme || ! -e $state_dir/lock-wallpaper ]]; then
   if [[ -n ${first_wallpaper:-} ]]; then
     as_user env HYPRISM_ROOT="$runtime_root" "$runtime_root/scripts/wallpaper" set "$first_wallpaper"
   else
@@ -151,8 +149,11 @@ fi
 if [[ ! -e $theme_dir/kitty.conf ]]; then
   run install -m 0644 -o "$target_user" -g "$target_group" /dev/null "$theme_dir/kitty.conf"
 fi
-link_path "$theme_dir/gtk-3.0.css" "$target_home/.config/gtk-3.0/gtk.css"
-link_path "$theme_dir/gtk-4.0.css" "$target_home/.config/gtk-4.0/gtk.css"
+if [[ -L $target_home/.config/gtk-3.0/gtk.css && $(readlink "$target_home/.config/gtk-3.0/gtk.css") == "$theme_dir/gtk-3.0.css" ]]; then
+  backup_path "$target_home/.config/gtk-3.0/gtk.css"
+fi
+link_path "$theme_dir/colloid-gtk-4.0/gtk.css" "$target_home/.config/gtk-4.0/gtk.css"
+link_path "$theme_dir/colloid-gtk-4.0/assets" "$target_home/.config/gtk-4.0/assets"
 link_path "$theme_dir/kvantum/Hyprism" "$target_home/.config/Kvantum/Hyprism"
 link_path "$theme_dir/icons/Hyprism-Papirus" "$target_home/.local/share/icons/Hyprism-Papirus"
 
@@ -161,7 +162,7 @@ if ((dry_run == 0)); then
 fi
 
 if ((dry_run == 0)) && command -v gsettings >/dev/null; then
-  as_user gsettings set org.gnome.desktop.interface gtk-theme Colloid-Hyprism-Dark-Compact
+  as_user gsettings set org.gnome.desktop.interface gtk-theme "$colloid_name"
   as_user gsettings set org.gnome.desktop.interface icon-theme Hyprism-Papirus
   as_user gsettings set org.gnome.desktop.interface color-scheme prefer-dark
 fi
@@ -178,12 +179,12 @@ if ((dry_run == 0)); then
     || { printf 'Um ponto de entrada obsoleto do Hyprland ainda está instalado.\n' >&2; exit 1; }
   [[ -f $quickshell_default/shell.qml && -f $quickshell_config/shell.qml ]] \
     || { printf 'O ponto de entrada do Quickshell não foi instalado.\n' >&2; exit 1; }
-  [[ -f $target_home/.config/foot/foot.ini && -s $theme_dir/foot.ini && -f $theme_dir/kitty.conf && -s $theme_dir/hyprlock-colors.conf ]] \
+  [[ -f $target_home/.config/foot/foot.ini && -s $theme_dir/foot.ini && -f $theme_dir/kitty.conf && -s $theme_dir/hyprlock-colors.conf && -s $theme_dir/hyprlock.conf ]] \
     || { printf 'A configuração ou um tema de fallback está ausente.\n' >&2; exit 1; }
   [[ -s $colloid_theme/gtk-3.0/gtk.css && -s $colloid_theme/gtk-4.0/gtk.css ]] \
     || { printf 'O tema Colloid-Hyprism não foi instalado.\n' >&2; exit 1; }
-  [[ -s $target_home/.config/gtk-3.0/gtk.css && -s $target_home/.config/gtk-4.0/gtk.css && -s $target_home/.config/Kvantum/Hyprism/Hyprism.kvconfig && -s $target_home/.local/share/icons/Hyprism-Papirus/index.theme ]] \
-    || { printf 'Os temas dinâmicos GTK ou Kvantum não foram publicados.\n' >&2; exit 1; }
+  [[ -s $target_home/.config/gtk-4.0/gtk.css && -d $target_home/.config/gtk-4.0/assets && -s $target_home/.config/Kvantum/Hyprism/Hyprism.kvconfig && -s $target_home/.local/share/icons/Hyprism-Papirus/index.theme ]] \
+    || { printf 'Os temas dinâmicos libadwaita ou Kvantum não foram publicados.\n' >&2; exit 1; }
   [[ -s $font_regular && -s $font_medium && -s $font_semibold ]] \
     || { printf 'A fonte Google Sans Flex não foi instalada.\n' >&2; exit 1; }
   [[ -d /usr/share/icons/Papirus-Dark && -d /usr/share/icons/Papirus ]] \

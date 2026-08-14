@@ -23,7 +23,7 @@ O instalador:
 - instala pacotes oficiais e usa `paru` ou `yay` somente quando `packages/aur.txt` contém entradas;
 - instala Papirus, Symbols Nerd Font Mono e as ferramentas do Fontconfig a partir dos repositórios oficiais do Arch;
 - baixa Google Sans Flex 400, 500 e 600 diretamente do CDN oficial do Google Fonts, em URLs versionadas e verificadas por SHA-256, sem redistribuir binários no repositório;
-- instala o Colloid no escopo do usuário a partir de uma revisão upstream fixada e cria a variante `Colloid-Hyprism-Dark-Compact`;
+- instala o Colloid no escopo do usuário a partir de uma revisão upstream fixada e cria a variante dinâmica `Colloid-Hyprism-Dark-Matugen`;
 - provisiona Hyprlock, Kvantum para Qt 5/6, `qt5ct`, `qt6ct` e as ferramentas de compilação do tema GTK;
 - cria `~/Imagens/Wallpapers` e `~/Imagens/Screenshots` sem apagar conteúdo existente;
 - copia os arquivos runtime para `~/.local/share/hyprism`, sem depender do local original do clone;
@@ -71,11 +71,13 @@ Na ilha compacta, a bateria mostra somente um dos cinco glifos semânticos de n�
 
 O seletor de papéis de parede recebe foco exclusivo assim que `Alt+K` o abre. A busca `Pesquisar papel de parede...` compara nomes sem diferenciar maiúsculas, acentos, hífens, sublinhados e espaços. As setas navegam espacialmente pela grade, `Enter` aplica somente uma seleção filtrada válida e `Escape` fecha. A altura acompanha a quantidade de linhas até o limite da tela; as miniaturas continuam assíncronas e armazenadas pelo cache de imagens do Qt.
 
-O histórico de clipboard registra texto e imagem com os watchers MIME do `wl-paste` e armazena os bytes originais no `cliphist`. O painel classifica o preview, gera miniaturas PNG proporcionais de até 420×240 em `~/.cache/hyprism/clipboard`, mantém no máximo 64 miniaturas e usa um ícone neutro quando a prévia falha. Restaurar uma imagem executa `cliphist decode` diretamente para `wl-copy --type image/...`; o caminho da miniatura nunca é copiado como texto.
+O histórico de clipboard registra texto e imagem com dois watchers MIME do `wl-paste` e armazena os bytes originais no `cliphist`. Um único supervisor mantém ambos os watchers, segura um `flock` no runtime do usuário e impede duplicação após recargas do Hyprland. Cada gravação publica um marcador atômico em `$XDG_CACHE_HOME/hyprism/state/clipboard-event`; o `ClipboardService` observa esse arquivo e relê o banco sem reiniciar o Quickshell. O painel classifica o preview, gera miniaturas PNG proporcionais de até 420×240 em `$XDG_CACHE_HOME/hyprism/clipboard`, mantém no máximo 64 miniaturas e usa um ícone neutro quando a prévia falha. Restaurar uma imagem executa `cliphist decode` diretamente para `wl-copy --type image/...`; o caminho da miniatura nunca é copiado como texto.
 
 Notificações flutuantes formam uma lista centralizada de até quatro cartões, ou três em telas baixas. Cada cartão expira individualmente, títulos e corpos têm limites de linhas, alterações com o mesmo ID substituem a geração anterior e excedentes permanecem no histórico com um contador compacto. O Hub suprime temporariamente a pilha flutuante para preservar seus controles, sem descartar o histórico.
 
-O layout tiled usa `gaps_in = 4` e `gaps_out = 10`. A reserva superior da ilha continua independente desses espaços e o fullscreen continua removendo somente a superfície persistente e a reserva do monitor afetado.
+O layout tiled usa `gaps_in = 3` e `gaps_out = 8`. A reserva superior da ilha continua independente desses espaços e o fullscreen continua removendo somente a superfície persistente e a reserva do monitor afetado. Janelas de cliente usam raio de 10 px; os raios próprios do Quickshell não são afetados.
+
+A borda ativa usa exclusivamente o papel semântico `secondary_container` do Matugen e a inativa usa `inactive_border`, derivado de `outline_variant`; ambos têm fallbacks Lua válidos. As animações do compositor usam uma curva Bézier curta sem spring ou overshoot. Abertura, fechamento, movimento, fade, layers e workspaces recebem durações próprias entre 1,0 e 2,4 unidades do Hyprland, mantendo movimento visível sem a cauda lenta anterior.
 
 A tela configurada em `config/user.json` tem prioridade quando existe. Em seguida são usadas a tela focada do Hyprland e a primeira tela enumerada pelo Quickshell. Nenhum nome como `eDP-1`, `HDMI-A-1` ou `Virtual-1` é codificado.
 
@@ -95,7 +97,7 @@ papel de parede
           ├─ Hyprland Lua
           ├─ Hyprlock
           ├─ Foot e Kitty
-          ├─ GTK 3/4 sobre Colloid-Hyprism
+          ├─ GTK 2/3/4 e libadwaita sobre Colloid-Hyprism
           ├─ pastas do Hyprism-Papirus
           └─ Kvantum para Qt 5/6
 ```
@@ -104,22 +106,23 @@ papel de parede
 
 - `~/.cache/hyprism/theme/theme.json` para Quickshell;
 - `~/.cache/hyprism/theme/hyprland.lua` para bordas do Hyprland;
-- `~/.cache/hyprism/theme/hyprlock-colors.conf` para a tela de bloqueio;
+- `~/.cache/hyprism/theme/hyprlock-colors.conf` e `hyprlock.conf` completo para a tela de bloqueio;
 - `~/.cache/hyprism/theme/foot.ini` com foreground, background, cursor, seleção e as 16 cores ANSI;
 - `~/.cache/hyprism/theme/kitty.conf` e aplicação remota nas janelas Kitty compatíveis;
-- `~/.cache/hyprism/theme/gtk-3.0.css` e `gtk-4.0.css` como camada dinâmica sobre Colloid;
+- `~/.cache/hyprism/theme/colloid/_color-palette-matugen.scss` como entrada semântica do Colloid;
+- `~/.cache/hyprism/theme/colloid-gtk-4.0/` como saída fixa do libadwaita;
 - `~/.cache/hyprism/theme/icons/Hyprism-Papirus` como tema herdado de ícones, contendo somente pastas recoloridas;
 - `~/.cache/hyprism/theme/kvantum/Hyprism/` com SVG, configuração e esquema de cores do Kvantum.
 
 Todos os artefatos são gerados por completo em um arquivo temporário, validados contra conteúdo vazio ou não resolvido e publicados por substituição atômica. Uma falha em Matugen preserva toda a paleta anterior; uma falha de um consumidor preserva seu último arquivo válido e não corrompe os demais. `scripts/system/publish-json` oferece o mesmo fluxo para uma configuração JSON produzida por outra ferramenta. Os leitores do shell aplicam debounce, mantêm o último estado válido e usam os padrões embutidos quando o arquivo ainda não existe ou está vazio.
 
-O instalador copia os wallpapers incluídos e executa a pipeline inicial antes de considerar Hyprlock pronto. Assim, `~/.cache/hyprism/theme/hyprlock-colors.conf` e `~/.cache/hyprism/state/lock-wallpaper` já existem no primeiro bloqueio. `scripts/system/validate-hyprlock` verifica arquivos, cores, referências e blocos sem iniciar o lockscreen. A configuração permanece em `~/.config/hypr/hyprlock.conf`; `Alt+L` chama Hyprlock diretamente pelo Hyprland e não depende do Quickshell. A instalação oficial usa uma única transação `pacman -Syu` para não misturar versões de Hyprlock, Hyprland, aquamarine e Mesa.
+O instalador copia os wallpapers incluídos e executa a pipeline inicial antes de considerar Hyprlock pronto. Assim, `hyprlock-colors.conf`, o `hyprlock.conf` dinâmico completo e `state/lock-wallpaper` já existem no primeiro bloqueio. A configuração instalada em `~/.config/hypr/hyprlock.conf` é um fallback autossuficiente de cor sólida; `scripts/system/lock` executa o arquivo dinâmico quando todos os recursos são válidos e faz `exec hyprlock` com o fallback caso contrário. `Alt+L` continua sendo um binding direto do Hyprland, sem depender do Quickshell. Para evitar a captura inicial que falhava no caminho gráfico do VirtualBox, o lock desativa seu próprio fade e seleciona screencopy por memória compartilhada. `scripts/system/validate-hyprlock` passa os dois arquivos pelo parser real do Hyprlock usando deliberadamente um display Wayland inexistente, portanto valida propriedades e cores sem bloquear a sessão. A instalação oficial usa uma única transação `pacman -Syu` para não misturar versões de Hyprlock, Hyprland, aquamarine e Mesa.
 
-GTK 3 e GTK 4 usam `Colloid-Hyprism-Dark-Compact` como fundação estática e carregam as cores dinâmicas pelos arquivos `gtk.css` do usuário. A camada reduz os papéis Material a um fundo dominante, uma view apenas 2,5% acima e uma superfície elevada 5,5% acima; sidebar e view compartilham a mesma cor, e seleção usa exatamente o acento canônico. Essa camada também fornece variáveis de cor para aplicações libadwaita sem forçar `GTK_THEME`; aplicações que armazenam seu próprio esquema ou já estavam abertas podem precisar ser reabertas.
+GTK 2, GTK 3, GTK 4 e libadwaita usam `Colloid-Hyprism-Dark-Matugen`. O template versionado em `config/matugen/templates/colloid-gtk-theme.scss` conserva as 111 variáveis do template Matugen/Colloid comprovado no ambiente de desenvolvimento: papéis semânticos claros e escuros, aliases legados, escala cinza, seleção e cores de janela. O acento escuro é substituído pelo acento canônico exato do Hyprism; as demais cores continuam vindo da paleta semântica do Matugen. Não existe mais uma camada CSS GTK ad-hoc sobre um Colloid estático.
 
 `Hyprism-Papirus` herda `Papirus-Dark`, `Papirus` e `hicolor`. O gerador seleciona os SVGs `folder-blue` do Papirus como templates, substitui o corpo `#5294e2` pelo hexadecimal canônico exato e deriva somente sombra e dobra desse mesmo valor. Downloads, Documentos, Imagens, Música, Vídeos, Desktop, Público e demais overlays continuam intactos; os ícones de aplicativos permanecem herdados e não são recoloridos. A geração ocorre numa nova árvore, a referência ativa é trocada atomicamente e somente duas gerações são retidas para cobrir leitores concorrentes sem crescimento ilimitado. Aplicativos já abertos podem exigir reabertura para limpar seu cache de ícones.
 
-`scripts/system/install-colloid-theme` obtém [Colloid GTK Theme](https://github.com/vinceliuice/Colloid-gtk-theme) diretamente do upstream na revisão `9bf9fc5a5974ae0659f59a4281aae6f594c95bdd`, preservando a licença GPL-3.0 no checkout temporário e sem redistribuir a árvore de terceiros. O marcador de revisão faz uma reinstalação controlada somente quando a base fixada muda ou está incompleta.
+`scripts/system/install-colloid-theme` obtém [Colloid GTK Theme](https://github.com/vinceliuice/Colloid-gtk-theme) diretamente do upstream público na revisão `6c2dc65865628bda9fdc8157a30cd5eda6fd41f9`. O patch versionado em `config/matugen/colloid-matugen.patch` reproduz somente a integração Matugen do setup funcional: leitura de `_color-palette-matugen.scss`, variante `Matugen` e fallbacks de assets GTK 2, Labwc e Plank. A compilação usa `--color dark --libadwaita fixed --tweaks matugen rimless`. O SHA-256 da paleta instalada dispensa recompilações sem mudança. Uma nova árvore é compilada e validada num destino isolado; somente depois GTK 2/3/4 e a saída fixa do libadwaita substituem a geração ativa. Falha de download, SCSS ou `sassc` mantém integralmente o último tema funcional.
 
 Qt 6 usa `QT_QPA_PLATFORMTHEME=qt6ct`, uma única chave válida de tema de plataforma. Qt 5 e Qt 6 usam `QT_STYLE_OVERRIDE=kvantum` como motor visual e compartilham o tema dinâmico `Hyprism` selecionado em `~/.config/Kvantum/kvantum.kvconfig`. As configurações de `qt5ct` e `qt6ct` mantêm Hyprism-Papirus e Kvantum selecionados para inspeção ou execução específica de cada geração, sem concatenar nomes de plugins incompatíveis. Novos processos Qt recebem a nova paleta imediatamente; processos já abertos podem precisar ser reiniciados.
 
@@ -156,6 +159,8 @@ Uma VM normalmente oferece Ethernet e não oferece bateria, Wi-Fi, Bluetooth, br
 Foot não usa o caminho de renderização do Kitty e é o primeiro terminal a testar com `Alt+Return`. Mantenha aceleração 3D e recursos de vídeo da VM compatíveis com a versão do Hyprland usada pelo Arch.
 
 O Quickshell usa por padrão o backend `software` do Qt Quick. Esse backend rasteriza a interface sem depender de uma superfície EGL e evita as falhas `Could not create EGL surface`, `eglSwapBuffers failed` e `Wayland connection experienced a fatal error` observadas com o adaptador gráfico do VirtualBox. A configuração vale apenas para o processo do Quickshell; Hyprland, Foot e os demais aplicativos mantêm seus próprios backends gráficos.
+
+Depois de uma instalação na VM, `pgrep -af 'wl-paste.*clipboard-store'` deve mostrar exatamente dois processos, um para texto e outro para imagem. `cliphist list` pode responder que ainda não existe banco antes da primeira cópia; isso é um estado vazio normal. Depois de copiar conteúdo, o marcador `$XDG_CACHE_HOME/hyprism/state/clipboard-event` muda e o painel deve atualizar imediatamente. Para o lockscreen, `~/.local/share/hyprism/scripts/system/validate-hyprlock ~/.config/hypr/hyprlock.conf` repete a validação segura; o teste visual final continua sendo `Alt+L` dentro da VM.
 
 O clima inicial está configurado para São Paulo, com fuso `America/Sao_Paulo`. Local, latitude, longitude, fuso e intervalo podem ser alterados no bloco `weather` de `config/user.json` antes de executar novamente o instalador.
 

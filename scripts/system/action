@@ -26,8 +26,55 @@ screenshot_monitor() {
   grim -o "$monitor" "$file" && wl-copy <"$file" && notify screenshot "$file"
 }
 clipboard_watch() {
-  wl-paste --type text --watch cliphist store &
-  wl-paste --type image --watch cliphist store &
+  command -v wl-paste >/dev/null || { printf 'wl-paste não está instalado.\n' >&2; return 1; }
+  command -v cliphist >/dev/null || { printf 'cliphist não está instalado.\n' >&2; return 1; }
+  local runtime_dir lock_file event_file action_path text_pid image_pid
+  runtime_dir="${HYPRISM_CLIPBOARD_RUNTIME_DIR:-${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}/hyprism-runtime-$UID}/hyprism}"
+  lock_file="$runtime_dir/clipboard-watch.lock"
+  event_file="${XDG_CACHE_HOME:-$HOME/.cache}/hyprism/state/clipboard-event"
+  action_path=$(readlink -f "$0")
+  export CLIPHIST_MAX_STORE_SIZE="${CLIPHIST_MAX_STORE_SIZE:-20MiB}"
+  mkdir -p -m 0700 "$runtime_dir" "$(dirname "$event_file")"
+  exec 8>"$lock_file"
+  flock -n 8 || return 0
+  printf 'início\n' >"$event_file"
+  wl-paste --type text --watch "$action_path" clipboard-store &
+  text_pid=$!
+  wl-paste --type image --watch "$action_path" clipboard-store &
+  image_pid=$!
+  trap 'kill "$text_pid" "$image_pid" 2>/dev/null || true; wait "$text_pid" "$image_pid" 2>/dev/null || true' EXIT INT TERM
+  wait -n "$text_pid" "$image_pid"
+  printf 'Um watcher da área de transferência foi encerrado inesperadamente.\n' >&2
+  return 1
+}
+clipboard_publish_event() {
+  local state_dir event_file event_candidate
+  state_dir="${XDG_CACHE_HOME:-$HOME/.cache}/hyprism/state"
+  event_file="$state_dir/clipboard-event"
+  mkdir -p -m 0700 "$state_dir"
+  event_candidate=$(mktemp "$state_dir/.clipboard-event.XXXXXX")
+  printf '%s\n' "$(date +%s%N)" >"$event_candidate"
+  mv -f -- "$event_candidate" "$event_file"
+}
+clipboard_store() {
+  cliphist store
+  clipboard_publish_event
+}
+clipboard_restore() {
+  local identifier=${1:-} mime=${2:-}
+  [[ $identifier =~ ^[0-9]+$ ]] || { printf 'Identificador inválido da área de transferência.\n' >&2; return 2; }
+  [[ $mime =~ ^(text|image)/[A-Za-z0-9.+_-]+(;charset=[A-Za-z0-9._-]+)?$ ]] || { printf 'Tipo MIME inválido da área de transferência.\n' >&2; return 2; }
+  cliphist decode "$identifier" | wl-copy --type "$mime"
+}
+clipboard_delete() {
+  local identifier=${1:-}
+  [[ $identifier =~ ^[0-9]+$ ]] || { printf 'Identificador inválido da área de transferência.\n' >&2; return 2; }
+  printf '%s\n' "$identifier" | cliphist delete
+  clipboard_publish_event
+}
+clipboard_clear() {
+  cliphist wipe
+  clipboard_publish_event
 }
 case "${1:-}" in
   volume-up) volume 5%+ ;;
@@ -43,6 +90,10 @@ case "${1:-}" in
     [[ -n $color ]] && printf '%s' "$color" | wl-copy && notify color "$color"
     ;;
   clipboard-watch) clipboard_watch ;;
+  clipboard-store) clipboard_store ;;
+  clipboard-restore) clipboard_restore "${2:-}" "${3:-}" ;;
+  clipboard-delete) clipboard_delete "${2:-}" ;;
+  clipboard-clear) clipboard_clear ;;
   night-mode)
     night_state="${XDG_CACHE_HOME:-$HOME/.cache}/hyprism/state/night-mode"
     mkdir -p "$(dirname "$night_state")"
@@ -58,5 +109,5 @@ case "${1:-}" in
     notify power "$([[ $profile == power-saver ]] && printf 'Economia' || printf 'Equilibrado')"
     ;;
   record) ${HYPRISM_RECORD_COMMAND:-wf-recorder -f "$HOME/Imagens/Screenshots/$(date +%Y%m%d_%H%M%S)_recording.mp4"} ;;
-  *) printf 'Uso: %s {volume-up|volume-down|volume-mute|mic-mute|brightness-up|brightness-down|screenshot-area|screenshot-monitor|color-picker|clipboard-watch|night-mode|power-save|record}\n' "$0" >&2; exit 2 ;;
+  *) printf 'Uso: %s {volume-up|volume-down|volume-mute|mic-mute|brightness-up|brightness-down|screenshot-area|screenshot-monitor|color-picker|clipboard-watch|clipboard-store|clipboard-restore|clipboard-delete|clipboard-clear|night-mode|power-save|record}\n' "$0" >&2; exit 2 ;;
 esac

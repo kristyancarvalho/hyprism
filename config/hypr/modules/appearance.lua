@@ -1,8 +1,8 @@
 local home = assert(os.getenv("HOME"), "HOME is required")
 local cache_home = os.getenv("XDG_CACHE_HOME") or home .. "/.cache"
 local palette = {
-    active_border = "rgb(82b1d3)",
-    inactive_border = "rgb(426172)",
+    active_border = "rgb(355b6e)",
+    inactive_border = "rgb(293943)",
 }
 
 local palette_path = cache_home .. "/hyprism/theme/hyprland.lua"
@@ -23,7 +23,7 @@ hl.config({
         },
     },
     decoration = {
-        rounding = 12,
+        rounding = 10,
         rounding_power = 2,
         active_opacity = 1.0,
         inactive_opacity = 0.94,

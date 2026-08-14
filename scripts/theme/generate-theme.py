@@ -13,8 +13,11 @@ from PIL import Image
 
 
 HOME = pathlib.Path.home()
+ROOT = pathlib.Path(os.environ.get("HYPRISM_ROOT", pathlib.Path(__file__).resolve().parents[2]))
 CACHE = pathlib.Path(os.environ.get("HYPRISM_CACHE_DIR", HOME / ".cache/hyprism"))
 OUT = CACHE / "theme"
+COLLOID_TEMPLATE = ROOT / "config/matugen/templates/colloid-gtk-theme.scss"
+HYPRLOCK_BASE = ROOT / "config/hypr/hyprlock.conf"
 KVANTUM_BASE = pathlib.Path(os.environ.get("HYPRISM_KVANTUM_BASE", "/usr/share/Kvantum/KvArcDark"))
 PAPIRUS_BASE = pathlib.Path(os.environ.get("HYPRISM_PAPIRUS_BASE", "/usr/share/icons/Papirus"))
 FALLBACK = {
@@ -22,6 +25,8 @@ FALLBACK = {
     "foreground": "#e0e8ee",
     "accent": "#3ba7d9",
     "secondary": "#8ebbd8",
+    "secondary_container": "#28495a",
+    "inactive_border": "#304653",
     "error": "#e4777f",
 }
 
@@ -136,6 +141,8 @@ def matugen_palette(image):
         "accent": wallpaper_source_color(image),
         "matugenSource": colors["source_color"]["dark"]["color"],
         "secondary": colors["secondary"]["dark"]["color"],
+        "secondary_container": colors["secondary_container"]["dark"]["color"],
+        "inactive_border": colors["outline_variant"]["dark"]["color"],
         "error": colors["error"]["dark"]["color"],
     }
     return semantic, generated
@@ -161,6 +168,8 @@ def theme_from(raw, image):
         "mutedForeground": mix(background, foreground, .55),
         "primary": accent,
         "secondary": secondary,
+        "secondaryContainer": raw.get("secondary_container", FALLBACK["secondary_container"]),
+        "inactiveBorder": raw.get("inactive_border", FALLBACK["inactive_border"]),
         "accent": accent,
         "accentForeground": accent_foreground,
         "accentDim": mix(accent, background, .58),
@@ -222,9 +231,13 @@ def render_foot(theme):
 
 def render_hyprland(theme):
     return (
+        "local theme = {\n"
+        f'    secondary_container = "rgb({theme["secondaryContainer"][1:]})",\n'
+        f'    inactive_border = "rgb({theme["inactiveBorder"][1:]})",\n'
+        "}\n\n"
         "return {\n"
-        f'    active_border = "rgb({theme["accent"][1:]})",\n'
-        f'    inactive_border = "rgb({theme["outline"][1:]})",\n'
+        "    active_border = theme.secondary_container,\n"
+        "    inactive_border = theme.inactive_border,\n"
         "}\n"
     )
 
@@ -242,51 +255,99 @@ def render_hyprlock(theme):
     return "".join(f"$hyprism_{name} = rgb({color[1:]})\n" for name, color in values.items())
 
 
-def render_gtk(theme, version):
-    gtk_view = mix(theme["background"], theme["foreground"], .025)
-    gtk_elevated = mix(theme["background"], theme["foreground"], .055)
-    gtk_separator = mix(theme["background"], theme["foreground"], .14)
-    definitions = {
-        "theme_bg_color": theme["background"],
-        "theme_fg_color": theme["foreground"],
-        "theme_base_color": gtk_view,
-        "theme_text_color": theme["foreground"],
-        "theme_selected_bg_color": theme["accent"],
-        "theme_selected_fg_color": theme["accentForeground"],
-        "accent_bg_color": theme["accent"],
-        "accent_fg_color": theme["accentForeground"],
-        "accent_color": theme["accent"],
-        "window_bg_color": theme["background"],
-        "window_fg_color": theme["foreground"],
-        "view_bg_color": gtk_view,
-        "view_fg_color": theme["foreground"],
-        "headerbar_bg_color": gtk_elevated,
-        "headerbar_fg_color": theme["foreground"],
-        "sidebar_bg_color": gtk_view,
-        "sidebar_fg_color": theme["foreground"],
-        "card_bg_color": gtk_elevated,
-        "card_fg_color": theme["foreground"],
-        "dialog_bg_color": gtk_elevated,
-        "dialog_fg_color": theme["foreground"],
-        "popover_bg_color": gtk_elevated,
-        "popover_fg_color": theme["foreground"],
-        "borders": gtk_separator,
-        "error_bg_color": theme["error"],
-        "error_fg_color": theme["background"],
-    }
-    lines = [f"@define-color {name} {color};" for name, color in definitions.items()]
-    lines.extend([
-        "window, .background { background-color: @window_bg_color; background-image: none; color: @window_fg_color; }",
-        "headerbar, .titlebar, toolbar, .toolbar, menubar, .menubar { background-color: @headerbar_bg_color; background-image: none; color: @headerbar_fg_color; border-color: @borders; }",
-        ".sidebar, placessidebar, stacksidebar, navigationview, navigationpage { background-color: @sidebar_bg_color; background-image: none; color: @sidebar_fg_color; }",
-        ".view, iconview, entry, textview, treeview, listview, list, listbox, scrolledwindow, viewport { background-color: @view_bg_color; background-image: none; color: @view_fg_color; }",
-        "selection, *:selected { background-color: @accent_bg_color; color: @accent_fg_color; }",
-        "*:focus-visible { outline-color: @accent_color; }",
-        "button:checked, switch:checked, check:checked { background-color: @accent_bg_color; color: @accent_fg_color; }",
-    ])
-    if version == 4:
-        lines.append(".error, .destructive-action { color: @error_bg_color; }")
-    return "\n".join(lines) + "\n"
+def render_hyprlock_config(theme):
+    colors = render_hyprlock(theme)
+    lines = []
+    for line in HYPRLOCK_BASE.read_text(encoding="utf-8").splitlines():
+        if line.startswith("$hyprism_"):
+            continue
+        if re.match(r"^    path\s*=", line):
+            lines.append(f"    path = {CACHE / 'state/lock-wallpaper'}")
+        else:
+            lines.append(line)
+    return colors + "\n" + "\n".join(lines) + "\n"
+
+
+def render_colloid(matugen, theme):
+    template = COLLOID_TEMPLATE.read_text(encoding="utf-8")
+    pattern = re.compile(r"\{\{colors\.([a-z0-9_]+)\.(light|dark)\.hex\}\}")
+
+    def color(match):
+        name, mode = match.groups()
+        if name == "primary" and mode == "dark":
+            return theme["accent"]
+        if name == "on_primary" and mode == "dark":
+            return theme["accentForeground"]
+        try:
+            value = matugen["colors"][name][mode]["color"]
+        except (KeyError, TypeError) as error:
+            dark_roles = {
+                "primary": theme["accent"],
+                "on_primary": theme["accentForeground"],
+                "primary_container": theme["surfaceActive"],
+                "on_primary_container": theme["foreground"],
+                "background": theme["background"],
+                "on_background": theme["foreground"],
+                "surface": theme["background"],
+                "on_surface": theme["foreground"],
+                "surface_variant": theme["surfaceVariant"],
+                "on_surface_variant": theme["mutedForeground"],
+                "surface_container_lowest": mix(theme["background"], "#000000", .18),
+                "surface_container_low": theme["surface"],
+                "surface_container": theme["surfaceVariant"],
+                "surface_container_high": theme["surfaceElevated"],
+                "surface_container_highest": theme["surfaceHover"],
+                "outline": theme["outline"],
+                "outline_variant": theme["inactiveBorder"],
+                "inverse_surface": theme["foreground"],
+                "inverse_on_surface": theme["background"],
+                "inverse_primary": theme["accentDim"],
+                "secondary": theme["secondary"],
+                "on_secondary": theme["background"],
+                "secondary_container": theme["secondaryContainer"],
+                "on_secondary_container": theme["foreground"],
+                "tertiary": theme["success"],
+                "on_tertiary": theme["background"],
+                "tertiary_container": theme["surfaceActive"],
+                "on_tertiary_container": theme["foreground"],
+                "error": theme["error"],
+                "on_error": theme["background"],
+                "error_container": theme["error"],
+                "on_error_container": theme["foreground"],
+                "shadow": "#000000",
+                "scrim": "#000000",
+            }
+            if name not in dark_roles:
+                raise ValueError(f"cor Matugen ausente: {name}.{mode}") from error
+            value = dark_roles[name] if mode == "dark" else mix(dark_roles[name], "#ffffff", .72)
+        rgb(value)
+        return value
+
+    rendered = pattern.sub(color, template)
+    validate_colors(rendered)
+    required = (
+        "$accent-dark:", "$bg-dark:", "$surface-container-dark:",
+        "$grey-050:", "$grey-950:", "$default-dark:",
+    )
+    if any(name not in rendered for name in required):
+        raise ValueError("variáveis obrigatórias do Colloid ausentes")
+    return rendered
+
+
+def update_colloid(palette_path):
+    if os.environ.get("HYPRISM_SKIP_COLLOID") == "1":
+        print("Tema do Hyprism: compilação do Colloid ignorada neste ambiente")
+        return
+    command = [str(ROOT / "scripts/system/install-colloid-theme"), str(palette_path)]
+    result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=300)
+    if result.returncode == 0:
+        if result.stdout.strip():
+            print(result.stdout.strip())
+        return
+    print("Tema do Hyprism: falha ao atualizar o GTK; tema anterior preservado", file=sys.stderr)
+    details = (result.stderr or result.stdout).strip().splitlines()[-12:]
+    for line in details:
+        print(f"  {line}", file=sys.stderr)
 
 
 def papirus_output_name(name):
@@ -481,8 +542,13 @@ def main():
     publish(OUT / "foot.ini", render_foot(theme), validate_colors)
     publish(OUT / "hyprland.lua", render_hyprland(theme), validate_colors)
     publish(OUT / "hyprlock-colors.conf", render_hyprlock(theme), validate_colors)
-    publish(OUT / "gtk-3.0.css", render_gtk(theme, 3), validate_colors)
-    publish(OUT / "gtk-4.0.css", render_gtk(theme, 4), validate_colors)
+    publish(OUT / "hyprlock.conf", render_hyprlock_config(theme), validate_colors)
+    try:
+        colloid_palette = OUT / "colloid/_color-palette-matugen.scss"
+        if publish(colloid_palette, render_colloid(matugen, theme), validate_colors):
+            update_colloid(colloid_palette)
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
+        print(f"Tema do Hyprism: Colloid preservado após falha ({error})", file=sys.stderr)
     publish_papirus(theme)
     try:
         kvantum_svg, kvantum_config, kvantum_colors = render_kvantum(theme)
