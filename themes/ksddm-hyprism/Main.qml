@@ -1,5 +1,5 @@
 import QtQuick
-import QtQuick.Controls
+import QtQuick.Controls as Controls
 import QtQuick.Layouts
 import SddmComponents
 
@@ -155,7 +155,7 @@ Item {
                 Layout.fillWidth: true
                 spacing: 8
 
-                Button {
+                Controls.Button {
                     Layout.preferredWidth: 38
                     Layout.preferredHeight: 38
                     text: "‹"
@@ -202,7 +202,7 @@ Item {
                     }
                 }
 
-                Button {
+                Controls.Button {
                     Layout.preferredWidth: 38
                     Layout.preferredHeight: 38
                     text: "›"
@@ -261,7 +261,7 @@ Item {
                 }
             }
 
-            Button {
+            Controls.Button {
                 id: loginButton
                 Layout.fillWidth: true
                 Layout.preferredHeight: 44
@@ -292,7 +292,7 @@ Item {
                 Layout.fillWidth: true
                 spacing: 8
 
-                Button {
+                Controls.Button {
                     id: previousSession
                     Layout.preferredWidth: 36
                     Layout.preferredHeight: 34
@@ -315,7 +315,7 @@ Item {
                     font.pixelSize: 12
                 }
 
-                Button {
+                Controls.Button {
                     Layout.preferredWidth: 36
                     Layout.preferredHeight: 34
                     text: "›"
@@ -347,7 +347,7 @@ Item {
         anchors.margins: 28
         spacing: 8
 
-        Button {
+        Controls.Button {
             visible: sddm.canSuspend
             text: "Suspender"
             font.family: "Google Sans Flex"
@@ -356,7 +356,7 @@ Item {
             contentItem: Text { text: parent.text; color: root.foregroundColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font: parent.font }
         }
 
-        Button {
+        Controls.Button {
             visible: sddm.canReboot
             text: "Reiniciar"
             font.family: "Google Sans Flex"
@@ -365,7 +365,7 @@ Item {
             contentItem: Text { text: parent.text; color: root.foregroundColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font: parent.font }
         }
 
-        Button {
+        Controls.Button {
             visible: sddm.canPowerOff
             text: "Desligar"
             font.family: "Google Sans Flex"
