@@ -50,21 +50,25 @@ Item {
             height: Design.compactItemHeight
             spacing: Design.compactItemSpacing
 
-            CompactBarItem {
+            Item {
                 visible: compact.controller.recording
-                theme: compact.theme
-                iconName: "recording"
-                iconOnly: true
-                filled: false
-                horizontalPadding: Design.compactPlainPadding
-                iconColor: compact.theme.colors.error
+                width: 10
+                height: Design.compactItemHeight
                 opacity: 1
+
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 7
+                    height: 7
+                    radius: 3.5
+                    color: compact.theme.colors.error
+                }
 
                 SequentialAnimation on opacity {
                     running: compact.controller.recording
                     loops: Animation.Infinite
-                    NumberAnimation { from: 1; to: .35; duration: 650; easing.type: Easing.InOutSine }
-                    NumberAnimation { from: .35; to: 1; duration: 650; easing.type: Easing.InOutSine }
+                    NumberAnimation { from: 1; to: .4; duration: 700; easing.type: Easing.InOutSine }
+                    NumberAnimation { from: .4; to: 1; duration: 700; easing.type: Easing.InOutSine }
                 }
             }
 

@@ -189,6 +189,10 @@ Item {
         if (recordingService) recordingService.startRegion()
     }
 
+    function confirmRecordingSurfaceReleased() {
+        if (recordingService) recordingService.confirmSurfaceReleased()
+    }
+
     function startMonitorRecording() {
         if (recordingService) recordingService.startMonitor(targetScreenName)
     }
