@@ -25,10 +25,11 @@ O instalador:
 - baixa Google Sans Flex 400, 500 e 600 diretamente do CDN oficial do Google Fonts, em URLs versionadas e verificadas por SHA-256, sem redistribuir binários no repositório;
 - instala o Colloid no escopo do usuário a partir de uma revisão upstream fixada e cria a variante dinâmica `Colloid-Hyprism-Dark-Matugen`;
 - provisiona Hyprlock, Kvantum para Qt 5/6, `qt5ct`, `qt6ct` e as ferramentas de compilação do tema GTK;
+- provisiona Starship, tmux, Neovim e uma configuração NvChad v2.5 integrada ao tema;
 - cria `~/Imagens/Wallpapers`, `~/Imagens/Screenshots` e `~/Vídeos/gravacoes` sem apagar conteúdo existente;
 - instala o KSDDM adaptado em `/usr/share/sddm/themes/hyprism-ksddm`, publica somente o drop-in `/etc/sddm.conf.d/20-hyprism.conf` e habilita o serviço SDDM sem reiniciá-lo;
 - copia os arquivos runtime para `~/.local/share/hyprism`, sem depender do local original do clone;
-- cria links para `~/.config/hypr`, `~/.config/quickshell/default`, o alias `~/.config/quickshell/hyprism`, Foot, Kitty, GTK 3/4, Kvantum, Qt 5/6 e a configuração do usuário;
+- cria links para `~/.config/hypr`, `~/.config/quickshell/default`, o alias `~/.config/quickshell/hyprism`, Foot, Kitty, Starship, tmux, NvChad, GTK 3/4, Kvantum, Qt 5/6 e a configuração do usuário;
 - guarda conflitos em `~/.local/state/hyprism/backups/`;
 - verifica `hyprland.lua`, `shell.qml`, `foot.ini` e o tema de fallback do Foot;
 - não instala nem ativa um `hyprland.conf` legado.
@@ -80,7 +81,7 @@ O histórico de clipboard registra texto e imagem com dois watchers MIME do `wl-
 
 `RecordingService` concentra `recording`, modo, início, tempo decorrido, saída e ações. Um supervisor segura `$XDG_RUNTIME_DIR/hyprism/recording.lock`, inicia um único filho `wf-recorder` e encaminha `SIGINT` apenas a esse PID. Outro gravador do usuário não é procurado nem encerrado. Se o Quickshell for substituído durante a gravação, a destruição do processo supervisionado encaminha o encerramento ao filho e o lock impede uma segunda instância concorrente.
 
-Durante a gravação, somente um ponto vermelho de 7 px aparece na ilha compacta e pulsa entre opacidade `1` e `0,4` em ciclos suaves de 1,4 s, sem texto, ícone, pill ou animação de geometria. A expansão e o Hub mostram o tempo decorrido com a ação `Parar`. Pressionar `Alt+Shift+R` novamente envia a parada imediatamente. Arquivos H.264 são encapsulados como MP4 e gravados em `~/Vídeos/gravacoes` com nomes como `20260814_032501_184_tela.mp4` e `20260814_032501_184_regiao.mp4`; os milissegundos evitam colisão sem prejudicar a ordenação. Sucesso ou falha produz feedback do próprio Hyprism em pt-BR.
+Durante a gravação, somente um ponto de 11 px com a cor semântica `warning` aparece na ilha compacta e pulsa entre opacidade `1` e `0,4` em ciclos suaves de 1,3 s, sem texto, ícone, pill ou animação de geometria. A expansão e o Hub mostram o tempo decorrido com a ação `Parar`. Pressionar `Alt+Shift+R` novamente envia a parada imediatamente. Arquivos H.264 são encapsulados como MP4 e gravados em `~/Vídeos/gravacoes` com nomes como `20260814_032501_184_tela.mp4` e `20260814_032501_184_regiao.mp4`; os milissegundos evitam colisão sem prejudicar a ordenação. Sucesso ou falha produz feedback do próprio Hyprism em pt-BR.
 
 Notificações flutuantes formam uma lista centralizada de até quatro cartões, ou três em telas baixas. Cada cartão expira individualmente, títulos e corpos têm limites de linhas, alterações com o mesmo ID substituem a geração anterior e excedentes permanecem no histórico com um contador compacto. O Hub suprime temporariamente a pilha flutuante para preservar seus controles, sem descartar o histórico.
 
@@ -94,7 +95,7 @@ A tela configurada em `config/user.json` tem prioridade quando existe. Em seguid
 
 Foot é o terminal padrão porque é um terminal Wayland pequeno, rápido e adequado ao ambiente gráfico virtual. `Alt+Return` é um atalho direto do Hyprland para o programa centralizado em `modules/programs.lua`; ele não depende do Quickshell.
 
-`config/foot/foot.ini` usa JetBrains Mono Nerd Font 11.5, padding de 10 px, cursor beam, fundo escuro com opacidade 0,94 e a mesma paleta semântica do shell. Kitty permanece instalado e configurado como alternativa, mas não é o padrão. `$TERMINAL` também aponta para `foot`.
+`config/foot/foot.ini` usa JetBrains Mono Nerd Font 11.5, padding de 10 px, cursor beam, fundo escuro com opacidade 0,88 e a mesma paleta semântica do shell. A regra `foot-background-blur` mantém o blur do compositor habilitado para a classe `foot`, tornando a transparência perceptível sem afetar os demais aplicativos. Kitty permanece instalado e configurado como alternativa, mas não é o padrão. `$TERMINAL` também aponta para `foot`.
 
 ## Papel de parede e cores
 
@@ -106,6 +107,9 @@ papel de parede
           ├─ Hyprland Lua
           ├─ Hyprlock
           ├─ Foot e Kitty
+          ├─ Starship
+          ├─ tmux
+          ├─ NvChad
           ├─ GTK 2/3/4 e libadwaita sobre Colloid-Hyprism
           ├─ pastas do Hyprism-Papirus
           ├─ Kvantum para Qt 5/6
@@ -119,6 +123,9 @@ papel de parede
 - `~/.cache/hyprism/theme/hyprlock-colors.conf` e `hyprlock.conf` completo para a tela de bloqueio;
 - `~/.cache/hyprism/theme/foot.ini` com foreground, background, cursor, seleção e as 16 cores ANSI;
 - `~/.cache/hyprism/theme/kitty.conf` e aplicação remota nas janelas Kitty compatíveis;
+- `~/.cache/hyprism/theme/starship.toml`, ligado a `~/.config/starship.toml`;
+- `~/.cache/hyprism/theme/tmux.conf`, ligado a `~/.config/tmux/theme.conf`;
+- `~/.cache/hyprism/theme/nvim/matugen.lua` e `~/.config/nvim/lua/themes/matugen.lua` para o NvChad;
 - `~/.cache/hyprism/theme/colloid/_color-palette-matugen.scss` como entrada semântica do Colloid;
 - `~/.cache/hyprism/theme/colloid-gtk-4.0/` como saída fixa do libadwaita;
 - `~/.cache/hyprism/theme/icons/Hyprism-Papirus` como tema herdado de ícones, contendo somente pastas recoloridas;
@@ -126,6 +133,18 @@ papel de parede
 - `~/.cache/hyprism/theme/sddm/theme.conf` e o estado publicado para o KSDDM.
 
 Todos os artefatos são gerados por completo em um arquivo temporário, validados contra conteúdo vazio ou não resolvido e publicados por substituição atômica. Uma falha em Matugen preserva toda a paleta anterior; uma falha de um consumidor preserva seu último arquivo válido e não corrompe os demais. `scripts/system/publish-json` oferece o mesmo fluxo para uma configuração JSON produzida por outra ferramenta. Os leitores do shell aplicam debounce, mantêm o último estado válido e usam os padrões embutidos quando o arquivo ainda não existe ou está vazio.
+
+O papel semântico `warning` parte do `error` produzido pela mesma paleta Matugen, conserva luminosidade, saturação e contraste úteis para fundo escuro e normaliza somente o matiz para 10°, na região de vermelho quente. `error` continua independente. Assim, gravação e avisos deixam de herdar o rosa da cor Material sem usar um hexadecimal fixo entre wallpapers.
+
+## Ambiente de desenvolvimento temático
+
+O template `config/matugen/templates/starship.toml` gera o prompt Powerline completo em `~/.config/starship.toml`. O instalador detecta somente o shell de login do usuário entre zsh, bash e fish, liga o fragmento correspondente e acrescenta uma única linha idempotente ao arquivo de inicialização. O Starship relê a configuração a cada prompt, portanto terminais existentes recebem a nova paleta no comando seguinte.
+
+O template `config/matugen/templates/tmux.conf` gera exclusivamente a camada visual. Uma instalação sem configuração cria `~/.config/tmux/tmux.conf`; quando já existe `.config/tmux/tmux.conf` ou `.tmux.conf`, o instalador preserva seu conteúdo e acrescenta somente `source-file -q ~/.config/tmux/theme.conf`, com backup anterior. Depois de uma mudança real, o gerador consulta `tmux list-sessions`; somente quando um servidor padrão já existe executa `source-file`, sem criar servidor, encerrar sessão ou falhar a aplicação dos outros temas.
+
+`config/nvim` contém o bootstrap completo do NvChad v2.5, os imports de plugins, opções, mappings, statusline Powerline e um tema de fallback válido. Matugen renderiza `config/matugen/templates/nvchad.lua` atomicamente no cache e em `~/.config/nvim/lua/themes/matugen.lua`. `lua/autocmds.lua` observa esse diretório, consolida eventos por 150 ms e chama `nvchad.utils.reload` numa instância já aberta; `VimLeavePre` encerra timer e watcher. Uma configuração Neovim anterior é movida integralmente para `~/.local/state/hyprism/backups/` antes de a versão gerenciada ser ligada.
+
+Arquivos byte a byte idênticos não são substituídos. Isso evita prompts de I/O desnecessários, recarga do tmux e eventos no watcher do Neovim. Starship, tmux e NvChad falham isoladamente: ausência de um servidor tmux ou de uma configuração NvChad ativa não impede Quickshell, GTK, Papirus, Kvantum ou os demais consumidores de receberem a paleta.
 
 ## SDDM / KSDDM
 
@@ -252,7 +271,7 @@ scripts/system/shell-ipc tasks list
 
 A reserva superior compacta usa 8 px de margem, 44 px de ilha e 4 px de respiro. A superfície de reserva permanece fixa e totalmente transparente durante expansões. O overlay ignora exclusões de outras camadas, usa a mesma origem absoluta no topo central e mantém um canvas Wayland estável; a forma desenhada, seu recorte e sua máscara de entrada compartilham uma única geometria animada. Launcher, hub, clipboard, seletor de wallpaper, Alt+Tab e menu de energia crescem para baixo sem ampliar a reserva. Cada tela detectada recebe sua própria ilha visual e seus próprios widgets. Painéis transitórios usam primeiro a tela invocadora e, para atalhos, o monitor focado pelo Hyprland.
 
-As transições de opacidade usam 80 ms, respostas rápidas usam 110 ms e morphs de geometria usam 150 ms. Um único progresso interpola largura, altura e raio, sem animações concorrentes do `PanelWindow`, do fundo e do recorte. A ilha compacta, painéis, cards, botões, notificações, widgets, launcher, OSD e Alt+Tab usam raio predominante de 9 px.
+As transições de opacidade usam 80 ms, respostas rápidas usam 110 ms e morphs de geometria usam 150 ms. Entradas usam `OutQuart`, saídas usam `InCubic`, deslocamentos usam `InOutCubic` e o morph inteiro usa `OutQuart`. Um único progresso interpola largura, altura e raio, enquanto a revelação do conteúdo percorre os mesmos 150 ms sem a antiga reversão de opacity após 20 ms. O foco lógico continua solicitado no ciclo imediato de carregamento. Não há animações concorrentes do `PanelWindow`, do fundo e do recorte. A ilha compacta, painéis, cards, botões, notificações, widgets, launcher, OSD e Alt+Tab usam raio predominante de 9 px.
 
 Os workspaces aparecem como até cinco células quadradas numeradas: o workspace ativo usa preenchimento de destaque, ocupados usam superfície elevada, vizinhos vazios ficam atenuados e urgentes usam a cor semântica de erro. A seleção considera o workspace ativo, seus vizinhos e workspaces ocupados ou urgentes sem alargar indefinidamente a ilha. A bateria usa a família Font Awesome do Nerd Font entre `nf-fa-battery_0` e `nf-fa-battery_4`, com limiares de carga centralizados e um raio discreto ao carregar.
 
@@ -418,6 +437,10 @@ config/hypr/        configuração Lua modular do Hyprland
 config/quickshell/  shell, painéis, widgets, serviços, notificações e OSD
 config/foot/        configuração e tema de fallback do Foot
 config/kitty/       suporte opcional ao Kitty
+config/matugen/     templates centralizados dos consumidores de tema
+config/nvim/        configuração gerenciada do NvChad v2.5
+config/shell/       inicialização do Starship por shell
+config/tmux/        inclusão da camada visual dinâmica do tmux
 config/sddm/        drop-in mínimo do tema de login
 scripts/            backends, wallpaper e geração de tema
 packages/           listas reproduzíveis de pacotes oficiais e AUR
