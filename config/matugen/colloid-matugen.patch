@@ -1,0 +1,206 @@
+diff --git a/install.sh b/install.sh
+index a83008c..68a760b 100755
+--- a/install.sh
++++ b/install.sh
+@@ -8,6 +8,15 @@ source "${REPO_DIR}/gtkrc.sh"
+ source "${REPO_DIR}/gtkrc.sh"
+ source "${REPO_DIR}/assets.sh"
+ 
++matugen_color() {
++  local name="${1}"
++  local fallback="${2}"
++  local value=
++
++  value="$(sed -n "s/^\$${name}:[[:space:]]*\(#[0-9A-Fa-f]\{6\}\).*/\1/p" "${SRC_DIR}/sass/_color-palette-matugen.scss" | head -n 1)"
++  printf '%s' "${value:-$fallback}"
++}
++
+ ROOT_UID=0
+ DEST_DIR=
+ 
+@@ -31,7 +40,7 @@ SASSC_OPT="-M -t expanded"
+ 
+ THEME_NAME=Colloid
+ THEME_VARIANTS=('' '-Purple' '-Pink' '-Red' '-Orange' '-Yellow' '-Green' '-Teal' '-Grey')
+-SCHEME_VARIANTS=('' '-Nord' '-Dracula' '-Gruvbox' '-Everforest' '-Catppuccin')
++SCHEME_VARIANTS=('' '-Nord' '-Dracula' '-Gruvbox' '-Everforest' '-Catppuccin' '-Matugen')
+ COLOR_VARIANTS=('' '-Light' '-Dark')
+ SIZE_VARIANTS=('' '-Compact')
+ 
+@@ -82,7 +91,7 @@ OPTIONS:
+                           2. fixed                       Using fixed theme colors (that will break light/dark mode switch)
+ 
+   --tweaks                Specify versions for tweaks
+-                          1. [nord|dracula|gruvbox|everforest|catppuccin|all]  (Nord/Dracula/Gruvbox/Everforest/Catppuccin/all) ColorSchemes version
++                          1. [nord|dracula|gruvbox|everforest|catppuccin|matugen|all]  (Nord/Dracula/Gruvbox/Everforest/Catppuccin/Matugen/all) ColorSchemes version
+                           2. black                       Blackness color version
+                           3. rimless                     Remove the 1px border about windows and menus
+                           4. normal                      Normal windows button style like gnome default theme (titlebuttons: max/min/close)
+@@ -164,14 +173,22 @@ install() {
+ 
+   mkdir -p                                                                                   "${THEME_DIR}/labwc"
+-  cp "${SRC_DIR}/main/labwc/themerc${color}${scheme}"                                        "${THEME_DIR}/labwc/themerc"
++  local LABWC_THEMERC="${SRC_DIR}/main/labwc/themerc${color}${scheme}"
++  [[ ! -f "${LABWC_THEMERC}" ]] && LABWC_THEMERC="${SRC_DIR}/main/labwc/themerc${color}"
++  [[ ! -f "${LABWC_THEMERC}" ]] && LABWC_THEMERC="${SRC_DIR}/main/labwc/themerc${scheme}"
++  [[ ! -f "${LABWC_THEMERC}" ]] && LABWC_THEMERC="${SRC_DIR}/main/labwc/themerc"
++  cp "${LABWC_THEMERC}"                                                                      "${THEME_DIR}/labwc/themerc"
+   cp -r "${SRC_DIR}/assets/labwc/assets${color}/"*.svg                                       "${THEME_DIR}/labwc/"
+ 
+   mkdir -p                                                                                   "${THEME_DIR}/plank"
++  local PLANK_THEME=
+   if [[ "$color" == '-Light' ]]; then
+-    cp -r "${SRC_DIR}/main/plank/theme-Light${scheme}/"*                                     "${THEME_DIR}/plank"
++    PLANK_THEME="${SRC_DIR}/main/plank/theme-Light${scheme}"
++    [[ ! -d "${PLANK_THEME}" ]] && PLANK_THEME="${SRC_DIR}/main/plank/theme-Light"
+   else
+-    cp -r "${SRC_DIR}/main/plank/theme-Dark${scheme}/"*                                      "${THEME_DIR}/plank"
++    PLANK_THEME="${SRC_DIR}/main/plank/theme-Dark${scheme}"
++    [[ ! -d "${PLANK_THEME}" ]] && PLANK_THEME="${SRC_DIR}/main/plank/theme-Dark"
+   fi
++  cp -r "${PLANK_THEME}/"*                                                                   "${THEME_DIR}/plank"
+ }
+ 
+ themes=()
+@@ -367,6 +384,12 @@ while [[ $# -gt 0 ]]; do
+             echo -e "\nCatppuccin ColorScheme version! ..."
+             shift
+             ;;
++          matugen)
++            colorscheme='true'
++            schemes+=("${SCHEME_VARIANTS[6]}")
++            echo -e "\nMatugen ColorScheme version! ..."
++            shift
++            ;;
+           all)
+             colorscheme='true'
+             schemes+=("${SCHEME_VARIANTS[@]}")
+@@ -486,6 +509,9 @@ color_schemes() {
+       -Everforest)
+         scheme_color='everforest'
+         ;;
++      -Matugen)
++        scheme_color='matugen'
++        ;;
+       -Catppuccin)
+         scheme_color='catppuccin'
+         ;;
+diff --git a/gtkrc.sh b/gtkrc.sh
+index 9143ac3..15add22 100644
+--- a/gtkrc.sh
++++ b/gtkrc.sh
+@@ -257,6 +257,11 @@ change_color() {
+     esac
+   fi
+ 
++  if [[ "$scheme" == '-Matugen' ]]; then
++    theme_color_dark="$(matugen_color accent-dark '#3c84f7')"
++    theme_color_light="$(matugen_color accent-light '#5b9bf8')"
++  fi
++
+   if [[ "$blackness" == 'true' ]]; then
+     case "$scheme" in
+       '')
+@@ -307,6 +312,14 @@ change_color() {
+         titlebar_light='#e6e9ef'
+         titlebar_dark='#11111b'
+         ;;
++      -Matugen)
++        background_light="$(matugen_color bg-light '#ffffff')"
++        background_dark="$(matugen_color bg-dark '#0f0f0f')"
++        background_darker="$(matugen_color surface-container-dark '#121212')"
++        background_alt="$(matugen_color surface-highest-dark '#212121')"
++        titlebar_light="$(matugen_color surface-container-light '#f2f2f2')"
++        titlebar_dark="$(matugen_color surface-lowest-dark '#030303')"
++        ;;
+     esac
+   else
+     case "$scheme" in
+@@ -358,6 +371,14 @@ change_color() {
+         titlebar_light='#e6e9ef'
+         titlebar_dark='#24273a'
+         ;;
++      -Matugen)
++        background_light="$(matugen_color bg-light '#ffffff')"
++        background_dark="$(matugen_color bg-dark '#2c2c2c')"
++        background_darker="$(matugen_color surface-container-dark '#3c3c3c')"
++        background_alt="$(matugen_color surface-highest-dark '#464646')"
++        titlebar_light="$(matugen_color surface-container-light '#f2f2f2')"
++        titlebar_dark="$(matugen_color surface-lowest-dark '#242424')"
++        ;;
+     esac
+   fi
+ 
+diff --git a/assets.sh b/assets.sh
+index bca1780..a5801ca 100644
+--- a/assets.sh
++++ b/assets.sh
+@@ -256,6 +256,11 @@ render_assets() {
+     esac
+   fi
+ 
++  if [[ "$scheme" == '-Matugen' ]]; then
++    theme_color_dark="$(matugen_color accent-dark '#3c84f7')"
++    theme_color_light="$(matugen_color accent-light '#5b9bf8')"
++  fi
++
+   if [[ "$blackness" == 'true' ]]; then
+     case "$scheme" in
+       '')
+@@ -300,6 +305,13 @@ render_assets() {
+         titlebar_light='#e6e9ef'
+         titlebar_dark='#11111b'
+         ;;
++      -Matugen)
++        background_light="$(matugen_color bg-light '#ffffff')"
++        background_dark="$(matugen_color bg-dark '#0f0f0f')"
++        background_dark_alt="$(matugen_color surface-container-dark '#121212')"
++        titlebar_light="$(matugen_color surface-container-light '#f2f2f2')"
++        titlebar_dark="$(matugen_color surface-lowest-dark '#030303')"
++        ;;
+     esac
+   else
+     case "$scheme" in
+@@ -345,6 +357,13 @@ render_assets() {
+         titlebar_light='#e6e9ef'
+         titlebar_dark='#24273a'
+         ;;
++      -Matugen)
++        background_light="$(matugen_color bg-light '#ffffff')"
++        background_dark="$(matugen_color bg-dark '#2c2c2c')"
++        background_dark_alt="$(matugen_color surface-container-dark '#3c3c3c')"
++        titlebar_light="$(matugen_color surface-container-light '#f2f2f2')"
++        titlebar_dark="$(matugen_color surface-lowest-dark '#242424')"
++        ;;
+     esac
+   fi
+ 
+@@ -394,8 +413,14 @@ render_assets() {
+   cp -r "${SRC_DIR}/assets/gtk/symbolics/"*'.svg'                               "${THEME_DIR}/gtk-3.0/assets"
+   cp -r "${SRC_DIR}/assets/gtk/symbolics/"*'.svg'                               "${THEME_DIR}/gtk-4.0/assets"
+ 
+-  cp -r "${SRC_DIR}/assets/gtk-2.0/assets-common${ELSE_DARK:-}"                              "${THEME_DIR}/gtk-2.0/assets"
+-  cp -r "${SRC_DIR}/assets/gtk-2.0/assets${theme}${ELSE_DARK:-}${scheme}/"*"png"             "${THEME_DIR}/gtk-2.0/assets"
++  local GTK2_COMMON_ASSETS="${SRC_DIR}/assets/gtk-2.0/assets-common${ELSE_DARK:-}"
++  local GTK2_ASSETS="${SRC_DIR}/assets/gtk-2.0/assets${theme}${ELSE_DARK:-}${scheme}"
++  [[ ! -d "${GTK2_COMMON_ASSETS}" ]] && GTK2_COMMON_ASSETS="${SRC_DIR}/assets/gtk-2.0/assets-common"
++  [[ ! -d "${GTK2_ASSETS}" ]] && GTK2_ASSETS="${SRC_DIR}/assets/gtk-2.0/assets${theme}${ELSE_DARK:-}"
++  [[ ! -d "${GTK2_ASSETS}" ]] && GTK2_ASSETS="${SRC_DIR}/assets/gtk-2.0/assets${ELSE_DARK:-}"
++  [[ ! -d "${GTK2_ASSETS}" ]] && GTK2_ASSETS="${SRC_DIR}/assets/gtk-2.0/assets"
++  cp -r "${GTK2_COMMON_ASSETS}"                                                            "${THEME_DIR}/gtk-2.0/assets"
++  cp -r "${GTK2_ASSETS}/"*"png"                                                            "${THEME_DIR}/gtk-2.0/assets"
+ 
+   cp -r "${SRC_DIR}/assets/metacity-1/assets${window}"                                       "${THEME_DIR}/metacity-1/assets"
+   cp -r "${SRC_DIR}/assets/metacity-1/thumbnail${ELSE_DARK:-}.png"                           "${THEME_DIR}/metacity-1/thumbnail.png"
+@@ -465,6 +490,11 @@ render_assets() {
+         button_min="#eacb8e"
+       fi
+       ;;
++    -Matugen)
++      button_close="$(matugen_color error-dark '#fd5f51')"
++      button_max="$(matugen_color tertiary-dark '#38c76a')"
++      button_min="$(matugen_color secondary-dark '#fdbe04')"
++      ;;
+   esac
+ 
+   sed -i "s/#fd5f51/${button_close}/g"                                          "${THEME_DIR}/xfwm4/close-active.svg"
