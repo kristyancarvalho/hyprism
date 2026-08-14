@@ -25,7 +25,8 @@ O instalador:
 - baixa Google Sans Flex 400, 500 e 600 diretamente do CDN oficial do Google Fonts, em URLs versionadas e verificadas por SHA-256, sem redistribuir binários no repositório;
 - instala o Colloid no escopo do usuário a partir de uma revisão upstream fixada e cria a variante dinâmica `Colloid-Hyprism-Dark-Matugen`;
 - provisiona Hyprlock, Kvantum para Qt 5/6, `qt5ct`, `qt6ct` e as ferramentas de compilação do tema GTK;
-- cria `~/Imagens/Wallpapers` e `~/Imagens/Screenshots` sem apagar conteúdo existente;
+- cria `~/Imagens/Wallpapers`, `~/Imagens/Screenshots` e `~/Vídeos/gravacoes` sem apagar conteúdo existente;
+- instala o KSDDM adaptado em `/usr/share/sddm/themes/hyprism-ksddm`, publica somente o drop-in `/etc/sddm.conf.d/20-hyprism.conf` e habilita o serviço SDDM sem reiniciá-lo;
 - copia os arquivos runtime para `~/.local/share/hyprism`, sem depender do local original do clone;
 - cria links para `~/.config/hypr`, `~/.config/quickshell/default`, o alias `~/.config/quickshell/hyprism`, Foot, Kitty, GTK 3/4, Kvantum, Qt 5/6 e a configuração do usuário;
 - guarda conflitos em `~/.local/state/hyprism/backups/`;
@@ -73,6 +74,14 @@ O seletor de papéis de parede recebe foco exclusivo assim que `Alt+K` o abre. A
 
 O histórico de clipboard registra texto e imagem com dois watchers MIME do `wl-paste` e armazena os bytes originais no `cliphist`. Um único supervisor mantém ambos os watchers, segura um `flock` no runtime do usuário e impede duplicação após recargas do Hyprland. Cada gravação publica um marcador atômico em `$XDG_CACHE_HOME/hyprism/state/clipboard-event`; o `ClipboardService` observa esse arquivo e relê o banco sem reiniciar o Quickshell. O painel classifica o preview, gera miniaturas PNG proporcionais de até 420×240 em `$XDG_CACHE_HOME/hyprism/clipboard`, mantém no máximo 64 miniaturas e usa um ícone neutro quando a prévia falha. Restaurar uma imagem executa `cliphist decode` diretamente para `wl-copy --type image/...`; o caminho da miniatura nunca é copiado como texto.
 
+## Gravação de tela
+
+`Alt+Shift+R` abre o seletor morfológico quando o gravador está ocioso. Setas esquerda e direita alternam entre `Região` e `Tela inteira`, `Enter` ou espaço iniciam e `Escape` cancela. A região é selecionada pelo `slurp` somente depois que o painel fecha. Tela inteira passa ao `wf-recorder` o nome do monitor focado fornecido pela integração Hyprland; ela nunca usa um nome fixo nem grava o desktop virtual combinado.
+
+`RecordingService` concentra `recording`, modo, início, tempo decorrido, saída e ações. Um supervisor segura `$XDG_RUNTIME_DIR/hyprism/recording.lock`, inicia um único filho `wf-recorder` e encaminha `SIGINT` apenas a esse PID. Outro gravador do usuário não é procurado nem encerrado. Se o Quickshell for substituído durante a gravação, a destruição do processo supervisionado encaminha o encerramento ao filho e o lock impede uma segunda instância concorrente.
+
+Durante a gravação, o ícone Nerd Font vermelho da ilha compacta pulsa apenas por opacidade. A expansão mostra `Gravando` e o tempo decorrido; o Hub oferece `Parar` com mouse e teclado. Pressionar `Alt+Shift+R` novamente envia a parada imediatamente. Arquivos H.264 são encapsulados como MP4 e gravados em `~/Vídeos/gravacoes` com nomes como `20260814_032501_184_tela.mp4` e `20260814_032501_184_regiao.mp4`; os milissegundos evitam colisão sem prejudicar a ordenação. Sucesso ou falha produz feedback do próprio Hyprism em pt-BR.
+
 Notificações flutuantes formam uma lista centralizada de até quatro cartões, ou três em telas baixas. Cada cartão expira individualmente, títulos e corpos têm limites de linhas, alterações com o mesmo ID substituem a geração anterior e excedentes permanecem no histórico com um contador compacto. O Hub suprime temporariamente a pilha flutuante para preservar seus controles, sem descartar o histórico.
 
 O layout tiled usa `gaps_in = 3` e `gaps_out = 8`. A reserva superior da ilha continua independente desses espaços e o fullscreen continua removendo somente a superfície persistente e a reserva do monitor afetado. Janelas de cliente usam raio de 10 px; os raios próprios do Quickshell não são afetados.
@@ -99,7 +108,8 @@ papel de parede
           ├─ Foot e Kitty
           ├─ GTK 2/3/4 e libadwaita sobre Colloid-Hyprism
           ├─ pastas do Hyprism-Papirus
-          └─ Kvantum para Qt 5/6
+          ├─ Kvantum para Qt 5/6
+          └─ SDDM / KSDDM
 ```
 
 `scripts/theme/generate-theme.py` é o gerador central. Uma miniatura limitada do wallpaper fornece a cor representativa mais relevante; a transformação HLS mantém o matiz, limita apenas saturação extrema e posiciona a luminosidade numa faixa útil de 0,48 a 0,72 antes da correção mínima de contraste. O resultado fica mais claro que a cor-fonte escura sem se transformar num pastel Material. O `primary` tonal do Material não é usado como destaque do Hyprism. Matugen continua responsável por fundo, superfícies, texto, cores de apoio e erro. O gerador cria:
@@ -113,8 +123,19 @@ papel de parede
 - `~/.cache/hyprism/theme/colloid-gtk-4.0/` como saída fixa do libadwaita;
 - `~/.cache/hyprism/theme/icons/Hyprism-Papirus` como tema herdado de ícones, contendo somente pastas recoloridas;
 - `~/.cache/hyprism/theme/kvantum/Hyprism/` com SVG, configuração e esquema de cores do Kvantum.
+- `~/.cache/hyprism/theme/sddm/theme.conf` e o estado publicado para o KSDDM.
 
 Todos os artefatos são gerados por completo em um arquivo temporário, validados contra conteúdo vazio ou não resolvido e publicados por substituição atômica. Uma falha em Matugen preserva toda a paleta anterior; uma falha de um consumidor preserva seu último arquivo válido e não corrompe os demais. `scripts/system/publish-json` oferece o mesmo fluxo para uma configuração JSON produzida por outra ferramenta. Os leitores do shell aplicam debounce, mantêm o último estado válido e usam os padrões embutidos quando o arquivo ainda não existe ou está vazio.
+
+## SDDM / KSDDM
+
+O tema em `themes/ksddm-hyprism` deriva do fork [KSDDM](https://github.com/kristyancarvalho/ksddm), commit `9ed05b7c894e3c8f5d63a88524ab71f7c6a2e1ee`, originalmente baseado no SilentSDDM. A importação é vendorizada sem `.git`, mantém GPL-3.0 e a atribuição em `ORIGIN.md`, e reduz a interface a usuário, sessão, senha, entrada, suspensão, reinício e desligamento. Google Sans Flex, superfícies escuras, raio moderado e o acento canônico alinham o greeter ao shell sem levar widgets do desktop ao login.
+
+O instalador copia o tema para `/usr/share/sddm/themes/hyprism-ksddm` e seleciona somente `Current=hyprism-ksddm` em `/etc/sddm.conf.d/20-hyprism.conf`; nenhum `/etc/sddm.conf` completo é substituído. `/var/lib/hyprism` permanece root-owned. Somente `/var/lib/hyprism/sddm`, com modo `0755`, pertence ao usuário configurado e contém `current-wallpaper.jpg` e `theme.conf`; `/usr/share/sddm` nunca fica gravável pelo usuário.
+
+Toda aplicação de wallpaper, inclusive a opção aleatória, atravessa `scripts/wallpaper` e o mesmo `generate-theme.py`. O gerador converte o primeiro frame aceito pelo Pillow para JPEG RGB de qualidade 94, valida o arquivo temporário, aplica modo `0644` e faz rename atômico para `/var/lib/hyprism/sddm/current-wallpaper.jpg`. As cores do mesmo tema são publicadas atomicamente no diretório de estado. O greeter usa esse caminho estável, portanto não depende da leitura de `~/Imagens` e não exige sudo por troca. O SDDM não é reiniciado; a nova imagem aparece na próxima tela de login. Para staging, `HYPRISM_SDDM_STATE_DIR=/tmp/hyprism-sddm-test` redireciona os dois artefatos.
+
+Antes da geração inicial, o instalador cria o diretório de estado e garante um wallpaper compatível. Se a pasta do usuário estiver vazia, `wallpapers/abyss.svg` gera `hyprism-abyss.png`. A mesma execução inicial produz o estado de Hyprlock e SDDM, instala o drop-in e só então conclui, de modo que o primeiro greeter já encontra uma imagem legível.
 
 O instalador copia os wallpapers incluídos e executa a pipeline inicial antes de considerar Hyprlock pronto. Assim, `hyprlock-colors.conf`, o `hyprlock.conf` dinâmico completo e `state/lock-wallpaper` já existem no primeiro bloqueio. A configuração instalada em `~/.config/hypr/hyprlock.conf` é um fallback autossuficiente de cor sólida; `scripts/system/lock` executa o arquivo dinâmico quando todos os recursos são válidos e faz `exec hyprlock` com o fallback caso contrário. `Alt+L` continua sendo um binding direto do Hyprland, sem depender do Quickshell. Para evitar a captura inicial que falhava no caminho gráfico do VirtualBox, o lock desativa seu próprio fade e seleciona screencopy por memória compartilhada. `scripts/system/validate-hyprlock` passa os dois arquivos pelo parser real do Hyprlock usando deliberadamente um display Wayland inexistente, portanto valida propriedades e cores sem bloquear a sessão. A instalação oficial usa uma única transação `pacman -Syu` para não misturar versões de Hyprlock, Hyprland, aquamarine e Mesa.
 
@@ -147,6 +168,7 @@ Qt 6 usa `QT_QPA_PLATFORMTHEME=qt6ct`, uma única chave válida de tema de plata
 | `Alt+Ctrl+P` | Seletor de cor |
 | `Alt+Shift+S` | Captura de região |
 | `Alt+Shift+F` | Captura do monitor focado |
+| `Alt+Shift+R` | Selecionar gravação; durante a gravação, parar |
 | `Alt+L` | Bloqueio com Hyprlock |
 | `Alt+P` | Alternar pseudotile pela API Lua atual |
 | `Alt+W` | Fechar janela diretamente pelo Hyprland |
@@ -344,6 +366,34 @@ test -s ~/.cache/hyprism/theme/foot.ini && echo 'tema do Foot encontrado'
 
 `foot -C` apenas valida a configuração na VM. Se o arquivo gerado estiver ausente, execute novamente o instalador ou selecione um papel de parede com `hyprism-wallpaper set CAMINHO`.
 
+### Gravação não iniciou
+
+Na VM, verifique o backend, o seletor e o destino:
+
+```bash
+pacman -Q wf-recorder slurp
+command -v wf-recorder slurp
+test -d ~/Vídeos/gravacoes && test -w ~/Vídeos/gravacoes
+qs -c default ipc call shell status | jq '{recording,recordingPending,recordingSelecting,recordingMode,recordingOutputPath,recordingProcessId}'
+```
+
+`Tela inteira` usa o monitor com `focused=true` em `hyprctl -j monitors`. Cancelar `slurp` não cria arquivo. Se uma instância anterior ainda estiver finalizando, o lock por sessão rejeita a nova em vez de encerrar um processo desconhecido.
+
+### SDDM não carregou o tema dinâmico
+
+Sem reiniciar o SDDM dentro de uma sessão ativa, valide:
+
+```bash
+pacman -Q sddm
+cat /etc/sddm.conf.d/20-hyprism.conf
+readlink -f /usr/share/sddm/themes/hyprism-ksddm/theme.conf
+stat -c '%U:%G:%a %n' /var/lib/hyprism/sddm
+file /var/lib/hyprism/sddm/current-wallpaper.jpg
+grep -E '^(background|accent-color|surface-color)=' /var/lib/hyprism/sddm/theme.conf
+```
+
+O diretório de estado deve pertencer ao usuário instalado, usar modo `755` e conter arquivos `644`; o tema em `/usr/share/sddm/themes` e o drop-in continuam root-owned.
+
 ### Verificação manual da estabilização
 
 Na VM, confirme estes pontos depois de iniciar uma sessão nova:
@@ -366,8 +416,10 @@ config/hypr/        configuração Lua modular do Hyprland
 config/quickshell/  shell, painéis, widgets, serviços, notificações e OSD
 config/foot/        configuração e tema de fallback do Foot
 config/kitty/       suporte opcional ao Kitty
+config/sddm/        drop-in mínimo do tema de login
 scripts/            backends, wallpaper e geração de tema
 packages/           listas reproduzíveis de pacotes oficiais e AUR
+themes/             fontes vendorizadas de temas externos adaptados
 wallpapers/         papéis de parede de teste incluídos
 install.sh          implantação Arch reproduzível
 ```
