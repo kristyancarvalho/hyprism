@@ -329,7 +329,7 @@ PanelWindow {
                     text: "Parar"
                     iconName: "close"
                     compact: true
-                    destructive: true
+                    warning: true
                     onClicked: controller.stopRecording()
                 }
             }

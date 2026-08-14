@@ -95,7 +95,7 @@ A tela configurada em `config/user.json` tem prioridade quando existe. Em seguid
 
 Foot é o terminal padrão porque é um terminal Wayland pequeno, rápido e adequado ao ambiente gráfico virtual. `Alt+Return` é um atalho direto do Hyprland para o programa centralizado em `modules/programs.lua`; ele não depende do Quickshell.
 
-`config/foot/foot.ini` usa JetBrains Mono Nerd Font 11.5, padding de 10 px, cursor beam, fundo escuro com opacidade 0,88 e a mesma paleta semântica do shell. A regra `foot-background-blur` mantém o blur do compositor habilitado para a classe `foot`, tornando a transparência perceptível sem afetar os demais aplicativos. Kitty permanece instalado e configurado como alternativa, mas não é o padrão. `$TERMINAL` também aponta para `foot`.
+`config/foot/foot.ini` usa JetBrains Mono Nerd Font 11.5, padding de 10 px, cursor beam, fundo escuro com opacidade 0,82 e a mesma paleta semântica do shell. A regra `foot-background-blur` mantém o blur do compositor habilitado para a classe `foot`, tornando a transparência perceptível sem afetar os demais aplicativos. Kitty permanece instalado e configurado como alternativa, mas não é o padrão. `$TERMINAL` também aponta para `foot`.
 
 ## Papel de parede e cores
 

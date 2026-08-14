@@ -8,6 +8,7 @@ Rectangle {
     property string iconName: ""
     property bool active: false
     property bool destructive: false
+    property bool warning: false
     property bool compact: false
     property bool available: true
     property bool pending: false
@@ -17,7 +18,7 @@ Rectangle {
     implicitWidth: content.implicitWidth + (compact ? 18 : 26)
     implicitHeight: compact ? 30 : 38
     radius: Design.radiusDefault
-    color: destructive && available ? theme.colors.error : active && available ? theme.colors.accentDim : hovered ? theme.colors.surfaceHover : theme.colors.surfaceVariant
+    color: warning && available ? theme.colors.warning : destructive && available ? theme.colors.error : active && available ? theme.colors.accentDim : hovered ? theme.colors.surfaceHover : theme.colors.surfaceVariant
     border.width: activeFocus ? 2 : 0
     border.color: theme.colors.borderFocused
     opacity: available ? pending ? .72 : 1 : .5
@@ -32,13 +33,13 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             name: button.pending ? "refresh" : button.iconName
             iconSize: button.compact ? Design.iconXs : Design.iconSm
-            color: button.theme.colors.foreground
+            color: button.warning && button.available ? button.theme.colors.background : button.theme.colors.foreground
         }
 
         Text {
             anchors.verticalCenter: parent.verticalCenter
             text: button.text
-            color: button.theme.colors.foreground
+            color: button.warning && button.available ? button.theme.colors.background : button.theme.colors.foreground
             font.family: Design.fontFamily
             font.pixelSize: button.compact ? Design.fontSizeXs : Design.fontSizeSm
             font.weight: Design.fontWeightMedium

@@ -244,7 +244,7 @@ def render_foot(theme):
         f'selection-foreground={theme["foreground"][1:]}',
         f'selection-background={theme["surfaceVariant"][1:]}',
         f'urls={theme["accent"][1:]}',
-        "alpha=0.88",
+        "alpha=0.82",
     ]
     colors = terminal_colors(theme)
     lines.extend(f"regular{index}={color[1:]}" for index, color in enumerate(colors[:8]))
