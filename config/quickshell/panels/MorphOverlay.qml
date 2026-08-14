@@ -67,6 +67,9 @@ PanelWindow {
         } else if (mode === "switcher") {
             width = Math.min(safeWidth, 920)
             height = 220
+        } else if (mode === "recordingSelector") {
+            width = Math.min(safeWidth, 480)
+            height = 184
         }
         return {
             width: Math.round(Design.clamp(width, 320, Math.min(safeWidth, Design.morphSurfaceMaxWidth))),
@@ -151,7 +154,7 @@ PanelWindow {
             id: content
             anchors.fill: parent
             opacity: 1
-            sourceComponent: window.localMode === "launcher" ? launcher : window.localMode === "wallpaper" ? wallpaper : window.localMode === "clipboard" ? clipboardPanel : window.localMode === "control" ? control : window.localMode === "network" ? network : window.localMode === "bluetooth" ? bluetooth : window.localMode === "power" ? power : window.localMode === "emoji" ? emoji : window.localMode === "switcher" ? switcher : window.localMode === "hover" ? expanded : compactContent
+            sourceComponent: window.localMode === "launcher" ? launcher : window.localMode === "wallpaper" ? wallpaper : window.localMode === "clipboard" ? clipboardPanel : window.localMode === "control" ? control : window.localMode === "network" ? network : window.localMode === "bluetooth" ? bluetooth : window.localMode === "power" ? power : window.localMode === "emoji" ? emoji : window.localMode === "switcher" ? switcher : window.localMode === "recordingSelector" ? recordingSelector : window.localMode === "hover" ? expanded : compactContent
             onLoaded: {
                 opacity = 0
                 contentReveal.restart()
@@ -256,7 +259,7 @@ PanelWindow {
             }
 
             MediaStrip {
-                visible: controller.mediaAvailable()
+                visible: controller.mediaAvailable() && !controller.recording
                 anchors.centerIn: parent
                 width: Math.min(410, parent.width * .48)
                 controller: window.controller
@@ -264,7 +267,7 @@ PanelWindow {
             }
 
             Column {
-                visible: !controller.mediaAvailable()
+                visible: !controller.mediaAvailable() && !controller.recording
                 anchors.centerIn: parent
 
                 Text {
@@ -282,6 +285,37 @@ PanelWindow {
                     color: theme.colors.mutedForeground
                     font.family: Design.fontFamily
                     font.pixelSize: Design.fontSizeXs
+                }
+            }
+
+            Row {
+                visible: controller.recording
+                anchors.centerIn: parent
+                spacing: Design.spacingSm
+
+                StatusIcon {
+                    anchors.verticalCenter: parent.verticalCenter
+                    name: "recording"
+                    iconSize: Design.iconSm
+                    color: theme.colors.error
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Gravando · " + controller.recordingElapsedText()
+                    color: theme.colors.foreground
+                    font.family: Design.fontFamily
+                    font.pixelSize: Design.fontSizeSm
+                    font.weight: Design.fontWeightSemibold
+                }
+
+                ShellButton {
+                    theme: window.theme
+                    text: "Parar"
+                    iconName: "close"
+                    compact: true
+                    destructive: true
+                    onClicked: controller.stopRecording()
                 }
             }
 
@@ -336,4 +370,5 @@ PanelWindow {
     Component { id: power; PowerMenu { controller: window.controller; theme: window.theme } }
     Component { id: emoji; EmojiPicker { controller: window.controller; theme: window.theme } }
     Component { id: switcher; WindowSwitcher { controller: window.controller; theme: window.theme } }
+    Component { id: recordingSelector; RecordingSelector { controller: window.controller; theme: window.theme } }
 }

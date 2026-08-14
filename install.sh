@@ -57,6 +57,10 @@ passwd_entry=$(getent passwd "$target_user" || true)
 target_home=$(cut -d: -f6 <<<"$passwd_entry")
 target_group=$(id -gn "$target_user")
 [[ -d $target_home ]] || { printf 'A pasta pessoal não existe: %s\n' "$target_home" >&2; exit 1; }
+if ((dry_run == 0)) && [[ $(id -u) -ne 0 ]]; then
+  printf 'Execute o instalador com sudo para configurar o SDDM com segurança.\n' >&2
+  exit 1
+fi
 
 if ((install_packages)); then
   [[ $(id -u) -eq 0 ]] || { printf 'Execute com sudo para instalar pacotes ou use --no-packages.\n' >&2; exit 1; }
@@ -75,7 +79,7 @@ quickshell_parent="$target_home/.config/quickshell"
 quickshell_config="$quickshell_parent/hyprism"
 quickshell_default="$quickshell_parent/default"
 
-run install -d -o "$target_user" -g "$target_group" "$target_home/.config" "$target_home/.local/bin" "$target_home/.local/share" "$target_home/Imagens/Wallpapers" "$target_home/Imagens/Screenshots"
+run install -d -o "$target_user" -g "$target_group" "$target_home/.config" "$target_home/.local/bin" "$target_home/.local/share" "$target_home/Imagens/Wallpapers" "$target_home/Imagens/Screenshots" "$target_home/Vídeos/gravacoes"
 backup_path "$runtime_root"
 run install -d -o "$target_user" -g "$target_group" "$runtime_root/config" "$runtime_root/scripts"
 run cp -a "$repo_dir/config/." "$runtime_root/config/"
@@ -84,6 +88,17 @@ if ((dry_run == 0)); then
   chown -R "$target_user:$target_group" "$runtime_root"
   chmod +x "$runtime_root/scripts/wallpaper" "$runtime_root"/scripts/theme/*.py "$runtime_root"/scripts/system/*
 fi
+
+sddm_theme_dir="/usr/share/sddm/themes/hyprism-ksddm"
+sddm_state_dir="/var/lib/hyprism/sddm"
+sddm_dropin="/etc/sddm.conf.d/20-hyprism.conf"
+run install -d -m 0755 /var/lib/hyprism
+run install -d -m 0755 -o "$target_user" -g "$target_group" "$sddm_state_dir"
+run install -d -m 0755 "$sddm_theme_dir" /etc/sddm.conf.d
+run rm -f "$sddm_theme_dir/theme.conf"
+run cp -a "$repo_dir/themes/ksddm-hyprism/." "$sddm_theme_dir/"
+run ln -sfn "$sddm_state_dir/theme.conf" "$sddm_theme_dir/theme.conf"
+run install -m 0644 "$repo_dir/config/sddm/20-hyprism.conf" "$sddm_dropin"
 
 locale -a 2>/dev/null | grep -Eiq '^C\.UTF-?8$|^C\.utf8$|^en_US\.UTF-?8$' \
   || { printf 'O sistema precisa oferecer ao menos um locale UTF-8.\n' >&2; exit 1; }
@@ -97,12 +112,19 @@ if [[ ! -s $font_regular || ! -s $font_medium || ! -s $font_semibold ]]; then
 else
   printf 'Google Sans Flex já está instalada.\n'
 fi
+run install -d -m 0755 /usr/local/share/fonts/hyprism
+run install -m 0644 "$font_regular" "$font_medium" "$font_semibold" /usr/local/share/fonts/hyprism/
+if ((dry_run == 0)); then run fc-cache -f /usr/local/share/fonts/hyprism; fi
 
 for image in "$repo_dir"/wallpapers/*.{png,jpg,jpeg,webp}; do
   [[ -f $image ]] || continue
   destination="$target_home/Imagens/Wallpapers/$(basename "$image")"
   if [[ ! -e $destination ]]; then run install -m 0644 -o "$target_user" -g "$target_group" "$image" "$destination"; fi
 done
+if ! find -P "$target_home/Imagens/Wallpapers" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print -quit | grep -q .; then
+  command -v magick >/dev/null || { printf 'ImageMagick é obrigatório para criar o wallpaper inicial.\n' >&2; exit 1; }
+  as_user magick -background none "$repo_dir/wallpapers/abyss.svg" "$target_home/Imagens/Wallpapers/hyprism-abyss.png"
+fi
 
 colloid_revision=6c2dc65865628bda9fdc8157a30cd5eda6fd41f9
 colloid_name=Colloid-Hyprism-Dark-Matugen
@@ -136,11 +158,11 @@ theme_dir="$target_home/.cache/hyprism/theme"
 state_dir="$target_home/.cache/hyprism/state"
 run install -d -o "$target_user" -g "$target_group" "$theme_dir" "$state_dir"
 first_wallpaper=$(find -P "$target_home/Imagens/Wallpapers" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print -quit)
-if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/hyprlock.conf || ! -s $theme_dir/colloid/_color-palette-matugen.scss || ! -s $theme_dir/colloid-gtk-4.0/gtk.css || ! -s $colloid_theme/gtk-3.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig || ! -s $theme_dir/icons/Hyprism-Papirus/index.theme || ! -e $state_dir/lock-wallpaper ]]; then
+if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/hyprlock.conf || ! -s $theme_dir/colloid/_color-palette-matugen.scss || ! -s $theme_dir/colloid-gtk-4.0/gtk.css || ! -s $colloid_theme/gtk-3.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig || ! -s $theme_dir/icons/Hyprism-Papirus/index.theme || ! -e $state_dir/lock-wallpaper || ! -s $sddm_state_dir/current-wallpaper.jpg || ! -s $sddm_state_dir/theme.conf ]]; then
   if [[ -n ${first_wallpaper:-} ]]; then
-    as_user env HYPRISM_ROOT="$runtime_root" "$runtime_root/scripts/wallpaper" set "$first_wallpaper"
+    as_user env HYPRISM_ROOT="$runtime_root" HYPRISM_SDDM_STATE_DIR="$sddm_state_dir" "$runtime_root/scripts/wallpaper" set "$first_wallpaper"
   else
-    as_user env HYPRISM_CACHE_DIR="$target_home/.cache/hyprism" "$runtime_root/scripts/theme/generate-theme.py"
+    as_user env HYPRISM_CACHE_DIR="$target_home/.cache/hyprism" HYPRISM_SDDM_STATE_DIR="$sddm_state_dir" "$runtime_root/scripts/theme/generate-theme.py"
   fi
 fi
 if [[ ! -s $theme_dir/foot.ini ]]; then
@@ -191,6 +213,10 @@ if ((dry_run == 0)); then
     || { printf 'O tema de ícones Papirus não foi instalado.\n' >&2; exit 1; }
   [[ -s $theme_dir/hyprlock-colors.conf && -e $state_dir/lock-wallpaper ]] \
     || { printf 'Os recursos iniciais do Hyprlock não foram gerados.\n' >&2; exit 1; }
+  [[ -s $sddm_theme_dir/Main.qml && -s $sddm_theme_dir/metadata.desktop && -L $sddm_theme_dir/theme.conf && -s $sddm_state_dir/theme.conf && -s $sddm_state_dir/current-wallpaper.jpg && -s $sddm_dropin ]] \
+    || { printf 'O tema dinâmico do SDDM não foi instalado corretamente.\n' >&2; exit 1; }
+  [[ $(stat -c '%U:%G:%a' "$sddm_state_dir") == "$target_user:$target_group:755" ]] \
+    || { printf 'As permissões do estado dinâmico do SDDM são inválidas.\n' >&2; exit 1; }
   [[ $(as_user fc-match --format '%{family}\n' 'Google Sans Flex') == *"Google Sans Flex"* ]] \
     || { printf 'A fonte Google Sans Flex não foi indexada pelo Fontconfig.\n' >&2; exit 1; }
   [[ $(as_user fc-match --format '%{family}\n' 'Symbols Nerd Font Mono') == *"Symbols Nerd Font Mono"* ]] \
@@ -207,14 +233,15 @@ fi
 
 if ((dry_run == 0)); then
   if command -v systemctl >/dev/null && [[ $(id -u) -eq 0 ]]; then
-    systemctl enable NetworkManager.service bluetooth.service
+    systemctl enable NetworkManager.service bluetooth.service sddm.service
   fi
 fi
 
 missing=()
-for command in Hyprland hyprlock qs foot kitty matugen awww awww-daemon python3 jq curl git sassc kvantummanager qt5ct qt6ct fc-cache fc-match wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp hyprpicker brightnessctl wf-recorder hyprsunset powerprofilesctl; do command -v "$command" >/dev/null || missing+=("$command"); done
+for command in Hyprland hyprlock qs foot kitty matugen awww awww-daemon python3 jq curl git sassc kvantummanager qt5ct qt6ct fc-cache fc-match wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp hyprpicker brightnessctl wf-recorder hyprsunset powerprofilesctl sddm-greeter-qt6; do command -v "$command" >/dev/null || missing+=("$command"); done
 printf '\nHyprism instalado para %s.\n' "$target_user"
 printf 'Configurações: %s/.config/{hypr,quickshell/default,quickshell/hyprism,foot,kitty,gtk-3.0,gtk-4.0,Kvantum,qt5ct,qt6ct}\n' "$target_home"
 printf 'Papéis de parede: %s/Imagens/Wallpapers\nCapturas de tela: %s/Imagens/Screenshots\n' "$target_home" "$target_home"
+printf 'Gravações: %s/Vídeos/gravacoes\nTema de login: %s\nWallpaper do SDDM: %s/current-wallpaper.jpg\n' "$target_home" "$sddm_theme_dir" "$sddm_state_dir"
 if ((${#missing[@]})); then printf 'Executáveis ausentes: %s\n' "${missing[*]}" >&2; exit 1; else printf 'Todos os executáveis essenciais foram validados.\n'; fi
 printf 'Encerre a sessão e selecione o Hyprland para iniciar.\n'

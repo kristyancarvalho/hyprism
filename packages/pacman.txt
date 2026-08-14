@@ -1,5 +1,6 @@
 hyprland
 hyprlock
+sddm
 quickshell
 qt6-imageformats
 

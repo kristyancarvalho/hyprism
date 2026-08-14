@@ -1,0 +1,11 @@
+[SddmGreeterTheme]
+Name=Hyprism KSDDM
+Type=sddm-theme
+Description=Tema KSDDM integrado ao Hyprism
+License=GPL-3.0-or-later
+Version=1.0.0
+Theme-Id=hyprism-ksddm
+Theme-API=2.0
+MainScript=Main.qml
+QtVersion=6
+ConfigFile=theme.conf

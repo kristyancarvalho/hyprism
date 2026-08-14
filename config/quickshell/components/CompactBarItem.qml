@@ -15,6 +15,7 @@ Rectangle {
     property int labelMaximumWidth: -1
     property int horizontalPadding: filled ? Design.compactPillPadding : Design.compactPlainPadding
     property int labelWeight: selected ? Design.fontWeightSemibold : Design.fontWeightMedium
+    property color iconColor: selected ? theme.colors.background : theme.colors.foreground
     signal clicked()
     implicitWidth: content.implicitWidth + horizontalPadding * 2
     implicitHeight: Design.compactItemHeight
@@ -31,7 +32,7 @@ Rectangle {
         CompactBarIcon {
             visible: item.iconName.length > 0
             name: item.iconName
-            color: item.selected ? item.theme.colors.background : item.theme.colors.foreground
+            color: item.iconColor
         }
 
         CompactBarLabel {

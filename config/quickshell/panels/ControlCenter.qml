@@ -219,6 +219,45 @@ Item {
                 onChanged: value => panel.setBrightness(value)
             }
 
+            Rectangle {
+                width: parent.width
+                height: controller.recording ? 54 : 0
+                visible: controller.recording
+                radius: Design.radiusSm
+                color: panel.theme.colors.surfaceVariant
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: Design.spacingSm
+                    spacing: Design.spacingSm
+
+                    StatusIcon {
+                        name: "recording"
+                        iconSize: Design.iconSm
+                        color: panel.theme.colors.error
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: "Gravando · " + controller.recordingElapsedText()
+                        color: panel.theme.colors.foreground
+                        font.family: Design.fontFamily
+                        font.pixelSize: Design.fontSizeSm
+                        font.weight: Design.fontWeightSemibold
+                    }
+
+                    ShellButton {
+                        id: stopRecordingButton
+                        theme: panel.theme
+                        text: "Parar"
+                        iconName: "close"
+                        compact: true
+                        destructive: true
+                        onClicked: controller.stopRecording()
+                    }
+                }
+            }
+
             Rectangle { width: parent.width; height: 1; color: panel.theme.colors.borderSubtle; opacity: .55 }
 
             MediaStrip {

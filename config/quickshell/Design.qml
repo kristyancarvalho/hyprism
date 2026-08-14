@@ -140,7 +140,10 @@ QtObject {
         services: "󰒋",
         tasks: "󰄬",
         processes: "󰧑",
-        calendar: "󰃭"
+        calendar: "󰃭",
+        recording: "󰑋",
+        recordRegion: "󰩭",
+        recordMonitor: "󰍹"
     })
 
     function icon(name) {
@@ -167,6 +170,15 @@ QtObject {
         const value = Math.max(0, Math.floor(safeNumber(seconds, 0)))
         const minutes = Math.floor(value / 60)
         return minutes + ":" + String(value % 60).padStart(2, "0")
+    }
+
+    function formatRecordingDuration(seconds) {
+        const value = Math.max(0, Math.floor(safeNumber(seconds, 0)))
+        const hours = Math.floor(value / 3600)
+        const minutes = Math.floor(value % 3600 / 60)
+        const remaining = String(value % 60).padStart(2, "0")
+        if (hours > 0) return String(hours).padStart(2, "0") + ":" + String(minutes).padStart(2, "0") + ":" + remaining
+        return String(minutes).padStart(2, "0") + ":" + remaining
     }
 
     function notificationCount(count) {
