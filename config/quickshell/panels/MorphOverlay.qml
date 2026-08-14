@@ -156,11 +156,11 @@ PanelWindow {
             opacity: 1
             sourceComponent: window.localMode === "launcher" ? launcher : window.localMode === "wallpaper" ? wallpaper : window.localMode === "clipboard" ? clipboardPanel : window.localMode === "control" ? control : window.localMode === "network" ? network : window.localMode === "bluetooth" ? bluetooth : window.localMode === "power" ? power : window.localMode === "emoji" ? emoji : window.localMode === "switcher" ? switcher : window.localMode === "recordingSelector" ? recordingSelector : window.localMode === "hover" ? expanded : compactContent
             onLoaded: {
+                contentReveal.stop()
                 opacity = 0
-                contentReveal.restart()
+                contentReveal.start()
                 focusTimer.restart()
             }
-            Behavior on opacity { NumberAnimation { duration: Design.animationInstant; easing.type: Easing.OutCubic } }
         }
     }
 
@@ -171,7 +171,7 @@ PanelWindow {
         from: 0
         to: 1
         duration: window.morphDuration
-        easing.type: Easing.OutCubic
+        easing.type: Design.easingMorph
     }
 
     Timer {
@@ -208,10 +208,14 @@ PanelWindow {
         onTriggered: if (window.interactive) window.acceptsFocusDismissal = true
     }
 
-    Timer {
+    NumberAnimation {
         id: contentReveal
-        interval: 20
-        onTriggered: content.opacity = 1
+        target: content
+        property: "opacity"
+        from: 0
+        to: 1
+        duration: window.morphDuration
+        easing.type: Design.easingEnter
     }
 
     Timer {
@@ -305,7 +309,7 @@ PanelWindow {
 
                 Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
-                    color: theme.colors.error
+                    color: theme.colors.warning
                     width: 8
                     height: 8
                     radius: 4

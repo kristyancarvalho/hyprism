@@ -52,23 +52,23 @@ Item {
 
             Item {
                 visible: compact.controller.recording
-                width: 10
+                width: Design.recordingDotCompactSize + 4
                 height: Design.compactItemHeight
                 opacity: 1
 
                 Rectangle {
                     anchors.centerIn: parent
-                    width: 7
-                    height: 7
-                    radius: 3.5
-                    color: compact.theme.colors.error
+                    width: Design.recordingDotCompactSize
+                    height: Design.recordingDotCompactSize
+                    radius: width / 2
+                    color: compact.theme.colors.warning
                 }
 
                 SequentialAnimation on opacity {
                     running: compact.controller.recording
                     loops: Animation.Infinite
-                    NumberAnimation { from: 1; to: .4; duration: 700; easing.type: Easing.InOutSine }
-                    NumberAnimation { from: .4; to: 1; duration: 700; easing.type: Easing.InOutSine }
+                    NumberAnimation { from: 1; to: .4; duration: 650; easing.type: Easing.InOutSine }
+                    NumberAnimation { from: .4; to: 1; duration: 650; easing.type: Easing.InOutSine }
                 }
             }
 

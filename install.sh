@@ -33,6 +33,21 @@ backup_path() {
   run mv "$destination" "$backup"
   printf 'Backup criado: %s → %s\n' "$destination" "$backup"
 }
+backup_copy() {
+  local source=$1 relative backup
+  [[ -e $source || -L $source ]] || return 0
+  relative=${source#"$target_home"/}; backup="$target_home/.local/state/hyprism/backups/$timestamp/$relative"
+  run install -d -o "$target_user" -g "$target_group" "$(dirname "$backup")"
+  run cp -a "$source" "$backup"
+  printf 'Backup criado: %s → %s\n' "$source" "$backup"
+}
+ensure_user_line() {
+  local destination=$1 line=$2
+  [[ -f $destination ]] && grep -Fqx -- "$line" "$destination" && return 0
+  backup_copy "$destination"
+  run install -d -o "$target_user" -g "$target_group" "$(dirname "$destination")"
+  as_user sh -c 'touch "$1"; if [ -s "$1" ] && [ -n "$(tail -c 1 "$1")" ]; then printf "\n" >> "$1"; fi; printf "%s\n" "$2" >> "$1"' sh "$destination" "$line"
+}
 link_path() {
   local source=$1 destination=$2
   if [[ -L $destination && $(readlink -f "$destination" 2>/dev/null || true) == $(readlink -f "$source") ]]; then return; fi
@@ -56,6 +71,7 @@ passwd_entry=$(getent passwd "$target_user" || true)
 [[ -n $passwd_entry ]] || { printf 'Usuário desconhecido: %s\n' "$target_user" >&2; exit 1; }
 target_home=$(cut -d: -f6 <<<"$passwd_entry")
 target_group=$(id -gn "$target_user")
+target_shell=$(basename "$(cut -d: -f7 <<<"$passwd_entry")")
 [[ -d $target_home ]] || { printf 'A pasta pessoal não existe: %s\n' "$target_home" >&2; exit 1; }
 if ((dry_run == 0)) && [[ $(id -u) -ne 0 ]]; then
   printf 'Execute o instalador com sudo para configurar o SDDM com segurança.\n' >&2
@@ -75,6 +91,8 @@ if ((install_packages)); then
 fi
 
 runtime_root="$target_home/.local/share/hyprism"
+theme_dir="$target_home/.cache/hyprism/theme"
+state_dir="$target_home/.cache/hyprism/state"
 quickshell_parent="$target_home/.config/quickshell"
 quickshell_config="$quickshell_parent/hyprism"
 quickshell_default="$quickshell_parent/default"
@@ -146,6 +164,37 @@ link_path "$runtime_root/config/qt5ct/qt5ct.conf" "$target_home/.config/qt5ct/qt
 link_path "$runtime_root/config/qt6ct/qt6ct.conf" "$target_home/.config/qt6ct/qt6ct.conf"
 link_path "$runtime_root/config/Kvantum/kvantum.kvconfig" "$target_home/.config/Kvantum/kvantum.kvconfig"
 link_path "$runtime_root/config/environment.d/90-hyprism.conf" "$target_home/.config/environment.d/90-hyprism.conf"
+if [[ -s $theme_dir/nvim/matugen.lua ]]; then
+  run install -m 0644 -o "$target_user" -g "$target_group" "$theme_dir/nvim/matugen.lua" "$runtime_root/config/nvim/lua/themes/matugen.lua"
+fi
+link_path "$runtime_root/config/nvim" "$target_home/.config/nvim"
+link_path "$theme_dir/starship.toml" "$target_home/.config/starship.toml"
+link_path "$theme_dir/tmux.conf" "$target_home/.config/tmux/theme.conf"
+
+tmux_include='source-file -q ~/.config/tmux/theme.conf'
+if [[ -e $target_home/.config/tmux/tmux.conf || -L $target_home/.config/tmux/tmux.conf ]]; then
+  ensure_user_line "$target_home/.config/tmux/tmux.conf" "$tmux_include"
+elif [[ -e $target_home/.tmux.conf || -L $target_home/.tmux.conf ]]; then
+  ensure_user_line "$target_home/.tmux.conf" "$tmux_include"
+else
+  link_path "$runtime_root/config/tmux/tmux.conf" "$target_home/.config/tmux/tmux.conf"
+fi
+
+case "$target_shell" in
+  zsh)
+    link_path "$runtime_root/config/shell/starship.zsh" "$target_home/.config/hyprism/starship.zsh"
+    ensure_user_line "$target_home/.zshrc" 'source "$HOME/.config/hyprism/starship.zsh"'
+    ;;
+  bash)
+    link_path "$runtime_root/config/shell/starship.bash" "$target_home/.config/hyprism/starship.bash"
+    ensure_user_line "$target_home/.bashrc" 'source "$HOME/.config/hyprism/starship.bash"'
+    ;;
+  fish)
+    link_path "$runtime_root/config/shell/starship.fish" "$target_home/.config/hyprism/starship.fish"
+    ensure_user_line "$target_home/.config/fish/config.fish" 'source "$HOME/.config/hyprism/starship.fish"'
+    ;;
+  *) printf 'Shell %s mantido sem inicialização automática do Starship.\n' "$target_shell" ;;
+esac
 
 link_path "$runtime_root/scripts/wallpaper" "$target_home/.local/bin/hyprism-wallpaper"
 link_path "$runtime_root/scripts/system/action" "$target_home/.local/bin/hyprism-action"
@@ -154,11 +203,9 @@ link_path "$runtime_root/scripts/system/start-shell" "$target_home/.local/bin/hy
 link_path "$runtime_root/scripts/system/shell-ipc" "$target_home/.local/bin/hyprism-shell-ipc"
 link_path "$runtime_root/scripts/system/lock" "$target_home/.local/bin/hyprism-lock"
 
-theme_dir="$target_home/.cache/hyprism/theme"
-state_dir="$target_home/.cache/hyprism/state"
 run install -d -o "$target_user" -g "$target_group" "$theme_dir" "$state_dir"
 first_wallpaper=$(find -P "$target_home/Imagens/Wallpapers" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print -quit)
-if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/hyprlock.conf || ! -s $theme_dir/colloid/_color-palette-matugen.scss || ! -s $theme_dir/colloid-gtk-4.0/gtk.css || ! -s $colloid_theme/gtk-3.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig || ! -s $theme_dir/icons/Hyprism-Papirus/index.theme || ! -e $state_dir/lock-wallpaper || ! -s $sddm_state_dir/current-wallpaper.jpg || ! -s $sddm_state_dir/theme.conf ]]; then
+if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/hyprlock.conf || ! -s $theme_dir/colloid/_color-palette-matugen.scss || ! -s $theme_dir/colloid-gtk-4.0/gtk.css || ! -s $colloid_theme/gtk-3.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig || ! -s $theme_dir/icons/Hyprism-Papirus/index.theme || ! -s $theme_dir/starship.toml || ! -s $theme_dir/tmux.conf || ! -s $theme_dir/nvim/matugen.lua || ! -s $target_home/.config/nvim/lua/themes/matugen.lua || ! -e $state_dir/lock-wallpaper || ! -s $sddm_state_dir/current-wallpaper.jpg || ! -s $sddm_state_dir/theme.conf ]]; then
   if [[ -n ${first_wallpaper:-} ]]; then
     as_user env HYPRISM_ROOT="$runtime_root" HYPRISM_SDDM_STATE_DIR="$sddm_state_dir" "$runtime_root/scripts/wallpaper" set "$first_wallpaper"
   else
@@ -203,6 +250,10 @@ if ((dry_run == 0)); then
     || { printf 'O ponto de entrada do Quickshell não foi instalado.\n' >&2; exit 1; }
   [[ -f $target_home/.config/foot/foot.ini && -s $theme_dir/foot.ini && -f $theme_dir/kitty.conf && -s $theme_dir/hyprlock-colors.conf && -s $theme_dir/hyprlock.conf ]] \
     || { printf 'A configuração ou um tema de fallback está ausente.\n' >&2; exit 1; }
+  [[ -s $target_home/.config/starship.toml && -s $target_home/.config/tmux/theme.conf && -s $target_home/.config/nvim/init.lua && -s $target_home/.config/nvim/lua/themes/matugen.lua ]] \
+    || { printf 'O ambiente de desenvolvimento temático não foi instalado.\n' >&2; exit 1; }
+  ! grep -Rqs '{{colors\.' "$target_home/.config/starship.toml" "$target_home/.config/tmux/theme.conf" "$target_home/.config/nvim/lua/themes/matugen.lua" \
+    || { printf 'Há valores Matugen não resolvidos no ambiente de desenvolvimento.\n' >&2; exit 1; }
   [[ -s $colloid_theme/gtk-3.0/gtk.css && -s $colloid_theme/gtk-4.0/gtk.css ]] \
     || { printf 'O tema Colloid-Hyprism não foi instalado.\n' >&2; exit 1; }
   [[ -s $target_home/.config/gtk-4.0/gtk.css && -d $target_home/.config/gtk-4.0/assets && -s $target_home/.config/Kvantum/Hyprism/Hyprism.kvconfig && -s $target_home/.local/share/icons/Hyprism-Papirus/index.theme ]] \
@@ -242,10 +293,11 @@ if ((dry_run == 0)); then
 fi
 
 missing=()
-for command in Hyprland hyprlock qs foot kitty matugen awww awww-daemon python3 jq curl git sassc kvantummanager qt5ct qt6ct fc-cache fc-match wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp hyprpicker brightnessctl wf-recorder hyprsunset powerprofilesctl sddm-greeter-qt6; do command -v "$command" >/dev/null || missing+=("$command"); done
+for command in Hyprland hyprlock qs foot kitty matugen starship tmux nvim awww awww-daemon python3 jq curl git sassc kvantummanager qt5ct qt6ct fc-cache fc-match wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp hyprpicker brightnessctl wf-recorder hyprsunset powerprofilesctl sddm-greeter-qt6; do command -v "$command" >/dev/null || missing+=("$command"); done
 printf '\nHyprism instalado para %s.\n' "$target_user"
 printf 'Configurações: %s/.config/{hypr,quickshell/default,quickshell/hyprism,foot,kitty,gtk-3.0,gtk-4.0,Kvantum,qt5ct,qt6ct}\n' "$target_home"
 printf 'Papéis de parede: %s/Imagens/Wallpapers\nCapturas de tela: %s/Imagens/Screenshots\n' "$target_home" "$target_home"
 printf 'Gravações: %s/Vídeos/gravacoes\nTema de login: %s\nWallpaper do SDDM: %s/current-wallpaper.jpg\n' "$target_home" "$sddm_theme_dir" "$sddm_state_dir"
+printf 'Starship: %s/.config/starship.toml\ntmux: %s/.config/tmux/theme.conf\nNvChad: %s/.config/nvim\n' "$target_home" "$target_home" "$target_home"
 if ((${#missing[@]})); then printf 'Executáveis ausentes: %s\n' "${missing[*]}" >&2; exit 1; else printf 'Todos os executáveis essenciais foram validados.\n'; fi
 printf 'Encerre a sessão e selecione o Hyprland para iniciar.\n'

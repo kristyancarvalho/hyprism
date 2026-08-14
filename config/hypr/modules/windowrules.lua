@@ -4,3 +4,9 @@ hl.layer_rule({
     blur = true,
     ignore_alpha = 0.08,
 })
+
+hl.window_rule({
+    name = "foot-background-blur",
+    match = { class = "^foot$" },
+    no_blur = false,
+})

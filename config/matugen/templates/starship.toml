@@ -1,0 +1,151 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+add_newline = false
+
+format = """
+$directory\
+[](fg:primary bg:primary_container)\
+$git_branch\
+$git_status\
+[](fg:primary_container bg:tertiary)\
+$nodejs\
+$python\
+$rust\
+$golang\
+[](fg:tertiary bg:surface_high)\
+$docker_context\
+[](fg:surface_high bg:surface_highest)\
+$package\
+[ ](fg:surface_highest bg:background)"""
+
+right_format = """
+$status\
+$cmd_duration\
+$jobs\
+$time"""
+
+palette = 'matugen'
+
+[directory]
+style = "bold fg:on_primary bg:primary"
+format = "[   $path$read_only ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+read_only = " 󰌾"
+
+[directory.substitutions]
+"Documentos" = "󰈙 "
+"Downloads" = " "
+"Músicas" = "󰝚 "
+"Imagens" = " "
+"www" = "󰲋 "
+
+[git_branch]
+symbol = ""
+style = "bold fg:on_primary_container bg:primary_container"
+format = "[ $symbol $branch ]($style)"
+
+[git_status]
+style = "bold fg:error bg:primary_container"
+format = "[ $all_status$ahead_behind ]($style)"
+conflicted = " "
+ahead = "⇡${count} "
+behind = "⇣${count} "
+diverged = "⇕⇡${ahead_count}⇣${behind_count} "
+up_to_date = ""
+untracked = "?${count} "
+stashed = "${count} "
+modified = "!${count} "
+staged = "+${count} "
+renamed = "»${count} "
+deleted = "✘${count} "
+
+[nodejs]
+symbol = ""
+style = "bold fg:on_tertiary bg:tertiary"
+format = "[ $symbol $version ]($style)"
+
+[python]
+symbol = ""
+style = "bold fg:on_tertiary bg:tertiary"
+format = "[ $symbol $pyenv_prefix$version( $virtualenv) ]($style)"
+
+[rust]
+symbol = ""
+style = "bold fg:on_tertiary bg:tertiary"
+format = "[ $symbol $version ]($style)"
+
+[golang]
+symbol = ""
+style = "bold fg:on_tertiary bg:tertiary"
+format = "[ $symbol $version ]($style)"
+
+[docker_context]
+symbol = ""
+style = "bold fg:on_surface bg:surface_high"
+format = "[ $symbol $context ]($style)"
+only_with_files = true
+
+[package]
+symbol = "󰏗"
+style = "bold fg:on_surface bg:surface_highest"
+format = "[ $symbol $version ]($style)"
+
+[status]
+disabled = false
+symbol = "✘ "
+success_symbol = ""
+style = "bold fg:on_error_container bg:error_container"
+format = "[](fg:error_container)[ $symbol$status ]($style)[](fg:error_container bg:background) "
+
+[cmd_duration]
+show_milliseconds = true
+style = "fg:on_surface_variant"
+format = "[󰔟 $duration ]($style)[](fg:outline)"
+disabled = false
+show_notifications = true
+min_time_to_notify = 45000
+
+[jobs]
+symbol = ""
+style = "fg:on_surface_variant"
+format = "[$symbol $number ]($style)[](fg:outline)"
+
+[time]
+disabled = false
+time_format = "%H:%M"
+style = "bold fg:on_primary bg:primary"
+format = "[](fg:primary)[ 󰥔 $time ]($style)"
+
+[line_break]
+disabled = true
+
+[character]
+disabled = true
+
+[palettes.matugen]
+background = "{{colors.background.default.hex}}"
+primary = "{{colors.primary.default.hex}}"
+on_primary = "{{colors.on_primary.default.hex}}"
+primary_container = "{{colors.primary_container.default.hex}}"
+on_primary_container = "{{colors.on_primary_container.default.hex}}"
+secondary = "{{colors.secondary.default.hex}}"
+on_secondary = "{{colors.on_secondary.default.hex}}"
+secondary_container = "{{colors.secondary_container.default.hex}}"
+on_secondary_container = "{{colors.on_secondary_container.default.hex}}"
+tertiary = "{{colors.tertiary.default.hex}}"
+on_tertiary = "{{colors.on_tertiary.default.hex}}"
+tertiary_container = "{{colors.tertiary_container.default.hex}}"
+on_tertiary_container = "{{colors.on_tertiary_container.default.hex}}"
+error = "{{colors.error.default.hex}}"
+on_error = "{{colors.on_error.default.hex}}"
+error_container = "{{colors.error_container.default.hex}}"
+on_error_container = "{{colors.on_error_container.default.hex}}"
+primary_fixed_dim = "{{colors.primary_fixed_dim.default.hex}}"
+on_primary_fixed_variant = "{{colors.on_primary_fixed_variant.default.hex}}"
+surface = "{{colors.surface_container.default.hex}}"
+surface_high = "{{colors.surface_container_high.default.hex}}"
+surface_highest = "{{colors.surface_container_highest.default.hex}}"
+on_surface = "{{colors.on_surface.default.hex}}"
+on_surface_variant = "{{colors.on_surface_variant.default.hex}}"
+outline = "{{colors.outline.default.hex}}"

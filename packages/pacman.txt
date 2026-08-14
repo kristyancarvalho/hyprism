@@ -8,6 +8,9 @@ qt6-virtualkeyboard
 kitty
 foot
 matugen
+starship
+tmux
+neovim
 awww
 adwaita-icon-theme
 papirus-icon-theme

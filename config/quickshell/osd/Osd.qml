@@ -11,9 +11,9 @@ Glass {
     height: 58
     radius: Design.radiusMd
     surfaceOpacity: .96
-    visible: controller.osdKind.length > 0
-    opacity: visible ? 1 : 0
-    Behavior on opacity { NumberAnimation { duration: Design.animationFast } }
+    visible: opacity > 0
+    opacity: controller.osdKind.length > 0 ? 1 : 0
+    Behavior on opacity { NumberAnimation { duration: Design.animationFast; easing.type: controller.osdKind.length > 0 ? Design.easingEnter : Design.easingExit } }
 
     Row {
         anchors.fill: parent
