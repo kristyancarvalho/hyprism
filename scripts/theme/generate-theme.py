@@ -29,9 +29,11 @@ FALLBACK = {
     "inactive_border": "#304653",
     "error": "#e4777f",
 }
+SDDM_STATE = pathlib.Path(os.environ.get("HYPRISM_SDDM_STATE_DIR", "/var/lib/hyprism/sddm"))
+SDDM_STATE_EXPLICIT = "HYPRISM_SDDM_STATE_DIR" in os.environ
 
 
-def write(path, value):
+def write(path, value, mode=None):
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary = tempfile.mkstemp(prefix=".hyprism-", dir=path.parent)
     try:
@@ -39,6 +41,8 @@ def write(path, value):
             handle.write(value)
             handle.flush()
             os.fsync(handle.fileno())
+        if mode is not None:
+            os.chmod(temporary, mode)
         os.replace(temporary, path)
     except BaseException:
         pathlib.Path(temporary).unlink(missing_ok=True)
@@ -266,6 +270,57 @@ def render_hyprlock_config(theme):
         else:
             lines.append(line)
     return colors + "\n" + "\n".join(lines) + "\n"
+
+
+def render_sddm(theme):
+    values = {
+        "background": (SDDM_STATE / "current-wallpaper.jpg").resolve().as_uri(),
+        "background-color": theme["background"],
+        "surface-color": theme["surface"],
+        "surface-hover-color": theme["surfaceHover"],
+        "foreground-color": theme["foreground"],
+        "muted-color": theme["mutedForeground"],
+        "accent-color": theme["accent"],
+        "accent-foreground-color": theme["accentForeground"],
+        "error-color": theme["error"],
+    }
+    return "[General]\n" + "".join(f"{key}={value}\n" for key, value in values.items())
+
+
+def publish_sddm(theme, image):
+    if not SDDM_STATE.exists():
+        if not SDDM_STATE_EXPLICIT:
+            return False
+        SDDM_STATE.mkdir(parents=True, exist_ok=True)
+    if not SDDM_STATE.is_dir() or not os.access(SDDM_STATE, os.W_OK):
+        print(f"Tema do Hyprism: estado do SDDM sem permissão de escrita em {SDDM_STATE}", file=sys.stderr)
+        return False
+    wallpaper = SDDM_STATE / "current-wallpaper.jpg"
+    temporary_wallpaper = None
+    try:
+        if image:
+            descriptor, temporary_wallpaper = tempfile.mkstemp(prefix=".current-wallpaper-", suffix=".jpg", dir=SDDM_STATE)
+            os.close(descriptor)
+            with Image.open(image) as source:
+                source.seek(0)
+                converted = source.convert("RGB")
+                converted.save(temporary_wallpaper, format="JPEG", quality=94, optimize=True)
+            with open(temporary_wallpaper, "rb") as handle:
+                os.fsync(handle.fileno())
+            with Image.open(temporary_wallpaper) as verification:
+                verification.verify()
+            os.chmod(temporary_wallpaper, 0o644)
+            os.replace(temporary_wallpaper, wallpaper)
+            temporary_wallpaper = None
+        if not wallpaper.is_file() or not os.access(wallpaper, os.R_OK):
+            raise ValueError("wallpaper legível ausente")
+        write(SDDM_STATE / "theme.conf", render_sddm(theme), 0o644)
+        return True
+    except (OSError, ValueError) as error:
+        if temporary_wallpaper:
+            pathlib.Path(temporary_wallpaper).unlink(missing_ok=True)
+        print(f"Tema do Hyprism: estado anterior do SDDM preservado após falha ({error})", file=sys.stderr)
+        return False
 
 
 def render_colloid(matugen, theme):
@@ -543,6 +598,8 @@ def main():
     publish(OUT / "hyprland.lua", render_hyprland(theme), validate_colors)
     publish(OUT / "hyprlock-colors.conf", render_hyprlock(theme), validate_colors)
     publish(OUT / "hyprlock.conf", render_hyprlock_config(theme), validate_colors)
+    publish(OUT / "sddm/theme.conf", render_sddm(theme), validate_colors)
+    publish_sddm(theme, image)
     try:
         colloid_palette = OUT / "colloid/_color-palette-matugen.scss"
         if publish(colloid_palette, render_colloid(matugen, theme), validate_colors):
