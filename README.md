@@ -25,7 +25,7 @@ O instalador:
 - baixa Google Sans Flex 400, 500 e 600 diretamente do CDN oficial do Google Fonts, em URLs versionadas e verificadas por SHA-256, sem redistribuir binários no repositório;
 - instala o Colloid no escopo do usuário a partir de uma revisão upstream fixada e cria a variante dinâmica `Colloid-Hyprism-Dark-Matugen`;
 - provisiona Hyprlock, Kvantum para Qt 5/6, `qt5ct`, `qt6ct` e as ferramentas de compilação do tema GTK;
-- provisiona Starship, tmux, Neovim, Fastfetch e uma configuração NvChad v2.5 integrada ao tema;
+- provisiona Starship, tmux com TPM e plugins, Neovim, Fastfetch e uma configuração NvChad v2.5 integrada ao tema;
 - cria `~/Imagens/Wallpapers`, `~/Imagens/Screenshots` e `~/Vídeos/gravacoes` sem apagar conteúdo existente;
 - instala o KSDDM adaptado em `/usr/share/sddm/themes/hyprism-ksddm`, publica somente o drop-in `/etc/sddm.conf.d/20-hyprism.conf` e habilita o serviço SDDM sem reiniciá-lo;
 - copia os arquivos runtime para `~/.local/share/hyprism`, sem depender do local original do clone;
@@ -143,7 +143,9 @@ O papel semântico `warning` parte do `error` produzido pela mesma paleta Matuge
 
 O template `config/matugen/templates/starship.toml` gera o prompt Powerline completo em `~/.config/starship.toml`. O instalador detecta somente o shell de login do usuário entre zsh, bash e fish, liga o fragmento correspondente e acrescenta uma única linha idempotente ao arquivo de inicialização. O Starship relê a configuração a cada prompt, portanto terminais existentes recebem a nova paleta no comando seguinte.
 
-O template `config/matugen/templates/tmux.conf` gera exclusivamente a camada visual. Uma instalação sem configuração cria `~/.config/tmux/tmux.conf`; quando já existe `.config/tmux/tmux.conf` ou `.tmux.conf`, o instalador preserva seu conteúdo e acrescenta somente `source-file -q ~/.config/tmux/theme.conf`, com backup anterior. Depois de uma mudança real, o gerador consulta `tmux list-sessions`; somente quando um servidor padrão já existe executa `source-file`, sem criar servidor, encerrar sessão ou falhar a aplicação dos outros temas.
+O template `config/matugen/templates/tmux.conf` gera exclusivamente a camada visual. O instalador liga a configuração completa de `config/tmux/tmux.conf` a `~/.tmux.conf`, arquiva configurações anteriores e mantém o tema dinâmico em `~/.config/tmux/theme.conf`. Essa configuração habilita mouse, histórico de 10.000 linhas, true color, índices iniciados em 1, teclas vi, splits no diretório atual, navegação e resize estilo Vim, atalhos de janelas, sessões, cópia e reload.
+
+O TPM é obtido diretamente do upstream em uma revisão fixada e instalado em `~/.tmux/plugins/tpm`. Na mesma execução, o instalador baixa os plugins declarados: `tmux-sensible`, `tmux-yank`, `tmux-resurrect` e `tmux-continuum`; restore automático e captura do conteúdo dos painéis ficam habilitados. Depois de uma mudança real de paleta, o gerador consulta `tmux list-sessions`; somente quando um servidor padrão já existe executa `source-file`, sem criar servidor, encerrar sessão ou falhar a aplicação dos outros temas.
 
 `config/nvim` contém o bootstrap completo do NvChad v2.5, os imports de plugins, opções, mappings, statusline Powerline e um tema de fallback válido. Matugen renderiza `config/matugen/templates/nvchad.lua` atomicamente no cache e em `~/.config/nvim/lua/themes/matugen.lua`. `lua/autocmds.lua` observa esse diretório, consolida eventos por 150 ms e chama `nvchad.utils.reload` numa instância já aberta; `VimLeavePre` encerra timer e watcher. Uma configuração Neovim anterior é movida integralmente para `~/.local/state/hyprism/backups/` antes de a versão gerenciada ser ligada.
 
