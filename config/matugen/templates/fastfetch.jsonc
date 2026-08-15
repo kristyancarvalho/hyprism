@@ -96,7 +96,7 @@
     },
     {
       "type": "command",
-      "key": "󰖳 Qt",
+      "key": "󰉼 Qt",
       "text": "config=\"${XDG_CONFIG_HOME:-$HOME/.config}/Kvantum/kvantum.kvconfig\"; theme=$(sed -n 's/^theme=//p' \"$config\" | head -n 1); case \"${QT_STYLE_OVERRIDE:-}\" in kvantum|Kvantum) style=Kvantum ;; '') style= ;; *) style=$QT_STYLE_OVERRIDE ;; esac; if [ -n \"$theme\" ] && [ -n \"$style\" ]; then printf '%s / %s\\n' \"$theme\" \"$style\"; elif [ -n \"$theme\" ]; then printf '%s\\n' \"$theme\"; elif [ -n \"$style\" ]; then printf '%s\\n' \"$style\"; else exit 1; fi"
     },
     "break",
