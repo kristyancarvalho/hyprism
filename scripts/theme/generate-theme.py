@@ -34,6 +34,8 @@ FALLBACK = {
 SDDM_STATE = pathlib.Path(os.environ.get("HYPRISM_SDDM_STATE_DIR", "/var/lib/hyprism/sddm"))
 SDDM_STATE_EXPLICIT = "HYPRISM_SDDM_STATE_DIR" in os.environ
 NVIM_THEME = pathlib.Path(os.environ.get("HYPRISM_NVIM_THEME_PATH", HOME / ".config/nvim/lua/themes/matugen.lua"))
+FASTFETCH_DIR = pathlib.Path(os.environ.get("HYPRISM_FASTFETCH_DIR", pathlib.Path(os.environ.get("XDG_CONFIG_HOME", HOME / ".config")) / "fastfetch"))
+FASTFETCH_LOGO_SOURCE = ROOT / "config/fastfetch/images/archlinux.svg"
 
 
 def write(path, value, mode=None):
@@ -459,6 +461,109 @@ def render_matugen_template(name, matugen, theme):
     return rendered
 
 
+def render_hyprism_template(name, theme):
+    template = (MATUGEN_TEMPLATES / name).read_text(encoding="utf-8")
+    pattern = re.compile(r"\{\{hyprism\.([A-Za-z0-9_]+)\}\}")
+
+    def color(match):
+        role = match.group(1)
+        if role not in theme:
+            raise ValueError(f"cor do Hyprism ausente: {role}")
+        rgb(theme[role])
+        return theme[role]
+
+    rendered = pattern.sub(color, template)
+    validate_colors(rendered)
+    return rendered
+
+
+def validate_fastfetch(content):
+    validate_colors(content)
+    config = json.loads(content)
+    logo = config.get("logo", {})
+    if logo.get("type") != "auto" or logo.get("source") != "~/.config/fastfetch/images/archlinux.png":
+        raise ValueError("logo de imagem do Fastfetch ausente")
+    modules = {module if isinstance(module, str) else module.get("type") for module in config.get("modules", [])}
+    required = {"title", "os", "kernel", "uptime", "packages", "shell", "wm", "terminal", "memory", "disk", "theme", "command", "custom"}
+    if not required.issubset(modules):
+        raise ValueError("módulos obrigatórios do Fastfetch ausentes")
+
+
+def validate_png(path):
+    with Image.open(path) as image:
+        image.verify()
+    with Image.open(path) as image:
+        if image.format != "PNG" or image.width < 256 or image.height < 256:
+            raise ValueError("imagem PNG do Fastfetch inválida")
+        rgba = image.convert("RGBA")
+        alpha_minimum, alpha_maximum = rgba.getchannel("A").getextrema()
+        if alpha_minimum != 0 or alpha_maximum == 0 or rgba.getbbox() is None:
+            raise ValueError("transparência do logo do Fastfetch inválida")
+
+
+def render_fastfetch_logo(theme):
+    content = FASTFETCH_LOGO_SOURCE.read_text(encoding="utf-8")
+    replacements = {
+        "#1793d1": theme["accent"],
+        "#3da5d9": theme["secondary"],
+        "#57b1de": mix(theme["accent"], theme["foreground"], .24),
+    }
+    for source, destination in replacements.items():
+        if source not in content.lower():
+            raise ValueError(f"região de cor ausente no logo: {source}")
+        content = re.sub(re.escape(source), destination, content, flags=re.IGNORECASE)
+    ElementTree.fromstring(content)
+    return content, replacements
+
+
+def publish_fastfetch_logo(theme):
+    target = FASTFETCH_DIR / "images/archlinux.png"
+    stamp = OUT / "fastfetch/logo-palette.json"
+    temporary = None
+    try:
+        rendered, colors = render_fastfetch_logo(theme)
+        signature = json_text(colors)
+        if stamp.is_file() and stamp.read_text(encoding="utf-8") == signature and target.is_file():
+            try:
+                validate_png(target)
+            except (OSError, ValueError):
+                pass
+            else:
+                return False
+        executable = shutil.which("magick")
+        if not executable:
+            raise ValueError("ImageMagick ausente")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        descriptor, temporary = tempfile.mkstemp(prefix=".archlinux-", suffix=".png", dir=target.parent)
+        os.close(descriptor)
+        result = subprocess.run(
+            [executable, "-background", "none", "svg:-", "-resize", "640x640", f"PNG32:{temporary}"],
+            input=rendered,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=30,
+        )
+        if result.returncode != 0:
+            raise ValueError((result.stderr or result.stdout).strip() or "falha no ImageMagick")
+        validate_png(temporary)
+        with open(temporary, "rb") as handle:
+            os.fsync(handle.fileno())
+        os.chmod(temporary, 0o644)
+        os.replace(temporary, target)
+        temporary = None
+        try:
+            write(stamp, signature)
+        except OSError as error:
+            print(f"Tema do Hyprism: estado de cores do Fastfetch não foi salvo ({error})", file=sys.stderr)
+        return True
+    except (OSError, ValueError, subprocess.SubprocessError, ElementTree.ParseError) as error:
+        if temporary:
+            pathlib.Path(temporary).unlink(missing_ok=True)
+        print(f"Tema do Hyprism: logo anterior do Fastfetch preservado após falha ({error})", file=sys.stderr)
+        return False
+
+
 def validate_starship(content):
     validate_colors(content)
     tomllib.loads(content)
@@ -715,6 +820,12 @@ def main():
         publish(NVIM_THEME, nvchad, validate_nvchad)
     except (OSError, ValueError, TypeError) as error:
         print(f"Tema do Hyprism: NvChad preservado após falha ({error})", file=sys.stderr)
+    try:
+        fastfetch = render_hyprism_template("fastfetch.jsonc", theme)
+        publish(OUT / "fastfetch/config.jsonc", fastfetch, validate_fastfetch)
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as error:
+        print(f"Tema do Hyprism: configuração anterior do Fastfetch preservada após falha ({error})", file=sys.stderr)
+    publish_fastfetch_logo(theme)
     try:
         colloid_palette = OUT / "colloid/_color-palette-matugen.scss"
         if publish(colloid_palette, render_colloid(matugen, theme), validate_colors):
