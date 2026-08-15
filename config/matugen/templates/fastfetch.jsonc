@@ -1,0 +1,109 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "type": "auto",
+    "source": "~/.config/fastfetch/images/archlinux.png",
+    "width": 24,
+    "height": 13,
+    "preserveAspectRatio": true,
+    "padding": {
+      "top": 1,
+      "left": 2,
+      "right": 3
+    }
+  },
+  "display": {
+    "separator": "  ",
+    "color": {
+      "keys": "{{hyprism.accent}}",
+      "title": "{{hyprism.accent}}",
+      "output": "{{hyprism.foreground}}",
+      "separator": "{{hyprism.outline}}"
+    },
+    "key": {
+      "width": 13
+    },
+    "size": {
+      "binaryPrefix": "IEC",
+      "maxPrefix": "GB",
+      "ndigits": 1,
+      "spaceBeforeUnit": "never"
+    },
+    "percent": {
+      "ndigits": 0,
+      "spaceBeforeUnit": "never"
+    }
+  },
+  "modules": [
+    "break",
+    {
+      "type": "title",
+      "format": "{#{{hyprism.accent}}}{user-name}{#{{hyprism.mutedForeground}}}@{#{{hyprism.secondary}}}{host-name}{#}"
+    },
+    {
+      "type": "separator",
+      "string": "──────────────────"
+    },
+    {
+      "type": "os",
+      "key": "󰣇 OS",
+      "format": "{name} {arch}"
+    },
+    {
+      "type": "kernel",
+      "key": "󰒋 Kernel",
+      "format": "{sysname} {release}"
+    },
+    {
+      "type": "uptime",
+      "key": "󱑎 Uptime",
+      "format": "{formatted}"
+    },
+    {
+      "type": "packages",
+      "key": "󰏖 Packages"
+    },
+    {
+      "type": "shell",
+      "key": "󱆃 Shell",
+      "format": "{pretty-name} {version}"
+    },
+    {
+      "type": "wm",
+      "key": "󱂬 WM",
+      "format": "{pretty-name} {version} ({protocol-name})"
+    },
+    {
+      "type": "terminal",
+      "key": "󰆍 Terminal",
+      "format": "{pretty-name}{?version} {version}{?}"
+    },
+    {
+      "type": "memory",
+      "key": "󰍛 Memory",
+      "format": "{used} / {total} {#{{hyprism.mutedForeground}}}({percentage}){#}"
+    },
+    {
+      "type": "disk",
+      "key": "󰋊 Storage",
+      "folders": "/",
+      "format": "{size-used} / {size-total} {#{{hyprism.mutedForeground}}}({size-percentage}){#}"
+    },
+    {
+      "type": "theme",
+      "key": "󰉼 GTK",
+      "format": "{theme2}"
+    },
+    {
+      "type": "command",
+      "key": "󰖳 Qt",
+      "text": "config=\"${XDG_CONFIG_HOME:-$HOME/.config}/Kvantum/kvantum.kvconfig\"; theme=$(sed -n 's/^theme=//p' \"$config\" | head -n 1); case \"${QT_STYLE_OVERRIDE:-}\" in kvantum|Kvantum) style=Kvantum ;; '') style= ;; *) style=$QT_STYLE_OVERRIDE ;; esac; if [ -n \"$theme\" ] && [ -n \"$style\" ]; then printf '%s / %s\\n' \"$theme\" \"$style\"; elif [ -n \"$theme\" ]; then printf '%s\\n' \"$theme\"; elif [ -n \"$style\" ]; then printf '%s\\n' \"$style\"; else exit 1; fi"
+    },
+    "break",
+    {
+      "type": "custom",
+      "format": "{#{{hyprism.accent}}}●{#} {#{{hyprism.secondary}}}●{#} {#{{hyprism.success}}}●{#} {#{{hyprism.foreground}}}●{#} {#{{hyprism.mutedForeground}}}●{#} {#{{hyprism.outline}}}●{#} {#{{hyprism.warning}}}●{#} {#{{hyprism.error}}}●{#}"
+    },
+    "break"
+  ]
+}

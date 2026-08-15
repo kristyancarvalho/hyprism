@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <path id="arch" d="M512 0C472 99 433 189 390 281 296 483 188 704 0 1024c151-87 288-143 406-173-16-77-5-151 29-207 22-37 49-59 77-59s55 22 77 59c34 56 45 130 29 207 118 30 255 86 406 173C836 704 728 483 634 281 591 189 552 99 512 0Z"/>
+    <mask id="cutout">
+      <rect width="1024" height="1024" fill="white"/>
+      <path d="M406 851c-16-77-5-151 29-207 22-37 49-59 77-59s55 22 77 59c34 56 45 130 29 207 68 17 139 42 213 74v99H193v-99c74-32 145-57 213-74Z" fill="black"/>
+    </mask>
+    <clipPath id="shape">
+      <use href="#arch"/>
+    </clipPath>
+  </defs>
+  <g mask="url(#cutout)">
+    <use href="#arch" fill="#1793d1"/>
+    <path d="M-20 1044C190 895 346 741 493 690c158-55 324-18 551 132v222Z" fill="#3da5d9" clip-path="url(#shape)"/>
+    <path d="M512 0c48 119 95 229 146 338 38 81 78 164 121 249-66-41-137-70-213-84L388 293c39-84 82-180 124-293Z" fill="#57b1de" clip-path="url(#shape)"/>
+  </g>
+</svg>

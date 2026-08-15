@@ -25,11 +25,11 @@ O instalador:
 - baixa Google Sans Flex 400, 500 e 600 diretamente do CDN oficial do Google Fonts, em URLs versionadas e verificadas por SHA-256, sem redistribuir binários no repositório;
 - instala o Colloid no escopo do usuário a partir de uma revisão upstream fixada e cria a variante dinâmica `Colloid-Hyprism-Dark-Matugen`;
 - provisiona Hyprlock, Kvantum para Qt 5/6, `qt5ct`, `qt6ct` e as ferramentas de compilação do tema GTK;
-- provisiona Starship, tmux, Neovim e uma configuração NvChad v2.5 integrada ao tema;
+- provisiona Starship, tmux, Neovim, Fastfetch e uma configuração NvChad v2.5 integrada ao tema;
 - cria `~/Imagens/Wallpapers`, `~/Imagens/Screenshots` e `~/Vídeos/gravacoes` sem apagar conteúdo existente;
 - instala o KSDDM adaptado em `/usr/share/sddm/themes/hyprism-ksddm`, publica somente o drop-in `/etc/sddm.conf.d/20-hyprism.conf` e habilita o serviço SDDM sem reiniciá-lo;
 - copia os arquivos runtime para `~/.local/share/hyprism`, sem depender do local original do clone;
-- cria links para `~/.config/hypr`, `~/.config/quickshell/default`, o alias `~/.config/quickshell/hyprism`, Foot, Kitty, Starship, tmux, NvChad, GTK 3/4, Kvantum, Qt 5/6 e a configuração do usuário;
+- cria links para `~/.config/hypr`, `~/.config/quickshell/default`, o alias `~/.config/quickshell/hyprism`, Foot, Kitty, Fastfetch, Starship, tmux, NvChad, GTK 3/4, Kvantum, Qt 5/6 e a configuração do usuário;
 - guarda conflitos em `~/.local/state/hyprism/backups/`;
 - verifica `hyprland.lua`, `shell.qml`, `foot.ini` e o tema de fallback do Foot;
 - não instala nem ativa um `hyprland.conf` legado.
@@ -110,6 +110,7 @@ papel de parede
           ├─ Starship
           ├─ tmux
           ├─ NvChad
+          ├─ Fastfetch
           ├─ GTK 2/3/4 e libadwaita sobre Colloid-Hyprism
           ├─ pastas do Hyprism-Papirus
           ├─ Kvantum para Qt 5/6
@@ -126,6 +127,8 @@ papel de parede
 - `~/.cache/hyprism/theme/starship.toml`, ligado a `~/.config/starship.toml`;
 - `~/.cache/hyprism/theme/tmux.conf`, ligado a `~/.config/tmux/theme.conf`;
 - `~/.cache/hyprism/theme/nvim/matugen.lua` e `~/.config/nvim/lua/themes/matugen.lua` para o NvChad;
+- `~/.cache/hyprism/theme/fastfetch/config.jsonc`, ligado a `~/.config/fastfetch/config.jsonc`;
+- `~/.config/fastfetch/images/archlinux.png` como logo transparente recolorido;
 - `~/.cache/hyprism/theme/colloid/_color-palette-matugen.scss` como entrada semântica do Colloid;
 - `~/.cache/hyprism/theme/colloid-gtk-4.0/` como saída fixa do libadwaita;
 - `~/.cache/hyprism/theme/icons/Hyprism-Papirus` como tema herdado de ícones, contendo somente pastas recoloridas;
@@ -143,6 +146,10 @@ O template `config/matugen/templates/starship.toml` gera o prompt Powerline comp
 O template `config/matugen/templates/tmux.conf` gera exclusivamente a camada visual. Uma instalação sem configuração cria `~/.config/tmux/tmux.conf`; quando já existe `.config/tmux/tmux.conf` ou `.tmux.conf`, o instalador preserva seu conteúdo e acrescenta somente `source-file -q ~/.config/tmux/theme.conf`, com backup anterior. Depois de uma mudança real, o gerador consulta `tmux list-sessions`; somente quando um servidor padrão já existe executa `source-file`, sem criar servidor, encerrar sessão ou falhar a aplicação dos outros temas.
 
 `config/nvim` contém o bootstrap completo do NvChad v2.5, os imports de plugins, opções, mappings, statusline Powerline e um tema de fallback válido. Matugen renderiza `config/matugen/templates/nvchad.lua` atomicamente no cache e em `~/.config/nvim/lua/themes/matugen.lua`. `lua/autocmds.lua` observa esse diretório, consolida eventos por 150 ms e chama `nvchad.utils.reload` numa instância já aberta; `VimLeavePre` encerra timer e watcher. Uma configuração Neovim anterior é movida integralmente para `~/.local/state/hyprism/backups/` antes de a versão gerenciada ser ligada.
+
+O preset do Fastfetch mantém uma imagem Arch à esquerda, título `usuário@host`, informações compactas de sistema, armazenamento raiz, tema GTK detectado e tema Qt lido da configuração ativa do Kvantum. A linha final mostra uma amostra da paleta do Hyprism. O template SVG Arch-blue em `config/fastfetch/images/archlinux.svg` nunca é alterado: cada execução do Matugen aplica o acento canônico, a cor secundária e um realce derivado, rasteriza e valida um PNG temporário e só então substitui atomicamente `~/.config/fastfetch/images/archlinux.png`. Cores idênticas dispensam nova rasterização e uma falha preserva o último logo válido.
+
+Fastfetch usa detecção automática de protocolo de imagem. No Foot, o caminho esperado é SIXEL; terminais compatíveis podem selecionar seu protocolo nativo e terminais sem imagens não recebem bytes de um protocolo fixado incorretamente. Uma linha vazia no começo, o padding superior do logo e uma linha vazia no fim separam a composição dos prompts Powerline do Starship. Toda troca de wallpaper, manual ou aleatória, passa pelo gerador antes de retornar; como Fastfetch lê o JSONC e o PNG a cada execução, o próximo `fastfetch` recebe as novas cores sem watcher, daemon ou reinício do terminal.
 
 Arquivos byte a byte idênticos não são substituídos. Isso evita prompts de I/O desnecessários, recarga do tmux e eventos no watcher do Neovim. Starship, tmux e NvChad falham isoladamente: ausência de um servidor tmux ou de uma configuração NvChad ativa não impede Quickshell, GTK, Papirus, Kvantum ou os demais consumidores de receberem a paleta.
 
@@ -437,6 +444,7 @@ config/hypr/        configuração Lua modular do Hyprland
 config/quickshell/  shell, painéis, widgets, serviços, notificações e OSD
 config/foot/        configuração e tema de fallback do Foot
 config/kitty/       suporte opcional ao Kitty
+config/fastfetch/   fonte vetorial imutável do logo do Fastfetch
 config/matugen/     templates centralizados dos consumidores de tema
 config/nvim/        configuração gerenciada do NvChad v2.5
 config/shell/       inicialização do Starship por shell
