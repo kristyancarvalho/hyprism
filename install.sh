@@ -173,14 +173,8 @@ link_path "$runtime_root/config/nvim" "$target_home/.config/nvim"
 link_path "$theme_dir/starship.toml" "$target_home/.config/starship.toml"
 link_path "$theme_dir/tmux.conf" "$target_home/.config/tmux/theme.conf"
 
-tmux_include='source-file -q ~/.config/tmux/theme.conf'
-if [[ -e $target_home/.config/tmux/tmux.conf || -L $target_home/.config/tmux/tmux.conf ]]; then
-  ensure_user_line "$target_home/.config/tmux/tmux.conf" "$tmux_include"
-elif [[ -e $target_home/.tmux.conf || -L $target_home/.tmux.conf ]]; then
-  ensure_user_line "$target_home/.tmux.conf" "$tmux_include"
-else
-  link_path "$runtime_root/config/tmux/tmux.conf" "$target_home/.config/tmux/tmux.conf"
-fi
+backup_path "$target_home/.config/tmux/tmux.conf"
+link_path "$runtime_root/config/tmux/tmux.conf" "$target_home/.tmux.conf"
 
 case "$target_shell" in
   zsh)
@@ -223,6 +217,27 @@ fi
 if [[ ! -e $theme_dir/kitty.conf ]]; then
   run install -m 0644 -o "$target_user" -g "$target_group" /dev/null "$theme_dir/kitty.conf"
 fi
+
+tpm_revision=e261deb1b47614eed3400089ce7197dc68acc4eb
+tpm_dir="$target_home/.tmux/plugins/tpm"
+tpm_head=$(as_user git -C "$tpm_dir" rev-parse HEAD 2>/dev/null || true)
+if [[ ! -x $tpm_dir/tpm || $tpm_head != "$tpm_revision" ]]; then
+  backup_path "$tpm_dir"
+  run install -d -o "$target_user" -g "$target_group" "$(dirname "$tpm_dir")"
+  as_user git init --quiet "$tpm_dir"
+  as_user git -C "$tpm_dir" remote add origin https://github.com/tmux-plugins/tpm.git
+  as_user env GIT_TERMINAL_PROMPT=0 git -C "$tpm_dir" fetch --quiet --depth 1 origin "$tpm_revision"
+  as_user git -C "$tpm_dir" checkout --quiet --detach FETCH_HEAD
+fi
+if ((dry_run == 0)); then
+  [[ -x $tpm_dir/tpm && $(as_user git -C "$tpm_dir" rev-parse HEAD 2>/dev/null || true) == "$tpm_revision" ]] \
+    || { printf 'O TPM não foi instalado na revisão esperada.\n' >&2; exit 1; }
+  if as_user tmux list-sessions >/dev/null 2>&1; then
+    as_user tmux source-file "$target_home/.tmux.conf"
+  fi
+  as_user "$tpm_dir/bin/install_plugins"
+fi
+
 if [[ -L $target_home/.config/gtk-3.0/gtk.css && $(readlink "$target_home/.config/gtk-3.0/gtk.css") == "$theme_dir/gtk-3.0.css" ]]; then
   backup_path "$target_home/.config/gtk-3.0/gtk.css"
 fi
@@ -249,6 +264,7 @@ if ((dry_run == 0)); then
   verify_link "$runtime_root/config/quickshell" "$quickshell_config"
   verify_link "$theme_dir/fastfetch/config.jsonc" "$target_home/.config/fastfetch/config.jsonc"
   verify_link "$runtime_root/config/fastfetch/images/archlinux.svg" "$target_home/.config/fastfetch/images/archlinux-source.svg"
+  verify_link "$runtime_root/config/tmux/tmux.conf" "$target_home/.tmux.conf"
   [[ -f $target_home/.config/hypr/hyprland.lua ]] \
     || { printf 'O ponto de entrada Lua do Hyprland não foi instalado.\n' >&2; exit 1; }
   [[ ! -e $target_home/.config/hypr/hyprland.conf ]] \
@@ -259,6 +275,8 @@ if ((dry_run == 0)); then
     || { printf 'A configuração ou um tema de fallback está ausente.\n' >&2; exit 1; }
   [[ -s $target_home/.config/starship.toml && -s $target_home/.config/tmux/theme.conf && -s $target_home/.config/nvim/init.lua && -s $target_home/.config/nvim/lua/themes/matugen.lua ]] \
     || { printf 'O ambiente de desenvolvimento temático não foi instalado.\n' >&2; exit 1; }
+  [[ -x $tpm_dir/tpm && -d $target_home/.tmux/plugins/tmux-sensible && -d $target_home/.tmux/plugins/tmux-yank && -d $target_home/.tmux/plugins/tmux-resurrect && -d $target_home/.tmux/plugins/tmux-continuum ]] \
+    || { printf 'O TPM ou seus plugins declarados não foram instalados.\n' >&2; exit 1; }
   [[ -s $target_home/.config/fastfetch/config.jsonc && -s $target_home/.config/fastfetch/images/archlinux.png && -s $target_home/.config/fastfetch/images/archlinux-source.svg ]] \
     || { printf 'O preset temático do Fastfetch não foi instalado.\n' >&2; exit 1; }
   ! grep -ERqs '{{colors\.|{{hyprism\.' "$target_home/.config/starship.toml" "$target_home/.config/tmux/theme.conf" "$target_home/.config/nvim/lua/themes/matugen.lua" "$target_home/.config/fastfetch/config.jsonc" \
@@ -307,7 +325,7 @@ printf '\nHyprism instalado para %s.\n' "$target_user"
 printf 'Configurações: %s/.config/{hypr,quickshell/default,quickshell/hyprism,foot,kitty,gtk-3.0,gtk-4.0,Kvantum,qt5ct,qt6ct}\n' "$target_home"
 printf 'Papéis de parede: %s/Imagens/Wallpapers\nCapturas de tela: %s/Imagens/Screenshots\n' "$target_home" "$target_home"
 printf 'Gravações: %s/Vídeos/gravacoes\nTema de login: %s\nWallpaper do SDDM: %s/current-wallpaper.jpg\n' "$target_home" "$sddm_theme_dir" "$sddm_state_dir"
-printf 'Starship: %s/.config/starship.toml\ntmux: %s/.config/tmux/theme.conf\nNvChad: %s/.config/nvim\n' "$target_home" "$target_home" "$target_home"
+printf 'Starship: %s/.config/starship.toml\ntmux: %s/.tmux.conf (TPM em %s/.tmux/plugins)\nNvChad: %s/.config/nvim\n' "$target_home" "$target_home" "$target_home" "$target_home"
 printf 'Fastfetch: %s/.config/fastfetch/config.jsonc\nLogo do Fastfetch: %s/.config/fastfetch/images/archlinux.png\n' "$target_home" "$target_home"
 if ((${#missing[@]})); then printf 'Executáveis ausentes: %s\n' "${missing[*]}" >&2; exit 1; else printf 'Todos os executáveis essenciais foram validados.\n'; fi
 printf 'Encerre a sessão e selecione o Hyprland para iniciar.\n'
