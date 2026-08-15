@@ -157,6 +157,8 @@ link_path "$runtime_root/config/quickshell" "$quickshell_config"
 link_path "$runtime_root/config/user.json" "$target_home/.config/hyprism/user.json"
 link_path "$runtime_root/config/foot/foot.ini" "$target_home/.config/foot/foot.ini"
 link_path "$runtime_root/config/kitty/kitty.conf" "$target_home/.config/kitty/kitty.conf"
+link_path "$theme_dir/fastfetch/config.jsonc" "$target_home/.config/fastfetch/config.jsonc"
+link_path "$runtime_root/config/fastfetch/images/archlinux.svg" "$target_home/.config/fastfetch/images/archlinux-source.svg"
 link_path "$runtime_root/config/gtk-3.0/settings.ini" "$target_home/.config/gtk-3.0/settings.ini"
 link_path "$runtime_root/config/gtk-4.0/settings.ini" "$target_home/.config/gtk-4.0/settings.ini"
 link_path "$runtime_root/config/gtk-2.0/gtkrc" "$target_home/.gtkrc-2.0"
@@ -204,8 +206,11 @@ link_path "$runtime_root/scripts/system/shell-ipc" "$target_home/.local/bin/hypr
 link_path "$runtime_root/scripts/system/lock" "$target_home/.local/bin/hyprism-lock"
 
 run install -d -o "$target_user" -g "$target_group" "$theme_dir" "$state_dir"
+if [[ ! -s $theme_dir/fastfetch/logo-palette.json ]]; then
+  backup_path "$target_home/.config/fastfetch/images/archlinux.png"
+fi
 first_wallpaper=$(find -P "$target_home/Imagens/Wallpapers" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print -quit)
-if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/hyprlock.conf || ! -s $theme_dir/colloid/_color-palette-matugen.scss || ! -s $theme_dir/colloid-gtk-4.0/gtk.css || ! -s $colloid_theme/gtk-3.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig || ! -s $theme_dir/icons/Hyprism-Papirus/index.theme || ! -s $theme_dir/starship.toml || ! -s $theme_dir/tmux.conf || ! -s $theme_dir/nvim/matugen.lua || ! -s $target_home/.config/nvim/lua/themes/matugen.lua || ! -e $state_dir/lock-wallpaper || ! -s $sddm_state_dir/current-wallpaper.jpg || ! -s $sddm_state_dir/theme.conf ]]; then
+if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/hyprlock.conf || ! -s $theme_dir/colloid/_color-palette-matugen.scss || ! -s $theme_dir/colloid-gtk-4.0/gtk.css || ! -s $colloid_theme/gtk-3.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig || ! -s $theme_dir/icons/Hyprism-Papirus/index.theme || ! -s $theme_dir/starship.toml || ! -s $theme_dir/tmux.conf || ! -s $theme_dir/nvim/matugen.lua || ! -s $target_home/.config/nvim/lua/themes/matugen.lua || ! -s $theme_dir/fastfetch/config.jsonc || ! -s $target_home/.config/fastfetch/images/archlinux.png || ! -e $state_dir/lock-wallpaper || ! -s $sddm_state_dir/current-wallpaper.jpg || ! -s $sddm_state_dir/theme.conf ]]; then
   if [[ -n ${first_wallpaper:-} ]]; then
     as_user env HYPRISM_ROOT="$runtime_root" HYPRISM_SDDM_STATE_DIR="$sddm_state_dir" "$runtime_root/scripts/wallpaper" set "$first_wallpaper"
   else
@@ -242,6 +247,8 @@ if ((dry_run == 0)); then
   verify_link "$runtime_root/config/hypr" "$target_home/.config/hypr"
   verify_link "$runtime_root/config/quickshell" "$quickshell_default"
   verify_link "$runtime_root/config/quickshell" "$quickshell_config"
+  verify_link "$theme_dir/fastfetch/config.jsonc" "$target_home/.config/fastfetch/config.jsonc"
+  verify_link "$runtime_root/config/fastfetch/images/archlinux.svg" "$target_home/.config/fastfetch/images/archlinux-source.svg"
   [[ -f $target_home/.config/hypr/hyprland.lua ]] \
     || { printf 'O ponto de entrada Lua do Hyprland não foi instalado.\n' >&2; exit 1; }
   [[ ! -e $target_home/.config/hypr/hyprland.conf ]] \
@@ -252,7 +259,9 @@ if ((dry_run == 0)); then
     || { printf 'A configuração ou um tema de fallback está ausente.\n' >&2; exit 1; }
   [[ -s $target_home/.config/starship.toml && -s $target_home/.config/tmux/theme.conf && -s $target_home/.config/nvim/init.lua && -s $target_home/.config/nvim/lua/themes/matugen.lua ]] \
     || { printf 'O ambiente de desenvolvimento temático não foi instalado.\n' >&2; exit 1; }
-  ! grep -Rqs '{{colors\.' "$target_home/.config/starship.toml" "$target_home/.config/tmux/theme.conf" "$target_home/.config/nvim/lua/themes/matugen.lua" \
+  [[ -s $target_home/.config/fastfetch/config.jsonc && -s $target_home/.config/fastfetch/images/archlinux.png && -s $target_home/.config/fastfetch/images/archlinux-source.svg ]] \
+    || { printf 'O preset temático do Fastfetch não foi instalado.\n' >&2; exit 1; }
+  ! grep -ERqs '{{colors\.|{{hyprism\.' "$target_home/.config/starship.toml" "$target_home/.config/tmux/theme.conf" "$target_home/.config/nvim/lua/themes/matugen.lua" "$target_home/.config/fastfetch/config.jsonc" \
     || { printf 'Há valores Matugen não resolvidos no ambiente de desenvolvimento.\n' >&2; exit 1; }
   [[ -s $colloid_theme/gtk-3.0/gtk.css && -s $colloid_theme/gtk-4.0/gtk.css ]] \
     || { printf 'O tema Colloid-Hyprism não foi instalado.\n' >&2; exit 1; }
@@ -293,11 +302,12 @@ if ((dry_run == 0)); then
 fi
 
 missing=()
-for command in Hyprland hyprlock qs foot kitty matugen starship tmux nvim awww awww-daemon python3 jq curl git sassc kvantummanager qt5ct qt6ct fc-cache fc-match wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp hyprpicker brightnessctl wf-recorder hyprsunset powerprofilesctl sddm-greeter-qt6; do command -v "$command" >/dev/null || missing+=("$command"); done
+for command in Hyprland hyprlock qs foot kitty fastfetch matugen starship tmux nvim awww awww-daemon python3 jq curl git sassc magick kvantummanager qt5ct qt6ct fc-cache fc-match wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp hyprpicker brightnessctl wf-recorder hyprsunset powerprofilesctl sddm-greeter-qt6; do command -v "$command" >/dev/null || missing+=("$command"); done
 printf '\nHyprism instalado para %s.\n' "$target_user"
 printf 'Configurações: %s/.config/{hypr,quickshell/default,quickshell/hyprism,foot,kitty,gtk-3.0,gtk-4.0,Kvantum,qt5ct,qt6ct}\n' "$target_home"
 printf 'Papéis de parede: %s/Imagens/Wallpapers\nCapturas de tela: %s/Imagens/Screenshots\n' "$target_home" "$target_home"
 printf 'Gravações: %s/Vídeos/gravacoes\nTema de login: %s\nWallpaper do SDDM: %s/current-wallpaper.jpg\n' "$target_home" "$sddm_theme_dir" "$sddm_state_dir"
 printf 'Starship: %s/.config/starship.toml\ntmux: %s/.config/tmux/theme.conf\nNvChad: %s/.config/nvim\n' "$target_home" "$target_home" "$target_home"
+printf 'Fastfetch: %s/.config/fastfetch/config.jsonc\nLogo do Fastfetch: %s/.config/fastfetch/images/archlinux.png\n' "$target_home" "$target_home"
 if ((${#missing[@]})); then printf 'Executáveis ausentes: %s\n' "${missing[*]}" >&2; exit 1; else printf 'Todos os executáveis essenciais foram validados.\n'; fi
 printf 'Encerre a sessão e selecione o Hyprland para iniciar.\n'
