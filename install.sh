@@ -291,7 +291,7 @@ if ((dry_run == 0)); then
     || { printf 'O tema de ícones Papirus não foi instalado.\n' >&2; exit 1; }
   [[ -s $theme_dir/hyprlock-colors.conf && -e $state_dir/lock-wallpaper ]] \
     || { printf 'Os recursos iniciais do Hyprlock não foram gerados.\n' >&2; exit 1; }
-  [[ -s $sddm_theme_dir/Main.qml && -s $sddm_theme_dir/metadata.desktop && -L $sddm_theme_dir/theme.conf && -s $sddm_state_dir/theme.conf && -s $sddm_state_dir/current-wallpaper.jpg && -s $sddm_dropin ]] \
+  [[ -s $sddm_theme_dir/Main.qml && -s $sddm_theme_dir/SessionIdentity.qml && -s $sddm_theme_dir/metadata.desktop && -L $sddm_theme_dir/theme.conf && -s $sddm_state_dir/theme.conf && -s $sddm_state_dir/current-wallpaper.jpg && -s $sddm_dropin ]] \
     || { printf 'O tema dinâmico do SDDM não foi instalado corretamente.\n' >&2; exit 1; }
   [[ -d /usr/lib/qt6/qml/QtQuick/VirtualKeyboard ]] \
     || { printf 'O teclado virtual do SDDM não foi instalado.\n' >&2; exit 1; }
