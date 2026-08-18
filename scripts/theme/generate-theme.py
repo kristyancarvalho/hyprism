@@ -167,6 +167,7 @@ def matugen_palette(image):
         "matugenSource": colors["source_color"]["dark"]["color"],
         "secondary": colors["secondary"]["dark"]["color"],
         "secondary_container": colors["secondary_container"]["dark"]["color"],
+        "tertiary": colors["tertiary"]["dark"]["color"],
         "inactive_border": colors["outline_variant"]["dark"]["color"],
         "error": colors["error"]["dark"]["color"],
     }
@@ -178,21 +179,35 @@ def theme_from(raw, image):
     foreground = accessible_text(raw["foreground"], background, 7)
     accent = faithful_accent(raw["accent"], background)
     secondary = faithful_accent(raw.get("secondary", accent), background, 3.0)
+    tertiary = faithful_accent(raw.get("tertiary", secondary), background, 3.0)
     surface = mix(background, foreground, .075)
     surface_variant = mix(background, foreground, .145)
     outline = mix(background, foreground, .24)
     accent_foreground = background if contrast(accent, background) >= 4.5 else foreground
+    secondary_foreground = background if contrast(secondary, background) >= 4.5 else foreground
+    tertiary_foreground = background if contrast(tertiary, background) >= 4.5 else foreground
+    error = accessible_text(raw.get("error", FALLBACK["error"]), background, 3.2)
+    on_error = accessible_text(background, error, 4.5)
     return {
         "background": background,
         "surface": surface,
+        "surfaceContainer": surface_variant,
+        "surfaceContainerHigh": mix(surface_variant, foreground, .04),
+        "surfaceContainerHighest": mix(surface_variant, foreground, .08),
         "surfaceVariant": surface_variant,
         "surfaceElevated": mix(surface_variant, foreground, .04),
         "surfaceHover": mix(surface_variant, foreground, .08),
         "surfaceActive": mix(accent, background, .64),
         "foreground": foreground,
+        "onSurface": foreground,
         "mutedForeground": mix(background, foreground, .55),
+        "onSurfaceVariant": mix(background, foreground, .55),
         "primary": accent,
+        "onPrimary": accent_foreground,
         "secondary": secondary,
+        "onSecondary": secondary_foreground,
+        "tertiary": tertiary,
+        "onTertiary": tertiary_foreground,
         "secondaryContainer": raw.get("secondary_container", FALLBACK["secondary_container"]),
         "inactiveBorder": raw.get("inactive_border", FALLBACK["inactive_border"]),
         "accent": accent,
@@ -203,7 +218,10 @@ def theme_from(raw, image):
         "borderSubtle": mix(background, outline, .58),
         "borderNormal": outline,
         "borderFocused": accent,
-        "error": accessible_text(raw.get("error", FALLBACK["error"]), background, 3.2),
+        "error": error,
+        "onError": on_error,
+        "errorContainer": mix(error, background, .58),
+        "onErrorContainer": foreground,
         "warning": warning_color(raw.get("error", FALLBACK["error"]), background),
         "success": faithful_accent("#45a66d", background, 3.2),
         "wallpaper": image,
@@ -298,11 +316,17 @@ def render_sddm(theme):
         "background": (SDDM_STATE / "current-wallpaper.jpg").resolve().as_uri(),
         "background-color": theme["background"],
         "surface-color": theme["surface"],
+        "surface-container-color": theme["surfaceContainer"],
+        "surface-container-high-color": theme["surfaceContainerHigh"],
         "surface-hover-color": theme["surfaceHover"],
         "foreground-color": theme["foreground"],
         "muted-color": theme["mutedForeground"],
-        "accent-color": theme["accent"],
-        "accent-foreground-color": theme["accentForeground"],
+        "primary-color": theme["primary"],
+        "on-primary-color": theme["onPrimary"],
+        "secondary-color": theme["secondary"],
+        "tertiary-color": theme["tertiary"],
+        "accent-color": theme["primary"],
+        "accent-foreground-color": theme["onPrimary"],
         "error-color": theme["error"],
     }
     return "[General]\n" + "".join(f"{key}={value}\n" for key, value in values.items())
@@ -456,13 +480,12 @@ def render_matugen_template(name, matugen, theme):
         rgb(value)
         return value
 
-    rendered = pattern.sub(color, template)
+    rendered = render_hyprism_values(pattern.sub(color, template), theme)
     validate_colors(rendered)
     return rendered
 
 
-def render_hyprism_template(name, theme):
-    template = (MATUGEN_TEMPLATES / name).read_text(encoding="utf-8")
+def render_hyprism_values(template, theme):
     pattern = re.compile(r"\{\{hyprism\.([A-Za-z0-9_]+)\}\}")
 
     def color(match):
@@ -475,6 +498,11 @@ def render_hyprism_template(name, theme):
     rendered = pattern.sub(color, template)
     validate_colors(rendered)
     return rendered
+
+
+def render_hyprism_template(name, theme):
+    template = (MATUGEN_TEMPLATES / name).read_text(encoding="utf-8")
+    return render_hyprism_values(template, theme)
 
 
 def validate_fastfetch(content):

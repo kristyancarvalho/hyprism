@@ -36,7 +36,7 @@ local function reload_matugen_theme()
 end
 
 matugen_watcher:start(vim.fs.dirname(matugen_path), {}, function(_, filename)
-  if vim._matugen_theme_generation == matugen_generation and filename == "matugen.lua" then
+  if vim._matugen_theme_generation == matugen_generation and (not filename or filename == "matugen.lua") then
     reload_matugen_theme()
   end
 end)

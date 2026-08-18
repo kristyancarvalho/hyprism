@@ -368,6 +368,7 @@ PanelWindow {
                     visible: controller.system.battery.available
                     theme: window.theme
                     iconName: controller.batteryIconName()
+                    iconColor: window.theme.colors[controller.batteryColorRole()]
                     trailingIconName: controller.batteryCharging() ? "charging" : ""
                     label: controller.batteryExpandedText()
                     filled: false
