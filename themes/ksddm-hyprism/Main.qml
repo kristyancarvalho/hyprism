@@ -209,6 +209,8 @@ FocusScope {
                 border.width: 1
                 border.color: Qt.rgba(root.foregroundColor.r, root.foregroundColor.g, root.foregroundColor.b, .12)
                 clip: true
+                layer.enabled: true
+                layer.smooth: true
 
                 Image {
                     id: avatarImage
@@ -216,7 +218,24 @@ FocusScope {
                     anchors.margins: 3
                     source: root.userIcon
                     fillMode: Image.PreserveAspectCrop
-                    visible: status === Image.Ready
+                    visible: false
+                }
+
+                Rectangle {
+                    id: avatarMask
+                    anchors.fill: avatarImage
+                    radius: parent.radius - 3
+                    color: "white"
+                    visible: false
+                    layer.enabled: true
+                }
+
+                MultiEffect {
+                    anchors.fill: avatarImage
+                    source: avatarImage
+                    maskEnabled: true
+                    maskSource: avatarMask
+                    visible: avatarImage.status === Image.Ready
                 }
 
                 Text {
@@ -262,117 +281,139 @@ FocusScope {
             width: passwordSurface.width
             height: passwordSurface.height
             sourceItem: wallpaper
-            sourceRect: Qt.rect(passwordSurface.x, passwordSurface.y, passwordSurface.width, passwordSurface.height)
+            readonly property point origin: passwordSurface.mapToItem(wallpaper, 0, 0)
+            sourceRect: Qt.rect(origin.x, origin.y, passwordSurface.width, passwordSurface.height)
             live: true
             recursive: true
             visible: false
         }
 
-        Rectangle {
-            id: passwordSurface
+        Row {
             width: parent.width
             height: 50
-            radius: 15
-            color: "transparent"
-            clip: true
-
-            MultiEffect {
-                anchors.fill: parent
-                source: passwordBackdrop
-                blurEnabled: true
-                blur: .42
-                blurMax: 18
-                autoPaddingEnabled: false
-            }
+            spacing: 8
 
             Rectangle {
-                anchors.fill: parent
-                color: Qt.rgba(root.surfaceColor.r, root.surfaceColor.g, root.surfaceColor.b, .74)
-                border.width: password.activeFocus ? 2 : 1
-                border.color: password.activeFocus ? root.primaryColor : Qt.rgba(root.foregroundColor.r, root.foregroundColor.g, root.foregroundColor.b, .12)
-                radius: parent.radius
-
-                Behavior on border.color { ColorAnimation { duration: 110 } }
-            }
-
-            Text {
-                anchors.left: parent.left
-                anchors.leftMargin: 16
-                anchors.verticalCenter: parent.verticalCenter
-                text: "󰌾"
-                color: password.activeFocus ? root.primaryColor : root.mutedColor
-                font.family: "Symbols Nerd Font Mono"
-                font.pixelSize: 16
-            }
-
-            Controls.TextField {
-                id: password
-                anchors.left: parent.left
-                anchors.leftMargin: 48
-                anchors.right: visibilityButton.left
-                anchors.rightMargin: 6
-                anchors.verticalCenter: parent.verticalCenter
+                id: passwordSurface
+                width: parent.width - loginButton.width - parent.spacing
                 height: parent.height
-                enabled: !root.authenticating
-                placeholderText: "Senha"
-                echoMode: root.passwordVisible ? TextInput.Normal : TextInput.Password
-                passwordCharacter: "●"
-                color: root.foregroundColor
-                placeholderTextColor: root.mutedColor
-                selectionColor: root.primaryColor
-                selectedTextColor: root.onPrimaryColor
-                font.family: "Google Sans Flex"
-                font.pixelSize: 14
-                background: Item {}
-                activeFocusOnTab: true
-                Keys.onReturnPressed: event => {
-                    root.login()
-                    event.accepted = true
+                radius: 15
+                color: "transparent"
+                clip: true
+                layer.enabled: true
+                layer.smooth: true
+
+                Rectangle {
+                    id: passwordMask
+                    anchors.fill: parent
+                    radius: parent.radius
+                    color: "white"
+                    visible: false
+                    layer.enabled: true
+                }
+
+                MultiEffect {
+                    anchors.fill: parent
+                    source: passwordBackdrop
+                    blurEnabled: true
+                    blur: .42
+                    blurMax: 18
+                    autoPaddingEnabled: false
+                    maskEnabled: true
+                    maskSource: passwordMask
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    color: Qt.rgba(root.surfaceColor.r, root.surfaceColor.g, root.surfaceColor.b, .74)
+                    border.width: password.activeFocus ? 2 : 1
+                    border.color: password.activeFocus ? root.primaryColor : Qt.rgba(root.foregroundColor.r, root.foregroundColor.g, root.foregroundColor.b, .12)
+                    radius: parent.radius
+                    clip: true
+
+                    Behavior on border.color { ColorAnimation { duration: 110 } }
+                }
+
+                Text {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 16
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "󰌾"
+                    color: password.activeFocus ? root.primaryColor : root.mutedColor
+                    font.family: "Symbols Nerd Font Mono"
+                    font.pixelSize: 16
+                }
+
+                Controls.TextField {
+                    id: password
+                    anchors.left: parent.left
+                    anchors.leftMargin: 48
+                    anchors.right: visibilityButton.left
+                    anchors.rightMargin: 6
+                    anchors.verticalCenter: parent.verticalCenter
+                    height: parent.height
+                    enabled: !root.authenticating
+                    placeholderText: "Senha"
+                    echoMode: root.passwordVisible ? TextInput.Normal : TextInput.Password
+                    passwordCharacter: "●"
+                    color: root.foregroundColor
+                    placeholderTextColor: root.mutedColor
+                    selectionColor: root.primaryColor
+                    selectedTextColor: root.onPrimaryColor
+                    font.family: "Google Sans Flex"
+                    font.pixelSize: 14
+                    background: Item {}
+                    activeFocusOnTab: true
+                    Keys.onReturnPressed: event => {
+                        root.login()
+                        event.accepted = true
+                    }
+                }
+
+                Controls.Button {
+                    id: visibilityButton
+                    anchors.right: parent.right
+                    anchors.rightMargin: 5
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 40
+                    height: 40
+                    enabled: !root.authenticating
+                    text: root.passwordVisible ? "󰈈" : "󰈉"
+                    font.family: "Symbols Nerd Font Mono"
+                    font.pixelSize: 16
+                    onClicked: root.passwordVisible = !root.passwordVisible
+                    background: Rectangle { radius: 11; color: parent.hovered || parent.activeFocus ? root.surfaceHoverColor : "transparent" }
+                    contentItem: Text { text: parent.text; color: root.mutedColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font: parent.font }
+                    Controls.ToolTip.visible: hovered
+                    Controls.ToolTip.text: root.passwordVisible ? "Ocultar senha" : "Mostrar senha"
+                    Controls.ToolTip.delay: 450
                 }
             }
 
             Controls.Button {
-                id: visibilityButton
-                anchors.right: parent.right
-                anchors.rightMargin: 5
-                anchors.verticalCenter: parent.verticalCenter
-                width: 40
-                height: 40
-                enabled: !root.authenticating
-                text: root.passwordVisible ? "󰈈" : "󰈉"
+                id: loginButton
+                width: 50
+                height: parent.height
+                enabled: !root.authenticating && root.username.length > 0
+                text: root.authenticating ? "󰔟" : "󰁔"
                 font.family: "Symbols Nerd Font Mono"
-                font.pixelSize: 16
-                onClicked: root.passwordVisible = !root.passwordVisible
-                background: Rectangle { radius: 11; color: parent.hovered || parent.activeFocus ? root.surfaceHoverColor : "transparent" }
-                contentItem: Text { text: parent.text; color: root.mutedColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font: parent.font }
+                font.pixelSize: 19
+                onClicked: root.login()
+                scale: pressed ? .94 : 1
+                background: Rectangle {
+                    radius: 15
+                    color: parent.enabled ? root.primaryColor : root.surfaceContainerColor
+                    opacity: parent.enabled ? parent.hovered || parent.activeFocus ? 1 : .9 : .58
+                    border.width: parent.activeFocus ? 2 : 0
+                    border.color: root.foregroundColor
+                    Behavior on color { ColorAnimation { duration: 110 } }
+                }
+                contentItem: Text { text: parent.text; color: root.onPrimaryColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font: parent.font }
+                Behavior on scale { NumberAnimation { duration: 80; easing.type: Easing.OutCubic } }
                 Controls.ToolTip.visible: hovered
-                Controls.ToolTip.text: root.passwordVisible ? "Ocultar senha" : "Mostrar senha"
+                Controls.ToolTip.text: root.authenticating ? "Autenticando" : "Entrar"
                 Controls.ToolTip.delay: 450
             }
-        }
-
-        Controls.Button {
-            id: loginButton
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: 48
-            height: 48
-            enabled: !root.authenticating && root.username.length > 0
-            text: root.authenticating ? "󰔟" : "󰜎"
-            font.family: "Symbols Nerd Font Mono"
-            font.pixelSize: 19
-            onClicked: root.login()
-            background: Rectangle {
-                radius: 14
-                color: parent.enabled ? root.primaryColor : root.surfaceContainerColor
-                opacity: parent.enabled ? parent.hovered || parent.activeFocus ? 1 : .9 : .58
-                border.width: parent.activeFocus ? 2 : 0
-                border.color: root.foregroundColor
-                Behavior on color { ColorAnimation { duration: 110 } }
-            }
-            contentItem: Text { text: parent.text; color: root.onPrimaryColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font: parent.font }
-            Controls.ToolTip.visible: hovered
-            Controls.ToolTip.text: root.authenticating ? "Autenticando" : "Entrar"
-            Controls.ToolTip.delay: 450
         }
 
         Text {
@@ -399,7 +440,7 @@ FocusScope {
         anchors.bottom: parent.bottom
         anchors.leftMargin: 24
         anchors.bottomMargin: 24
-        width: Math.min(212, contentItem.implicitWidth + 28)
+        width: 42
         height: 42
         visible: root.revealed && root.sessionCount > 0
         enabled: !root.authenticating
@@ -414,35 +455,18 @@ FocusScope {
             border.width: root.sessionsVisible ? 1 : 0
             border.color: root.primaryColor
         }
-        contentItem: Row {
+        contentItem: Item {
             anchors.centerIn: parent
-            spacing: 9
             Text {
-                anchors.verticalCenter: parent.verticalCenter
+                anchors.centerIn: parent
                 text: root.sessionProfile(root.sessionIndex).glyph
                 color: root.primaryColor
                 font.family: "Symbols Nerd Font Mono"
                 font.pixelSize: 19
             }
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: root.sessionName
-                color: root.foregroundColor
-                elide: Text.ElideRight
-                font.family: "Google Sans Flex"
-                font.pixelSize: 12
-                font.weight: Font.Medium
-            }
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: "󰅂"
-                color: root.mutedColor
-                font.family: "Symbols Nerd Font Mono"
-                font.pixelSize: 14
-            }
         }
         Controls.ToolTip.visible: hovered
-        Controls.ToolTip.text: "Selecionar sessão"
+        Controls.ToolTip.text: root.sessionName
         Controls.ToolTip.delay: 450
     }
 
@@ -452,8 +476,11 @@ FocusScope {
         anchors.bottom: sessionButton.top
         anchors.leftMargin: 24
         anchors.bottomMargin: 10
-        width: Math.min(parent.width - 48, Math.max(184, sessionRow.implicitWidth + 16))
-        height: 64
+        width: Math.min(252, parent.width - 48)
+        readonly property int entryHeight: 46
+        readonly property int entrySpacing: 6
+        readonly property real requestedHeight: sessionList.contentHeight + 16
+        height: Math.min(Math.max(62, requestedHeight), Math.max(72, parent.height - sessionButton.height - 96))
         radius: 16
         color: Qt.rgba(root.surfaceColor.r, root.surfaceColor.g, root.surfaceColor.b, .9)
         opacity: root.sessionsVisible ? 1 : 0
@@ -463,70 +490,63 @@ FocusScope {
         border.color: Qt.rgba(root.foregroundColor.r, root.foregroundColor.g, root.foregroundColor.b, .12)
         clip: true
 
-        Flickable {
+        ListView {
+            id: sessionList
             anchors.fill: parent
             anchors.margins: 8
-            contentWidth: sessionRow.implicitWidth
-            contentHeight: height
-            interactive: contentWidth > width
+            model: root.sessionCount
+            spacing: sessionPicker.entrySpacing
+            interactive: contentHeight > height
+            boundsBehavior: Flickable.StopAtBounds
             clip: true
 
-            Row {
-                id: sessionRow
-                height: parent.height
-                spacing: 6
-
-                Repeater {
-                    model: root.sessionCount
-
-                    delegate: Controls.Button {
-                        id: sessionItem
-                        readonly property string name: root.sessionValue(index, 260, "Sessão")
-                        readonly property var profile: root.sessionProfile(index)
-                        readonly property bool selected: root.sessionIndex === index
-                        width: selected || hovered || activeFocus ? Math.min(164, label.implicitWidth + 54) : 44
-                        height: 48
-                        enabled: !root.authenticating
-                        text: ""
-                        onClicked: root.selectSession(index)
-                        background: Rectangle {
-                            radius: 12
-                            color: sessionItem.selected ? Qt.rgba(root.primaryColor.r, root.primaryColor.g, root.primaryColor.b, .22) : sessionItem.hovered || sessionItem.activeFocus ? root.surfaceHoverColor : "transparent"
-                            border.width: sessionItem.selected ? 1 : 0
-                            border.color: root.primaryColor
-                            Behavior on color { ColorAnimation { duration: 100 } }
-                        }
-                        contentItem: Row {
-                            anchors.centerIn: parent
-                            spacing: 7
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: sessionItem.profile.glyph
-                                color: sessionItem.selected ? root.primaryColor : root.foregroundColor
-                                font.family: "Symbols Nerd Font Mono"
-                                font.pixelSize: sessionItem.selected ? 20 : 18
-                                Behavior on font.pixelSize { NumberAnimation { duration: 100 } }
-                            }
-                            Text {
-                                id: label
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: visible ? Math.min(108, implicitWidth) : 0
-                                text: sessionItem.name
-                                color: sessionItem.selected ? root.foregroundColor : root.mutedColor
-                                elide: Text.ElideRight
-                                visible: sessionItem.selected || sessionItem.hovered || sessionItem.activeFocus
-                                font.family: "Google Sans Flex"
-                                font.pixelSize: 11
-                                font.weight: sessionItem.selected ? Font.Medium : Font.Normal
-                            }
-                        }
-                        Behavior on width { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
-                        Controls.ToolTip.visible: hovered && !selected
-                        Controls.ToolTip.text: name
-                        Controls.ToolTip.delay: 450
+            delegate: Controls.Button {
+                id: sessionItem
+                readonly property string name: root.sessionValue(index, 260, "Sessão")
+                readonly property var profile: root.sessionProfile(index)
+                readonly property bool selected: root.sessionIndex === index
+                width: sessionList.width
+                height: sessionPicker.entryHeight
+                enabled: !root.authenticating
+                text: ""
+                onClicked: root.selectSession(index)
+                background: Rectangle {
+                    radius: 12
+                    color: sessionItem.selected ? Qt.rgba(root.primaryColor.r, root.primaryColor.g, root.primaryColor.b, .22) : sessionItem.hovered || sessionItem.activeFocus ? root.surfaceHoverColor : "transparent"
+                    border.width: sessionItem.selected ? 1 : 0
+                    border.color: root.primaryColor
+                    Behavior on color { ColorAnimation { duration: 100 } }
+                }
+                contentItem: Item {
+                    anchors.fill: parent
+                    Text {
+                        id: sessionIcon
+                        anchors.left: parent.left
+                        anchors.leftMargin: 13
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: sessionItem.profile.glyph
+                        color: sessionItem.selected ? root.primaryColor : root.foregroundColor
+                        font.family: "Symbols Nerd Font Mono"
+                        font.pixelSize: 19
+                    }
+                    Text {
+                        anchors.left: sessionIcon.right
+                        anchors.leftMargin: 10
+                        anchors.right: parent.right
+                        anchors.rightMargin: 13
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: sessionItem.name
+                        color: sessionItem.selected ? root.foregroundColor : root.mutedColor
+                        elide: Text.ElideRight
+                        font.family: "Google Sans Flex"
+                        font.pixelSize: 12
+                        font.weight: sessionItem.selected ? Font.Medium : Font.Normal
                     }
                 }
+                Controls.ToolTip.visible: false
             }
+
+            Controls.ScrollBar.vertical: Controls.ScrollBar { policy: Controls.ScrollBar.AsNeeded }
         }
 
         Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }

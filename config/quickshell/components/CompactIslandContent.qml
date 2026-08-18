@@ -118,6 +118,7 @@ Item {
                 visible: compact.controller.system.battery.available
                 theme: compact.theme
                 iconName: compact.controller.batteryIconName()
+                iconColor: compact.theme.colors[compact.controller.batteryColorRole()]
                 iconOnly: true
                 filled: false
                 horizontalPadding: Design.compactPlainPadding

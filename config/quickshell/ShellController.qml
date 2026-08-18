@@ -574,8 +574,27 @@ Item {
         return "battery4"
     }
 
+    function batteryStatusKey() {
+        return Design.safeText(system.battery.status, "").toLowerCase()
+    }
+
     function batteryCharging() {
-        return system.battery.available && Design.safeText(system.battery.status, "").toLowerCase() === "charging"
+        return system.battery.available && batteryStatusKey() === "charging"
+    }
+
+    function batteryExternalPower() {
+        const status = batteryStatusKey()
+        return system.battery.available && (status === "charging" || status === "full" || status === "not charging")
+    }
+
+    function batteryColorRole() {
+        if (!system.battery.available) return "mutedForeground"
+        if (batteryExternalPower()) return "primary"
+        const percentage = Design.clamp(system.battery.percent, 0, 100)
+        if (percentage <= 15) return "error"
+        if (percentage <= 30) return "warning"
+        if (percentage <= 60) return "secondary"
+        return "primary"
     }
 
     function volumeIconName() {
