@@ -6,9 +6,10 @@ local programs = {
     root = root,
     scripts = root .. "/scripts",
     quickshell = os.getenv("QS_CONFIG_NAME") or "default",
-    terminal = os.getenv("TERMINAL") or "foot",
+    modifier = "SUPER",
+    terminal = os.getenv("TERMINAL") or "kitty",
     file_manager = "thunar",
-    browser = "firefox",
+    browser = "zen-browser",
 }
 
 package.loaded["hyprism.programs"] = programs

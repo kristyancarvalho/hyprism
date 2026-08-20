@@ -44,6 +44,7 @@ git
 wl-clipboard
 cliphist
 brightnessctl
+ddcutil
 playerctl
 grim
 slurp
@@ -51,7 +52,7 @@ hyprpicker
 imagemagick
 wf-recorder
 hyprsunset
+xdg-utils
 
 thunar
-firefox
 chromium

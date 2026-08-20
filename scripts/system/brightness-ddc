@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+command -v ddcutil >/dev/null 2>&1 || exit 0
+state_dir="${XDG_CACHE_HOME:-$HOME/.cache}/hyprism/state"
+runtime_dir="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}/hyprism-runtime-$UID}/hyprism"
+state_file="$state_dir/brightness-target"
+lock_file="$runtime_dir/brightness-ddc.lock"
+mkdir -p -m 0700 "$state_dir" "$runtime_dir"
+exec 9>"$lock_file"
+flock -n 9 || exit 0
+
+while true; do
+  target=$(cat "$state_file" 2>/dev/null || true)
+  [[ $target =~ ^[0-9]+$ ]] || exit 0
+  ((target >= 0 && target <= 100)) || exit 0
+  buses=$(ddcutil detect --brief 2>/dev/null | awk '
+    /^Display [0-9]+/ { valid = 1; next }
+    /^Invalid display/ { valid = 0; next }
+    valid && /I2C bus:/ {
+      sub(/^.*\/dev\/i2c-/, "")
+      print $1
+    }
+  ')
+  while IFS= read -r bus; do
+    [[ $bus =~ ^[0-9]+$ ]] || continue
+    ddcutil setvcp 10 "$target" --bus "$bus" --noverify --sleep-multiplier 0.2 >/dev/null 2>&1 || true
+  done <<< "$buses"
+  latest=$(cat "$state_file" 2>/dev/null || true)
+  [[ $latest == "$target" ]] && break
+done

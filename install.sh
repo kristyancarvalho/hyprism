@@ -97,7 +97,7 @@ quickshell_parent="$target_home/.config/quickshell"
 quickshell_config="$quickshell_parent/hyprism"
 quickshell_default="$quickshell_parent/default"
 
-run install -d -o "$target_user" -g "$target_group" "$target_home/.config" "$target_home/.local/bin" "$target_home/.local/share" "$target_home/Imagens/Wallpapers" "$target_home/Imagens/Screenshots" "$target_home/Vídeos/gravacoes"
+run install -d -o "$target_user" -g "$target_group" "$target_home/.config" "$target_home/.cache" "$target_home/.cache/hyprism" "$target_home/.local/bin" "$target_home/.local/share" "$target_home/Imagens/Wallpapers" "$target_home/Imagens/Screenshots" "$target_home/Vídeos/gravacoes"
 backup_path "$runtime_root"
 run install -d -o "$target_user" -g "$target_group" "$runtime_root/config" "$runtime_root/scripts"
 run cp -a "$repo_dir/config/." "$runtime_root/config/"
@@ -166,6 +166,7 @@ link_path "$runtime_root/config/qt5ct/qt5ct.conf" "$target_home/.config/qt5ct/qt
 link_path "$runtime_root/config/qt6ct/qt6ct.conf" "$target_home/.config/qt6ct/qt6ct.conf"
 link_path "$runtime_root/config/Kvantum/kvantum.kvconfig" "$target_home/.config/Kvantum/kvantum.kvconfig"
 link_path "$runtime_root/config/environment.d/90-hyprism.conf" "$target_home/.config/environment.d/90-hyprism.conf"
+link_path "$runtime_root/config/systemd/user/hyprism-hyprsunset.service" "$target_home/.config/systemd/user/hyprism-hyprsunset.service"
 if [[ -s $theme_dir/nvim/matugen.lua ]]; then
   run install -m 0644 -o "$target_user" -g "$target_group" "$theme_dir/nvim/matugen.lua" "$runtime_root/config/nvim/lua/themes/matugen.lua"
 fi
@@ -257,6 +258,28 @@ if ((dry_run == 0)) && command -v gsettings >/dev/null; then
 fi
 
 if ((dry_run == 0)); then
+  browser_desktop=
+  while IFS= read -r desktop_file; do
+    if grep -Eq '^Type=Application$' "$desktop_file" && grep -Eq '^Exec=.*(/|^)zen-(bin|browser)([[:space:]]|$)' "$desktop_file"; then
+      browser_desktop=$(basename "$desktop_file")
+      break
+    fi
+  done < <(find /usr/local/share/applications /usr/share/applications -maxdepth 1 -type f -name '*.desktop' -print 2>/dev/null)
+  [[ -n $browser_desktop ]] || { printf 'A entrada desktop instalada do Zen não foi encontrada.\n' >&2; exit 1; }
+  as_user xdg-settings set default-web-browser "$browser_desktop"
+  for scheme in http https; do
+    as_user xdg-settings set default-url-scheme-handler "$scheme" "$browser_desktop"
+  done
+  for mime in text/html x-scheme-handler/http x-scheme-handler/https; do
+    as_user xdg-mime default "$browser_desktop" "$mime"
+  done
+  user_runtime="/run/user/$(id -u "$target_user")"
+  if [[ -S $user_runtime/bus ]]; then
+    as_user env XDG_RUNTIME_DIR="$user_runtime" DBUS_SESSION_BUS_ADDRESS="unix:path=$user_runtime/bus" systemctl --user daemon-reload
+  fi
+fi
+
+if ((dry_run == 0)); then
   [[ -d $runtime_root && ! -L $runtime_root ]] \
     || { printf 'A cópia runtime está ausente ou ainda depende do clone.\n' >&2; exit 1; }
   verify_link "$runtime_root/config/hypr" "$target_home/.config/hypr"
@@ -265,6 +288,7 @@ if ((dry_run == 0)); then
   verify_link "$theme_dir/fastfetch/config.jsonc" "$target_home/.config/fastfetch/config.jsonc"
   verify_link "$runtime_root/config/fastfetch/images/archlinux.svg" "$target_home/.config/fastfetch/images/archlinux-source.svg"
   verify_link "$runtime_root/config/tmux/tmux.conf" "$target_home/.tmux.conf"
+  verify_link "$runtime_root/config/systemd/user/hyprism-hyprsunset.service" "$target_home/.config/systemd/user/hyprism-hyprsunset.service"
   [[ -f $target_home/.config/hypr/hyprland.lua ]] \
     || { printf 'O ponto de entrada Lua do Hyprland não foi instalado.\n' >&2; exit 1; }
   [[ ! -e $target_home/.config/hypr/hyprland.conf ]] \
@@ -320,7 +344,7 @@ if ((dry_run == 0)); then
 fi
 
 missing=()
-for command in Hyprland hyprlock qs foot kitty fastfetch matugen starship tmux nvim awww awww-daemon python3 jq curl git sassc magick kvantummanager qt5ct qt6ct fc-cache fc-match wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp hyprpicker brightnessctl wf-recorder hyprsunset powerprofilesctl sddm-greeter-qt6; do command -v "$command" >/dev/null || missing+=("$command"); done
+for command in Hyprland hyprlock qs foot kitty fastfetch matugen starship tmux nvim awww awww-daemon python3 jq curl git sassc magick kvantummanager qt5ct qt6ct fc-cache fc-match wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp hyprpicker brightnessctl ddcutil wf-recorder hyprsunset zen-browser xdg-settings powerprofilesctl sddm-greeter-qt6; do command -v "$command" >/dev/null || missing+=("$command"); done
 printf '\nHyprism instalado para %s.\n' "$target_user"
 printf 'Configurações: %s/.config/{hypr,quickshell/default,quickshell/hyprism,foot,kitty,gtk-3.0,gtk-4.0,Kvantum,qt5ct,qt6ct}\n' "$target_home"
 printf 'Papéis de parede: %s/Imagens/Wallpapers\nCapturas de tela: %s/Imagens/Screenshots\n' "$target_home" "$target_home"

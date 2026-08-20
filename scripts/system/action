@@ -10,8 +10,18 @@ volume() {
 }
 brightness() {
   command -v brightnessctl >/dev/null || return 1
-  brightnessctl set "$1" >/dev/null
-  local value; value=$(brightnessctl -m 2>/dev/null | awk -F, '{gsub("%", "", $4); print $4}')
+  brightnessctl -c backlight set "$1" >/dev/null
+  local value state_dir state_file state_candidate
+  value=$(brightnessctl -c backlight -m 2>/dev/null | awk -F, '{gsub("%", "", $4); print $4}')
+  state_dir="${XDG_CACHE_HOME:-$HOME/.cache}/hyprism/state"
+  state_file="$state_dir/brightness-target"
+  mkdir -p -m 0700 "$state_dir"
+  state_candidate=$(mktemp "$state_dir/.brightness-target.XXXXXX")
+  printf '%s\n' "${value:-0}" >"$state_candidate"
+  mv -f -- "$state_candidate" "$state_file"
+  if command -v ddcutil >/dev/null 2>&1; then
+    "$root_dir/scripts/system/brightness-ddc" >/dev/null 2>&1 &
+  fi
   notify brightness "${value:-0}"
 }
 screenshot_area() {
@@ -83,6 +93,7 @@ case "${1:-}" in
   mic-mute) wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle; notify microphone "mudo" ;;
   brightness-up) brightness 5%+ ;;
   brightness-down) brightness 5%- ;;
+  brightness-set) brightness "${2:-0}%" ;;
   screenshot-area) screenshot_area ;;
   screenshot-monitor) screenshot_monitor ;;
   color-picker)
@@ -95,12 +106,10 @@ case "${1:-}" in
   clipboard-delete) clipboard_delete "${2:-}" ;;
   clipboard-clear) clipboard_clear ;;
   night-mode)
-    night_state="${XDG_CACHE_HOME:-$HOME/.cache}/hyprism/state/night-mode"
-    mkdir -p "$(dirname "$night_state")"
     mode=${2:-toggle}
-    if [[ $mode == toggle ]]; then [[ $(cat "$night_state" 2>/dev/null || true) == on ]] && mode=off || mode=on; fi
-    if [[ $mode == on ]]; then hyprctl hyprsunset temperature 4000 >/dev/null 2>&1 && printf on >"$night_state" && notify night Ativado
-    else hyprctl hyprsunset identity >/dev/null 2>&1 && printf off >"$night_state" && notify night Desativado
+    if [[ $mode == toggle ]]; then systemctl --user is-active --quiet hyprism-hyprsunset.service && mode=off || mode=on; fi
+    if [[ $mode == on ]]; then systemctl --user start hyprism-hyprsunset.service && notify night Ativado
+    else systemctl --user stop hyprism-hyprsunset.service && notify night Desativado
     fi
     ;;
   power-save)
@@ -108,5 +117,5 @@ case "${1:-}" in
     powerprofilesctl set "$profile" >/dev/null 2>&1
     notify power "$([[ $profile == power-saver ]] && printf 'Economia' || printf 'Equilibrado')"
     ;;
-  *) printf 'Uso: %s {volume-up|volume-down|volume-mute|mic-mute|brightness-up|brightness-down|screenshot-area|screenshot-monitor|color-picker|clipboard-watch|clipboard-store|clipboard-restore|clipboard-delete|clipboard-clear|night-mode|power-save}\n' "$0" >&2; exit 2 ;;
+  *) printf 'Uso: %s {volume-up|volume-down|volume-mute|mic-mute|brightness-up|brightness-down|brightness-set|screenshot-area|screenshot-monitor|color-picker|clipboard-watch|clipboard-store|clipboard-restore|clipboard-delete|clipboard-clear|night-mode|power-save}\n' "$0" >&2; exit 2 ;;
 esac

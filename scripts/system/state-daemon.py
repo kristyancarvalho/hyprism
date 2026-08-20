@@ -21,6 +21,13 @@ def command(args, timeout=1):
         return ""
 
 
+def command_succeeds(args, timeout=1):
+    try:
+        return subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=timeout).returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
 def volume(target="@DEFAULT_AUDIO_SINK@"):
     text = command(["wpctl", "get-volume", target])
     try:
@@ -136,14 +143,9 @@ def brightness():
 
 
 def night_mode():
-    cache_root = pathlib.Path(os.environ.get("XDG_CACHE_HOME", pathlib.Path.home() / ".cache"))
-    state_path = cache_root / "hyprism/state/night-mode"
-    available = bool(shutil.which("hyprctl") and os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"))
-    try:
-        enabled = state_path.read_text().strip() == "on"
-    except OSError:
-        enabled = False
-    return {"available": available, "enabled": enabled if available else False}
+    available = bool(shutil.which("hyprsunset") and shutil.which("systemctl") and os.environ.get("XDG_RUNTIME_DIR"))
+    enabled = available and command_succeeds(["systemctl", "--user", "is-active", "--quiet", "hyprism-hyprsunset.service"])
+    return {"available": available, "enabled": enabled}
 
 
 def power_profile():

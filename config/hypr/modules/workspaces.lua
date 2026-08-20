@@ -1,4 +1,4 @@
-local mod = "ALT"
+local mod = require("hyprism.programs").modifier
 
 for workspace = 1, 10 do
     local key = workspace % 10

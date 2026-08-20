@@ -1,5 +1,5 @@
 local paths = require("hyprism.programs")
-local mod = "ALT"
+local mod = paths.modifier
 local scripts = paths.scripts
 local exec = hl.dsp.exec_cmd
 
@@ -43,10 +43,10 @@ bind(mod .. " + CTRL + right", script("system/move-or-scroll") .. " r")
 hl.bind(mod .. " + CTRL + up", hl.dsp.window.move({ direction = "up" }))
 hl.bind(mod .. " + CTRL + down", hl.dsp.window.move({ direction = "down" }))
 
-hl.bind(mod .. " + SUPER + right", hl.dsp.window.resize({ x = 30, y = 0, relative = true }), { repeating = true })
-hl.bind(mod .. " + SUPER + left", hl.dsp.window.resize({ x = -30, y = 0, relative = true }), { repeating = true })
-hl.bind(mod .. " + SUPER + up", hl.dsp.window.resize({ x = 0, y = -30, relative = true }), { repeating = true })
-hl.bind(mod .. " + SUPER + down", hl.dsp.window.resize({ x = 0, y = 30, relative = true }), { repeating = true })
+hl.bind(mod .. " + ALT + right", hl.dsp.window.resize({ x = 30, y = 0, relative = true }), { repeating = true })
+hl.bind(mod .. " + ALT + left", hl.dsp.window.resize({ x = -30, y = 0, relative = true }), { repeating = true })
+hl.bind(mod .. " + ALT + up", hl.dsp.window.resize({ x = 0, y = -30, relative = true }), { repeating = true })
+hl.bind(mod .. " + ALT + down", hl.dsp.window.resize({ x = 0, y = 30, relative = true }), { repeating = true })
 hl.bind(mod .. " + equal", hl.dsp.layout("colresize +conf"))
 hl.bind(mod .. " + minus", hl.dsp.layout("colresize -conf"))
 hl.bind(mod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })
@@ -54,13 +54,13 @@ hl.bind(mod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
 
 bind(mod .. " + Tab", quickshell_ipc .. "switcherForward")
 bind(mod .. " + SHIFT + Tab", quickshell_ipc .. "switcherBackward")
-bind("Alt_L", quickshell_ipc .. "switcherCommit", { release = true })
-bind("Alt_R", quickshell_ipc .. "switcherCommit", { release = true })
+bind("Super_L", quickshell_ipc .. "switcherCommit", { release = true })
+bind("Super_R", quickshell_ipc .. "switcherCommit", { release = true })
 
 bind(mod .. " + SHIFT + up", script("system/action") .. " volume-up")
 bind(mod .. " + SHIFT + down", script("system/action") .. " volume-down")
 bind(mod .. " + SHIFT + M", script("system/action") .. " volume-mute")
-bind(mod .. " + SUPER + M", script("system/action") .. " mic-mute")
+bind(mod .. " + ALT + M", script("system/action") .. " mic-mute")
 bind("XF86AudioRaiseVolume", script("system/action") .. " volume-up", { locked = true, repeating = true })
 bind("XF86AudioLowerVolume", script("system/action") .. " volume-down", { locked = true, repeating = true })
 bind("XF86AudioMute", script("system/action") .. " volume-mute", { locked = true, repeating = true })
@@ -72,7 +72,7 @@ bind("XF86AudioPause", "playerctl play-pause", { locked = true })
 bind("XF86AudioPlay", "playerctl play-pause", { locked = true })
 bind("XF86AudioPrev", "playerctl previous", { locked = true })
 
-bind(mod .. " + SUPER + K", quickshell_ipc .. "randomWallpaper")
+bind(mod .. " + ALT + K", quickshell_ipc .. "randomWallpaper")
 bind(mod .. " + SHIFT + S", script("system/action") .. " screenshot-area")
 bind(mod .. " + SHIFT + F", script("system/action") .. " screenshot-monitor")
 bind(mod .. " + CTRL + P", script("system/action") .. " color-picker")

@@ -6,7 +6,7 @@ hl.layer_rule({
 })
 
 hl.window_rule({
-    name = "foot-background-blur",
-    match = { class = "^foot$" },
+    name = "kitty-background-blur",
+    match = { class = "^kitty$" },
     no_blur = false,
 })

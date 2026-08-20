@@ -1,0 +1,10 @@
+[Unit]
+Description=Hyprism night color temperature
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/hyprsunset --temperature 3800
+Restart=on-failure
+RestartSec=2
