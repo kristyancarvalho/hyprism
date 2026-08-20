@@ -17,7 +17,10 @@ PanelWindow {
     readonly property bool compactViewport: shellScreen && shellScreen.height < 900
     readonly property int visibleTaskLimit: Math.min(controller.widgetNumber("tasks", "limit", 3, 1, 6), compactViewport ? 1 : 3)
     readonly property int visibleProcessLimit: Math.min(controller.widgetNumber("processes", "limit", 3, 1, 6), compactViewport ? 2 : 3)
-    readonly property int cardWidth: Math.max(200, Math.floor((implicitWidth - columnGap) / 2))
+    readonly property int logicalWidth: shellScreen ? Math.min(shellScreen.width - Design.spacingLg * 2, Math.min(700, Math.max(570, shellScreen.width * .56))) : 680
+    readonly property int logicalHeight: Math.max(primaryColumn.implicitHeight, secondaryColumn.implicitHeight)
+    readonly property real effectiveScale: Math.min(Design.widgetScale, usableHeight / Math.max(1, logicalHeight), shellScreen ? (shellScreen.width - Design.spacingLg * 2) / logicalWidth : Design.widgetScale)
+    readonly property int cardWidth: Math.max(200, Math.floor((logicalWidth - columnGap) / 2))
     readonly property string layoutPosition: controller.widgetLayoutPosition()
     readonly property int usableTop: Design.compactReservedHeight(controller.config.shell) + Design.spacingLg
     readonly property int usableHeight: shellScreen ? Math.max(0, shellScreen.height - usableTop - Design.spacingLg) : 0
@@ -36,8 +39,8 @@ PanelWindow {
         right: Design.spacingLg
         left: Design.spacingLg
     }
-    implicitWidth: shellScreen ? Math.min(shellScreen.width - Design.spacingLg * 2, Math.min(700, Math.max(570, shellScreen.width * .56))) : 680
-    implicitHeight: Math.max(primaryColumn.implicitHeight, secondaryColumn.implicitHeight)
+    implicitWidth: logicalWidth * effectiveScale
+    implicitHeight: logicalHeight * effectiveScale
     color: "transparent"
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Bottom
@@ -51,7 +54,10 @@ PanelWindow {
     }
 
     Row {
-        anchors.fill: parent
+        width: widgetWindow.logicalWidth
+        height: widgetWindow.logicalHeight
+        scale: widgetWindow.effectiveScale
+        transformOrigin: Item.TopLeft
         spacing: widgetWindow.columnGap
 
         Column {

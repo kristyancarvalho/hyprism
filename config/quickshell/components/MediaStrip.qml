@@ -28,7 +28,8 @@ Item {
         spacing: 10
 
         Rectangle {
-            visible: media.expanded
+            id: cover
+            visible: media.expanded && media.width >= 290
             width: media.height
             height: media.height
             radius: Design.radiusSm
@@ -55,7 +56,7 @@ Item {
         }
 
         Column {
-            width: media.expanded ? Math.max(130, parent.width - controls.width - (artwork.parent.visible ? artwork.parent.width + 20 : 10)) : parent.width
+            width: media.expanded ? Math.max(0, parent.width - (controls.visible ? controls.width + 10 : 0) - (cover.visible ? cover.width + 10 : 0)) : parent.width
             anchors.verticalCenter: parent.verticalCenter
             spacing: media.expanded ? 3 : 0
 
@@ -80,7 +81,7 @@ Item {
             }
 
             Row {
-                visible: media.expanded
+                visible: media.expanded && media.width >= 340
                 width: parent.width
                 spacing: 7
 
@@ -119,7 +120,7 @@ Item {
 
         Row {
             id: controls
-            visible: media.expanded
+            visible: media.expanded && media.width >= 245
             anchors.verticalCenter: parent.verticalCenter
             spacing: 3
 

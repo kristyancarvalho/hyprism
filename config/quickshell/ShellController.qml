@@ -39,6 +39,7 @@ Item {
     readonly property date currentTime: systemClock.date
     property var appEntries: []
     property var applicationIndex: ({})
+    property var clientIndex: ({})
     property var wallpaperEntries: []
     property string wallpaperCurrent: ""
     property string wallpaperQuery: ""
@@ -460,16 +461,17 @@ Item {
         const address = HyprlandService.normalizedAddress(window.address)
         if (!address) return null
         const ipc = window.lastIpcObject || {}
-        const candidates = [ipc.class, ipc.initialClass, window.appId]
+        const client = clientIndex[address.toLowerCase()] || {}
+        const candidates = [client.class, client.initialClass, window.appId, client.executable, client.command, ipc.class, ipc.initialClass]
         const application = applicationEntry(candidates)
         return {
             window: window,
             address: address,
-            appId: Design.safeText(ipc.class, Design.safeText(ipc.initialClass, "")),
-            initialClass: Design.safeText(ipc.initialClass, ""),
+            appId: Design.safeText(client.class, Design.safeText(ipc.class, Design.safeText(window.appId, ""))),
+            initialClass: Design.safeText(client.initialClass, Design.safeText(ipc.initialClass, "")),
             icon: application ? Design.safeText(application.icon, "application-x-executable") : "application-x-executable",
             applicationName: application ? Design.safeText(application.name, "Janela") : applicationName(candidates),
-            title: Design.safeText(window.title, "Sem título"),
+            title: Design.safeText(window.title, Design.safeText(client.title, "Sem título")),
             minimized: false
         }
     }
@@ -666,6 +668,14 @@ Item {
         const index = {}
         for (let entryIndex = 0; entryIndex < safeEntries.length; entryIndex++) {
             const entry = safeEntries[entryIndex]
+            const primaryAliases = Array.isArray(entry.primaryAliases) ? entry.primaryAliases : []
+            for (let aliasIndex = 0; aliasIndex < primaryAliases.length; aliasIndex++) {
+                const key = normalizedApplicationKey(primaryAliases[aliasIndex])
+                if (key && !index[key]) index[key] = entry
+            }
+        }
+        for (let entryIndex = 0; entryIndex < safeEntries.length; entryIndex++) {
+            const entry = safeEntries[entryIndex]
             const aliases = Array.isArray(entry.aliases) ? entry.aliases.slice() : []
             aliases.push(entry.id, entry.startupClass, entry.executable, entry.name)
             for (let aliasIndex = 0; aliasIndex < aliases.length; aliasIndex++) {
@@ -675,6 +685,10 @@ Item {
         }
         appEntries = safeEntries
         applicationIndex = index
+    }
+
+    function setClientEntries(entries) {
+        clientIndex = entries && typeof entries === "object" ? entries : ({})
     }
 
     function applicationEntry(candidates) {

@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
@@ -264,80 +265,89 @@ PanelWindow {
         Item {
             anchors.fill: parent
 
-            WorkspaceStrip {
-                anchors.left: parent.left
+            RowLayout {
+                anchors.fill: parent
                 anchors.leftMargin: Design.spacingLg
-                anchors.verticalCenter: parent.verticalCenter
+                anchors.rightMargin: Design.spacingLg
+                spacing: Design.spacingSm
+
+            WorkspaceStrip {
+                Layout.alignment: Qt.AlignVCenter
                 shellScreen: window.shellScreen
                 theme: window.theme
             }
 
-            MediaStrip {
-                visible: controller.mediaAvailable() && !controller.recording
-                anchors.centerIn: parent
-                width: Math.min(410, parent.width * .48)
-                controller: window.controller
-                theme: window.theme
-            }
+            Item {
+                Layout.fillWidth: true
+                Layout.minimumWidth: 80
+                Layout.maximumWidth: 410
+                Layout.preferredHeight: 60
+                clip: true
 
-            Column {
-                visible: !controller.mediaAvailable() && !controller.recording
-                anchors.centerIn: parent
-
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: controller.formattedDate("HH:mm")
-                    color: theme.colors.foreground
-                    font.family: Design.fontFamily
-                    font.pixelSize: Design.fontSizeLg
-                    font.weight: Design.fontWeightSemibold
-                }
-
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: controller.formattedDate("ddd, dd MMM")
-                    color: theme.colors.mutedForeground
-                    font.family: Design.fontFamily
-                    font.pixelSize: Design.fontSizeXs
-                }
-            }
-
-            Row {
-                visible: controller.recording
-                anchors.centerIn: parent
-                spacing: Design.spacingSm
-
-                Rectangle {
-                    anchors.verticalCenter: parent.verticalCenter
-                    color: theme.colors.warning
-                    width: 8
-                    height: 8
-                    radius: 4
-                }
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: controller.recordingElapsedText()
-                    color: theme.colors.foreground
-                    font.family: Design.fontFamily
-                    font.pixelSize: Design.fontSizeSm
-                    font.weight: Design.fontWeightSemibold
-                }
-
-                ShellButton {
+                MediaStrip {
+                    visible: controller.mediaAvailable() && !controller.recording
+                    anchors.fill: parent
+                    controller: window.controller
                     theme: window.theme
-                    text: "Parar"
-                    iconName: "close"
-                    compact: true
-                    warning: true
-                    onClicked: controller.stopRecording()
+                }
+
+                Column {
+                    visible: !controller.mediaAvailable() && !controller.recording
+                    anchors.centerIn: parent
+
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: controller.formattedDate("HH:mm")
+                        color: theme.colors.foreground
+                        font.family: Design.fontFamily
+                        font.pixelSize: Design.fontSizeLg
+                        font.weight: Design.fontWeightSemibold
+                    }
+
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: controller.formattedDate("ddd, dd MMM")
+                        color: theme.colors.mutedForeground
+                        font.family: Design.fontFamily
+                        font.pixelSize: Design.fontSizeXs
+                    }
+                }
+
+                Row {
+                    visible: controller.recording
+                    anchors.centerIn: parent
+                    spacing: Design.spacingSm
+
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: theme.colors.warning
+                        width: 8
+                        height: 8
+                        radius: 4
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: controller.recordingElapsedText()
+                        color: theme.colors.foreground
+                        font.family: Design.fontFamily
+                        font.pixelSize: Design.fontSizeSm
+                        font.weight: Design.fontWeightSemibold
+                    }
+
+                    ShellButton {
+                        theme: window.theme
+                        text: "Parar"
+                        iconName: "close"
+                        compact: true
+                        warning: true
+                        onClicked: controller.stopRecording()
+                    }
                 }
             }
 
-            Row {
-                anchors.right: parent.right
-                anchors.rightMargin: Design.spacingLg
-                anchors.verticalCenter: parent.verticalCenter
+            RowLayout {
+                Layout.alignment: Qt.AlignVCenter
                 spacing: Design.compactItemSpacing
 
                 CompactBarItem {
@@ -345,13 +355,17 @@ PanelWindow {
                     theme: window.theme
                     iconName: controller.weatherIconName(controller.weather.weatherCode)
                     label: Math.round(Design.safeNumber(controller.weather.temperature, 0)) + "°"
+                    iconOnly: window.morphWidth < 720
                     filled: false
                 }
 
                 CompactBarItem {
                     theme: window.theme
                     iconName: controller.networkIconName()
+                    iconSize: Design.compactConnectivityIconSize
                     label: controller.networkLabel()
+                    iconOnly: window.morphWidth < 760
+                    labelMaximumWidth: 110
                     filled: false
                 }
 
@@ -359,8 +373,10 @@ PanelWindow {
                     visible: controller.system.bluetooth.available
                     theme: window.theme
                     iconName: controller.bluetoothIconName()
+                    iconSize: Design.compactConnectivityIconSize
                     label: controller.bluetoothExpandedText()
-                    labelMaximumWidth: 180
+                    iconOnly: window.morphWidth < 840
+                    labelMaximumWidth: 130
                     filled: false
                 }
 
@@ -371,8 +387,11 @@ PanelWindow {
                     iconColor: window.theme.colors[controller.batteryColorRole()]
                     trailingIconName: controller.batteryCharging() ? "charging" : ""
                     label: controller.batteryExpandedText()
+                    iconOnly: window.morphWidth < 800
+                    labelMaximumWidth: 105
                     filled: false
                 }
+            }
             }
         }
     }

@@ -86,8 +86,8 @@ Item {
 
     Timer {
         id: brightnessDebounce
-        interval: 75
-        onTriggered: controller.run(["brightnessctl", "set", panel.pendingBrightnessValue + "%"])
+        interval: 240
+        onTriggered: controller.run([panel.controller.rootDir + "/scripts/system/action", "brightness-set", String(panel.pendingBrightnessValue)])
     }
 
     Flickable {

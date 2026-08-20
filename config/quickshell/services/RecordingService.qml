@@ -72,11 +72,13 @@ Item {
         selecting = true
         awaitingSurfaceRelease = true
         controller.close()
+        surfaceReleaseFallback.restart()
     }
 
     function confirmSurfaceReleased() {
         if (!selecting || !awaitingSurfaceRelease || slurp.running) return
         awaitingSurfaceRelease = false
+        surfaceReleaseFallback.stop()
         regionLaunch.restart()
     }
 
@@ -129,11 +131,17 @@ Item {
 
     Timer {
         id: regionLaunch
-        interval: 0
+        interval: 90
         onTriggered: {
             if (!service.selecting) return
             slurp.running = true
         }
+    }
+
+    Timer {
+        id: surfaceReleaseFallback
+        interval: 320
+        onTriggered: service.confirmSurfaceReleased()
     }
 
     Timer {
@@ -158,6 +166,7 @@ Item {
             const wasSelecting = service.selecting
             service.selecting = false
             service.awaitingSurfaceRelease = false
+            surfaceReleaseFallback.stop()
             if (!wasSelecting) return
             const geometry = Design.safeText(geometryOutput.text, "")
             if (exitCode === 0 && /^-?\d+,-?\d+\s+\d+x\d+$/.test(geometry)) {

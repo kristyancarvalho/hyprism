@@ -28,6 +28,7 @@ QtObject {
     readonly property int compactWidthMax: 680
     readonly property int compactItemHeight: 30
     readonly property int compactIconSize: 16
+    readonly property int compactConnectivityIconSize: 14
     readonly property int compactTextSize: 12
     readonly property int compactHorizontalPadding: 16
     readonly property int compactPillPadding: 10
@@ -65,6 +66,7 @@ QtObject {
     readonly property int widgetHeaderHeight: 20
     readonly property int widgetIconSize: 16
     readonly property int widgetInnerPadding: 10
+    readonly property real widgetScale: 1.18
     readonly property int barHeight: compactBarHeight
     readonly property int barPillHeight: compactItemHeight
     readonly property int barPaddingHorizontal: compactHorizontalPadding

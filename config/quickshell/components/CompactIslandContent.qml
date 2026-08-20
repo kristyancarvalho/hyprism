@@ -100,6 +100,7 @@ Item {
             CompactBarItem {
                 theme: compact.theme
                 iconName: compact.controller.networkIconName()
+                iconSize: Design.compactConnectivityIconSize
                 label: compact.controller.networkLabel()
                 filled: false
                 horizontalPadding: Design.compactPlainPadding
@@ -109,6 +110,7 @@ Item {
                 visible: compact.controller.system.bluetooth.available
                 theme: compact.theme
                 iconName: compact.controller.bluetoothIconName()
+                iconSize: Design.compactConnectivityIconSize
                 iconOnly: true
                 filled: false
                 horizontalPadding: Design.compactPlainPadding

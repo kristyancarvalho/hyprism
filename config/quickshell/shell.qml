@@ -303,6 +303,7 @@ ShellRoot {
                 popupCount: root.popupNotifications.length,
                 popupOverflowCount: root.popupOverflowCount,
                 notificationHistoryCount: root.notificationHistory.length,
+                clipboardCount: shellController.clipboardEntries.length,
                 switcherMetadata: shellController.switcherWindows.map(item => ({ address: item.address, appId: item.appId, initialClass: item.initialClass, icon: item.icon, applicationName: item.applicationName, title: item.title })),
                 widgets: root.widgetStatus(),
                 widgetLayoutPosition: shellController.widgetLayoutPosition(),

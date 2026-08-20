@@ -8,6 +8,7 @@ Item {
     required property var controller
     readonly property string rootDir: controller.rootDir
     function refreshApps() { apps.running = true }
+    function refreshClients() { if (!clients.running) clients.running = true }
     function refreshWallpapers() {
         wallpapers.running = false
         currentWallpaper.running = true
@@ -16,6 +17,11 @@ Item {
         id: apps; command: ["python3", service.rootDir + "/scripts/system/desktop-index.py"]
         stdout: SplitParser { splitMarker: "\n"; onRead: data => { try { service.controller.setApplicationEntries(JSON.parse(data)) } catch (error) { console.warn("índice de aplicativos inválido", error) } } }
     }
+    Process {
+        id: clients; command: ["python3", service.rootDir + "/scripts/system/desktop-index.py", "clients"]
+        stdout: SplitParser { splitMarker: "\n"; onRead: data => { try { service.controller.setClientEntries(JSON.parse(data)) } catch (error) { console.warn("índice de janelas inválido", error) } } }
+    }
+    Timer { interval: 1000; repeat: true; running: true; triggeredOnStart: true; onTriggered: service.refreshClients() }
     Process {
         id: wallpapers; command: [service.rootDir + "/scripts/wallpaper", "list"]
         stdout: SplitParser { splitMarker: "\n"; onRead: data => { if (data.length) { let next = service.controller.wallpaperEntries.slice(); next.push(data); service.controller.wallpaperEntries = next } } }
@@ -27,5 +33,5 @@ Item {
         onStarted: service.controller.wallpaperCurrent = ""
         onExited: wallpapers.running = true
     }
-    Component.onCompleted: refreshApps()
+    Component.onCompleted: { refreshApps(); refreshClients() }
 }

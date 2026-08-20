@@ -46,7 +46,7 @@ Item {
             Text {
                 id: hint
                 Layout.preferredWidth: implicitWidth
-                text: "← → navegar  ·  solte Alt para abrir"
+                text: "← → navegar  ·  solte Super para abrir"
                 color: panel.theme.colors.mutedForeground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeXs
