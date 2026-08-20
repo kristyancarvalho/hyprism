@@ -356,6 +356,7 @@ PanelWindow {
                     iconName: controller.weatherIconName(controller.weather.weatherCode)
                     label: Math.round(Design.safeNumber(controller.weather.temperature, 0)) + "°"
                     iconOnly: window.morphWidth < 720
+                    labelMaximumWidth: 48
                     filled: false
                 }
 
