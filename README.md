@@ -59,29 +59,29 @@ No primeiro boot, a paleta escura embutida mantém a ilha e os widgets utilizáv
 
 Google Sans Flex é a família primária de texto da interface. Symbols Nerd Font Mono é usada somente para a iconografia semântica do shell. Os tamanhos, pesos, alturas, espaçamentos, raios e glifos ficam centralizados em `Design.qml`, e componentes compartilhados mantêm a linha de base e o ritmo vertical da ilha. O sistema visual usa retângulos arredondados de 9 px como forma dominante, com 6 px para elementos pequenos e 12 px para superfícies amplas. Hierarquia tonal, espaçamento e preenchimento de estado substituem contornos repetidos; bordas ficam reservadas ao foco, à seleção, à urgência e à definição externa da ilha.
 
-O índice de aplicativos percorre `XDG_DATA_HOME` e `XDG_DATA_DIRS` uma vez na inicialização, lê ID, `StartupWMClass`, `Exec`, `TryExec`, nome e `Icon` dos arquivos `.desktop` e cria um cache normalizado compartilhado. O Alt+Tab tenta `class`, `initialClass` e app ID contra esses aliases; o campo `Icon` resolvido passa pelo tema Hyprism-Papirus, que herda os aplicativos normais do Papirus-Dark, com fallback para `application-x-executable`. Launcher, Alt+Tab e mídia usam o mesmo cache. Estados do sistema usam exclusivamente o mapa semântico Nerd Font; emoji não é usado como ícone de status.
+O índice de aplicativos percorre `XDG_DATA_HOME` e `XDG_DATA_DIRS` uma vez na inicialização, lê ID, `StartupWMClass`, `Exec`, `TryExec`, nome e `Icon` dos arquivos `.desktop` e cria um cache normalizado compartilhado. O Super+Tab combina `class`, `initialClass`, app ID e os metadados de processo publicados pelo Hyprland com esses aliases; o campo `Icon` resolvido passa pelo tema Hyprism-Papirus, que herda os aplicativos normais do Papirus-Dark, com fallback para `application-x-executable`. Launcher, Super+Tab e mídia usam o mesmo cache. Estados do sistema usam exclusivamente o mapa semântico Nerd Font; emoji não é usado como ícone de status.
 
-Um `PanelWindow` transparente de 1 px mantém a zona exclusiva constante composta pela margem superior, pela altura compacta e pelo respiro configurado, sem desenhar fundo, borda ou conteúdo. Janelas tiled e maximizadas começam abaixo dessa faixa. Em cada monitor, um canvas overlay transparente de tamanho fixo contém a única superfície visual da ilha. Launcher, controles, notificações, mídia expandida e Alt+Tab animam essa superfície dentro do canvas sem redimensionar a superfície Wayland, ampliar a zona exclusiva ou reorganizar as janelas.
+Um `PanelWindow` transparente de 1 px mantém a zona exclusiva constante composta pela margem superior, pela altura compacta e pelo respiro configurado, sem desenhar fundo, borda ou conteúdo. Janelas tiled e maximizadas começam abaixo dessa faixa. Em cada monitor, um canvas overlay transparente de tamanho fixo contém a única superfície visual da ilha. Launcher, controles, notificações, mídia expandida e Super+Tab animam essa superfície dentro do canvas sem redimensionar a superfície Wayland, ampliar a zona exclusiva ou reorganizar as janelas.
 
 O workspace ativo de cada monitor fornece o estado real `hasFullscreen`. Nesse estado, somente a ilha persistente, seus widgets e sua reserva daquele monitor são ocultados. Outros monitores continuam normais. Um painel solicitado explicitamente continua autorizado a aparecer sobre fullscreen e mantém a mesma tela alvo.
 
-O Alt+Tab usa os toplevels do Hyprland expostos pelo Quickshell e mantém uma lista MRU atualizada por eventos de foco. Cada entrada guarda o endereço hexadecimal canônico da janela. A primeira troca seleciona a janela focada anteriormente; repetições avançam ou recuam e soltar Alt chama `hl.dsp.focus` com `address:`, inclusive em outro workspace ou monitor. A interface mostra ícone Papirus, nome do aplicativo e título, com fallback intencional quando algum metadado está ausente.
+O Super+Tab usa os toplevels do Hyprland expostos pelo Quickshell e mantém uma lista MRU atualizada por eventos de foco. Cada entrada guarda o endereço hexadecimal canônico da janela. A primeira troca seleciona a janela focada anteriormente; repetições avançam ou recuam e soltar Super chama `hl.dsp.focus` com `address:`, inclusive em outro workspace ou monitor. A interface mostra ícone Papirus, nome do aplicativo e título, com fallback intencional quando algum metadado está ausente.
 
-Launcher, papéis de parede, clipboard, redes, Bluetooth, central de controle, notificações, energia, mídia e Alt+Tab aceitam navegação por teclado. `Escape` fecha, `Enter` ativa, setas percorrem listas, grades e controles, e `Tab` mantém a travessia de foco onde não conflita com o alternador de janelas.
+Launcher, papéis de parede, clipboard, redes, Bluetooth, central de controle, notificações, energia, mídia e Super+Tab aceitam navegação por teclado. `Escape` fecha, `Enter` ativa, setas percorrem listas, grades e controles, e `Tab` mantém a travessia de foco onde não conflita com o alternador de janelas.
 
 Na ilha compacta, a bateria mostra somente um dos cinco glifos semânticos de nível e o Bluetooth mostra somente seu estado; percentual, carregamento e dispositivo conectado aparecem na expansão. A rede mantém ícone e nome no modo compacto: SSID real no Wi-Fi, `Ethernet` em hardware físico e `Rede` para Ethernet virtualizada. O Wi-Fi usa exclusivamente a família `nf-md-wifi_strength_*`, com estados outline, fraco, médio, forte e desconectado centralizados em `Design.qml`.
 
-O seletor de papéis de parede recebe foco exclusivo assim que `Alt+K` o abre. A busca `Pesquisar papel de parede...` compara nomes sem diferenciar maiúsculas, acentos, hífens, sublinhados e espaços. As setas navegam espacialmente pela grade, `Enter` aplica somente uma seleção filtrada válida e `Escape` fecha. A altura acompanha a quantidade de linhas até o limite da tela; as miniaturas continuam assíncronas e armazenadas pelo cache de imagens do Qt.
+O seletor de papéis de parede recebe foco exclusivo assim que `Super+K` o abre. A busca `Pesquisar papel de parede...` compara nomes sem diferenciar maiúsculas, acentos, hífens, sublinhados e espaços. As setas navegam espacialmente pela grade, `Enter` aplica somente uma seleção filtrada válida e `Escape` fecha. A altura acompanha a quantidade de linhas até o limite da tela; as miniaturas continuam assíncronas e armazenadas pelo cache de imagens do Qt.
 
 O histórico de clipboard registra texto e imagem com dois watchers MIME do `wl-paste` e armazena os bytes originais no `cliphist`. Um único supervisor mantém ambos os watchers, segura um `flock` no runtime do usuário e impede duplicação após recargas do Hyprland. Cada gravação publica um marcador atômico em `$XDG_CACHE_HOME/hyprism/state/clipboard-event`; o `ClipboardService` observa esse arquivo e relê o banco sem reiniciar o Quickshell. O painel classifica o preview, gera miniaturas PNG proporcionais de até 420×240 em `$XDG_CACHE_HOME/hyprism/clipboard`, mantém no máximo 64 miniaturas e usa um ícone neutro quando a prévia falha. Restaurar uma imagem executa `cliphist decode` diretamente para `wl-copy --type image/...`; o caminho da miniatura nunca é copiado como texto.
 
 ## Gravação de tela
 
-`Alt+Shift+R` abre o seletor morfológico quando o gravador está ocioso. Setas esquerda e direita alternam entre `Região` e `Tela inteira`, `Enter` ou espaço iniciam e `Escape` cancela. Em `Região`, o serviço primeiro fecha o seletor; a superfície-alvo confirma que retirou o foco exclusivo e desativou o grab do Hyprland, então o próximo ciclo do event loop inicia o `slurp` de forma assíncrona. Uma seleção válida no formato `x,y LARGURAxALTURA` é enviada ao `wf-recorder -g`; cancelar não cria arquivo nem ativa o estado de gravação. Tela inteira passa ao `wf-recorder` o nome do monitor focado fornecido pela integração Hyprland; ela nunca usa um nome fixo nem grava o desktop virtual combinado.
+`Super+Shift+R` abre o seletor morfológico quando o gravador está ocioso. Setas esquerda e direita alternam entre `Região` e `Tela inteira`, `Enter` ou espaço iniciam e `Escape` cancela. Em `Região`, o serviço primeiro fecha o seletor; a superfície-alvo confirma que retirou o foco exclusivo e desativou o grab do Hyprland, então o próximo ciclo do event loop inicia o `slurp` de forma assíncrona. Uma seleção válida no formato `x,y LARGURAxALTURA` é enviada ao `wf-recorder -g`; cancelar não cria arquivo nem ativa o estado de gravação. Tela inteira passa ao `wf-recorder` o nome do monitor focado fornecido pela integração Hyprland; ela nunca usa um nome fixo nem grava o desktop virtual combinado.
 
 `RecordingService` concentra `recording`, modo, início, tempo decorrido, saída e ações. Um supervisor segura `$XDG_RUNTIME_DIR/hyprism/recording.lock`, inicia um único filho `wf-recorder` e encaminha `SIGINT` apenas a esse PID. Outro gravador do usuário não é procurado nem encerrado. Se o Quickshell for substituído durante a gravação, a destruição do processo supervisionado encaminha o encerramento ao filho e o lock impede uma segunda instância concorrente.
 
-Durante a gravação, somente um ponto de 11 px com a cor semântica `warning` aparece na ilha compacta e pulsa entre opacidade `1` e `0,4` em ciclos suaves de 1,3 s, sem texto, ícone, pill ou animação de geometria. A expansão e o Hub mostram o tempo decorrido com a ação `Parar`. Pressionar `Alt+Shift+R` novamente envia a parada imediatamente. Arquivos H.264 são encapsulados como MP4 e gravados em `~/Vídeos/gravacoes` com nomes como `20260814_032501_184_tela.mp4` e `20260814_032501_184_regiao.mp4`; os milissegundos evitam colisão sem prejudicar a ordenação. Sucesso ou falha produz feedback do próprio Hyprism em pt-BR.
+Durante a gravação, somente um ponto de 11 px com a cor semântica `warning` aparece na ilha compacta e pulsa entre opacidade `1` e `0,4` em ciclos suaves de 1,3 s, sem texto, ícone, pill ou animação de geometria. A expansão e o Hub mostram o tempo decorrido com a ação `Parar`. Pressionar `Super+Shift+R` novamente envia a parada imediatamente. Arquivos H.264 são encapsulados como MP4 e gravados em `~/Vídeos/gravacoes` com nomes como `20260814_032501_184_tela.mp4` e `20260814_032501_184_regiao.mp4`; os milissegundos evitam colisão sem prejudicar a ordenação. Sucesso ou falha produz feedback do próprio Hyprism em pt-BR.
 
 Notificações flutuantes formam uma lista centralizada de até quatro cartões, ou três em telas baixas. Cada cartão expira individualmente, títulos e corpos têm limites de linhas, alterações com o mesmo ID substituem a geração anterior e excedentes permanecem no histórico com um contador compacto. O Hub suprime temporariamente a pilha flutuante para preservar seus controles, sem descartar o histórico.
 
@@ -93,9 +93,9 @@ A tela configurada em `config/user.json` tem prioridade quando existe. Em seguid
 
 ## Terminal
 
-Foot é o terminal padrão porque é um terminal Wayland pequeno, rápido e adequado ao ambiente gráfico virtual. `Alt+Return` é um atalho direto do Hyprland para o programa centralizado em `modules/programs.lua`; ele não depende do Quickshell.
+Kitty é o terminal padrão. `Super+Return` é um atalho direto do Hyprland para o programa centralizado em `modules/programs.lua`; ele não depende do Quickshell.
 
-`config/foot/foot.ini` usa JetBrains Mono Nerd Font 11.5, padding de 10 px, cursor beam, fundo escuro com opacidade 0,82 e a mesma paleta semântica do shell. A regra `foot-background-blur` mantém o blur do compositor habilitado para a classe `foot`, tornando a transparência perceptível sem afetar os demais aplicativos. Kitty permanece instalado e configurado como alternativa, mas não é o padrão. `$TERMINAL` também aponta para `foot`.
+`config/kitty/kitty.conf` usa JetBrains Mono Nerd Font, fundo com opacidade 0,88 e a paleta semântica gerada. A regra `kitty-background-blur` mantém o blur do compositor habilitado para a classe `kitty`, tornando a transparência perceptível sem afetar os demais aplicativos. Foot permanece instalado como fallback. `$TERMINAL` aponta para `kitty`.
 
 ## Papel de parede e cores
 
@@ -167,7 +167,7 @@ Toda aplicação de wallpaper, inclusive a opção aleatória, atravessa `script
 
 Antes da geração inicial, o instalador cria o diretório de estado e garante um wallpaper compatível. Se a pasta do usuário estiver vazia, `wallpapers/abyss.svg` gera `hyprism-abyss.png`. A mesma execução inicial produz o estado de Hyprlock e SDDM, instala o drop-in e só então conclui, de modo que o primeiro greeter já encontra uma imagem legível.
 
-O instalador copia os wallpapers incluídos e executa a pipeline inicial antes de considerar Hyprlock pronto. Assim, `hyprlock-colors.conf`, o `hyprlock.conf` dinâmico completo e `state/lock-wallpaper` já existem no primeiro bloqueio. A configuração instalada em `~/.config/hypr/hyprlock.conf` é um fallback autossuficiente de cor sólida; `scripts/system/lock` executa o arquivo dinâmico quando todos os recursos são válidos e faz `exec hyprlock` com o fallback caso contrário. `Alt+L` continua sendo um binding direto do Hyprland, sem depender do Quickshell. Para evitar a captura inicial que falhava no caminho gráfico do VirtualBox, o lock desativa seu próprio fade e seleciona screencopy por memória compartilhada. `scripts/system/validate-hyprlock` passa os dois arquivos pelo parser real do Hyprlock usando deliberadamente um display Wayland inexistente, portanto valida propriedades e cores sem bloquear a sessão. A instalação oficial usa uma única transação `pacman -Syu` para não misturar versões de Hyprlock, Hyprland, aquamarine e Mesa.
+O instalador copia os wallpapers incluídos e executa a pipeline inicial antes de considerar Hyprlock pronto. Assim, `hyprlock-colors.conf`, o `hyprlock.conf` dinâmico completo e `state/lock-wallpaper` já existem no primeiro bloqueio. A configuração instalada em `~/.config/hypr/hyprlock.conf` é um fallback autossuficiente de cor sólida; `scripts/system/lock` executa o arquivo dinâmico quando todos os recursos são válidos e faz `exec hyprlock` com o fallback caso contrário. `Super+L` continua sendo um binding direto do Hyprland, sem depender do Quickshell. Para evitar a captura inicial que falhava no caminho gráfico do VirtualBox, o lock desativa seu próprio fade e seleciona screencopy por memória compartilhada. `scripts/system/validate-hyprlock` passa os dois arquivos pelo parser real do Hyprlock usando deliberadamente um display Wayland inexistente, portanto valida propriedades e cores sem bloquear a sessão. A instalação oficial usa uma única transação `pacman -Syu` para não misturar versões de Hyprlock, Hyprland, aquamarine e Mesa.
 
 GTK 2, GTK 3, GTK 4 e libadwaita usam `Colloid-Hyprism-Dark-Matugen`. O template versionado em `config/matugen/templates/colloid-gtk-theme.scss` conserva as 111 variáveis do template Matugen/Colloid comprovado no ambiente de desenvolvimento: papéis semânticos claros e escuros, aliases legados, escala cinza, seleção e cores de janela. O acento escuro é substituído pelo acento canônico exato do Hyprism; as demais cores continuam vindo da paleta semântica do Matugen. Não existe mais uma camada CSS GTK ad-hoc sobre um Colloid estático.
 
@@ -181,38 +181,38 @@ Qt 6 usa `QT_QPA_PLATFORMTHEME=qt6ct`, uma única chave válida de tema de plata
 
 | Atalho | Ação |
 | --- | --- |
-| `Alt+Return` | Foot, diretamente pelo Hyprland |
-| `Alt+E` | Gerenciador de arquivos |
-| `Alt+B` | Navegador |
-| `Alt+R` | Aplicativos |
-| `Alt+K` | Papéis de parede |
-| `Alt+Super+K` | Papel de parede aleatório |
-| `Alt+Shift+V` | Área de transferência |
-| `Alt+Tab` / `Alt+Shift+Tab` | Troca de janelas; soltar Alt confirma |
-| `Alt+Shift+N` | Rede |
-| `Alt+Shift+I` | Economia de energia |
-| `Alt+Shift+L` | Menu de energia do Quickshell |
-| `Alt+M` | Encerrar sessão diretamente pelo Hyprland |
-| `Alt+Shift+E` | Recarregar ou iniciar o Quickshell |
-| `Alt+Ctrl+S` | Modo noturno |
-| `Alt+Ctrl+P` | Seletor de cor |
-| `Alt+Shift+S` | Captura de região |
-| `Alt+Shift+F` | Captura do monitor focado |
-| `Alt+Shift+R` | Selecionar gravação; durante a gravação, parar |
-| `Alt+L` | Bloqueio com Hyprlock |
-| `Alt+P` | Alternar pseudotile pela API Lua atual |
-| `Alt+W` | Fechar janela diretamente pelo Hyprland |
-| `Alt+1…0` | Workspaces 1–10 |
+| `Super+Return` | Kitty, diretamente pelo Hyprland |
+| `Super+E` | Gerenciador de arquivos |
+| `Super+B` | Zen Browser |
+| `Super+R` | Aplicativos |
+| `Super+K` | Papéis de parede |
+| `Super+Alt+K` | Papel de parede aleatório |
+| `Super+Shift+V` | Área de transferência |
+| `Super+Tab` / `Super+Shift+Tab` | Troca de janelas; soltar Super confirma |
+| `Super+Shift+N` | Rede |
+| `Super+Shift+I` | Economia de energia |
+| `Super+Shift+L` | Menu de energia do Quickshell |
+| `Super+M` | Encerrar sessão diretamente pelo Hyprland |
+| `Super+Shift+E` | Recarregar ou iniciar o Quickshell |
+| `Super+Ctrl+S` | Modo noturno |
+| `Super+Ctrl+P` | Seletor de cor |
+| `Super+Shift+S` | Captura de região |
+| `Super+Shift+F` | Captura do monitor focado |
+| `Super+Shift+R` | Selecionar gravação; durante a gravação, parar |
+| `Super+L` | Bloqueio com Hyprlock |
+| `Super+P` | Alternar pseudotile pela API Lua atual |
+| `Super+W` | Fechar janela diretamente pelo Hyprland |
+| `Super+1…0` | Workspaces 1–10 |
 
 ## VirtualBox
 
 Uma VM normalmente oferece Ethernet e não oferece bateria, Wi-Fi, Bluetooth, brilho, GPU NVIDIA ou sensores físicos. Esses estados são válidos. Quando o adaptador Ethernet pertence a uma máquina virtual, a interface usa o rótulo neutro `Rede` e os detalhes informam `Adaptador virtual`; ela não tenta inferir o SSID do host. A ilha continua visível, o widget de data/hora e o widget de CPU/memória são criados, e controles de hardware ausente ficam ocultos ou indisponíveis. Em particular, o controle de brilho só existe quando `brightnessctl` encontra um controlador real.
 
-Foot não usa o caminho de renderização do Kitty e é o primeiro terminal a testar com `Alt+Return`. Mantenha aceleração 3D e recursos de vídeo da VM compatíveis com a versão do Hyprland usada pelo Arch.
+Kitty é o primeiro terminal a testar com `Super+Return`; Foot permanece disponível como fallback na VM. Mantenha aceleração 3D e recursos de vídeo da VM compatíveis com a versão do Hyprland usada pelo Arch.
 
 O Quickshell usa por padrão o backend `software` do Qt Quick. Esse backend rasteriza a interface sem depender de uma superfície EGL e evita as falhas `Could not create EGL surface`, `eglSwapBuffers failed` e `Wayland connection experienced a fatal error` observadas com o adaptador gráfico do VirtualBox. A configuração vale apenas para o processo do Quickshell; Hyprland, Foot e os demais aplicativos mantêm seus próprios backends gráficos.
 
-Depois de uma instalação na VM, `pgrep -af 'wl-paste.*clipboard-store'` deve mostrar exatamente dois processos, um para texto e outro para imagem. `cliphist list` pode responder que ainda não existe banco antes da primeira cópia; isso é um estado vazio normal. Depois de copiar conteúdo, o marcador `$XDG_CACHE_HOME/hyprism/state/clipboard-event` muda e o painel deve atualizar imediatamente. Para o lockscreen, `~/.local/share/hyprism/scripts/system/validate-hyprlock ~/.config/hypr/hyprlock.conf` repete a validação segura; o teste visual final continua sendo `Alt+L` dentro da VM.
+Depois de uma instalação na VM, `pgrep -af 'wl-paste.*clipboard-store'` deve mostrar exatamente dois processos, um para texto e outro para imagem. `cliphist list` pode responder que ainda não existe banco antes da primeira cópia; isso é um estado vazio normal. Depois de copiar conteúdo, o marcador `$XDG_CACHE_HOME/hyprism/state/clipboard-event` muda e o painel deve atualizar imediatamente. Para o lockscreen, `~/.local/share/hyprism/scripts/system/validate-hyprlock ~/.config/hypr/hyprlock.conf` repete a validação segura; o teste visual final continua sendo `Super+L` dentro da VM.
 
 O clima inicial está configurado para São Paulo, com fuso `America/Sao_Paulo`. Local, latitude, longitude, fuso e intervalo podem ser alterados no bloco `weather` de `config/user.json` antes de executar novamente o instalador.
 
@@ -278,9 +278,9 @@ scripts/system/shell-ipc tasks list
 
 `finish` mantém 100% brevemente antes de remover a tarefa; `fail` preserva o erro por cinco segundos. Sem tarefas ativas, nenhum card vazio ocupa o desktop.
 
-A reserva superior compacta usa 8 px de margem, 44 px de ilha e 4 px de respiro. A superfície de reserva permanece fixa e totalmente transparente durante expansões. O overlay ignora exclusões de outras camadas, usa a mesma origem absoluta no topo central e mantém um canvas Wayland estável; a forma desenhada, seu recorte e sua máscara de entrada compartilham uma única geometria animada. Launcher, hub, clipboard, seletor de wallpaper, Alt+Tab e menu de energia crescem para baixo sem ampliar a reserva. Cada tela detectada recebe sua própria ilha visual e seus próprios widgets. Painéis transitórios usam primeiro a tela invocadora e, para atalhos, o monitor focado pelo Hyprland.
+A reserva superior compacta usa 8 px de margem, 44 px de ilha e 4 px de respiro. A superfície de reserva permanece fixa e totalmente transparente durante expansões. O overlay ignora exclusões de outras camadas, usa a mesma origem absoluta no topo central e mantém um canvas Wayland estável; a forma desenhada, seu recorte e sua máscara de entrada compartilham uma única geometria animada. Launcher, hub, clipboard, seletor de wallpaper, Super+Tab e menu de energia crescem para baixo sem ampliar a reserva. Cada tela detectada recebe sua própria ilha visual e seus próprios widgets. Painéis transitórios usam primeiro a tela invocadora e, para atalhos, o monitor focado pelo Hyprland.
 
-As transições de opacidade usam 80 ms, respostas rápidas usam 110 ms e morphs de geometria usam 150 ms. Entradas usam `OutQuart`, saídas usam `InCubic`, deslocamentos usam `InOutCubic` e o morph inteiro usa `OutQuart`. Um único progresso interpola largura, altura e raio, enquanto a revelação do conteúdo percorre os mesmos 150 ms sem a antiga reversão de opacity após 20 ms. O foco lógico continua solicitado no ciclo imediato de carregamento. Não há animações concorrentes do `PanelWindow`, do fundo e do recorte. A ilha compacta, painéis, cards, botões, notificações, widgets, launcher, OSD e Alt+Tab usam raio predominante de 9 px.
+As transições de opacidade usam 80 ms, respostas rápidas usam 110 ms e morphs de geometria usam 150 ms. Entradas usam `OutQuart`, saídas usam `InCubic`, deslocamentos usam `InOutCubic` e o morph inteiro usa `OutQuart`. Um único progresso interpola largura, altura e raio, enquanto a revelação do conteúdo percorre os mesmos 150 ms sem a antiga reversão de opacity após 20 ms. O foco lógico continua solicitado no ciclo imediato de carregamento. Não há animações concorrentes do `PanelWindow`, do fundo e do recorte. A ilha compacta, painéis, cards, botões, notificações, widgets, launcher, OSD e Super+Tab usam raio predominante de 9 px.
 
 Os workspaces aparecem como até cinco células quadradas numeradas: o workspace ativo usa preenchimento de destaque, ocupados usam superfície elevada, vizinhos vazios ficam atenuados e urgentes usam a cor semântica de erro. A seleção considera o workspace ativo, seus vizinhos e workspaces ocupados ou urgentes sem alargar indefinidamente a ilha. A bateria usa a família Font Awesome do Nerd Font entre `nf-fa-battery_0` e `nf-fa-battery_4`; a cor é `primary` acima de 60%, `secondary` entre 31% e 60%, `warning` entre 16% e 30% e `error` até 15%. Estados em alimentação externa (`Charging`, `Full` e `Not charging`) usam `primary`; somente `Charging` mostra o raio discreto existente.
 
@@ -361,7 +361,7 @@ rg -n 'start-shell|hyprland.start' ~/.config/hypr
 journalctl --user -b --no-pager | rg -i 'quickshell|hyprism|qml'
 ```
 
-`Alt+Shift+E` tenta uma recarga IPC e, se não houver processo, inicia novamente a configuração correta. `Alt+Return`, fechamento de janelas, workspaces e `Alt+M` continuam funcionando sem Quickshell.
+`Super+Shift+E` tenta uma recarga IPC e, se não houver processo, inicia novamente a configuração correta. `Super+Return`, fechamento de janelas, workspaces e `Super+M` continuam funcionando sem Quickshell.
 
 Confira as fontes e o tema de ícones instalados:
 
@@ -384,17 +384,17 @@ QT_QUICK_BACKEND=software QSG_INFO=1 qs --no-duplicate
 
 O segundo comando é apenas para diagnóstico dentro da VM e deve informar o backend de software antes de carregar a interface.
 
-### Foot não abriu
+### Kitty não abriu
 
 ```bash
-pacman -Q foot
-command -v foot
-foot -C
-readlink -f ~/.config/foot/foot.ini
-test -s ~/.cache/hyprism/theme/foot.ini && echo 'tema do Foot encontrado'
+pacman -Q kitty
+command -v kitty
+kitty +kitten show_config >/dev/null
+readlink -f ~/.config/kitty/kitty.conf
+test -s ~/.cache/hyprism/theme/kitty.conf && echo 'tema do Kitty encontrado'
 ```
 
-`foot -C` apenas valida a configuração na VM. Se o arquivo gerado estiver ausente, execute novamente o instalador ou selecione um papel de parede com `hyprism-wallpaper set CAMINHO`.
+`kitty +kitten show_config` apenas valida a configuração. Se o arquivo gerado estiver ausente, execute novamente o instalador ou selecione um papel de parede com `hyprism-wallpaper set CAMINHO`.
 
 ### Gravação não iniciou
 
@@ -432,7 +432,7 @@ Na VM, confirme estes pontos depois de iniciar uma sessão nova:
 - o topo e o centro horizontal permanecem imóveis durante hover, abertura e fechamento de todos os painéis;
 - um clique normal em qualquer área livre da ilha abre o hub, e o conteúdo expandido permanece clicável durante a animação;
 - duas telas mantêm ilhas e widgets independentes durante movimento do ponteiro, hotplug e mudança de resolução;
-- `Alt+R`, `Alt+K`, `Alt+Shift+V`, `Alt+Shift+N`, `Alt+Shift+L` e `Alt+Tab` recebem teclado imediatamente no monitor focado;
+- `Super+R`, `Super+K`, `Super+Shift+V`, `Super+Shift+N`, `Super+Shift+L` e `Super+Tab` recebem teclado imediatamente no monitor focado;
 - o launcher cresce até seis resultados visíveis, reduz ao filtrar e rola resultados adicionais sem rastro colorido;
 - notificações aparecem centralizadas abaixo da ilha, empilham para baixo e mostram um único estado vazio no histórico;
 - toggles acompanham o estado real depois de sucesso ou falha, e recursos indisponíveis nunca aparecem ativos;
@@ -445,7 +445,7 @@ Na VM, confirme estes pontos depois de iniciar uma sessão nova:
 config/hypr/        configuração Lua modular do Hyprland
 config/quickshell/  shell, painéis, widgets, serviços, notificações e OSD
 config/foot/        configuração e tema de fallback do Foot
-config/kitty/       suporte opcional ao Kitty
+config/kitty/       configuração do Kitty padrão
 config/fastfetch/   fonte vetorial imutável do logo do Fastfetch
 config/matugen/     templates centralizados dos consumidores de tema
 config/nvim/        configuração gerenciada do NvChad v2.5
