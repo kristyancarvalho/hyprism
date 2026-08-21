@@ -89,6 +89,73 @@ def command_details(command):
     return ' '.join(tokens), executable, flatpak_id
 
 
+def expanded_exec(entry):
+    try:
+        tokens = shlex.split(entry['rawExec'])
+    except (TypeError, ValueError) as error:
+        raise ValueError(f'invalid Exec field: {error}') from error
+    arguments = []
+    for token in tokens:
+        value = []
+        index = 0
+        while index < len(token):
+            if token[index] != '%':
+                value.append(token[index])
+                index += 1
+                continue
+            if index + 1 >= len(token):
+                raise ValueError('invalid Exec field code: trailing %')
+            code = token[index + 1]
+            index += 2
+            if code == '%':
+                value.append('%')
+            elif code in 'fFuU':
+                if code in 'FU' and token != f'%{code}':
+                    raise ValueError(f'%{code} must be a separate argument')
+            elif code == 'i':
+                if token != '%i':
+                    raise ValueError('%i must be a separate argument')
+                icon = entry.get('icon', '')
+                if icon:
+                    arguments.extend(['--icon', icon])
+            elif code == 'c':
+                value.append(entry['name'])
+            elif code == 'k':
+                value.append(entry['path'])
+            elif code in 'dDnNvm':
+                continue
+            else:
+                raise ValueError(f'invalid Exec field code: %{code}')
+        expanded = ''.join(value)
+        if expanded:
+            arguments.append(expanded)
+    if not arguments:
+        raise ValueError('Exec field does not contain a command')
+    return arguments
+
+
+def executable_path(command, working_directory=None):
+    if '/' not in command:
+        return shutil.which(command)
+    path = pathlib.Path(command)
+    if not path.is_absolute() and working_directory:
+        path = pathlib.Path(working_directory) / path
+    return str(path) if path.is_file() and os.access(path, os.X_OK) else None
+
+
+def kitty_arguments(command):
+    try:
+        configured = shlex.split(os.environ.get('TERMINAL', 'kitty'))
+    except ValueError as error:
+        raise ValueError(f'invalid TERMINAL value: {error}') from error
+    if not configured or pathlib.Path(configured[0]).name != 'kitty':
+        raise ValueError('configured terminal is not Kitty')
+    terminal = executable_path(configured[0])
+    if not terminal:
+        raise ValueError(f'Kitty executable not found: {configured[0]}')
+    return [terminal, *configured[1:], '-e', *command]
+
+
 def desktop_entries():
     apps = {}
     seen = set()
@@ -132,8 +199,11 @@ def desktop_entries():
                     'comment': comment,
                     'icon': section.get('Icon', 'application-x-executable'),
                     'exec': command,
+                    'rawExec': section.get('Exec', ''),
                     'path': str(path),
+                    'workingDirectory': section.get('Path', ''),
                     'terminal': section.getboolean('Terminal', fallback=False),
+                    'dbusActivatable': section.getboolean('DBusActivatable', fallback=False),
                     'noDisplay': no_display,
                     'hidden': hidden,
                     'onlyShowIn': desktop_list(section.get('OnlyShowIn', '')),
@@ -152,18 +222,37 @@ def launch_desktop_entry(desktop_id):
     for entry in desktop_entries():
         if entry['id'] != desktop_id:
             continue
-        # Quickshell owns the pipes connected to this short-lived helper.  If
-        # gio (and therefore the launched application) inherits those pipes,
-        # Quickshell closes them as soon as the helper exits.  Applications
-        # which log during startup can then abort or exit on the broken pipe.
-        subprocess.Popen(
-            ['gio', 'launch', entry['path']],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            start_new_session=True,
-        )
+        working_directory = None
+        if entry['terminal']:
+            try:
+                command = expanded_exec(entry)
+                working_directory = entry['workingDirectory'] or None
+                if working_directory and not pathlib.Path(working_directory).is_dir():
+                    raise ValueError(f'working directory not found: {working_directory}')
+                if not executable_path(command[0], working_directory):
+                    raise ValueError(f'target executable not found: {command[0]}')
+                launch = kitty_arguments(command)
+            except ValueError as error:
+                print(f'hyprism launcher: {entry["name"]}: {error}', file=sys.stderr)
+                return 1
+        else:
+            launch = ['gio', 'launch', entry['path']]
+        # Quickshell closes this helper's pipes when it exits.  Launched
+        # applications must not inherit them or later writes can abort.
+        try:
+            subprocess.Popen(
+                launch,
+                cwd=working_directory,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+        except OSError as error:
+            print(f'hyprism launcher: {entry["name"]}: process spawning failed: {error}', file=sys.stderr)
+            return 1
         return 0
+    print(f'hyprism launcher: desktop entry not found: {desktop_id}', file=sys.stderr)
     return 1
 
 
@@ -325,13 +414,19 @@ def watch_client_entries():
             connection.close()
 
 
-if len(sys.argv) > 2 and sys.argv[1] == 'launch':
-    raise SystemExit(launch_desktop_entry(sys.argv[2]))
-elif len(sys.argv) > 1 and sys.argv[1] == 'clients':
-    print(json.dumps(client_entries()))
-elif len(sys.argv) > 1 and sys.argv[1] == 'clients-watch':
-    watch_client_entries()
-elif len(sys.argv) > 1 and sys.argv[1] == 'watch':
-    watch_desktop_entries()
-else:
-    print(json.dumps(desktop_entries()))
+def main():
+    if len(sys.argv) > 2 and sys.argv[1] == 'launch':
+        return launch_desktop_entry(sys.argv[2])
+    if len(sys.argv) > 1 and sys.argv[1] == 'clients':
+        print(json.dumps(client_entries()))
+    elif len(sys.argv) > 1 and sys.argv[1] == 'clients-watch':
+        watch_client_entries()
+    elif len(sys.argv) > 1 and sys.argv[1] == 'watch':
+        watch_desktop_entries()
+    else:
+        print(json.dumps(desktop_entries()))
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
