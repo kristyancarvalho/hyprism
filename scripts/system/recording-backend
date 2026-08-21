@@ -8,6 +8,17 @@ recordings_dir="$HOME/Vídeos/gravacoes"
 runtime_dir="${HYPRISM_RECORDING_RUNTIME_DIR:-${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}/hyprism-runtime-$UID}/hyprism}"
 lock_file="$runtime_dir/recording.lock"
 log_dir="${XDG_CACHE_HOME:-$HOME/.cache}/hyprism"
+selector_pid=
+recorder_pid=
+forwarded=0
+
+forward_signal() {
+  forwarded=1
+  [[ -z $selector_pid ]] || kill -TERM "$selector_pid" 2>/dev/null || true
+  [[ -z $recorder_pid ]] || kill -INT "$recorder_pid" 2>/dev/null || true
+}
+
+trap forward_signal INT TERM HUP
 
 command -v wf-recorder >/dev/null || { printf 'wf-recorder não está instalado.\n' >&2; exit 127; }
 command -v flock >/dev/null || { printf 'flock não está disponível.\n' >&2; exit 127; }
@@ -23,6 +34,30 @@ flock -n 9 || { printf 'Já existe uma gravação do Hyprism em andamento.\n' >&
 arguments=(-f "$output" -c libx264)
 case "$mode" in
   regiao)
+    if [[ -z $target ]]; then
+      command -v slurp >/dev/null || { printf 'slurp não está instalado.\n' >&2; exit 127; }
+      selector_output=$(mktemp "$runtime_dir/.slurp-output.XXXXXX")
+      selector_error=$(mktemp "$runtime_dir/.slurp-error.XXXXXX")
+      slurp -f '%x,%y %wx%h' >"$selector_output" 2>"$selector_error" &
+      selector_pid=$!
+      set +e
+      wait "$selector_pid"
+      selector_status=$?
+      set -e
+      selector_pid=
+      if ((forwarded || selector_status == 1 || selector_status == 130 || selector_status == 143)); then
+        rm -f "$selector_output" "$selector_error"
+        printf 'CANCELADA\n'
+        exit 0
+      fi
+      if ((selector_status != 0)); then
+        tr -d '\r' <"$selector_error" >&2
+        rm -f "$selector_output" "$selector_error"
+        exit "$selector_status"
+      fi
+      target=$(tr -d '\r\n' <"$selector_output")
+      rm -f "$selector_output" "$selector_error"
+    fi
     [[ $target =~ ^-?[0-9]+,-?[0-9]+[[:space:]][0-9]+x[0-9]+$ ]] \
       || { printf 'A geometria selecionada é inválida.\n' >&2; exit 2; }
     arguments+=(-g "$target")
@@ -43,12 +78,6 @@ esac
 recorder_error=$(mktemp "$runtime_dir/.wf-recorder.XXXXXX")
 wf-recorder "${arguments[@]}" 2>"$recorder_error" &
 recorder_pid=$!
-forwarded=0
-forward_signal() {
-  forwarded=1
-  kill -INT "$recorder_pid" 2>/dev/null || true
-}
-trap forward_signal INT TERM HUP
 printf 'INICIADA\n'
 set +e
 while true; do

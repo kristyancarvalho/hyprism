@@ -65,7 +65,7 @@ Item {
     }
 
     function startRegion() {
-        if (recorder.running || slurp.running || recording || pending || selecting) return
+        if (recorder.running || recording || pending || selecting) return
         mode = "regiao"
         outputPath = ""
         lastError = ""
@@ -76,14 +76,14 @@ Item {
     }
 
     function confirmSurfaceReleased() {
-        if (!selecting || !awaitingSurfaceRelease || slurp.running) return
+        if (!selecting || !awaitingSurfaceRelease || recorder.running) return
         awaitingSurfaceRelease = false
         surfaceReleaseFallback.stop()
         regionLaunch.restart()
     }
 
     function startMonitor(monitorName) {
-        if (recorder.running || slurp.running || recording || pending || selecting) return
+        if (recorder.running || recording || pending || selecting) return
         const monitor = Design.safeText(monitorName, "")
         controller.close()
         if (!monitor) {
@@ -100,9 +100,14 @@ Item {
             resetRuntime()
             return
         }
-        if (selecting && slurp.running) {
-            selecting = false
-            slurp.signal(15)
+        if (selecting && recorder.running) {
+            stopRequested = true
+            recorder.signal(15)
+            stopTimeout.restart()
+            return
+        }
+        if (selecting) {
+            resetRuntime()
             return
         }
         if (!recorder.running) {
@@ -129,13 +134,21 @@ Item {
         recording = true
     }
 
+    function launchRegion() {
+        if (!selecting || recorder.running || recording || pending) return
+        outputPath = pathFor("regiao")
+        lastError = ""
+        saved = false
+        stopRequested = false
+        pending = true
+        recorder.command = [controller.rootDir + "/scripts/system/recording-backend", "regiao", outputPath, ""]
+        recorder.running = true
+    }
+
     Timer {
         id: regionLaunch
-        interval: 90
-        onTriggered: {
-            if (!service.selecting) return
-            slurp.running = true
-        }
+        interval: Design.animationMorph
+        onTriggered: service.launchRegion()
     }
 
     Timer {
@@ -158,35 +171,19 @@ Item {
     }
 
     Process {
-        id: slurp
-        command: ["slurp", "-f", "%x,%y %wx%h"]
-        stdout: StdioCollector { id: geometryOutput }
-        stderr: StdioCollector { id: geometryError }
-        onExited: (exitCode, exitStatus) => {
-            const wasSelecting = service.selecting
-            service.selecting = false
-            service.awaitingSurfaceRelease = false
-            surfaceReleaseFallback.stop()
-            if (!wasSelecting) return
-            const geometry = Design.safeText(geometryOutput.text, "")
-            if (exitCode === 0 && /^-?\d+,-?\d+\s+\d+x\d+$/.test(geometry)) {
-                service.launch("regiao", geometry)
-                return
-            }
-            if (exitCode !== 1) service.fail(Design.safeText(geometryError.text, "slurp não pôde selecionar a região"))
-        }
-    }
-
-    Process {
         id: recorder
         stdout: SplitParser {
             splitMarker: "\n"
             onRead: data => {
                 if (data === "INICIADA") {
+                    service.selecting = false
                     service.pending = false
                     service.recording = true
                     service.startedAt = Date.now()
                     service.elapsed = 0
+                } else if (data === "CANCELADA") {
+                    service.selecting = false
+                    service.pending = false
                 } else if (data.indexOf("SALVA:") === 0) {
                     service.saved = true
                     service.outputPath = Design.safeText(data.slice(6), service.outputPath)
