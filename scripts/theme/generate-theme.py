@@ -849,6 +849,11 @@ def main():
         publish(OUT / "fastfetch/config.jsonc", fastfetch, validate_fastfetch)
     except (OSError, ValueError, TypeError, json.JSONDecodeError) as error:
         print(f"Tema do Hyprism: configuração anterior do Fastfetch preservada após falha ({error})", file=sys.stderr)
+    try:
+        zathura = render_hyprism_template("zathurarc", theme)
+        publish(OUT / "zathura/zathurarc", zathura, validate_colors)
+    except (OSError, ValueError, TypeError) as error:
+        print(f"Tema do Hyprism: Zathura preservado após falha ({error})", file=sys.stderr)
     publish_fastfetch_logo(theme)
     try:
         colloid_palette = OUT / "colloid/_color-palette-matugen.scss"

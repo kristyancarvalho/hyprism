@@ -28,6 +28,8 @@ flatpak
 xdg-desktop-portal
 xdg-desktop-portal-hyprland
 xdg-desktop-portal-gtk
+zathura
+zathura-pdf-mupdf
 
 networkmanager
 bluez

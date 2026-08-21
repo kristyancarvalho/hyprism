@@ -176,6 +176,7 @@ fi
 link_path "$runtime_root/config/nvim" "$target_home/.config/nvim"
 link_path "$theme_dir/starship.toml" "$target_home/.config/starship.toml"
 link_path "$theme_dir/tmux.conf" "$target_home/.config/tmux/theme.conf"
+link_path "$theme_dir/zathura/zathurarc" "$target_home/.config/zathura/zathurarc"
 
 backup_path "$target_home/.config/tmux/tmux.conf"
 link_path "$runtime_root/config/tmux/tmux.conf" "$target_home/.tmux.conf"
@@ -208,7 +209,7 @@ if [[ ! -s $theme_dir/fastfetch/logo-palette.json ]]; then
   backup_path "$target_home/.config/fastfetch/images/archlinux.png"
 fi
 first_wallpaper=$(find -P "$target_home/Imagens/Wallpapers" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print -quit)
-if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/hyprlock.conf || ! -s $theme_dir/colloid/_color-palette-matugen.scss || ! -s $theme_dir/colloid-gtk-4.0/gtk.css || ! -s $colloid_theme/gtk-3.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig || ! -s $theme_dir/icons/Hyprism-Papirus/index.theme || ! -s $theme_dir/starship.toml || ! -s $theme_dir/tmux.conf || ! -s $theme_dir/nvim/matugen.lua || ! -s $target_home/.config/nvim/lua/themes/matugen.lua || ! -s $theme_dir/fastfetch/config.jsonc || ! -s $target_home/.config/fastfetch/images/archlinux.png || ! -e $state_dir/lock-wallpaper || ! -s $sddm_state_dir/current-wallpaper.jpg || ! -s $sddm_state_dir/theme.conf ]]; then
+if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/hyprlock.conf || ! -s $theme_dir/colloid/_color-palette-matugen.scss || ! -s $theme_dir/colloid-gtk-4.0/gtk.css || ! -s $colloid_theme/gtk-3.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig || ! -s $theme_dir/icons/Hyprism-Papirus/index.theme || ! -s $theme_dir/starship.toml || ! -s $theme_dir/tmux.conf || ! -s $theme_dir/zathura/zathurarc || ! -s $theme_dir/nvim/matugen.lua || ! -s $target_home/.config/nvim/lua/themes/matugen.lua || ! -s $theme_dir/fastfetch/config.jsonc || ! -s $target_home/.config/fastfetch/images/archlinux.png || ! -e $state_dir/lock-wallpaper || ! -s $sddm_state_dir/current-wallpaper.jpg || ! -s $sddm_state_dir/theme.conf ]]; then
   if [[ -n ${first_wallpaper:-} ]]; then
     as_user env HYPRISM_ROOT="$runtime_root" HYPRISM_SDDM_STATE_DIR="$sddm_state_dir" "$runtime_root/scripts/wallpaper" set "$first_wallpaper"
   else
@@ -300,13 +301,13 @@ if ((dry_run == 0)); then
     || { printf 'O ponto de entrada do Quickshell não foi instalado.\n' >&2; exit 1; }
   [[ -f $target_home/.config/foot/foot.ini && -s $theme_dir/foot.ini && -f $theme_dir/kitty.conf && -s $theme_dir/hyprlock-colors.conf && -s $theme_dir/hyprlock.conf ]] \
     || { printf 'A configuração ou um tema de fallback está ausente.\n' >&2; exit 1; }
-  [[ -s $target_home/.config/starship.toml && -s $target_home/.config/tmux/theme.conf && -s $target_home/.config/nvim/init.lua && -s $target_home/.config/nvim/lua/themes/matugen.lua ]] \
+  [[ -s $target_home/.config/starship.toml && -s $target_home/.config/tmux/theme.conf && -s $target_home/.config/zathura/zathurarc && -s $target_home/.config/nvim/init.lua && -s $target_home/.config/nvim/lua/themes/matugen.lua ]] \
     || { printf 'O ambiente de desenvolvimento temático não foi instalado.\n' >&2; exit 1; }
   [[ -x $tpm_dir/tpm && -d $target_home/.tmux/plugins/tmux-sensible && -d $target_home/.tmux/plugins/tmux-yank && -d $target_home/.tmux/plugins/tmux-resurrect && -d $target_home/.tmux/plugins/tmux-continuum ]] \
     || { printf 'O TPM ou seus plugins declarados não foram instalados.\n' >&2; exit 1; }
   [[ -s $target_home/.config/fastfetch/config.jsonc && -s $target_home/.config/fastfetch/images/archlinux.png && -s $target_home/.config/fastfetch/images/archlinux-source.svg ]] \
     || { printf 'O preset temático do Fastfetch não foi instalado.\n' >&2; exit 1; }
-  ! grep -ERqs '{{colors\.|{{hyprism\.' "$target_home/.config/starship.toml" "$target_home/.config/tmux/theme.conf" "$target_home/.config/nvim/lua/themes/matugen.lua" "$target_home/.config/fastfetch/config.jsonc" \
+  ! grep -ERqs '{{colors\.|{{hyprism\.' "$target_home/.config/starship.toml" "$target_home/.config/tmux/theme.conf" "$target_home/.config/zathura/zathurarc" "$target_home/.config/nvim/lua/themes/matugen.lua" "$target_home/.config/fastfetch/config.jsonc" \
     || { printf 'Há valores Matugen não resolvidos no ambiente de desenvolvimento.\n' >&2; exit 1; }
   [[ -s $colloid_theme/gtk-3.0/gtk.css && -s $colloid_theme/gtk-4.0/gtk.css ]] \
     || { printf 'O tema Colloid-Hyprism não foi instalado.\n' >&2; exit 1; }
@@ -347,7 +348,7 @@ if ((dry_run == 0)); then
 fi
 
 missing=()
-for command in Hyprland hyprlock qs foot kitty fastfetch matugen starship tmux nvim awww awww-daemon python3 jq curl git sassc magick kvantummanager qt5ct qt6ct fc-cache fc-match wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp hyprpicker brightnessctl ddcutil wf-recorder hyprsunset zen-browser xdg-settings powerprofilesctl sddm-greeter-qt6 flatpak; do command -v "$command" >/dev/null || missing+=("$command"); done
+for command in Hyprland hyprlock qs foot kitty fastfetch matugen starship tmux nvim awww awww-daemon python3 jq curl git sassc magick kvantummanager qt5ct qt6ct fc-cache fc-match wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp hyprpicker brightnessctl ddcutil wf-recorder hyprsunset zen-browser xdg-settings powerprofilesctl sddm-greeter-qt6 flatpak zathura; do command -v "$command" >/dev/null || missing+=("$command"); done
 printf '\nHyprism instalado para %s.\n' "$target_user"
 printf 'Configurações: %s/.config/{hypr,quickshell/default,quickshell/hyprism,foot,kitty,gtk-3.0,gtk-4.0,Kvantum,qt5ct,qt6ct}\n' "$target_home"
 printf 'Papéis de parede: %s/Imagens/Wallpapers\nCapturas de tela: %s/Imagens/Screenshots\n' "$target_home" "$target_home"
