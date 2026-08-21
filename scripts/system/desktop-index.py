@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 import configparser
+import ctypes
 import json
 import os
 import pathlib
+import select
 import shlex
+import struct
 import subprocess
 import sys
+import time
 
 
 def normalized(value):
@@ -83,6 +87,79 @@ def desktop_entries():
     return sorted(apps.values(), key=lambda item: item['name'].casefold())
 
 
+def watch_desktop_entries():
+    libc = ctypes.CDLL(None, use_errno=True)
+    init = libc.inotify_init1
+    init.argtypes = [ctypes.c_int]
+    init.restype = ctypes.c_int
+    add = libc.inotify_add_watch
+    add.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_uint32]
+    add.restype = ctypes.c_int
+    event = struct.Struct('iIII')
+    watch_mask = 0x00000004 | 0x00000008 | 0x00000040 | 0x00000080 | 0x00000100 | 0x00000200 | 0x00000400 | 0x00000800
+    directory_flag = 0x40000000
+
+    def open_watches():
+        descriptor = init(os.O_CLOEXEC | os.O_NONBLOCK)
+        if descriptor < 0:
+            raise OSError(ctypes.get_errno(), os.strerror(ctypes.get_errno()))
+        watched = set()
+        candidates = []
+        for root in application_roots():
+            if root.is_dir():
+                candidates.append(root)
+                candidates.extend(path for path in root.rglob('*') if path.is_dir())
+            elif root.parent.is_dir():
+                candidates.append(root.parent)
+        for path in candidates:
+            resolved = str(path.resolve())
+            if resolved in watched:
+                continue
+            if add(descriptor, os.fsencode(resolved), watch_mask) >= 0:
+                watched.add(resolved)
+        return descriptor
+
+    def publish_index():
+        print(json.dumps(desktop_entries()), flush=True)
+
+    descriptor = open_watches()
+    publish_index()
+    deadline = None
+    rebuild_watches = False
+    try:
+        while True:
+            timeout = None if deadline is None else max(0, deadline - time.monotonic())
+            ready, _, _ = select.select([descriptor], [], [], timeout)
+            if not ready:
+                publish_index()
+                if rebuild_watches:
+                    os.close(descriptor)
+                    descriptor = open_watches()
+                    rebuild_watches = False
+                deadline = None
+                continue
+            try:
+                data = os.read(descriptor, 65536)
+            except BlockingIOError:
+                continue
+            offset = 0
+            relevant = False
+            while offset + event.size <= len(data):
+                _, mask, _, length = event.unpack_from(data, offset)
+                offset += event.size
+                name = data[offset:offset + length].split(b'\0', 1)[0]
+                offset += length
+                if mask & directory_flag:
+                    rebuild_watches = True
+                    relevant = True
+                elif not name or name.lower().endswith(b'.desktop'):
+                    relevant = True
+            if relevant:
+                deadline = time.monotonic() + .35
+    finally:
+        os.close(descriptor)
+
+
 def process_metadata(pid):
     executable = ''
     command = ''
@@ -125,5 +202,7 @@ def client_entries():
 
 if len(sys.argv) > 1 and sys.argv[1] == 'clients':
     print(json.dumps(client_entries()))
+elif len(sys.argv) > 1 and sys.argv[1] == 'watch':
+    watch_desktop_entries()
 else:
     print(json.dumps(desktop_entries()))
