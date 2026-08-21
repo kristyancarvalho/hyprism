@@ -293,6 +293,7 @@ def render_hyprlock(theme):
         "foreground": theme["foreground"],
         "muted": theme["mutedForeground"],
         "accent": theme["accent"],
+        "secondary": theme["secondary"],
         "error": theme["error"],
     }
     return "".join(f"$hyprism_{name} = rgb({color[1:]})\n" for name, color in values.items())
@@ -509,7 +510,7 @@ def validate_fastfetch(content):
     validate_colors(content)
     config = json.loads(content)
     logo = config.get("logo", {})
-    if logo.get("type") != "auto" or logo.get("source") != "~/.config/fastfetch/images/archlinux.png":
+    if logo.get("type") != "kitty-icat" or logo.get("source") != "~/.config/fastfetch/images/archlinux.png":
         raise ValueError("logo de imagem do Fastfetch ausente")
     modules = {module if isinstance(module, str) else module.get("type") for module in config.get("modules", [])}
     required = {"title", "os", "kernel", "uptime", "packages", "shell", "wm", "terminal", "memory", "disk", "theme", "command", "custom"}
@@ -531,17 +532,12 @@ def validate_png(path):
 
 def render_fastfetch_logo(theme):
     content = FASTFETCH_LOGO_SOURCE.read_text(encoding="utf-8")
-    replacements = {
-        "#1793d1": theme["accent"],
-        "#3da5d9": theme["secondary"],
-        "#57b1de": mix(theme["accent"], theme["foreground"], .24),
-    }
-    for source, destination in replacements.items():
-        if source not in content.lower():
-            raise ValueError(f"região de cor ausente no logo: {source}")
-        content = re.sub(re.escape(source), destination, content, flags=re.IGNORECASE)
+    source = "#1793d1"
+    if content.lower().count(source) != 1:
+        raise ValueError("preenchimento monocromático do logo ausente")
+    content = re.sub(re.escape(source), theme["accent"], content, flags=re.IGNORECASE)
     ElementTree.fromstring(content)
-    return content, replacements
+    return content, {"fill": theme["accent"]}
 
 
 def publish_fastfetch_logo(theme):

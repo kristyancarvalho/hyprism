@@ -10,8 +10,8 @@ wallpaper="$cache_dir/state/lock-wallpaper"
 [[ -s $colors ]] || { printf 'Paleta do Hyprlock ausente: %s\n' "$colors" >&2; exit 1; }
 [[ -s $generated ]] || { printf 'Configuração dinâmica do Hyprlock ausente: %s\n' "$generated" >&2; exit 1; }
 [[ -e $wallpaper && -r $wallpaper ]] || { printf 'Papel de parede do Hyprlock ausente: %s\n' "$wallpaper" >&2; exit 1; }
-[[ $(grep -Ec '^\$hyprism_(background|surface|surface_active|foreground|muted|accent|error) = rgb\([0-9a-fA-F]{6}\)$' "$colors") -eq 7 ]] || { printf 'Paleta do Hyprlock inválida.\n' >&2; exit 1; }
-[[ $(grep -Ec '^\$hyprism_(background|surface|surface_active|foreground|muted|accent|error) = rgb\([0-9a-fA-F]{6}\)$' "$generated") -eq 7 ]] || { printf 'Cores da configuração dinâmica do Hyprlock inválidas.\n' >&2; exit 1; }
+[[ $(grep -Ec '^\$hyprism_(background|surface|surface_active|foreground|muted|accent|secondary|error) = rgb\([0-9a-fA-F]{6}\)$' "$colors") -eq 8 ]] || { printf 'Paleta do Hyprlock inválida.\n' >&2; exit 1; }
+[[ $(grep -Ec '^\$hyprism_(background|surface|surface_active|foreground|muted|accent|secondary|error) = rgb\([0-9a-fA-F]{6}\)$' "$generated") -eq 8 ]] || { printf 'Cores da configuração dinâmica do Hyprlock inválidas.\n' >&2; exit 1; }
 grep -Eiq 'undefined|null|nan|\{\{' "$fallback" "$colors" "$generated" && { printf 'Valor não resolvido na configuração do Hyprlock.\n' >&2; exit 1; }
 grep -Fqx "    path = $wallpaper" "$generated" || { printf 'Wallpaper dinâmico do Hyprlock não corresponde ao estado instalado.\n' >&2; exit 1; }
 grep -Eq '^    path =$' "$fallback" || { printf 'O fallback do Hyprlock depende de uma imagem dinâmica.\n' >&2; exit 1; }
