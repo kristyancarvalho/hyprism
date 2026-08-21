@@ -12,6 +12,7 @@ PanelWindow {
     required property var theme
     property int overflowCount: 0
     property bool suppressed: false
+    property bool removalPending: false
     signal dismissRequested(var notification)
 
     function notificationKey(notification) {
@@ -28,8 +29,12 @@ PanelWindow {
     function syncModel() {
         const current = notifications || []
         const desiredKeys = current.map(notification => notificationKey(notification))
+        let removed = false
         for (let index = popupModel.count - 1; index >= 0; index--) {
-            if (desiredKeys.indexOf(popupModel.get(index).key) < 0) popupModel.remove(index)
+            if (desiredKeys.indexOf(popupModel.get(index).key) < 0) {
+                removed = true
+                popupModel.remove(index)
+            }
         }
         for (let target = 0; target < current.length; target++) {
             const notification = current[target]
@@ -41,10 +46,17 @@ PanelWindow {
                 if (existing !== target) popupModel.move(existing, target, 1)
             }
         }
+        if (removed) {
+            removalPending = true
+            removalTimer.restart()
+        } else if (current.length > 0) {
+            removalPending = false
+            removalTimer.stop()
+        }
     }
 
     screen: shellScreen
-    visible: shellScreen !== null && !suppressed && popupModel.count > 0
+    visible: shellScreen !== null && !suppressed && (popupModel.count > 0 || removalPending)
     anchors.top: true
     margins.top: Design.compactReservedHeight(controller.config.shell) + 6
     implicitWidth: 360
@@ -55,6 +67,12 @@ PanelWindow {
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
     ListModel { id: popupModel; dynamicRoles: true }
+
+    Timer {
+        id: removalTimer
+        interval: Design.animationMorph
+        onTriggered: popup.removalPending = false
+    }
 
     ListView {
         id: stack
@@ -75,8 +93,18 @@ PanelWindow {
             onDismissed: popup.dismissRequested(notification)
         }
 
-        add: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Design.animationFast; easing.type: Design.easingEnter } }
-        remove: Transition { NumberAnimation { property: "opacity"; to: 0; duration: Design.animationFast; easing.type: Design.easingExit } }
+        add: Transition {
+            ParallelAnimation {
+                NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Design.animationFast; easing.type: Design.easingEnter }
+                NumberAnimation { property: "x"; from: 16; to: 0; duration: Design.animationMorph; easing.type: Design.easingEnter }
+            }
+        }
+        remove: Transition {
+            ParallelAnimation {
+                NumberAnimation { property: "opacity"; to: 0; duration: Design.animationFast; easing.type: Design.easingExit }
+                NumberAnimation { property: "x"; to: 16; duration: Design.animationMorph; easing.type: Design.easingExit }
+            }
+        }
         displaced: Transition { NumberAnimation { property: "y"; duration: Design.animationMorph; easing.type: Design.easingMove } }
     }
 
