@@ -6,6 +6,7 @@ import os
 import pathlib
 import select
 import shlex
+import shutil
 import socket
 import struct
 import subprocess
@@ -54,6 +55,19 @@ def desktop_visible(section):
     return not desktops.intersection(excluded)
 
 
+def try_exec_available(value):
+    if not value:
+        return True
+    try:
+        executable = shlex.split(value)[0]
+    except (IndexError, ValueError):
+        return False
+    if '/' in executable:
+        path = pathlib.Path(executable)
+        return path.is_file() and os.access(path, os.X_OK)
+    return shutil.which(executable) is not None
+
+
 def command_details(command):
     try:
         tokens = [token for token in shlex.split(command) if not token.startswith('%')]
@@ -93,7 +107,13 @@ def desktop_entries():
                 seen.add(desktop_id)
                 no_display = section.getboolean('NoDisplay', fallback=False)
                 hidden = section.getboolean('Hidden', fallback=False)
-                if section.get('Type') != 'Application' or no_display or hidden or not desktop_visible(section):
+                if (
+                    section.get('Type') != 'Application'
+                    or no_display
+                    or hidden
+                    or not desktop_visible(section)
+                    or not try_exec_available(section.get('TryExec', ''))
+                ):
                     continue
                 command, executable, flatpak_id = command_details(section.get('Exec', ''))
                 if not command:
@@ -132,7 +152,17 @@ def launch_desktop_entry(desktop_id):
     for entry in desktop_entries():
         if entry['id'] != desktop_id:
             continue
-        subprocess.Popen(['gio', 'launch', entry['path']], start_new_session=True)
+        # Quickshell owns the pipes connected to this short-lived helper.  If
+        # gio (and therefore the launched application) inherits those pipes,
+        # Quickshell closes them as soon as the helper exits.  Applications
+        # which log during startup can then abort or exit on the broken pipe.
+        subprocess.Popen(
+            ['gio', 'launch', entry['path']],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
         return 0
     return 1
 
