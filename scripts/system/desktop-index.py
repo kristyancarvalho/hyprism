@@ -6,6 +6,7 @@ import os
 import pathlib
 import select
 import shlex
+import socket
 import struct
 import subprocess
 import sys
@@ -21,7 +22,36 @@ def application_roots():
     data_dirs = os.environ.get('XDG_DATA_DIRS', '/usr/local/share:/usr/share').split(':')
     roots = [data_home / 'applications']
     roots.extend(pathlib.Path(directory) / 'applications' for directory in data_dirs if directory)
+    roots.extend([
+        pathlib.Path.home() / '.local/share/flatpak/exports/share/applications',
+        pathlib.Path('/var/lib/flatpak/exports/share/applications')
+    ])
     return list(dict.fromkeys(roots))
+
+
+def localized(section, key, fallback=''):
+    locale = os.environ.get('LC_ALL') or os.environ.get('LC_MESSAGES') or os.environ.get('LANG', '')
+    locale = locale.split('.', 1)[0].split('@', 1)[0]
+    candidates = [locale]
+    if '_' in locale:
+        candidates.append(locale.split('_', 1)[0])
+    for candidate in candidates:
+        if candidate and section.get(f'{key}[{candidate}]'):
+            return section.get(f'{key}[{candidate}]')
+    return section.get(key, fallback)
+
+
+def desktop_list(value):
+    return [item for item in str(value).split(';') if item]
+
+
+def desktop_visible(section):
+    desktops = {item.casefold() for item in os.environ.get('XDG_CURRENT_DESKTOP', '').split(':') if item}
+    only = {item.casefold() for item in desktop_list(section.get('OnlyShowIn', ''))}
+    excluded = {item.casefold() for item in desktop_list(section.get('NotShowIn', ''))}
+    if only and not desktops.intersection(only):
+        return False
+    return not desktops.intersection(excluded)
 
 
 def command_details(command):
@@ -47,6 +77,7 @@ def command_details(command):
 
 def desktop_entries():
     apps = {}
+    seen = set()
     for root in application_roots():
         if not root.exists():
             continue
@@ -56,27 +87,37 @@ def desktop_entries():
             try:
                 parser.read(path, encoding='utf-8')
                 section = parser['Desktop Entry']
-                if section.get('Type') != 'Application' or section.getboolean('NoDisplay', fallback=False) or section.getboolean('Hidden', fallback=False):
+                desktop_id = str(path.relative_to(root)).replace('/', '-').removesuffix('.desktop') or path.stem
+                if desktop_id in seen:
+                    continue
+                seen.add(desktop_id)
+                no_display = section.getboolean('NoDisplay', fallback=False)
+                hidden = section.getboolean('Hidden', fallback=False)
+                if section.get('Type') != 'Application' or no_display or hidden or not desktop_visible(section):
                     continue
                 command, executable, flatpak_id = command_details(section.get('Exec', ''))
                 if not command:
                     continue
-                desktop_id = str(path.relative_to(root)).replace('/', '-').removesuffix('.desktop') or path.stem
-                if desktop_id in apps:
-                    continue
                 startup_class = section.get('StartupWMClass', '')
                 if startup_class.startswith('@@'):
                     startup_class = ''
-                name = section.get('Name', desktop_id)
+                name = localized(section, 'Name', desktop_id)
+                comment = localized(section, 'Comment', '')
                 aliases = {desktop_id, path.stem, startup_class, executable, flatpak_id, pathlib.Path(section.get('TryExec', '')).name, name}
                 ignored_parts = {'app', 'bin', 'class', 'com', 'desktop', 'org', 'opt', 'share', 'startup', 'usr'}
                 aliases.update(part for value in tuple(aliases) for part in str(value).replace('-', '.').replace('_', '.').split('.') if len(part) >= 4 and part.casefold() not in ignored_parts)
                 apps[desktop_id] = {
                     'id': desktop_id,
                     'name': name,
-                    'comment': section.get('Comment', ''),
+                    'comment': comment,
                     'icon': section.get('Icon', 'application-x-executable'),
                     'exec': command,
+                    'path': str(path),
+                    'terminal': section.getboolean('Terminal', fallback=False),
+                    'noDisplay': no_display,
+                    'hidden': hidden,
+                    'onlyShowIn': desktop_list(section.get('OnlyShowIn', '')),
+                    'notShowIn': desktop_list(section.get('NotShowIn', '')),
                     'startupClass': startup_class,
                     'executable': executable,
                     'primaryAliases': sorted({normalized(alias) for alias in (desktop_id, startup_class, flatpak_id) if normalized(alias)}),
@@ -85,6 +126,15 @@ def desktop_entries():
             except (configparser.Error, OSError, KeyError, ValueError):
                 continue
     return sorted(apps.values(), key=lambda item: item['name'].casefold())
+
+
+def launch_desktop_entry(desktop_id):
+    for entry in desktop_entries():
+        if entry['id'] != desktop_id:
+            continue
+        subprocess.Popen(['gio', 'launch', entry['path']], start_new_session=True)
+        return 0
+    return 1
 
 
 def watch_desktop_entries():
@@ -184,10 +234,11 @@ def client_entries():
     index = {}
     for client in clients if isinstance(clients, list) else []:
         address = str(client.get('address', '')).lower()
-        if not address:
+        if not client.get('mapped', False) or not address.startswith('0x') or address == '0x0':
             continue
         executable, command = process_metadata(client.get('pid', 0))
         index[address] = {
+            'address': address,
             'class': client.get('class', ''),
             'initialClass': client.get('initialClass', ''),
             'title': client.get('title', ''),
@@ -195,13 +246,61 @@ def client_entries():
             'pid': client.get('pid', 0),
             'executable': executable,
             'command': command,
-            'xwayland': bool(client.get('xwayland', False))
+            'xwayland': bool(client.get('xwayland', False)),
+            'workspace': client.get('workspace', {}).get('id', 0),
+            'focusHistoryID': client.get('focusHistoryID', -1)
         }
     return index
 
 
-if len(sys.argv) > 1 and sys.argv[1] == 'clients':
+def watch_client_entries():
+    runtime = os.environ.get('XDG_RUNTIME_DIR', f'/run/user/{os.getuid()}')
+    signature = os.environ.get('HYPRLAND_INSTANCE_SIGNATURE', '')
+    event_path = pathlib.Path(runtime) / 'hypr' / signature / '.socket2.sock'
+    relevant = ('openwindow', 'closewindow', 'movewindow', 'windowtitle', 'activewindow', 'changefloatingmode')
+
+    def publish():
+        print(json.dumps(client_entries()), flush=True)
+
+    publish()
+    while True:
+        connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            connection.connect(str(event_path))
+            connection.setblocking(False)
+            buffer = b''
+            deadline = time.monotonic() + 15
+            dirty = False
+            while True:
+                timeout = max(0, deadline - time.monotonic())
+                readable, _, _ = select.select([connection], [], [], timeout)
+                if readable:
+                    chunk = connection.recv(65536)
+                    if not chunk:
+                        break
+                    buffer += chunk
+                    lines = buffer.split(b'\n')
+                    buffer = lines.pop()
+                    if any(line.decode(errors='replace').startswith(relevant) for line in lines):
+                        dirty = True
+                        deadline = min(deadline, time.monotonic() + .08)
+                if time.monotonic() >= deadline or dirty and not readable:
+                    publish()
+                    dirty = False
+                    deadline = time.monotonic() + 15
+        except OSError:
+            time.sleep(1)
+            publish()
+        finally:
+            connection.close()
+
+
+if len(sys.argv) > 2 and sys.argv[1] == 'launch':
+    raise SystemExit(launch_desktop_entry(sys.argv[2]))
+elif len(sys.argv) > 1 and sys.argv[1] == 'clients':
     print(json.dumps(client_entries()))
+elif len(sys.argv) > 1 and sys.argv[1] == 'clients-watch':
+    watch_client_entries()
 elif len(sys.argv) > 1 and sys.argv[1] == 'watch':
     watch_desktop_entries()
 else:

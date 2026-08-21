@@ -12,8 +12,8 @@ Item {
     property string osdKind: ""
     property string osdValue: ""
     property int switcherIndex: 0
-    property var switcherWindows: []
-    property var mruWindows: []
+    property alias switcherWindows: switcherWindowModel
+    property var mruWindowAddresses: []
     property var mediaPlayer: null
     property int launcherResultCount: 0
     property bool pendingNightMode: false
@@ -79,6 +79,8 @@ Item {
     property string rootDir: Quickshell.env("HYPRISM_ROOT") || Quickshell.shellDir + "/../.."
     readonly property bool developmentMode: Quickshell.env("HYPRISM_DEVELOPMENT") === "1"
     readonly property var panelModes: ["launcher", "wallpaper", "clipboard", "control", "network", "bluetooth", "power", "emoji", "switcher", "recordingSelector"]
+
+    ListModel { id: switcherWindowModel }
 
     function defaultShellConfig() {
         return {
@@ -167,6 +169,12 @@ Item {
     function openPowerMenu(screenName) { openPanel("power", screenName) }
     function openEmojiPicker(screenName) { openPanel("emoji", screenName) }
     function openRecording(screenName) { openPanel("recordingSelector", screenName) }
+    function launchApplication(entry) {
+        if (!entry || !Design.safeText(entry.id, "")) return false
+        run(["python3", rootDir + "/scripts/system/desktop-index.py", "launch", entry.id])
+        close()
+        return true
+    }
     function toggleHub(screenName) { togglePanel("control", screenName) }
     function toggleLauncher(screenName) { togglePanel("launcher", screenName) }
     function toggleClipboard(screenName) { togglePanel("clipboard", screenName) }
@@ -431,77 +439,78 @@ Item {
     }
 
     function rememberWindow(window) {
-        if (!window) return
-        const available = Hyprland.toplevels.values || []
-        const next = [window]
-        for (let i = 0; i < mruWindows.length; i++) {
-            const candidate = mruWindows[i]
-            if (candidate && candidate !== window && available.indexOf(candidate) >= 0) next.push(candidate)
+        const address = window ? HyprlandService.normalizedAddress(window.address).toLowerCase() : ""
+        if (!address || !clientIndex[address]) return
+        const next = [address]
+        for (let index = 0; index < mruWindowAddresses.length; index++) {
+            const candidate = mruWindowAddresses[index]
+            if (candidate !== address && clientIndex[candidate]) next.push(candidate)
         }
-        for (let j = 0; j < available.length; j++) {
-            if (available[j] && next.indexOf(available[j]) < 0) next.push(available[j])
-        }
-        mruWindows = next
+        mruWindowAddresses = next
     }
 
-    function orderedWindows() {
-        const available = Hyprland.toplevels.values || []
+    function orderedWindowAddresses() {
+        const available = Object.keys(clientIndex)
         const ordered = []
-        for (let i = 0; i < mruWindows.length; i++) {
-            if (mruWindows[i] && available.indexOf(mruWindows[i]) >= 0 && ordered.indexOf(mruWindows[i]) < 0) ordered.push(mruWindows[i])
+        for (let index = 0; index < mruWindowAddresses.length; index++) {
+            const address = mruWindowAddresses[index]
+            if (clientIndex[address] && ordered.indexOf(address) < 0) ordered.push(address)
         }
-        for (let j = 0; j < available.length; j++) {
-            if (available[j] && ordered.indexOf(available[j]) < 0) ordered.push(available[j])
+        available.sort((left, right) => Design.safeNumber(clientIndex[left].focusHistoryID, 999999) - Design.safeNumber(clientIndex[right].focusHistoryID, 999999))
+        for (let index = 0; index < available.length; index++) {
+            if (ordered.indexOf(available[index]) < 0) ordered.push(available[index])
         }
         return ordered
     }
 
-    function switcherEntry(window) {
-        if (!window) return null
-        const address = HyprlandService.normalizedAddress(window.address)
-        if (!address) return null
-        const ipc = window.lastIpcObject || {}
-        const client = clientIndex[address.toLowerCase()] || {}
-        const candidates = [client.class, client.initialClass, window.appId, client.executable, client.command, ipc.class, ipc.initialClass]
+    function switcherEntry(address) {
+        const client = clientIndex[address]
+        if (!client) return null
+        const candidates = [client.class, client.initialClass, client.executable, client.command]
         const application = applicationEntry(candidates)
         return {
-            window: window,
             address: address,
-            appId: Design.safeText(client.class, Design.safeText(ipc.class, Design.safeText(window.appId, ""))),
-            initialClass: Design.safeText(client.initialClass, Design.safeText(ipc.initialClass, "")),
+            appId: Design.safeText(client.class, ""),
+            initialClass: Design.safeText(client.initialClass, ""),
             icon: application ? Design.safeText(application.icon, "application-x-executable") : "application-x-executable",
             applicationName: application ? Design.safeText(application.name, "Janela") : applicationName(candidates),
-            title: Design.safeText(window.title, Design.safeText(client.title, "Sem título")),
+            title: Design.safeText(client.title, "Sem título"),
             minimized: false
         }
     }
 
-    function switcherEntries() {
-        const windows = orderedWindows()
-        const entries = []
-        for (let index = 0; index < windows.length; index++) {
-            const entry = switcherEntry(windows[index])
-            if (entry) entries.push(entry)
+    function reconcileSwitcher() {
+        const selected = switcherWindowModel.count > 0 && switcherIndex < switcherWindowModel.count ? switcherWindowModel.get(switcherIndex).address : ""
+        const addresses = orderedWindowAddresses()
+        switcherWindowModel.clear()
+        for (let index = 0; index < addresses.length; index++) {
+            const entry = switcherEntry(addresses[index])
+            if (entry) switcherWindowModel.append(entry)
         }
-        return entries
+        let selectedIndex = -1
+        for (let index = 0; index < switcherWindowModel.count; index++) {
+            if (switcherWindowModel.get(index).address === selected) selectedIndex = index
+        }
+        switcherIndex = selectedIndex >= 0 ? selectedIndex : Math.min(switcherIndex, Math.max(0, switcherWindowModel.count - 1))
+        if (mode === "switcher" && switcherWindowModel.count === 0) close()
     }
 
     function switcher(step) {
         if (mode !== "switcher") {
             rememberWindow(Hyprland.activeToplevel)
-            switcherWindows = switcherEntries()
-            if (!switcherWindows.length) return
+            reconcileSwitcher()
+            if (!switcherWindowModel.count) return
             previousMode = mode
             openMode("switcher")
-            switcherIndex = step < 0 ? switcherWindows.length - 1 : Math.min(1, switcherWindows.length - 1)
+            switcherIndex = step < 0 ? switcherWindowModel.count - 1 : Math.min(1, switcherWindowModel.count - 1)
             return
         }
-        switcherIndex = (switcherIndex + step + switcherWindows.length) % switcherWindows.length
+        if (switcherWindowModel.count > 0) switcherIndex = (switcherIndex + step + switcherWindowModel.count) % switcherWindowModel.count
     }
 
     function commitSwitcher() {
         if (mode !== "switcher") return
-        const selected = switcherWindows[switcherIndex]
+        const selected = switcherIndex < switcherWindowModel.count ? switcherWindowModel.get(switcherIndex) : null
         if (selected) {
             HyprlandService.focusWindow(selected.address)
         }
@@ -689,6 +698,12 @@ Item {
 
     function setClientEntries(entries) {
         clientIndex = entries && typeof entries === "object" ? entries : ({})
+        const next = []
+        for (let index = 0; index < mruWindowAddresses.length; index++) {
+            if (clientIndex[mruWindowAddresses[index]]) next.push(mruWindowAddresses[index])
+        }
+        mruWindowAddresses = next
+        if (mode === "switcher") reconcileSwitcher()
     }
 
     function applicationEntry(candidates) {

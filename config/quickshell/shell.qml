@@ -259,6 +259,12 @@ ShellRoot {
         function togglePowerMenu(): void { shellController.togglePowerMenu(root.focusedScreenName()) }
         function toggleEmojiPicker(): void { shellController.toggleEmojiPicker(root.focusedScreenName()) }
         function toggleRecording(): void { shellController.toggleRecording(root.focusedScreenName()) }
+        function launchApplication(desktopId: string): bool {
+            for (let index = 0; index < shellController.appEntries.length; index++) {
+                if (shellController.appEntries[index].id === desktopId) return shellController.launchApplication(shellController.appEntries[index])
+            }
+            return false
+        }
         function switcherForward(): void {
             if (shellController.mode !== "switcher") shellController.targetScreenName = root.focusedScreenName()
             shellController.switcher(1)
@@ -293,9 +299,11 @@ ShellRoot {
                 widgetsLoaded: root.widgetsLoaded,
                 notificationServer: root.notificationServerReady,
                 systemService: shellController.systemServiceAvailable,
-                switcherCount: shellController.switcherWindows.length,
+                applicationCount: shellController.appEntries.length,
+                applicationIds: shellController.appEntries.map(entry => entry.id),
+                switcherCount: shellController.switcherWindows.count,
                 switcherIndex: shellController.switcherIndex,
-                switcherAddress: shellController.switcherWindows[shellController.switcherIndex] ? shellController.switcherWindows[shellController.switcherIndex].address : "",
+                switcherAddress: shellController.switcherIndex < shellController.switcherWindows.count ? shellController.switcherWindows.get(shellController.switcherIndex).address : "",
                 wallpaperQuery: shellController.wallpaperQuery,
                 wallpaperResultCount: shellController.wallpaperResultCount,
                 wallpaperSelectedIndex: shellController.wallpaperSelectedIndex,
@@ -304,7 +312,7 @@ ShellRoot {
                 popupOverflowCount: root.popupOverflowCount,
                 notificationHistoryCount: root.notificationHistory.length,
                 clipboardCount: shellController.clipboardEntries.length,
-                switcherMetadata: shellController.switcherWindows.map(item => ({ address: item.address, appId: item.appId, initialClass: item.initialClass, icon: item.icon, applicationName: item.applicationName, title: item.title })),
+                switcherMetadata: Array.from({ length: shellController.switcherWindows.count }, (_, index) => shellController.switcherWindows.get(index)),
                 widgets: root.widgetStatus(),
                 widgetLayoutPosition: shellController.widgetLayoutPosition(),
                 monitoring: shellController.monitoring,

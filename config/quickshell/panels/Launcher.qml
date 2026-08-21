@@ -33,9 +33,7 @@ Item {
     }
 
     function launch(app) {
-        if (!app || !Design.safeText(app.exec, "")) return
-        controller.run(["sh", "-lc", app.exec])
-        controller.close()
+        controller.launchApplication(app)
     }
 
     function takeInitialFocus() {

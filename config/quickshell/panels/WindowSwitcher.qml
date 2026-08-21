@@ -68,8 +68,11 @@ Item {
             onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
 
             delegate: Rectangle {
-                required property var modelData
                 required property int index
+                required property string icon
+                required property string applicationName
+                required property string title
+                required property bool minimized
                 property bool selected: controller.switcherIndex === index
                 width: Math.max(148, Math.min(180, (ListView.view.width - 30) / Math.min(4, Math.max(1, ListView.view.count))))
                 height: ListView.view.height
@@ -85,7 +88,7 @@ Item {
 
                     ShellIcon {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        name: modelData ? modelData.icon : "application-x-executable"
+                        name: icon
                         fallback: "application-x-executable"
                         iconSize: 38
                         framed: true
@@ -94,7 +97,7 @@ Item {
 
                     Text {
                         width: parent.width
-                        text: modelData ? modelData.applicationName : "Janela"
+                        text: applicationName
                         color: panel.theme.colors.foreground
                         font.family: Design.fontFamily
                         font.pixelSize: Design.fontSizeSm
@@ -105,7 +108,7 @@ Item {
 
                     Text {
                         width: parent.width
-                        text: Design.safeText(modelData ? modelData.title : "", modelData && modelData.minimized ? "Janela minimizada" : "Sem título")
+                        text: Design.safeText(title, minimized ? "Janela minimizada" : "Sem título")
                         color: panel.theme.colors.mutedForeground
                         font.family: Design.fontFamily
                         font.pixelSize: Design.fontSizeXs
