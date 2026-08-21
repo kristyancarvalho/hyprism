@@ -28,7 +28,8 @@ QtObject {
     readonly property int compactWidthMax: 680
     readonly property int compactItemHeight: 30
     readonly property int compactIconSize: 16
-    readonly property int compactConnectivityIconSize: 14
+    readonly property int compactConnectivityIconSize: 13
+    readonly property int compactConnectivityTextSize: 11
     readonly property int compactTextSize: 12
     readonly property int compactHorizontalPadding: 16
     readonly property int compactPillPadding: 10

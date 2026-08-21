@@ -13,6 +13,7 @@ Rectangle {
     property bool filled: true
     property bool clickable: false
     property int iconSize: Design.compactIconSize
+    property int labelSize: Design.compactTextSize
     property int labelMaximumWidth: -1
     property int horizontalPadding: filled ? Design.compactPillPadding : Design.compactPlainPadding
     property int labelWeight: selected ? Design.fontWeightSemibold : Design.fontWeightMedium
@@ -44,6 +45,7 @@ Rectangle {
             color: item.selected ? item.theme.colors.background : item.theme.colors.foreground
             elide: Text.ElideRight
             font.weight: item.labelWeight
+            font.pixelSize: item.labelSize
         }
 
         CompactBarIcon {

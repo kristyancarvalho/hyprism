@@ -101,6 +101,7 @@ Item {
                 theme: compact.theme
                 iconName: compact.controller.networkIconName()
                 iconSize: Design.compactConnectivityIconSize
+                labelSize: Design.compactConnectivityTextSize
                 label: compact.controller.networkLabel()
                 filled: false
                 horizontalPadding: Design.compactPlainPadding

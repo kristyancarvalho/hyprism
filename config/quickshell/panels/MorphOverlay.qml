@@ -37,7 +37,7 @@ PanelWindow {
         let width = compactWidth
         let height = Design.compactHeight(controller.config.shell)
         if (mode === "hover") {
-            width = Math.min(safeWidth, controller.mediaAvailable() ? 860 : 700)
+            width = Math.min(safeWidth, 860)
             height = controller.mediaAvailable() ? 88 : 64
         } else if (mode === "launcher") {
             width = Math.min(safeWidth, 720)
@@ -364,6 +364,7 @@ PanelWindow {
                     theme: window.theme
                     iconName: controller.networkIconName()
                     iconSize: Design.compactConnectivityIconSize
+                    labelSize: Design.compactConnectivityTextSize
                     label: controller.networkLabel()
                     iconOnly: window.morphWidth < 760
                     labelMaximumWidth: 110
@@ -375,6 +376,7 @@ PanelWindow {
                     theme: window.theme
                     iconName: controller.bluetoothIconName()
                     iconSize: Design.compactConnectivityIconSize
+                    labelSize: Design.compactConnectivityTextSize
                     label: controller.bluetoothExpandedText()
                     iconOnly: window.morphWidth < 840
                     labelMaximumWidth: 130

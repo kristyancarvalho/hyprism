@@ -36,13 +36,14 @@ Item {
             color: media.theme.colors.surfaceElevated
             clip: true
 
-            Image {
+            RoundedImage {
                 id: artwork
                 anchors.fill: parent
                 source: media.controller.mediaArtUrl()
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 cache: true
+                radius: cover.radius
             }
 
             ShellIcon {
