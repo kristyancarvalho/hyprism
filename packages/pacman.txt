@@ -24,6 +24,10 @@ kvantum
 kvantum-qt5
 sassc
 gnome-themes-extra
+flatpak
+xdg-desktop-portal
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
 
 networkmanager
 bluez

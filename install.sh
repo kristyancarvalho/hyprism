@@ -167,6 +167,9 @@ link_path "$runtime_root/config/qt6ct/qt6ct.conf" "$target_home/.config/qt6ct/qt
 link_path "$runtime_root/config/Kvantum/kvantum.kvconfig" "$target_home/.config/Kvantum/kvantum.kvconfig"
 link_path "$runtime_root/config/environment.d/90-hyprism.conf" "$target_home/.config/environment.d/90-hyprism.conf"
 link_path "$runtime_root/config/systemd/user/hyprism-hyprsunset.service" "$target_home/.config/systemd/user/hyprism-hyprsunset.service"
+if command -v flatpak >/dev/null; then
+  as_user flatpak override --user --unset-env=QT_STYLE_OVERRIDE
+fi
 if [[ -s $theme_dir/nvim/matugen.lua ]]; then
   run install -m 0644 -o "$target_user" -g "$target_group" "$theme_dir/nvim/matugen.lua" "$runtime_root/config/nvim/lua/themes/matugen.lua"
 fi
@@ -344,7 +347,7 @@ if ((dry_run == 0)); then
 fi
 
 missing=()
-for command in Hyprland hyprlock qs foot kitty fastfetch matugen starship tmux nvim awww awww-daemon python3 jq curl git sassc magick kvantummanager qt5ct qt6ct fc-cache fc-match wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp hyprpicker brightnessctl ddcutil wf-recorder hyprsunset zen-browser xdg-settings powerprofilesctl sddm-greeter-qt6; do command -v "$command" >/dev/null || missing+=("$command"); done
+for command in Hyprland hyprlock qs foot kitty fastfetch matugen starship tmux nvim awww awww-daemon python3 jq curl git sassc magick kvantummanager qt5ct qt6ct fc-cache fc-match wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp hyprpicker brightnessctl ddcutil wf-recorder hyprsunset zen-browser xdg-settings powerprofilesctl sddm-greeter-qt6 flatpak; do command -v "$command" >/dev/null || missing+=("$command"); done
 printf '\nHyprism instalado para %s.\n' "$target_user"
 printf 'Configurações: %s/.config/{hypr,quickshell/default,quickshell/hyprism,foot,kitty,gtk-3.0,gtk-4.0,Kvantum,qt5ct,qt6ct}\n' "$target_home"
 printf 'Papéis de parede: %s/Imagens/Wallpapers\nCapturas de tela: %s/Imagens/Screenshots\n' "$target_home" "$target_home"
