@@ -10,3 +10,11 @@ hl.window_rule({
     match = { class = "^kitty$" },
     no_blur = false,
 })
+
+hl.window_rule({
+    name = "gnome-calculator-dialog",
+    match = { initial_class = "^org\\.gnome\\.Calculator$" },
+    float = true,
+    size = { "monitor_w * 0.28", "monitor_h * 0.52" },
+    center = true,
+})

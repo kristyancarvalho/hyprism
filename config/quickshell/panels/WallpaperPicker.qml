@@ -50,7 +50,7 @@ FocusScope {
     }
 
     function focusSearch() {
-        searchInput.forceActiveFocus(Qt.TabFocusReason)
+        searchInput.forceInputFocus(Qt.TabFocusReason)
         controller.wallpaperFocusTarget = "search"
     }
 
@@ -103,7 +103,7 @@ FocusScope {
     }
 
     function initialFocusReady() {
-        return grid.activeFocus || searchInput.activeFocus || refreshButton.activeFocus || clearButton.activeFocus
+        return grid.activeFocus || searchInput.inputActiveFocus || refreshButton.activeFocus || searchInput.clearButtonItem.activeFocus
     }
 
     focus: true
@@ -143,98 +143,37 @@ FocusScope {
                 compact: true
                 onClicked: panel.appService.refreshWallpapers()
                 KeyNavigation.tab: grid
-                KeyNavigation.backtab: clearButton.visible ? clearButton : searchInput
+                KeyNavigation.backtab: searchInput.clearVisible ? searchInput.clearButtonItem : searchInput
                 onActiveFocusChanged: if (activeFocus) panel.controller.wallpaperFocusTarget = "refresh"
             }
         }
 
-        Rectangle {
-            id: searchBox
+        SearchField {
+            id: searchInput
             width: parent.width
             height: 42
-            radius: Design.radiusSm
-            color: searchInput.activeFocus ? panel.theme.colors.surfaceActive : panel.theme.colors.surfaceVariant
-            border.width: searchInput.activeFocus ? 1 : 0
-            border.color: panel.theme.colors.accent
-
-            StatusIcon {
-                id: searchIcon
-                anchors.left: parent.left
-                anchors.leftMargin: Design.spacingMd
-                anchors.verticalCenter: parent.verticalCenter
-                name: "search"
-                iconSize: Design.iconSm
-                color: panel.theme.colors.mutedForeground
+            theme: panel.theme
+            text: panel.controller.wallpaperQuery
+            placeholderText: "Pesquisar papel de parede..."
+            tabTarget: refreshButton
+            backtabTarget: grid
+            onTextChanged: if (text !== panel.controller.wallpaperQuery) panel.controller.wallpaperQuery = text
+            onKeyPressed: event => {
+                if (event.key === Qt.Key_Down) {
+                    panel.focusGrid()
+                    event.accepted = true
+                } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                    panel.applySelected()
+                    event.accepted = true
+                } else if (event.key === Qt.Key_Escape) {
+                    panel.controller.close()
+                    event.accepted = true
+                }
             }
-
-            TextInput {
-                id: searchInput
-                anchors {
-                    left: searchIcon.right
-                    right: clearButton.left
-                    top: parent.top
-                    bottom: parent.bottom
-                    leftMargin: Design.spacingSm
-                    rightMargin: Design.spacingSm
-                }
-                text: panel.controller.wallpaperQuery
-                color: panel.theme.colors.foreground
-                selectionColor: panel.theme.colors.accent
-                selectedTextColor: panel.theme.colors.background
-                font.family: Design.fontFamily
-                font.pixelSize: Design.fontSizeSm
-                verticalAlignment: TextInput.AlignVCenter
-                clip: true
-                onTextChanged: if (text !== panel.controller.wallpaperQuery) panel.controller.wallpaperQuery = text
-                Keys.priority: Keys.BeforeItem
-                Keys.onPressed: event => {
-                    if (event.key === Qt.Key_Down) {
-                        panel.focusGrid()
-                        event.accepted = true
-                    } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                        panel.applySelected()
-                        event.accepted = true
-                    } else if (event.key === Qt.Key_Escape) {
-                        panel.controller.close()
-                        event.accepted = true
-                    }
-                }
-                KeyNavigation.tab: clearButton.visible ? clearButton : refreshButton
-                KeyNavigation.backtab: grid
-                onActiveFocusChanged: if (activeFocus) panel.controller.wallpaperFocusTarget = "search"
-            }
-
-            Text {
-                anchors {
-                    left: searchInput.left
-                    right: searchInput.right
-                    verticalCenter: parent.verticalCenter
-                }
-                visible: searchInput.text.length === 0
-                text: "Pesquisar papel de parede..."
-                color: panel.theme.colors.mutedForeground
-                font.family: Design.fontFamily
-                font.pixelSize: Design.fontSizeSm
-                elide: Text.ElideRight
-            }
-
-            ShellButton {
-                id: clearButton
-                anchors.right: parent.right
-                anchors.rightMargin: Design.spacingXs
-                anchors.verticalCenter: parent.verticalCenter
-                visible: searchInput.text.length > 0
-                width: visible ? 34 : 0
-                theme: panel.theme
-                iconName: "close"
-                compact: true
-                onClicked: {
-                    panel.controller.wallpaperQuery = ""
-                    searchInput.forceActiveFocus(Qt.MouseFocusReason)
-                }
-                KeyNavigation.tab: refreshButton
-                KeyNavigation.backtab: searchInput
-                onActiveFocusChanged: if (activeFocus) panel.controller.wallpaperFocusTarget = "clear"
+            onClearRequested: panel.controller.wallpaperQuery = ""
+            onInputFocusChanged: active => {
+                if (active) panel.controller.wallpaperFocusTarget = "search"
+                else if (clearButtonItem.activeFocus) panel.controller.wallpaperFocusTarget = "clear"
             }
         }
 
@@ -242,7 +181,7 @@ FocusScope {
             id: grid
             property int columns: width >= 760 ? 4 : width >= 500 ? 3 : 2
             width: parent.width
-            height: Math.max(0, parent.height - header.height - searchBox.height - parent.spacing * 2)
+            height: Math.max(0, parent.height - header.height - searchInput.height - parent.spacing * 2)
             cellWidth: width / columns
             cellHeight: Math.max(112, Math.min(142, cellWidth * .66))
             clip: true
@@ -338,7 +277,7 @@ FocusScope {
         if (initialSelectionPending && !controller.wallpaperQuery.length && currentIndex >= 0) controller.wallpaperSelectedIndex = currentIndex
         clampSelection()
         if (!filteredWallpapers.length) Qt.callLater(() => focusSearch())
-        if (initialSelectionPending && filteredWallpapers.length && !searchInput.activeFocus) Qt.callLater(() => focusGrid())
+        if (initialSelectionPending && filteredWallpapers.length && !searchInput.inputActiveFocus) Qt.callLater(() => focusGrid())
     }
     Component.onCompleted: {
         appService.refreshWallpapers()

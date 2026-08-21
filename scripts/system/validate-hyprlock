@@ -17,7 +17,10 @@ grep -Fqx "    path = $wallpaper" "$generated" || { printf 'Wallpaper dinâmico 
 grep -Eq '^    path =$' "$fallback" || { printf 'O fallback do Hyprlock depende de uma imagem dinâmica.\n' >&2; exit 1; }
 for candidate in "$fallback" "$generated"; do
   grep -Eq '^    screencopy_mode = 1$' "$candidate" || { printf 'Modo de captura compatível com máquina virtual ausente.\n' >&2; exit 1; }
-  grep -A2 '^animations {' "$candidate" | grep -Eq '^    enabled = false$' || { printf 'Animações do Hyprlock ainda exigem captura da tela.\n' >&2; exit 1; }
+  grep -A7 '^animations {' "$candidate" | grep -Eq '^    enabled = true$' || { printf 'Animações do Hyprlock não estão habilitadas.\n' >&2; exit 1; }
+  for animation in fadeIn fadeOut inputFieldFade inputFieldDots inputFieldColors; do
+    grep -A7 '^animations {' "$candidate" | grep -Eq "^    animation = $animation, 1," || { printf 'Animação %s ausente no Hyprlock.\n' "$animation" >&2; exit 1; }
+  done
   awk 'BEGIN { depth = 0 } /\{/ { depth++ } /\}/ { depth-- } depth < 0 { exit 1 } END { exit depth != 0 }' "$candidate" || { printf 'Blocos desbalanceados na configuração do Hyprlock.\n' >&2; exit 1; }
   output=$(hyprlock --verbose --display "hyprism-validacao-inexistente-$$" --config "$candidate" 2>&1 || true)
   grep -Eq 'Config has errors|Config threw|Config path error|Invalid argument' <<<"$output" && { printf 'O parser do Hyprlock rejeitou a configuração:\n%s\n' "$output" >&2; exit 1; }
