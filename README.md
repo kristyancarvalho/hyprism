@@ -1,460 +1,91 @@
+<div align="center">
+
 # Hyprism
 
-Hyprism é um shell reproduzível para Arch Linux e Hyprland, construído com Quickshell. A interface principal é uma ilha morfológica centralizada no topo: compacta em repouso, expandida no hover e ampliada verticalmente para aplicativos, papéis de parede, área de transferência, notificações, controles, troca de janelas e energia.
+**Dotfiles automatizados para um ambiente Hyprland pessoal, coeso e dinâmico.**
 
-Quickshell implementa toda a interface visível. O projeto não usa Waybar, AGS, Eww, Rofi, Dunst, SwayNC nem Wlogout.
+[![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=archlinux&logoColor=white)](https://archlinux.org/)
+[![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-58E1FF?style=flat-square)](https://hypr.land/)
+[![Quickshell](https://img.shields.io/badge/Quickshell-QML-41CD52?style=flat-square&logo=qt&logoColor=white)](https://quickshell.org/)
+[![Matugen](https://img.shields.io/badge/Matugen-dynamic_color-8B5CF6?style=flat-square)](https://github.com/InioX/matugen)
 
-## Instalação no Arch Linux
+</div>
 
-Revise [packages/pacman.txt](packages/pacman.txt) e [packages/aur.txt](packages/aur.txt), clone o repositório e execute:
+> Hyprism é um conjunto de dotfiles automatizados para uma experiência personalizada no Hyprland. Quickshell fornece a ilha, os painéis e os widgets; Matugen propaga as cores do wallpaper por toda a sessão.
+
+## Demonstração
+
+| Desktop e ilha compacta | Ilha expandida |
+| --- | --- |
+| ![Desktop com ilha compacta e paleta verde](assets/screenshots/desktop.png) | ![Ilha expandida e paleta verde](assets/screenshots/island-expanded.png) |
+| **Widgets do desktop** | **Launcher** |
+| ![Widgets do desktop com paleta roxa](assets/screenshots/desktop-widgets.png) | ![Launcher com paleta azul](assets/screenshots/launcher.png) |
+| **Central de controle** | **Histórico de notificações** |
+| ![Central de controle com paleta laranja](assets/screenshots/control-center.png) | ![Histórico de notificações com paleta laranja](assets/screenshots/notifications.png) |
+| **Rede** | **Bluetooth** |
+| ![Painel de rede com paleta azul](assets/screenshots/network.png) | ![Painel Bluetooth com paleta roxa](assets/screenshots/bluetooth.png) |
+| **Área de transferência** | **Seletor de emoji** |
+| ![Área de transferência com paleta roxa](assets/screenshots/clipboard.png) | ![Seletor de emoji com paleta roxa](assets/screenshots/emoji-picker.png) |
+| **Energia** | **Gravação** |
+| ![Menu de energia com paleta laranja](assets/screenshots/power-menu.png) | ![Seletor de gravação com paleta laranja](assets/screenshots/recording.png) |
+| **Papéis de parede** | **Troca de janelas** |
+| ![Seletor de papéis de parede com paleta roxa](assets/screenshots/wallpaper-picker.png) | ![Troca de janelas com clientes reais em outros workspaces](assets/screenshots/window-switcher.png) |
+
+## O que configura
+
+- Hyprland em Lua: monitores, workspaces, gestos, regras, ambiente, atalhos e autostart.
+- Quickshell: ilha morfológica, launcher, troca de janelas, controles, notificações, OSD e widgets de monitoramento.
+- Temas Matugen para Hyprland, Hyprlock, SDDM, GTK, Kvantum, Kitty, Foot, Starship, tmux, Neovim, Fastfetch e Zathura.
+- Índice de aplicativos nativos e Flatpak com atualização ao vivo, além de portais Wayland integrados.
+- Capturas, gravação de região ou monitor, clipboard, modo noturno e controles de áudio, brilho, rede e Bluetooth.
+
+## Requisitos
+
+- Arch Linux com acesso à internet durante o provisionamento.
+- Um usuário normal com `sudo`; o instalador precisa de root para pacotes, fontes e SDDM.
+- Hardware e drivers compatíveis com uma sessão Hyprland/Wayland atual.
+
+## Instalação
 
 ```bash
+git clone https://github.com/kristyancarvalho/hyprism.git
+cd hyprism
 sudo ./install.sh --user "$USER"
 ```
 
-Para atualizar somente os arquivos depois que as dependências já estiverem instaladas:
+> [!WARNING]
+> A instalação atualiza pacotes e substitui configurações gerenciadas do usuário. Conflitos são movidos para `~/.local/state/hyprism/backups/` antes da criação dos links.
+
+Para reaplicar apenas os arquivos depois que todas as dependências já estiverem instaladas:
 
 ```bash
 sudo ./install.sh --user "$USER" --no-packages
 ```
 
-O instalador:
+Os wallpapers ficam em `~/Imagens/Wallpapers`. Para aplicar um arquivo pela mesma pipeline usada pelo seletor:
 
-- instala pacotes oficiais e usa `paru` ou `yay` somente quando `packages/aur.txt` contém entradas;
-- instala Papirus, Symbols Nerd Font Mono e as ferramentas do Fontconfig a partir dos repositórios oficiais do Arch;
-- baixa Google Sans Flex 400, 500 e 600 diretamente do CDN oficial do Google Fonts, em URLs versionadas e verificadas por SHA-256, sem redistribuir binários no repositório;
-- instala o Colloid no escopo do usuário a partir de uma revisão upstream fixada e cria a variante dinâmica `Colloid-Hyprism-Dark-Matugen`;
-- provisiona Hyprlock, Kvantum para Qt 5/6, `qt5ct`, `qt6ct` e as ferramentas de compilação do tema GTK;
-- provisiona Starship, tmux com TPM e plugins, Neovim, Fastfetch e uma configuração NvChad v2.5 integrada ao tema;
-- cria `~/Imagens/Wallpapers`, `~/Imagens/Screenshots` e `~/Vídeos/gravacoes` sem apagar conteúdo existente;
-- instala o KSDDM adaptado em `/usr/share/sddm/themes/hyprism-ksddm`, publica somente o drop-in `/etc/sddm.conf.d/20-hyprism.conf` e habilita o serviço SDDM sem reiniciá-lo;
-- copia os arquivos runtime para `~/.local/share/hyprism`, sem depender do local original do clone;
-- cria links para `~/.config/hypr`, `~/.config/quickshell/default`, o alias `~/.config/quickshell/hyprism`, Foot, Kitty, Fastfetch, Starship, tmux, NvChad, GTK 3/4, Kvantum, Qt 5/6 e a configuração do usuário;
-- guarda conflitos em `~/.local/state/hyprism/backups/`;
-- verifica `hyprland.lua`, `shell.qml`, `foot.ini` e o tema de fallback do Foot;
-- não instala nem ativa um `hyprland.conf` legado.
-
-## Arquitetura
-
-```text
-install.sh
-  └─ ~/.local/share/hyprism
-      ├─ config/hypr/hyprland.lua
-      │   └─ modules/autostart.lua
-      │       └─ scripts/system/start-shell
-      │           └─ qs -c default
-      │               └─ shell.qml
-      └─ config/quickshell
-          ├─ ilha e painéis
-          ├─ widgets de data e sistema
-          ├─ notificações e OSD
-          └─ serviços opcionais resilientes
+```bash
+hyprism-wallpaper set ~/Imagens/Wallpapers/arquivo.png
 ```
 
-`config/hypr/hyprland.lua` é o ponto de entrada Lua do Hyprland 0.55 ou posterior. Os módulos separam programas, monitores, aparência, entrada, layouts, regras, workspaces, atalhos, ambiente e autostart. Não há configuração Hyprland `.conf` ativa no repositório.
-
-O Quickshell é iniciado uma única vez pelo evento `hyprland.start`. O helper usa o executável canônico `qs`, a configuração nomeada `default`, `--no-duplicate`, uma raiz runtime estável e um locale UTF-8 já disponível no sistema. A alteração de locale fica restrita ao processo do Hyprism. `scripts/system/shell-ipc` centraliza a seleção de instância usada pelo Hyprland, OSD, wallpaper e recuperação. `QS_CONFIG_NAME=default` seleciona a instalação; `HYPRISM_QS_PATH` seleciona um caminho explícito em desenvolvimento. O alias `hyprism` preserva compatibilidade. Recarregar a configuração do Hyprland não acumula processos do shell.
-
-No primeiro boot, a paleta escura embutida mantém a ilha e os widgets utilizáveis mesmo sem arquivos gerados. Ausência de bateria, Wi-Fi, Bluetooth, brilho, GPU, sensores, MPRIS, clima ou histórico de clipboard produz um estado indisponível ou oculto, sem bloquear o `shell.qml`.
-
-Google Sans Flex é a família primária de texto da interface. Symbols Nerd Font Mono é usada somente para a iconografia semântica do shell. Os tamanhos, pesos, alturas, espaçamentos, raios e glifos ficam centralizados em `Design.qml`, e componentes compartilhados mantêm a linha de base e o ritmo vertical da ilha. O sistema visual usa retângulos arredondados de 9 px como forma dominante, com 6 px para elementos pequenos e 12 px para superfícies amplas. Hierarquia tonal, espaçamento e preenchimento de estado substituem contornos repetidos; bordas ficam reservadas ao foco, à seleção, à urgência e à definição externa da ilha.
-
-O índice de aplicativos percorre `XDG_DATA_HOME` e `XDG_DATA_DIRS` uma vez na inicialização, lê ID, `StartupWMClass`, `Exec`, `TryExec`, nome e `Icon` dos arquivos `.desktop` e cria um cache normalizado compartilhado. O Super+Tab combina `class`, `initialClass`, app ID e os metadados de processo publicados pelo Hyprland com esses aliases; o campo `Icon` resolvido passa pelo tema Hyprism-Papirus, que herda os aplicativos normais do Papirus-Dark, com fallback para `application-x-executable`. Launcher, Super+Tab e mídia usam o mesmo cache. Estados do sistema usam exclusivamente o mapa semântico Nerd Font; emoji não é usado como ícone de status.
-
-Um `PanelWindow` transparente de 1 px mantém a zona exclusiva constante composta pela margem superior, pela altura compacta e pelo respiro configurado, sem desenhar fundo, borda ou conteúdo. Janelas tiled e maximizadas começam abaixo dessa faixa. Em cada monitor, um canvas overlay transparente de tamanho fixo contém a única superfície visual da ilha. Launcher, controles, notificações, mídia expandida e Super+Tab animam essa superfície dentro do canvas sem redimensionar a superfície Wayland, ampliar a zona exclusiva ou reorganizar as janelas.
-
-O workspace ativo de cada monitor fornece o estado real `hasFullscreen`. Nesse estado, somente a ilha persistente, seus widgets e sua reserva daquele monitor são ocultados. Outros monitores continuam normais. Um painel solicitado explicitamente continua autorizado a aparecer sobre fullscreen e mantém a mesma tela alvo.
-
-O Super+Tab usa os toplevels do Hyprland expostos pelo Quickshell e mantém uma lista MRU atualizada por eventos de foco. Cada entrada guarda o endereço hexadecimal canônico da janela. A primeira troca seleciona a janela focada anteriormente; repetições avançam ou recuam e soltar Super chama `hl.dsp.focus` com `address:`, inclusive em outro workspace ou monitor. A interface mostra ícone Papirus, nome do aplicativo e título, com fallback intencional quando algum metadado está ausente.
-
-Launcher, papéis de parede, clipboard, redes, Bluetooth, central de controle, notificações, energia, mídia e Super+Tab aceitam navegação por teclado. `Escape` fecha, `Enter` ativa, setas percorrem listas, grades e controles, e `Tab` mantém a travessia de foco onde não conflita com o alternador de janelas.
-
-Na ilha compacta, a bateria mostra somente um dos cinco glifos semânticos de nível e o Bluetooth mostra somente seu estado; percentual, carregamento e dispositivo conectado aparecem na expansão. A rede mantém ícone e nome no modo compacto: SSID real no Wi-Fi, `Ethernet` em hardware físico e `Rede` para Ethernet virtualizada. O Wi-Fi usa exclusivamente a família `nf-md-wifi_strength_*`, com estados outline, fraco, médio, forte e desconectado centralizados em `Design.qml`.
-
-O seletor de papéis de parede recebe foco exclusivo assim que `Super+K` o abre. A busca `Pesquisar papel de parede...` compara nomes sem diferenciar maiúsculas, acentos, hífens, sublinhados e espaços. As setas navegam espacialmente pela grade, `Enter` aplica somente uma seleção filtrada válida e `Escape` fecha. A altura acompanha a quantidade de linhas até o limite da tela; as miniaturas continuam assíncronas e armazenadas pelo cache de imagens do Qt.
-
-O histórico de clipboard registra texto e imagem com dois watchers MIME do `wl-paste` e armazena os bytes originais no `cliphist`. Um único supervisor mantém ambos os watchers, segura um `flock` no runtime do usuário e impede duplicação após recargas do Hyprland. Cada gravação publica um marcador atômico em `$XDG_CACHE_HOME/hyprism/state/clipboard-event`; o `ClipboardService` observa esse arquivo e relê o banco sem reiniciar o Quickshell. O painel classifica o preview, gera miniaturas PNG proporcionais de até 420×240 em `$XDG_CACHE_HOME/hyprism/clipboard`, mantém no máximo 64 miniaturas e usa um ícone neutro quando a prévia falha. Restaurar uma imagem executa `cliphist decode` diretamente para `wl-copy --type image/...`; o caminho da miniatura nunca é copiado como texto.
-
-## Gravação de tela
-
-`Super+Shift+R` abre o seletor morfológico quando o gravador está ocioso. Setas esquerda e direita alternam entre `Região` e `Tela inteira`, `Enter` ou espaço iniciam e `Escape` cancela. Em `Região`, o serviço primeiro fecha o seletor; a superfície-alvo confirma que retirou o foco exclusivo e desativou o grab do Hyprland, então o próximo ciclo do event loop inicia o `slurp` de forma assíncrona. Uma seleção válida no formato `x,y LARGURAxALTURA` é enviada ao `wf-recorder -g`; cancelar não cria arquivo nem ativa o estado de gravação. Tela inteira passa ao `wf-recorder` o nome do monitor focado fornecido pela integração Hyprland; ela nunca usa um nome fixo nem grava o desktop virtual combinado.
-
-`RecordingService` concentra `recording`, modo, início, tempo decorrido, saída e ações. Um supervisor segura `$XDG_RUNTIME_DIR/hyprism/recording.lock`, inicia um único filho `wf-recorder` e encaminha `SIGINT` apenas a esse PID. Outro gravador do usuário não é procurado nem encerrado. Se o Quickshell for substituído durante a gravação, a destruição do processo supervisionado encaminha o encerramento ao filho e o lock impede uma segunda instância concorrente.
-
-Durante a gravação, somente um ponto de 11 px com a cor semântica `warning` aparece na ilha compacta e pulsa entre opacidade `1` e `0,4` em ciclos suaves de 1,3 s, sem texto, ícone, pill ou animação de geometria. A expansão e o Hub mostram o tempo decorrido com a ação `Parar`. Pressionar `Super+Shift+R` novamente envia a parada imediatamente. Arquivos H.264 são encapsulados como MP4 e gravados em `~/Vídeos/gravacoes` com nomes como `20260814_032501_184_tela.mp4` e `20260814_032501_184_regiao.mp4`; os milissegundos evitam colisão sem prejudicar a ordenação. Sucesso ou falha produz feedback do próprio Hyprism em pt-BR.
-
-Notificações flutuantes formam uma lista centralizada de até quatro cartões, ou três em telas baixas. Cada cartão expira individualmente, títulos e corpos têm limites de linhas, alterações com o mesmo ID substituem a geração anterior e excedentes permanecem no histórico com um contador compacto. O Hub suprime temporariamente a pilha flutuante para preservar seus controles, sem descartar o histórico.
-
-O layout tiled usa `gaps_in = 3` e `gaps_out = 8`. A reserva superior da ilha continua independente desses espaços e o fullscreen continua removendo somente a superfície persistente e a reserva do monitor afetado. Janelas de cliente usam raio de 10 px; os raios próprios do Quickshell não são afetados.
-
-A borda ativa usa exclusivamente o papel semântico `secondary_container` do Matugen e a inativa usa `inactive_border`, derivado de `outline_variant`; ambos têm fallbacks Lua válidos. As animações do compositor usam uma curva Bézier curta sem spring ou overshoot. Abertura, fechamento, movimento, fade, layers e workspaces recebem durações próprias entre 1,0 e 2,4 unidades do Hyprland, mantendo movimento visível sem a cauda lenta anterior.
-
-A tela configurada em `config/user.json` tem prioridade quando existe. Em seguida são usadas a tela focada do Hyprland e a primeira tela enumerada pelo Quickshell. Nenhum nome como `eDP-1`, `HDMI-A-1` ou `Virtual-1` é codificado.
-
-## Terminal
-
-Kitty é o terminal padrão. `Super+Return` é um atalho direto do Hyprland para o programa centralizado em `modules/programs.lua`; ele não depende do Quickshell.
-
-`config/kitty/kitty.conf` usa JetBrains Mono Nerd Font, fundo com opacidade 0,88 e a paleta semântica gerada. A regra `kitty-background-blur` mantém o blur do compositor habilitado para a classe `kitty`, tornando a transparência perceptível sem afetar os demais aplicativos. Foot permanece instalado como fallback. `$TERMINAL` aponta para `kitty`.
-
-## Papel de parede e cores
-
-```text
-papel de parede
-  └─ extração da cor-fonte fiel
-      └─ Matugen para superfícies semânticas
-          ├─ Quickshell
-          ├─ Hyprland Lua
-          ├─ Hyprlock
-          ├─ Foot e Kitty
-          ├─ Starship
-          ├─ tmux
-          ├─ NvChad
-          ├─ Fastfetch
-          ├─ GTK 2/3/4 e libadwaita sobre Colloid-Hyprism
-          ├─ pastas do Hyprism-Papirus
-          ├─ Kvantum para Qt 5/6
-          └─ SDDM / KSDDM
-```
-
-`scripts/theme/generate-theme.py` é o gerador central. Uma miniatura limitada do wallpaper fornece a cor representativa mais relevante; a transformação HLS mantém o matiz, limita apenas saturação extrema e posiciona a luminosidade numa faixa útil de 0,48 a 0,72 antes da correção mínima de contraste. O resultado fica mais claro que a cor-fonte escura sem se transformar num pastel Material. O `primary` tonal do Material não é usado como destaque do Hyprism. Matugen continua responsável por fundo, superfícies, texto, cores de apoio e erro. O gerador cria:
-
-- `~/.cache/hyprism/theme/theme.json` para Quickshell;
-- `~/.cache/hyprism/theme/hyprland.lua` para bordas do Hyprland;
-- `~/.cache/hyprism/theme/hyprlock-colors.conf` e `hyprlock.conf` completo para a tela de bloqueio;
-- `~/.cache/hyprism/theme/foot.ini` com foreground, background, cursor, seleção e as 16 cores ANSI;
-- `~/.cache/hyprism/theme/kitty.conf` e aplicação remota nas janelas Kitty compatíveis;
-- `~/.cache/hyprism/theme/starship.toml`, ligado a `~/.config/starship.toml`;
-- `~/.cache/hyprism/theme/tmux.conf`, ligado a `~/.config/tmux/theme.conf`;
-- `~/.cache/hyprism/theme/nvim/matugen.lua` e `~/.config/nvim/lua/themes/matugen.lua` para o NvChad;
-- `~/.cache/hyprism/theme/fastfetch/config.jsonc`, ligado a `~/.config/fastfetch/config.jsonc`;
-- `~/.config/fastfetch/images/archlinux.png` como logo transparente recolorido;
-- `~/.cache/hyprism/theme/colloid/_color-palette-matugen.scss` como entrada semântica do Colloid;
-- `~/.cache/hyprism/theme/colloid-gtk-4.0/` como saída fixa do libadwaita;
-- `~/.cache/hyprism/theme/icons/Hyprism-Papirus` como tema herdado de ícones, contendo somente pastas recoloridas;
-- `~/.cache/hyprism/theme/kvantum/Hyprism/` com SVG, configuração e esquema de cores do Kvantum.
-- `~/.cache/hyprism/theme/sddm/theme.conf` e o estado publicado para o KSDDM.
-
-Todos os artefatos são gerados por completo em um arquivo temporário, validados contra conteúdo vazio ou não resolvido e publicados por substituição atômica. Uma falha em Matugen preserva toda a paleta anterior; uma falha de um consumidor preserva seu último arquivo válido e não corrompe os demais. `scripts/system/publish-json` oferece o mesmo fluxo para uma configuração JSON produzida por outra ferramenta. Os leitores do shell aplicam debounce, mantêm o último estado válido e usam os padrões embutidos quando o arquivo ainda não existe ou está vazio.
-
-O papel semântico `warning` parte do `error` produzido pela mesma paleta Matugen, conserva luminosidade, saturação e contraste úteis para fundo escuro e normaliza somente o matiz para 10°, na região de vermelho quente. `error` continua independente. Assim, gravação e avisos deixam de herdar o rosa da cor Material sem usar um hexadecimal fixo entre wallpapers.
-
-## Ambiente de desenvolvimento temático
-
-O template `config/matugen/templates/starship.toml` gera o prompt Powerline completo em `~/.config/starship.toml`. Seus papéis `primary`, superfícies, texto, secundária, terciária, aviso e erro são resolvidos diretamente da paleta semântica do Hyprism; `primary` é exatamente o mesmo valor consumido pelo Quickshell. O instalador detecta somente o shell de login do usuário entre zsh, bash e fish, liga o fragmento correspondente e acrescenta uma única linha idempotente ao arquivo de inicialização. O Starship relê a configuração a cada prompt, portanto terminais existentes recebem a nova paleta no comando seguinte.
-
-O template `config/matugen/templates/tmux.conf` gera exclusivamente a camada visual. O instalador liga a configuração completa de `config/tmux/tmux.conf` a `~/.tmux.conf`, arquiva configurações anteriores e mantém o tema dinâmico em `~/.config/tmux/theme.conf`. Essa configuração habilita mouse, histórico de 10.000 linhas, true color, índices iniciados em 1, teclas vi, splits no diretório atual, navegação e resize estilo Vim, atalhos de janelas, sessões, cópia e reload.
-
-O TPM é obtido diretamente do upstream em uma revisão fixada e instalado em `~/.tmux/plugins/tpm`. Na mesma execução, o instalador baixa os plugins declarados: `tmux-sensible`, `tmux-yank`, `tmux-resurrect` e `tmux-continuum`; restore automático e captura do conteúdo dos painéis ficam habilitados. A barra, janela ativa, foco de pane e relógio usam a mesma `primary` exata do Hyprism. Depois de uma mudança real de paleta, o gerador consulta `tmux list-sessions`; somente quando um servidor padrão já existe executa `source-file` da camada visual, atualizando todas as sessões desse servidor sem criar servidor, encerrar sessão ou falhar a aplicação dos outros temas.
-
-`config/nvim` contém o bootstrap completo do NvChad v2.5, os imports de plugins, opções, mappings, statusline Powerline e um tema de fallback válido. Matugen renderiza `config/matugen/templates/nvchad.lua` atomicamente no cache e em `~/.config/nvim/lua/themes/matugen.lua`; o template usa os papéis canônicos do Hyprism para superfícies, texto, primária, secundária, terciária, aviso, erro e sucesso, preservando distinção para sintaxe e diagnósticos. `lua/autocmds.lua` observa esse diretório, consolida eventos por 150 ms e chama `nvchad.utils.reload` numa instância já aberta; o watcher também trata eventos de substituição atômica sem nome de arquivo. `VimLeavePre` encerra timer e watcher. Uma configuração Neovim anterior é movida integralmente para `~/.local/state/hyprism/backups/` antes de a versão gerenciada ser ligada.
-
-O preset do Fastfetch mantém uma imagem Arch à esquerda, título `usuário@host`, informações compactas de sistema, armazenamento raiz, tema GTK detectado e tema Qt lido da configuração ativa do Kvantum. A linha final mostra uma amostra da paleta do Hyprism. O template SVG Arch-blue em `config/fastfetch/images/archlinux.svg` nunca é alterado: cada execução do Matugen aplica o acento canônico, a cor secundária e um realce derivado, rasteriza e valida um PNG temporário e só então substitui atomicamente `~/.config/fastfetch/images/archlinux.png`. Cores idênticas dispensam nova rasterização e uma falha preserva o último logo válido.
-
-Fastfetch usa detecção automática de protocolo de imagem. No Foot, o caminho esperado é SIXEL; terminais compatíveis podem selecionar seu protocolo nativo e terminais sem imagens não recebem bytes de um protocolo fixado incorretamente. Uma linha vazia no começo, o padding superior do logo e uma linha vazia no fim separam a composição dos prompts Powerline do Starship. Toda troca de wallpaper, manual ou aleatória, passa pelo gerador antes de retornar; como Fastfetch lê o JSONC e o PNG a cada execução, o próximo `fastfetch` recebe as novas cores sem watcher, daemon ou reinício do terminal.
-
-Arquivos byte a byte idênticos não são substituídos. Isso evita prompts de I/O desnecessários, recarga do tmux e eventos no watcher do Neovim. Starship, tmux e NvChad falham isoladamente: ausência de um servidor tmux ou de uma configuração NvChad ativa não impede Quickshell, GTK, Papirus, Kvantum ou os demais consumidores de receberem a paleta.
-
-## SDDM / KSDDM
-
-O tema em `themes/ksddm-hyprism` deriva do fork [KSDDM](https://github.com/kristyancarvalho/ksddm), commit `9ed05b7c894e3c8f5d63a88524ab71f7c6a2e1ee`, originalmente baseado no SilentSDDM. A importação é vendorizada sem `.git`, mantém GPL-3.0 e a atribuição em `ORIGIN.md`. O estado inicial é intencionalmente silencioso: wallpaper com leve dim e somente `Aperte qualquer tecla`. Tecla, clique ou toque revela em 130 ms um avatar, o usuário e uma única superfície de senha já focada; `Escape` limpa a senha e volta ao wallpaper.
-
-O blur fica somente sob a senha e recebe a mesma máscara arredondada do preenchimento, da borda e do recorte do campo. O avatar também é renderizado por uma máscara arredondada dentro de seu contêiner. A ação de login fica alinhada à direita da senha, usa a seta de avanço e preserva submissão por `Enter`; mostrar senha, teclado, energia e a sessão atual permanecem controles compactos de ícone com tooltips curtos. O seletor de sessão abre uma lista vertical limitada e rolável, com rótulo sempre visível, largura estável e somente feedback visual no hover. A sessão ativa recebe o acento `primary`. `SessionIdentity.qml` normaliza nomes e associa Hyprland, dwm, KDE Plasma, GNOME, XFCE, Sway, i3, Qtile, Awesome, bspwm, Cinnamon, MATE, LXDE e LXQt aos glifos oficiais presentes no Symbols Nerd Font; dwl e sessões desconhecidas usam o fallback visual de sessão sem impedir a seleção. O teclado virtual reutiliza `QtQuick.VirtualKeyboard.InputPanel` do fork, provisionado por `qt6-virtualkeyboard`, enquanto o drop-in define `InputMethod=qtvirtualkeyboard` e `QT_IM_MODULE=qtvirtualkeyboard`. O botão compacto de teclado alterna o painel real e devolve foco à senha.
-
-O instalador copia o tema para `/usr/share/sddm/themes/hyprism-ksddm` e publica somente as seções `[General]` do método de entrada e `[Theme]` em `/etc/sddm.conf.d/20-hyprism.conf`; nenhum `/etc/sddm.conf` completo é substituído. `/var/lib/hyprism` permanece root-owned. Somente `/var/lib/hyprism/sddm`, com modo `0755`, pertence ao usuário configurado e contém `current-wallpaper.jpg` e `theme.conf`; `/usr/share/sddm` nunca fica gravável pelo usuário.
-
-Toda aplicação de wallpaper, inclusive a opção aleatória, atravessa `scripts/wallpaper` e o mesmo `generate-theme.py`. O gerador converte o primeiro frame aceito pelo Pillow para JPEG RGB de qualidade 94, valida o arquivo temporário, aplica modo `0644` e faz rename atômico para `/var/lib/hyprism/sddm/current-wallpaper.jpg`. As cores semânticas, incluindo a mesma `primary` do Quickshell, Tmux, Starship, Neovim e Fastfetch, são publicadas atomicamente no diretório de estado. O greeter usa esse caminho estável, portanto não depende da leitura de `~/Imagens` e não exige sudo por troca. O SDDM não é reiniciado; a nova imagem aparece na próxima tela de login. Para staging, `HYPRISM_SDDM_STATE_DIR=/tmp/hyprism-sddm-test` redireciona os dois artefatos.
-
-Antes da geração inicial, o instalador cria o diretório de estado e garante um wallpaper compatível. Se a pasta do usuário estiver vazia, `wallpapers/abyss.svg` gera `hyprism-abyss.png`. A mesma execução inicial produz o estado de Hyprlock e SDDM, instala o drop-in e só então conclui, de modo que o primeiro greeter já encontra uma imagem legível.
-
-O instalador copia os wallpapers incluídos e executa a pipeline inicial antes de considerar Hyprlock pronto. Assim, `hyprlock-colors.conf`, o `hyprlock.conf` dinâmico completo e `state/lock-wallpaper` já existem no primeiro bloqueio. A configuração instalada em `~/.config/hypr/hyprlock.conf` é um fallback autossuficiente de cor sólida; `scripts/system/lock` executa o arquivo dinâmico quando todos os recursos são válidos e faz `exec hyprlock` com o fallback caso contrário. `Super+L` continua sendo um binding direto do Hyprland, sem depender do Quickshell. Para evitar a captura inicial que falhava no caminho gráfico do VirtualBox, o lock desativa seu próprio fade e seleciona screencopy por memória compartilhada. `scripts/system/validate-hyprlock` passa os dois arquivos pelo parser real do Hyprlock usando deliberadamente um display Wayland inexistente, portanto valida propriedades e cores sem bloquear a sessão. A instalação oficial usa uma única transação `pacman -Syu` para não misturar versões de Hyprlock, Hyprland, aquamarine e Mesa.
-
-GTK 2, GTK 3, GTK 4 e libadwaita usam `Colloid-Hyprism-Dark-Matugen`. O template versionado em `config/matugen/templates/colloid-gtk-theme.scss` conserva as 111 variáveis do template Matugen/Colloid comprovado no ambiente de desenvolvimento: papéis semânticos claros e escuros, aliases legados, escala cinza, seleção e cores de janela. O acento escuro é substituído pelo acento canônico exato do Hyprism; as demais cores continuam vindo da paleta semântica do Matugen. Não existe mais uma camada CSS GTK ad-hoc sobre um Colloid estático.
-
-`Hyprism-Papirus` herda `Papirus-Dark`, `Papirus` e `hicolor`. O gerador seleciona os SVGs `folder-blue` do Papirus como templates, substitui o corpo `#5294e2` pelo hexadecimal canônico exato e deriva somente sombra e dobra desse mesmo valor. Downloads, Documentos, Imagens, Música, Vídeos, Desktop, Público e demais overlays continuam intactos; os ícones de aplicativos permanecem herdados e não são recoloridos. A geração ocorre numa nova árvore, a referência ativa é trocada atomicamente e somente duas gerações são retidas para cobrir leitores concorrentes sem crescimento ilimitado. Aplicativos já abertos podem exigir reabertura para limpar seu cache de ícones.
-
-`scripts/system/install-colloid-theme` obtém [Colloid GTK Theme](https://github.com/vinceliuice/Colloid-gtk-theme) diretamente do upstream público na revisão `6c2dc65865628bda9fdc8157a30cd5eda6fd41f9`. O patch versionado em `config/matugen/colloid-matugen.patch` reproduz somente a integração Matugen do setup funcional: leitura de `_color-palette-matugen.scss`, variante `Matugen` e fallbacks de assets GTK 2, Labwc e Plank. A compilação usa `--color dark --libadwaita fixed --tweaks matugen rimless`. O SHA-256 da paleta instalada dispensa recompilações sem mudança. Uma nova árvore é compilada e validada num destino isolado; somente depois GTK 2/3/4 e a saída fixa do libadwaita substituem a geração ativa. Falha de download, SCSS ou `sassc` mantém integralmente o último tema funcional.
-
-Qt 6 usa `QT_QPA_PLATFORMTHEME=qt6ct`, uma única chave válida de tema de plataforma. Qt 5 e Qt 6 usam `QT_STYLE_OVERRIDE=kvantum` como motor visual e compartilham o tema dinâmico `Hyprism` selecionado em `~/.config/Kvantum/kvantum.kvconfig`. As configurações de `qt5ct` e `qt6ct` mantêm Hyprism-Papirus e Kvantum selecionados para inspeção ou execução específica de cada geração, sem concatenar nomes de plugins incompatíveis. Novos processos Qt recebem a nova paleta imediatamente; processos já abertos podem precisar ser reiniciados.
-
-## Atalhos principais
+## Atalhos essenciais
 
 | Atalho | Ação |
 | --- | --- |
-| `Super+Return` | Kitty, diretamente pelo Hyprland |
-| `Super+E` | Gerenciador de arquivos |
-| `Super+B` | Zen Browser |
-| `Super+R` | Aplicativos |
-| `Super+K` | Papéis de parede |
-| `Super+Alt+K` | Papel de parede aleatório |
-| `Super+Shift+V` | Área de transferência |
-| `Super+Tab` / `Super+Shift+Tab` | Troca de janelas; soltar Super confirma |
-| `Super+Shift+N` | Rede |
-| `Super+Shift+I` | Economia de energia |
-| `Super+Shift+L` | Menu de energia do Quickshell |
-| `Super+M` | Encerrar sessão diretamente pelo Hyprland |
-| `Super+Shift+E` | Recarregar ou iniciar o Quickshell |
-| `Super+Ctrl+S` | Modo noturno |
-| `Super+Ctrl+P` | Seletor de cor |
-| `Super+Shift+S` | Captura de região |
-| `Super+Shift+F` | Captura do monitor focado |
-| `Super+Shift+R` | Selecionar gravação; durante a gravação, parar |
-| `Super+L` | Bloqueio com Hyprlock |
-| `Super+P` | Alternar pseudotile pela API Lua atual |
-| `Super+W` | Fechar janela diretamente pelo Hyprland |
-| `Super+1…0` | Workspaces 1–10 |
-
-## VirtualBox
-
-Uma VM normalmente oferece Ethernet e não oferece bateria, Wi-Fi, Bluetooth, brilho, GPU NVIDIA ou sensores físicos. Esses estados são válidos. Quando o adaptador Ethernet pertence a uma máquina virtual, a interface usa o rótulo neutro `Rede` e os detalhes informam `Adaptador virtual`; ela não tenta inferir o SSID do host. A ilha continua visível, o widget de data/hora e o widget de CPU/memória são criados, e controles de hardware ausente ficam ocultos ou indisponíveis. Em particular, o controle de brilho só existe quando `brightnessctl` encontra um controlador real.
-
-Kitty é o primeiro terminal a testar com `Super+Return`; Foot permanece disponível como fallback na VM. Mantenha aceleração 3D e recursos de vídeo da VM compatíveis com a versão do Hyprland usada pelo Arch.
-
-O Quickshell usa por padrão o backend `software` do Qt Quick. Esse backend rasteriza a interface sem depender de uma superfície EGL e evita as falhas `Could not create EGL surface`, `eglSwapBuffers failed` e `Wayland connection experienced a fatal error` observadas com o adaptador gráfico do VirtualBox. A configuração vale apenas para o processo do Quickshell; Hyprland, Foot e os demais aplicativos mantêm seus próprios backends gráficos.
-
-Depois de uma instalação na VM, `pgrep -af 'wl-paste.*clipboard-store'` deve mostrar exatamente dois processos, um para texto e outro para imagem. `cliphist list` pode responder que ainda não existe banco antes da primeira cópia; isso é um estado vazio normal. Depois de copiar conteúdo, o marcador `$XDG_CACHE_HOME/hyprism/state/clipboard-event` muda e o painel deve atualizar imediatamente. Para o lockscreen, `~/.local/share/hyprism/scripts/system/validate-hyprlock ~/.config/hypr/hyprlock.conf` repete a validação segura; o teste visual final continua sendo `Super+L` dentro da VM.
-
-O clima inicial está configurado para São Paulo, com fuso `America/Sao_Paulo`. Local, latitude, longitude, fuso e intervalo podem ser alterados no bloco `weather` de `config/user.json` antes de executar novamente o instalador.
-
-Os widgets persistentes formam duas colunas compactas tratadas como uma única composição e continuam abaixo de janelas normais. Na instalação nova, o grupo fica centralizado na área útil abaixo da reserva superior; data/clima, CPU/RAM, rede, armazenamento ficam na primeira coluna, enquanto uptime/carga, sensores, serviços, tarefas, processos e mídia ficam na segunda. Cards contextuais desaparecem quando não há sensores ou tarefas, e as colunas recalculam a própria altura sem deixar slots vazios. CPU, RAM e rede usam sparklines nativas com históricos limitados; o wallpaper permanece visível ao redor das superfícies translúcidas.
-
-## Widgets de monitoramento
-
-Todos os widgets ficam em `shell.widgets` de `config/user.json`. O formato antigo com booleanos continua aceito; um campo ausente recebe o padrão atual. Alterações publicadas atomicamente são aplicadas pelo hot reload. O mínimo para desativar um widget é:
-
-```json
-{
-  "shell": {
-    "widgets": {
-      "network": { "enabled": false }
-    }
-  }
-}
-```
-
-`shell.widgetLayout.position` aceita `center`, `top-left`, `top-right`, `bottom-left` e `bottom-right`. O padrão do arquivo instalado é `center` em cada monitor. Configurações antigas sem `position` continuam usando `shell.widgetLayout.side`: `left` corresponde a `top-left`, e os demais valores a `top-right`. O centro considera a reserva compacta e a geometria da própria tela, sem coordenadas globais entre monitores.
-
-| Chave | Padrão | Dados e opções |
-| --- | --- | --- |
-| `clock` | habilitado | Relógio e data em pt-BR |
-| `weather` | habilitado | Condição e temperatura da configuração de clima |
-| `media` | habilitado | Faixa MPRIS atual; oculta sem mídia |
-| `system` | habilitado | CPU e RAM com 60 amostras |
-| `network` | habilitado | Download/upload a cada 1 s; `historySamples` entre 15 e 180, `interface` com nome ou `auto` |
-| `storage` | habilitado | Uso dos mounts de `mounts`; `/home` é removido quando usa a mesma origem de `/` |
-| `sensors` | habilitado | Descoberta por `hwmon` e `thermal`; oculta quando nenhum sensor confiável existe |
-| `uptime` | habilitado | Uptime, cargas de 1/5/15 min, núcleos e total de processos |
-| `services` | habilitado | `items` monitorados; `problemOnly` oculta o card saudável |
-| `tasks` | habilitado | Até `limit` tarefas registradas por IPC; oculta quando vazia |
-| `processes` | habilitado | Top CPU e memória por `/proc` a cada 3 s; `limit` entre 1 e 6 |
-
-Rede lê contadores de `/proc/net/dev` da conexão ativa do NetworkManager ou da interface configurada. Loopback, bridges Docker, `veth` e `virbr` não são somados. Armazenamento usa `statvfs` a cada 60 s. Sensores e uptime são atualizados a cada 5 s. O monitor de serviços consulta somente estado, sem sudo ou ações, a cada 15 s. O coletor dedicado não é iniciado quando armazenamento, sensores, uptime, serviços e processos estão todos desabilitados.
-
-Itens de serviço aceitam nome visível, unit e escopo:
-
-```json
-{
-  "services": {
-    "enabled": true,
-    "problemOnly": false,
-    "items": [
-      { "name": "Rede", "unit": "NetworkManager.service", "scope": "system" },
-      { "name": "PipeWire", "unit": "pipewire.service", "scope": "user" }
-    ]
-  }
-}
-```
-
-O modelo de tarefas contém `id`, `title`, `subtitle`, `progress`, `indeterminate`, `status`, `startedAt`, `eta` em segundos e `source`. Scripts podem registrar progresso sem daemon adicional:
-
-```bash
-scripts/system/shell-ipc tasks add '{"id":"tema","title":"Aplicando tema","progress":20,"status":"running"}'
-scripts/system/shell-ipc tasks update tema '{"progress":75,"eta":30}'
-scripts/system/shell-ipc tasks finish tema
-scripts/system/shell-ipc tasks fail tema
-scripts/system/shell-ipc tasks remove tema
-scripts/system/shell-ipc tasks list
-```
-
-`finish` mantém 100% brevemente antes de remover a tarefa; `fail` preserva o erro por cinco segundos. Sem tarefas ativas, nenhum card vazio ocupa o desktop.
-
-A reserva superior compacta usa 8 px de margem, 44 px de ilha e 4 px de respiro. A superfície de reserva permanece fixa e totalmente transparente durante expansões. O overlay ignora exclusões de outras camadas, usa a mesma origem absoluta no topo central e mantém um canvas Wayland estável; a forma desenhada, seu recorte e sua máscara de entrada compartilham uma única geometria animada. Launcher, hub, clipboard, seletor de wallpaper, Super+Tab e menu de energia crescem para baixo sem ampliar a reserva. Cada tela detectada recebe sua própria ilha visual e seus próprios widgets. Painéis transitórios usam primeiro a tela invocadora e, para atalhos, o monitor focado pelo Hyprland.
-
-As transições de opacidade usam 80 ms, respostas rápidas usam 110 ms e morphs de geometria usam 150 ms. Entradas usam `OutQuart`, saídas usam `InCubic`, deslocamentos usam `InOutCubic` e o morph inteiro usa `OutQuart`. Um único progresso interpola largura, altura e raio, enquanto a revelação do conteúdo percorre os mesmos 150 ms sem a antiga reversão de opacity após 20 ms. O foco lógico continua solicitado no ciclo imediato de carregamento. Não há animações concorrentes do `PanelWindow`, do fundo e do recorte. A ilha compacta, painéis, cards, botões, notificações, widgets, launcher, OSD e Super+Tab usam raio predominante de 9 px.
-
-Os workspaces aparecem como até cinco células quadradas numeradas: o workspace ativo usa preenchimento de destaque, ocupados usam superfície elevada, vizinhos vazios ficam atenuados e urgentes usam a cor semântica de erro. A seleção considera o workspace ativo, seus vizinhos e workspaces ocupados ou urgentes sem alargar indefinidamente a ilha. A bateria usa a família Font Awesome do Nerd Font entre `nf-fa-battery_0` e `nf-fa-battery_4`; a cor é `primary` acima de 60%, `secondary` entre 31% e 60%, `warning` entre 16% e 30% e `error` até 15%. Estados em alimentação externa (`Charging`, `Full` e `Not charging`) usam `primary`; somente `Charging` mostra o raio discreto existente.
-
-Painéis interativos usam o foco exclusivo da superfície layer-shell e `HyprlandFocusGrab`, solicitam foco do primeiro controle depois que a superfície está estável e liberam o grab ao fechar. Clique na ilha e IPC passam pelas mesmas ações semânticas do controlador central. O launcher mostra no máximo seis linhas antes de rolar e calcula a altura a partir da quantidade filtrada. Os estados de Wi-Fi, Bluetooth, modo noturno e perfil de energia vêm do backend observado; o clique apenas inicia uma solicitação pendente e não altera a aparência ativa antecipadamente.
-
-O seletor de wallpaper abre com foco no wallpaper atual ou no primeiro resultado. Setas navegam usando a quantidade responsiva de colunas, Enter aplica, Escape fecha, Tab leva deterministicamente à busca e seta para baixo retorna ao grid. A busca por nome ignora caixa, acentos, hífens e underscores; sem resultado, mantém o campo editável e mostra `Nenhum papel de parede encontrado`.
-
-Notificações recebidas criam uma fotografia independente no histórico e mantêm o objeto do protocolo apenas no stack temporário. Expiração ou fechamento remove o toast e sinaliza o emissor sem apagar a fotografia. IDs de replacement atualizam a mesma entrada. `Limpar tudo` remove o histórico e os toasts correspondentes, mas o servidor continua aceitando novas notificações.
-
-A mídia usa o serviço MPRIS nativo do Quickshell. A ilha compacta mostra artista e faixa truncados; a expansão mostra capa, título, artista, progresso, tempos e controles. O widget de mídia usa recorte proporcional da capa, os mesmos tokens de cor e controles de teclado. Sem player ou faixa válida, os dois elementos permanecem ocultos.
-
-Em uma máquina física com aceleração Qt funcional, o backend RHI pode ser testado sem editar o repositório:
-
-```bash
-QT_QUICK_BACKEND=rhi qs --no-duplicate
-```
-
-## Solução de problemas
-
-### Quickshell não iniciou
-
-Execute estes comandos dentro da VM, depois de entrar no Hyprland:
-
-```bash
-pacman -Q quickshell
-command -v qs
-pgrep -af '(^|/)(qs|quickshell)( |$)'
-readlink -f ~/.config/quickshell/default
-readlink -f ~/.config/quickshell/hyprism
-test -r ~/.config/quickshell/default/shell.qml && echo 'shell.qml encontrado'
-test -x ~/.local/share/hyprism/scripts/system/start-shell && echo 'helper encontrado'
-```
-
-Confira a instância e os logs selecionando exatamente a configuração Hyprism:
-
-```bash
-qs list -a
-qs -c default log -t 200
-qs -c default ipc call shell status
-sed -n '1,200p' ~/.cache/hyprism/quickshell-startup.log
-```
-
-Para testar o clone sem instalar e sem alterar o locale do host, execute na raiz do repositório:
-
-```bash
-HYPRISM_ROOT="$PWD" scripts/system/start-shell --development
-HYPRISM_ROOT="$PWD" HYPRISM_QS_PATH="$PWD/config/quickshell/shell.qml" scripts/system/shell-ipc shell status
-```
-
-O modo de desenvolvimento usa o mesmo launcher e o caminho explícito do repositório. Se outro daemon do desktop já possuir `org.freedesktop.Notifications`, o Quickshell registrará um único conflito de DBus; isso não impede painéis, estado ou foco. Na sessão instalada do Hyprism, o Quickshell continua sendo o servidor de notificações e o projeto não inicia Dunst ou SwayNC.
-
-Somente quando `start-shell --development` define o escopo local, os modelos visuais descartáveis podem ser acionados sem assumir o serviço de notificações nem depender do banco real do clipboard:
-
-```bash
-HYPRISM_QS_PATH="$PWD/config/quickshell/shell.qml" scripts/system/shell-ipc development mockNotifications 5
-HYPRISM_QS_PATH="$PWD/config/quickshell/shell.qml" scripts/system/shell-ipc development mockReplacement
-HYPRISM_QS_PATH="$PWD/config/quickshell/shell.qml" scripts/system/shell-ipc development dismissNewestToast
-HYPRISM_QS_PATH="$PWD/config/quickshell/shell.qml" scripts/system/shell-ipc development clearNotificationHistory
-HYPRISM_QS_PATH="$PWD/config/quickshell/shell.qml" scripts/system/shell-ipc development mockClipboard
-```
-
-Esses endpoints ignoram chamadas na sessão instalada.
-
-Para observar um erro de carregamento sem daemonizar, primeiro confirme que não há uma instância ativa e então execute na VM:
-
-```bash
-HYPRISM_ROOT="$HOME/.local/share/hyprism" qs --no-duplicate
-```
-
-Como `default` é a configuração canônica, esse comando é equivalente a usar `qs -c default --no-duplicate`.
-
-Verifique também a configuração e o autostart do Hyprland:
-
-```bash
-Hyprland --verify-config -c ~/.config/hypr/hyprland.lua
-hyprctl configerrors
-rg -n 'start-shell|hyprland.start' ~/.config/hypr
-journalctl --user -b --no-pager | rg -i 'quickshell|hyprism|qml'
-```
-
-`Super+Shift+E` tenta uma recarga IPC e, se não houver processo, inicia novamente a configuração correta. `Super+Return`, fechamento de janelas, workspaces e `Super+M` continuam funcionando sem Quickshell.
-
-Confira as fontes e o tema de ícones instalados:
-
-```bash
-pacman -Q papirus-icon-theme ttf-nerd-fonts-symbols-mono fontconfig
-fc-match 'Google Sans Flex'
-fc-match 'Symbols Nerd Font Mono'
-test -d /usr/share/icons/Papirus-Dark && echo 'Papirus-Dark encontrado'
-test -s ~/.local/share/icons/Hyprism-Papirus/index.theme && echo 'Hyprism-Papirus encontrado'
-```
-
-Se os textos usarem uma fonte de fallback, execute `fc-cache -f` dentro da VM e encerre a sessão antes de testar novamente. O helper `install-google-sans-flex` verifica os três downloads antes de instalá-los em `~/.local/share/fonts/google-sans-flex`.
-
-Se o log mencionar EGL, confirme que a configuração instalada contém o fallback do VirtualBox:
-
-```bash
-head -n 3 ~/.config/quickshell/default/shell.qml
-QT_QUICK_BACKEND=software QSG_INFO=1 qs --no-duplicate
-```
-
-O segundo comando é apenas para diagnóstico dentro da VM e deve informar o backend de software antes de carregar a interface.
-
-### Kitty não abriu
-
-```bash
-pacman -Q kitty
-command -v kitty
-kitty +kitten show_config >/dev/null
-readlink -f ~/.config/kitty/kitty.conf
-test -s ~/.cache/hyprism/theme/kitty.conf && echo 'tema do Kitty encontrado'
-```
-
-`kitty +kitten show_config` apenas valida a configuração. Se o arquivo gerado estiver ausente, execute novamente o instalador ou selecione um papel de parede com `hyprism-wallpaper set CAMINHO`.
-
-### Gravação não iniciou
-
-Na VM, verifique o backend, o seletor e o destino:
-
-```bash
-pacman -Q wf-recorder slurp
-command -v wf-recorder slurp
-test -d ~/Vídeos/gravacoes && test -w ~/Vídeos/gravacoes
-qs -c default ipc call shell status | jq '{recording,recordingPending,recordingSelecting,recordingMode,recordingOutputPath,recordingProcessId}'
-```
-
-`Tela inteira` usa o monitor com `focused=true` em `hyprctl -j monitors`. Cancelar `slurp` não cria arquivo. Se uma instância anterior ainda estiver finalizando, o lock por sessão rejeita a nova em vez de encerrar um processo desconhecido.
-
-### SDDM não carregou o tema dinâmico
-
-Sem reiniciar o SDDM dentro de uma sessão ativa, valide:
-
-```bash
-pacman -Q sddm qt6-virtualkeyboard
-cat /etc/sddm.conf.d/20-hyprism.conf
-readlink -f /usr/share/sddm/themes/hyprism-ksddm/theme.conf
-stat -c '%U:%G:%a %n' /var/lib/hyprism/sddm
-file /var/lib/hyprism/sddm/current-wallpaper.jpg
-grep -E '^(background|accent-color|surface-color)=' /var/lib/hyprism/sddm/theme.conf
-```
-
-O diretório de estado deve pertencer ao usuário instalado, usar modo `755` e conter arquivos `644`; o tema em `/usr/share/sddm/themes` e o drop-in continuam root-owned. O drop-in deve conter `InputMethod=qtvirtualkeyboard`, `GreeterEnvironment=QT_IM_MODULE=qtvirtualkeyboard` e `Current=hyprism-ksddm`.
-
-### Verificação manual da estabilização
-
-Na VM, confirme estes pontos depois de iniciar uma sessão nova:
-
-- a área entre a ilha compacta e as janelas mede apenas a reserva compacta e não muda ao abrir painéis;
-- o topo e o centro horizontal permanecem imóveis durante hover, abertura e fechamento de todos os painéis;
-- um clique normal em qualquer área livre da ilha abre o hub, e o conteúdo expandido permanece clicável durante a animação;
-- duas telas mantêm ilhas e widgets independentes durante movimento do ponteiro, hotplug e mudança de resolução;
-- `Super+R`, `Super+K`, `Super+Shift+V`, `Super+Shift+N`, `Super+Shift+L` e `Super+Tab` recebem teclado imediatamente no monitor focado;
-- o launcher cresce até seis resultados visíveis, reduz ao filtrar e rola resultados adicionais sem rastro colorido;
-- notificações aparecem centralizadas abaixo da ilha, empilham para baixo e mostram um único estado vazio no histórico;
-- toggles acompanham o estado real depois de sucesso ou falha, e recursos indisponíveis nunca aparecem ativos;
-- o brilho aparece com slider em hardware compatível e fica oculto no VirtualBox sem backlight;
-- ícones, títulos, valores e gráficos dos cards de CPU e memória mantêm a mesma linha e o mesmo recorte.
-
-## Estrutura do repositório
-
-```text
-config/hypr/        configuração Lua modular do Hyprland
-config/quickshell/  shell, painéis, widgets, serviços, notificações e OSD
-config/foot/        configuração e tema de fallback do Foot
-config/kitty/       configuração do Kitty padrão
-config/fastfetch/   fonte vetorial imutável do logo do Fastfetch
-config/matugen/     templates centralizados dos consumidores de tema
-config/nvim/        configuração gerenciada do NvChad v2.5
-config/shell/       inicialização do Starship por shell
-config/tmux/        inclusão da camada visual dinâmica do tmux
-config/sddm/        drop-in mínimo do tema de login
-scripts/            backends, wallpaper e geração de tema
-packages/           listas reproduzíveis de pacotes oficiais e AUR
-themes/             fontes vendorizadas de temas externos adaptados
-wallpapers/         papéis de parede de teste incluídos
-install.sh          implantação Arch reproduzível
-```
+| `Super+Return` | Abrir Kitty |
+| `Super+R` | Abrir o launcher |
+| `Super+Tab` / `Super+Shift+Tab` | Navegar pelas janelas; soltar `Super` confirma |
+| `Super+K` / `Super+Alt+K` | Escolher / sortear wallpaper |
+| `Super+Shift+V` | Abrir a área de transferência |
+| `Super+Shift+N` | Abrir o painel de rede |
+| `Ctrl+.` | Abrir o seletor de emoji |
+| `Super+Shift+R` | Selecionar ou encerrar uma gravação |
+| `Super+Shift+S` / `Super+Shift+F` | Capturar região / monitor focado |
+| `Super+L` | Bloquear com Hyprlock |
+| `Super+Ctrl+S` | Alternar o modo noturno |
+| `Super+B` | Abrir o Zen Browser |
+| `Super+1…0` | Ir aos workspaces 1–10 |
+
+## Créditos e licenças
+
+Hyprism integra projetos como [Hyprland](https://hypr.land/), [Quickshell](https://quickshell.org/), [Matugen](https://github.com/InioX/matugen), [Colloid](https://github.com/vinceliuice/Colloid-gtk-theme) e [Papirus](https://github.com/PapirusDevelopmentTeam/papirus-icon-theme). Os componentes vendorizados mantêm suas atribuições e licenças nos respectivos diretórios, incluindo [KSDDM](themes/ksddm-hyprism/LICENSE) e [NvChad](config/nvim/LICENSE).
