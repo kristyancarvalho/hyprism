@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 import "../components"
 import ".."
@@ -37,11 +36,11 @@ Item {
     }
 
     function takeInitialFocus() {
-        search.forceActiveFocus()
+        search.forceInputFocus(Qt.ShortcutFocusReason)
     }
 
     function initialFocusReady() {
-        return search.activeFocus
+        return search.inputActiveFocus
     }
 
     function handleKey(event) {
@@ -99,44 +98,19 @@ Item {
             }
         }
 
-        Item {
+        SearchField {
+            id: search
             width: parent.width
             height: 46
-
-            TextField {
-                id: search
-                anchors.fill: parent
-                focus: true
-                leftPadding: 46
-                rightPadding: 14
-                placeholderText: "Pesquisar aplicativos…"
-                color: panel.theme.colors.foreground
-                placeholderTextColor: panel.theme.colors.mutedForeground
-                font.family: Design.fontFamily
-                font.pixelSize: Design.fontSizeMd
-                background: Rectangle {
-                    radius: Design.radiusSm
-                    color: panel.theme.colors.surfaceVariant
-                    border.color: search.activeFocus ? panel.theme.colors.accent : panel.theme.colors.outline
-                    border.width: search.activeFocus ? 2 : 0
-                }
-                onTextChanged: {
-                    panel.query = text
-                    panel.selected = 0
-                }
-                Keys.onPressed: event => panel.handleKey(event)
+            theme: panel.theme
+            focusBorderWidth: 2
+            placeholderText: "Pesquisar aplicativos…"
+            onTextChanged: {
+                panel.query = text
+                panel.selected = 0
             }
-
-            StatusIcon {
-                anchors {
-                    left: parent.left
-                    leftMargin: 14
-                    verticalCenter: parent.verticalCenter
-                }
-                name: "search"
-                iconSize: Design.iconMd
-                color: panel.theme.colors.mutedForeground
-            }
+            onKeyPressed: event => panel.handleKey(event)
+            onClearRequested: text = ""
         }
 
         ListView {
