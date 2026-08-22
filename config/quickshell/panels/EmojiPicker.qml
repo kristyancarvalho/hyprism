@@ -136,11 +136,11 @@ FocusScope {
 
         GridView {
             id: grid
-            property int columns: Math.max(1, Math.floor(width / cellWidth))
+            readonly property int columns: Design.emojiColumnCount
             width: parent.width
             height: Math.max(0, parent.height - search.height - parent.spacing)
-            cellWidth: 58
-            cellHeight: 58
+            cellWidth: Design.emojiCellSize
+            cellHeight: Design.emojiCellSize
             clip: true
             model: panel.resultModel
             currentIndex: panel.selectedIndex
@@ -151,33 +151,39 @@ FocusScope {
             KeyNavigation.backtab: search.clearVisible ? search.clearButtonItem : search
             onCurrentIndexChanged: if (currentIndex >= 0) positionViewAtIndex(currentIndex, GridView.Contain)
 
-            delegate: Rectangle {
+            delegate: Item {
                 required property var modelData
                 required property int index
-                width: 50
-                height: 50
-                radius: Design.radiusSm
-                color: panel.selectedIndex === index ? panel.theme.colors.surfaceActive : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
-                border.width: panel.selectedIndex === index ? (grid.activeFocus ? 2 : 1) : 0
-                border.color: panel.theme.colors.accent
+                width: grid.cellWidth
+                height: grid.cellHeight
 
-                Behavior on color {
-                    ColorAnimation { duration: Design.animationInstant; easing.type: Design.easingMorph }
-                }
-
-                Text {
+                Rectangle {
                     anchors.centerIn: parent
-                    text: modelData.glyph
-                    font.pixelSize: 24
-                }
+                    width: Design.emojiButtonSize
+                    height: Design.emojiButtonSize
+                    radius: Design.radiusSm
+                    color: panel.selectedIndex === index ? panel.theme.colors.surfaceActive : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
+                    border.width: panel.selectedIndex === index ? (grid.activeFocus ? 2 : 1) : 0
+                    border.color: panel.theme.colors.accent
 
-                MouseArea {
-                    id: pointer
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onEntered: panel.selectedIndex = index
-                    onClicked: panel.copy(modelData.glyph)
+                    Behavior on color {
+                        ColorAnimation { duration: Design.animationInstant; easing.type: Design.easingMorph }
+                    }
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: modelData.glyph
+                        font.pixelSize: 24
+                    }
+
+                    MouseArea {
+                        id: pointer
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onEntered: panel.selectedIndex = index
+                        onClicked: panel.copy(modelData.glyph)
+                    }
                 }
             }
 

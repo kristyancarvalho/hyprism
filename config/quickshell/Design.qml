@@ -64,6 +64,12 @@ QtObject {
     readonly property int launcherResultRowHeight: 54
     readonly property int launcherResultSpacing: 5
     readonly property int launcherBaseHeight: 136
+    readonly property int emojiColumnCount: 8
+    readonly property int emojiButtonSize: 50
+    readonly property int emojiCellSpacing: spacingSm
+    readonly property int emojiCellSize: emojiButtonSize + emojiCellSpacing
+    readonly property int emojiGridWidth: emojiColumnCount * emojiCellSize
+    readonly property int emojiPickerWidth: emojiGridWidth + 2 * spacingLg
     readonly property int widgetHeaderHeight: 20
     readonly property int widgetIconSize: 16
     readonly property int widgetInnerPadding: 10
