@@ -63,7 +63,7 @@ PanelWindow {
             width = Math.min(safeWidth, 640)
             height = 300
         } else if (mode === "emoji") {
-            width = Math.min(safeWidth, 540)
+            width = Math.min(safeWidth, Design.emojiPickerWidth)
             height = 360
         } else if (mode === "switcher") {
             width = Math.min(safeWidth, 920)
