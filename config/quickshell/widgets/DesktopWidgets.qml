@@ -323,33 +323,32 @@ PanelWindow {
             DesktopCard {
                 theme: widgetWindow.theme
                 width: parent.width
-                visible: controller.widgetEnabled("uptime") && controller.monitoring.uptime.available
+                visible: controller.widgetEnabled("uptime") && controller.monitoring.systemInfo.available
                 height: visible ? implicitHeight : 0
                 iconName: "uptime"
                 title: "Sistema"
-                value: "Ativo há " + controller.formatUptime(controller.monitoring.uptime.uptimeSeconds)
-                contentHeight: 50
+                contentHeight: systemRows.count * Design.widgetDataRowHeight
 
-                Row {
+                Column {
                     anchors.fill: parent
-                    spacing: Design.spacingSm
+
                     Repeater {
+                        id: systemRows
                         model: [
-                            { label: "1 min", value: controller.monitoring.uptime.load1 },
-                            { label: "5 min", value: controller.monitoring.uptime.load5 },
-                            { label: "15 min", value: controller.monitoring.uptime.load15 }
+                            { label: "Kernel", value: controller.monitoring.systemInfo.kernel },
+                            { label: "Uptime", value: controller.formatUptime(controller.monitoring.uptime.uptimeSeconds) },
+                            { label: "Última snapshot", value: controller.snapshotAgeText() },
+                            { label: "Sessão", value: controller.monitoring.systemInfo.session },
+                            { label: "Atualizações", value: controller.updateCountText() }
                         ]
-                        Rectangle {
+
+                        WidgetInfoRow {
                             required property var modelData
-                            width: (parent.width - Design.spacingSm * 2) / 3
-                            height: parent.height
-                            radius: Design.radiusSm
-                            color: theme.colors.surfaceVariant
-                            Column {
-                                anchors.centerIn: parent
-                                Text { anchors.horizontalCenter: parent.horizontalCenter; text: Number(modelData.value).toFixed(2).replace(".", ","); color: modelData.value > controller.monitoring.uptime.cores ? theme.colors.warning : theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeSm; font.weight: Design.fontWeightSemibold }
-                                Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.label; color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
-                            }
+                            width: parent.width
+                            height: Design.widgetDataRowHeight
+                            theme: widgetWindow.theme
+                            label: modelData.label
+                            value: modelData.value
                         }
                     }
                 }
@@ -362,19 +361,23 @@ PanelWindow {
                 height: visible ? implicitHeight : 0
                 iconName: "temperature"
                 title: "Sensores"
-                contentHeight: Math.max(30, sensorRepeater.count * 28)
+                contentHeight: Math.max(Design.widgetDataRowHeight, sensorRepeater.count * Design.widgetDataRowHeight)
 
                 Column {
                     anchors.fill: parent
                     Repeater {
                         id: sensorRepeater
                         model: (controller.monitoring.sensors.items || []).slice(0, widgetWindow.compactViewport ? 2 : 4)
-                        Row {
+                        WidgetInfoRow {
                             required property var modelData
                             width: parent.width
-                            height: 28
-                            Text { width: parent.width - 60; text: Design.safeText(modelData.label, "Temperatura"); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; elide: Text.ElideRight }
-                            Text { width: 60; horizontalAlignment: Text.AlignRight; text: Math.round(Design.safeNumber(modelData.celsius, 0)) + "°C"; color: modelData.celsius >= 90 ? theme.colors.error : modelData.celsius >= 78 ? theme.colors.warning : theme.colors.accent; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold }
+                            height: Design.widgetDataRowHeight
+                            theme: widgetWindow.theme
+                            label: Design.safeText(modelData.label, "Temperatura")
+                            value: Math.round(Design.safeNumber(modelData.celsius, 0)) + "°C"
+                            labelWidth: parent.width - 68
+                            labelColor: theme.colors.foreground
+                            valueColor: modelData.celsius >= 90 ? theme.colors.error : modelData.celsius >= 78 ? theme.colors.warning : theme.colors.accent
                         }
                     }
                 }
@@ -407,12 +410,16 @@ PanelWindow {
                     Repeater {
                         id: serviceRepeater
                         model: controller.monitoring.services.healthy ? [] : (controller.monitoring.services.items || []).filter(item => item.state !== "running")
-                        Row {
+                        WidgetInfoRow {
                             required property var modelData
                             width: parent.width
                             height: 27
-                            Text { width: parent.width - 100; text: Design.safeText(modelData.name, "Serviço"); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; elide: Text.ElideRight }
-                            Text { width: 100; horizontalAlignment: Text.AlignRight; text: controller.serviceStateText(modelData.state); color: modelData.state === "failed" ? theme.colors.error : theme.colors.warning; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold }
+                            theme: widgetWindow.theme
+                            label: Design.safeText(modelData.name, "Serviço")
+                            value: controller.serviceStateText(modelData.state)
+                            labelWidth: parent.width - 108
+                            labelColor: theme.colors.foreground
+                            valueColor: modelData.state === "failed" ? theme.colors.error : theme.colors.warning
                         }
                     }
                 }
@@ -477,12 +484,17 @@ PanelWindow {
                         Text { text: "CPU"; color: theme.colors.accent; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold }
                         Repeater {
                             model: (controller.monitoring.processes.cpu || []).slice(0, widgetWindow.visibleProcessLimit)
-                            Row {
+                            WidgetInfoRow {
                                 required property var modelData
                                 width: parent.width
                                 height: 28
-                                Text { width: parent.width - 42; text: Design.safeText(modelData.name, "Processo"); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: 9; elide: Text.ElideRight }
-                                Text { width: 42; horizontalAlignment: Text.AlignRight; text: Math.round(Design.safeNumber(modelData.cpuPercent, 0)) + "%"; color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
+                                theme: widgetWindow.theme
+                                label: Design.safeText(modelData.name, "Processo")
+                                value: Math.round(Design.safeNumber(modelData.cpuPercent, 0)) + "%"
+                                labelWidth: parent.width - 50
+                                fontSize: 9
+                                labelColor: theme.colors.foreground
+                                valueColor: theme.colors.mutedForeground
                             }
                         }
                     }
@@ -494,12 +506,17 @@ PanelWindow {
                         Text { text: "Memória"; color: theme.colors.secondary; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold }
                         Repeater {
                             model: (controller.monitoring.processes.memory || []).slice(0, widgetWindow.visibleProcessLimit)
-                            Row {
+                            WidgetInfoRow {
                                 required property var modelData
                                 width: parent.width
                                 height: 28
-                                Text { width: parent.width - 58; text: Design.safeText(modelData.name, "Processo"); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: 9; elide: Text.ElideRight }
-                                Text { width: 58; horizontalAlignment: Text.AlignRight; text: controller.formatBytes(modelData.memoryBytes); color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
+                                theme: widgetWindow.theme
+                                label: Design.safeText(modelData.name, "Processo")
+                                value: controller.formatBytes(modelData.memoryBytes)
+                                labelWidth: parent.width - 66
+                                fontSize: 9
+                                labelColor: theme.colors.foreground
+                                valueColor: theme.colors.mutedForeground
                             }
                         }
                     }

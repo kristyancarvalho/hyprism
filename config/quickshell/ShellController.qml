@@ -57,7 +57,7 @@ Item {
     property var tasks: []
     property var weather: ({ city: "São Paulo", condition: "Indisponível", temperature: null, apparentTemperature: null, minimum: null, maximum: null, weatherCode: -1 })
     property var system: ({ audio: { available: false, percent: 0, muted: false }, microphone: { available: false, percent: 0, muted: false }, network: { available: false, kind: "disconnected", name: "Desconectado", enabled: false, signal: 0, receiveKib: 0, transmitKib: 0, wifiAvailable: false, wifiEnabled: false, virtualized: false }, bluetooth: { available: false, powered: false, connected: false, devices: [] }, battery: { available: false, percent: 0, status: "" }, brightness: { available: false, percent: 0 }, nightMode: { available: false, enabled: false }, powerProfile: { available: false, mode: "" }, memory: { percent: 0, used: 0, total: 0 }, cpu: { percent: 0 }, gpu: { available: false, percent: 0 }, temperature: { available: false, celsius: 0 } })
-    property var monitoring: ({ storage: { available: false, mounts: [] }, sensors: { available: false, items: [] }, uptime: { available: false, uptimeSeconds: 0, load1: 0, load5: 0, load15: 0, cores: 1, processCount: 0, kernel: "" }, services: { available: false, healthy: false, items: [] }, processes: { available: false, cpu: [], memory: [], limit: 3 } })
+    property var monitoring: ({ storage: { available: false, mounts: [] }, sensors: { available: false, items: [] }, uptime: { available: false, uptimeSeconds: 0, processCount: 0 }, systemInfo: { available: false, kernel: "", session: "", snapshotStatus: "unavailable", snapshotTimestamp: 0, updatesKnown: false, updateCount: 0 }, services: { available: false, healthy: false, items: [] }, processes: { available: false, cpu: [], memory: [], limit: 3 } })
     readonly property var widgetDefaults: ({
         clock: { enabled: true },
         weather: { enabled: true },
@@ -329,7 +329,7 @@ Item {
     }
 
     function resetMonitoring() {
-        monitoring = { storage: { available: false, mounts: [] }, sensors: { available: false, items: [] }, uptime: { available: false, uptimeSeconds: 0, load1: 0, load5: 0, load15: 0, cores: 1, processCount: 0, kernel: "" }, services: { available: false, healthy: false, items: [] }, processes: { available: false, cpu: [], memory: [], limit: 3 } }
+        monitoring = { storage: { available: false, mounts: [] }, sensors: { available: false, items: [] }, uptime: { available: false, uptimeSeconds: 0, processCount: 0 }, systemInfo: { available: false, kernel: "", session: "", snapshotStatus: "unavailable", snapshotTimestamp: 0, updatesKnown: false, updateCount: 0 }, services: { available: false, healthy: false, items: [] }, processes: { available: false, cpu: [], memory: [], limit: 3 } }
     }
 
     function updateMonitoring(incoming) {
@@ -338,6 +338,7 @@ Item {
             storage: Object.assign({}, monitoring.storage, next.storage || {}),
             sensors: Object.assign({}, monitoring.sensors, next.sensors || {}),
             uptime: Object.assign({}, monitoring.uptime, next.uptime || {}),
+            systemInfo: Object.assign({}, monitoring.systemInfo, next.systemInfo || {}),
             services: Object.assign({}, monitoring.services, next.services || {}),
             processes: Object.assign({}, monitoring.processes, next.processes || {})
         }
@@ -428,6 +429,29 @@ Item {
         if (days > 0) return days + " d " + hours + " h"
         if (hours > 0) return hours + " h " + minutes + " min"
         return minutes + " min"
+    }
+
+    function snapshotAgeText() {
+        const info = monitoring.systemInfo || {}
+        if (info.snapshotStatus === "none") return "Nenhuma"
+        if (info.snapshotStatus !== "available" || Design.safeNumber(info.snapshotTimestamp, 0) <= 0) return "Indisponível"
+        const elapsed = Math.max(0, Math.floor(currentTime.getTime() / 1000 - info.snapshotTimestamp))
+        const minutes = Math.floor(elapsed / 60)
+        const hours = Math.floor(elapsed / 3600)
+        const days = Math.floor(elapsed / 86400)
+        if (minutes < 1) return "agora"
+        if (minutes < 60) return "há " + minutes + " min"
+        if (hours < 24) return "há " + hours + " h"
+        if (days === 1) return "ontem"
+        return "há " + days + " d"
+    }
+
+    function updateCountText() {
+        const info = monitoring.systemInfo || {}
+        if (!info.updatesKnown) return "Indisponível"
+        const count = Math.max(0, Math.floor(Design.safeNumber(info.updateCount, 0)))
+        if (count === 0) return "Em dia"
+        return count === 1 ? "1 atualização" : count + " atualizações"
     }
 
     function serviceStateText(state) {
