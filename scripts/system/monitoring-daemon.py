@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
+import concurrent.futures
 import json
 import os
 import pathlib
 import platform
+import shutil
 import subprocess
 import sys
 import time
@@ -126,15 +128,11 @@ def sensors():
     return {"available": bool(preferred), "items": preferred[:4]}
 
 
-def uptime_load():
+def uptime():
     try:
         uptime_seconds = max(0, int(float(pathlib.Path("/proc/uptime").read_text().split()[0])))
     except (OSError, ValueError, IndexError):
         uptime_seconds = 0
-    try:
-        loads = [round(value, 2) for value in os.getloadavg()]
-    except OSError:
-        loads = [0, 0, 0]
     try:
         process_count = sum(entry.name.isdigit() for entry in pathlib.Path("/proc").iterdir())
     except OSError:
@@ -142,13 +140,94 @@ def uptime_load():
     return {
         "available": uptime_seconds > 0,
         "uptimeSeconds": uptime_seconds,
-        "load1": loads[0],
-        "load5": loads[1],
-        "load15": loads[2],
-        "cores": max(1, os.cpu_count() or 1),
-        "processCount": process_count,
-        "kernel": platform.release()
+        "processCount": process_count
     }
+
+
+def command_output(command, timeout):
+    try:
+        return subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            env={**os.environ, "LC_ALL": "C"}
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+def session_label():
+    desktop = os.environ.get("XDG_CURRENT_DESKTOP") or os.environ.get("XDG_SESSION_DESKTOP") or "Hyprland"
+    desktop = desktop.split(":")[0].strip() or "Hyprland"
+    session_type = (os.environ.get("XDG_SESSION_TYPE") or "wayland").strip().capitalize()
+    return f"{desktop} / {session_type}"
+
+
+def system_identity():
+    return {
+        "available": True,
+        "kernel": f"Linux {platform.release()}",
+        "session": session_label(),
+        "snapshotStatus": "unavailable",
+        "snapshotTimestamp": 0,
+        "updatesKnown": False,
+        "updateCount": 0
+    }
+
+
+def latest_snapshot():
+    if not shutil.which("snapper"):
+        return {"snapshotStatus": "unavailable", "snapshotTimestamp": 0}
+    configurations = command_output(["snapper", "--csvout", "--separator", "|", "list-configs"], 4)
+    if not configurations or configurations.returncode != 0:
+        return {"snapshotStatus": "unavailable", "snapshotTimestamp": 0}
+    names = []
+    for line in configurations.stdout.splitlines()[1:]:
+        name = line.split("|", 1)[0].strip()
+        if name:
+            names.append(name)
+    if not names:
+        return {"snapshotStatus": "none", "snapshotTimestamp": 0}
+    latest = 0
+    readable = False
+    for name in names:
+        listing = command_output(["snapper", "--csvout", "--separator", "|", "-c", name, "list"], 8)
+        if not listing or listing.returncode != 0:
+            continue
+        readable = True
+        lines = listing.stdout.splitlines()
+        if not lines:
+            continue
+        headers = lines[0].split("|")
+        try:
+            date_index = headers.index("date")
+        except ValueError:
+            continue
+        for line in lines[1:]:
+            fields = line.split("|")
+            if len(fields) <= date_index or not fields[date_index].strip():
+                continue
+            try:
+                timestamp = int(time.mktime(time.strptime(fields[date_index].strip(), "%Y-%m-%d %H:%M:%S")))
+                latest = max(latest, timestamp)
+            except ValueError:
+                continue
+    if latest > 0:
+        return {"snapshotStatus": "available", "snapshotTimestamp": latest}
+    return {"snapshotStatus": "none" if readable else "unavailable", "snapshotTimestamp": 0}
+
+
+def pending_updates():
+    if shutil.which("checkupdates"):
+        result = command_output(["checkupdates"], 30)
+        if result and result.returncode in (0, 2):
+            return {"updatesKnown": True, "updateCount": len([line for line in result.stdout.splitlines() if line.strip()])}
+    if shutil.which("pacman"):
+        result = command_output(["pacman", "-Qu"], 8)
+        if result and result.returncode == 0:
+            return {"updatesKnown": True, "updateCount": len([line for line in result.stdout.splitlines() if line.strip()])}
+    return {"updatesKnown": False, "updateCount": 0}
 
 
 def service_scope(item):
@@ -245,22 +324,44 @@ loop_interval = 1 if any(enabled(config, name) for name in ("sensors", "uptime",
 state = {
     "storage": {"available": False, "mounts": []},
     "sensors": {"available": False, "items": []},
-    "uptime": {"available": False, "uptimeSeconds": 0, "load1": 0, "load5": 0, "load15": 0, "cores": 1, "processCount": 0, "kernel": ""},
+    "uptime": {"available": False, "uptimeSeconds": 0, "processCount": 0},
+    "systemInfo": system_identity(),
     "services": {"available": False, "healthy": False, "items": []},
     "processes": {"available": False, "cpu": [], "memory": [], "limit": 3}
 }
 tick = 0
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+snapshot_future = None
+updates_future = None
 while True:
     changed = False
+    if snapshot_future is not None and snapshot_future.done():
+        try:
+            state["systemInfo"].update(snapshot_future.result())
+        except Exception:
+            state["systemInfo"].update({"snapshotStatus": "unavailable", "snapshotTimestamp": 0})
+        snapshot_future = None
+        changed = True
+    if updates_future is not None and updates_future.done():
+        try:
+            state["systemInfo"].update(updates_future.result())
+        except Exception:
+            state["systemInfo"].update({"updatesKnown": False, "updateCount": 0})
+        updates_future = None
+        changed = True
     if enabled(config, "storage") and tick % 60 == 0:
         state["storage"] = storage(config)
         changed = True
     if enabled(config, "sensors") and tick % 5 == 0:
         state["sensors"] = sensors()
         changed = True
-    if enabled(config, "uptime") and tick % 5 == 0:
-        state["uptime"] = uptime_load()
+    if enabled(config, "uptime") and tick % 60 == 0:
+        state["uptime"] = uptime()
         changed = True
+    if enabled(config, "uptime") and tick % 300 == 0 and snapshot_future is None:
+        snapshot_future = executor.submit(latest_snapshot)
+    if enabled(config, "uptime") and tick % 1800 == 0 and updates_future is None:
+        updates_future = executor.submit(pending_updates)
     if enabled(config, "services") and tick % 15 == 0:
         state["services"] = services(config)
         changed = True
