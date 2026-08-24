@@ -70,8 +70,11 @@ Item {
             preferredHighlightEnd: width * .66
             highlightRangeMode: ListView.ApplyRange
             onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
-            highlight: SelectionHighlight {
+
+            SelectionHighlight {
+                parent: windows.contentItem
                 theme: panel.theme
+                target: windows.currentItem
                 active: navigation.keyboardNavigation && windows.count > 0
             }
 
@@ -85,8 +88,10 @@ Item {
                 width: Math.max(148, Math.min(180, (ListView.view.width - 30) / Math.min(4, Math.max(1, ListView.view.count))))
                 height: ListView.view.height
                 radius: Design.radiusMd
-                color: navigation.keyboardNavigation && selected ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
+                color: navigation.keyboardNavigation ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
                 border.width: 0
+
+                Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
 
                 Column {
                     anchors.fill: parent

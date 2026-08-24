@@ -7,6 +7,7 @@ FocusScope {
     property alias text: input.text
     property string placeholderText: ""
     property bool clearButtonEnabled: true
+    property color focusedSurfaceColor: theme.colors.surfaceActive
     property Item tabTarget: null
     property Item backtabTarget: null
     readonly property bool inputActiveFocus: input.activeFocus
@@ -26,7 +27,7 @@ FocusScope {
     Rectangle {
         anchors.fill: parent
         radius: Design.radiusSm
-        color: input.activeFocus ? control.theme.colors.surfaceActive : control.theme.colors.surfaceVariant
+        color: input.activeFocus ? control.focusedSurfaceColor : control.theme.colors.surfaceVariant
         border.width: 0
 
         Behavior on color {

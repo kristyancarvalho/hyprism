@@ -78,7 +78,7 @@ PanelWindow {
         id: stack
         width: parent.width
         height: parent.height - (overflow.visible ? overflow.height + Design.spacingSm : 0)
-        spacing: 8
+        spacing: Design.notificationSpacing
         clip: true
         interactive: false
         cacheBuffer: 1000
