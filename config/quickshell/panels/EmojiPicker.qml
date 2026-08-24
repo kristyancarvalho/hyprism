@@ -9,7 +9,7 @@ FocusScope {
     required property var controller
     required property var theme
     property string query: ""
-    property int selectedIndex: 0
+    property int selectedIndex: -1
     property var emojis: []
     property string dataError: ""
     readonly property var resultModel: filteredEmoji()
@@ -47,6 +47,11 @@ FocusScope {
         controller.close()
     }
 
+    function resultSelectable(index) {
+        const entry = resultModel[index]
+        return entry && Design.safeText(entry.glyph, "").length > 0
+    }
+
     function focusGrid() {
         if (!resultCount) return
         grid.forceActiveFocus(Qt.TabFocusReason)
@@ -54,7 +59,16 @@ FocusScope {
     }
 
     function takeInitialFocus() {
+        resetSelection()
         search.forceInputFocus(Qt.ShortcutFocusReason)
+    }
+
+    function resetSelection() {
+        selectedIndex = navigation.reset(resultCount, resultSelectable)
+        grid.positionViewAtBeginning()
+        Qt.callLater(() => {
+            if (selectedIndex >= 0) grid.positionViewAtIndex(selectedIndex, GridView.Beginning)
+        })
     }
 
     function initialFocusReady() {
@@ -90,7 +104,7 @@ FocusScope {
     focus: true
     Keys.onPressed: event => handleGridKey(event)
     onResultCountChanged: {
-        selectedIndex = navigation.clamp(selectedIndex, resultCount)
+        if (selectedIndex < 0 || selectedIndex >= resultCount) resetSelection()
         if (!resultCount) search.forceInputFocus(Qt.OtherFocusReason)
     }
 
@@ -121,8 +135,7 @@ FocusScope {
             backtabTarget: grid
             onTextChanged: {
                 panel.query = text
-                panel.selectedIndex = 0
-                navigation.keyboardNavigation = false
+                panel.resetSelection()
             }
             onClearRequested: text = ""
             onKeyPressed: event => {

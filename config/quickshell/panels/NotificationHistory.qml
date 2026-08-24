@@ -8,10 +8,14 @@ Column {
     required property var theme
     required property var server
     property var notifications: server && Array.isArray(server.historyNotifications) ? server.historyNotifications : []
-    property int selectedIndex: 0
+    property int selectedIndex: -1
     spacing: Design.notificationSpacing
     activeFocusOnTab: true
-    onNotificationsChanged: selectedIndex = navigation.clamp(selectedIndex, notifications.length)
+    onNotificationsChanged: if (selectedIndex < 0 || selectedIndex >= notifications.length) selectedIndex = navigation.first(notifications.length)
+    onActiveFocusChanged: if (activeFocus) {
+        selectedIndex = navigation.reset(notifications.length)
+        historyList.positionViewAtBeginning()
+    }
 
     function dismiss(notification) {
         if (!notification) return
@@ -20,7 +24,7 @@ Column {
 
     function clearAll() {
         server.clearHistory()
-        selectedIndex = 0
+        selectedIndex = -1
     }
 
     Keys.onPressed: event => {

@@ -27,15 +27,14 @@ FocusScope {
         })
     }
 
-    function currentWallpaperIndex() {
-        const current = Design.safeText(controller.wallpaperCurrent, "")
-        return current ? filteredWallpapers.indexOf(current) : -1
-    }
-
-    function clampSelection() {
+    function resetSelection() {
         const count = filteredWallpapers.length
         controller.wallpaperResultCount = count
-        controller.wallpaperSelectedIndex = count > 0 ? Math.max(0, Math.min(controller.wallpaperSelectedIndex, count - 1)) : 0
+        controller.wallpaperSelectedIndex = navigation.reset(count, index => Design.safeText(filteredWallpapers[index], "").length > 0)
+        grid.positionViewAtBeginning()
+        Qt.callLater(() => {
+            if (controller.wallpaperSelectedIndex >= 0) grid.positionViewAtIndex(controller.wallpaperSelectedIndex, GridView.Beginning)
+        })
     }
 
     function focusGrid() {
@@ -100,7 +99,7 @@ FocusScope {
 
     function takeInitialFocus() {
         initialSelectionPending = true
-        navigation.useKeyboard()
+        resetSelection()
         Qt.callLater(() => filteredWallpapers.length ? focusGrid() : focusSearch())
     }
 
@@ -160,7 +159,6 @@ FocusScope {
             tabTarget: refreshButton
             backtabTarget: grid
             onTextChanged: {
-                navigation.keyboardNavigation = false
                 if (text !== panel.controller.wallpaperQuery) panel.controller.wallpaperQuery = text
             }
             onKeyPressed: event => {
@@ -199,7 +197,7 @@ FocusScope {
                 parent: grid.contentItem
                 theme: panel.theme
                 target: grid.currentItem
-                active: navigation.keyboardNavigation && grid.activeFocus && panel.filteredWallpapers.length > 0
+                active: navigation.keyboardNavigation && panel.filteredWallpapers.length > 0
                 inset: 2
             }
             activeFocusOnTab: true
@@ -311,9 +309,7 @@ FocusScope {
     }
 
     onFilteredWallpapersChanged: {
-        const currentIndex = currentWallpaperIndex()
-        if (initialSelectionPending && !controller.wallpaperQuery.length && currentIndex >= 0) controller.wallpaperSelectedIndex = currentIndex
-        clampSelection()
+        resetSelection()
         if (!filteredWallpapers.length) {
             if (!controller.wallpaperQuery.length) initialSelectionPending = true
             Qt.callLater(() => focusSearch())
@@ -322,7 +318,7 @@ FocusScope {
     }
     Component.onCompleted: {
         appService.refreshWallpapers()
-        clampSelection()
+        resetSelection()
         takeInitialFocus()
     }
 }
