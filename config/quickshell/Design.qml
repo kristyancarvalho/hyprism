@@ -87,6 +87,10 @@ QtObject {
     readonly property int outlineWidth: 1
     readonly property int historyLimit: 60
     readonly property int notificationHistoryLimit: 80
+    readonly property int notificationCardMinimumHeight: 76
+    readonly property int notificationHistoryRowHeight: 68
+    readonly property int notificationSpacing: 7
+    readonly property int notificationPaddingY: 9
     readonly property var icons: ({
         application: "󰀻",
         search: "󰍉",

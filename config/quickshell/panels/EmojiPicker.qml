@@ -127,6 +127,7 @@ FocusScope {
             onClearRequested: text = ""
             onKeyPressed: event => {
                 if (event.key === Qt.Key_Down) {
+                    navigation.useKeyboard()
                     panel.focusGrid()
                     event.accepted = true
                 } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
@@ -155,8 +156,11 @@ FocusScope {
             KeyNavigation.tab: search
             KeyNavigation.backtab: search.clearVisible ? search.clearButtonItem : search
             onCurrentIndexChanged: if (currentIndex >= 0) positionViewAtIndex(currentIndex, GridView.Contain)
-            highlight: SelectionHighlight {
+
+            SelectionHighlight {
+                parent: grid.contentItem
                 theme: panel.theme
+                target: grid.currentItem
                 active: navigation.keyboardNavigation && panel.resultCount > 0
                 inset: Design.spacingXs
             }
@@ -172,12 +176,10 @@ FocusScope {
                     width: Design.emojiButtonSize
                     height: Design.emojiButtonSize
                     radius: Design.radiusSm
-                    color: navigation.keyboardNavigation && panel.selectedIndex === index ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
+                    color: navigation.keyboardNavigation ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
                     border.width: 0
 
-                    Behavior on color {
-                        ColorAnimation { duration: Design.animationInstant; easing.type: Design.easingMorph }
-                    }
+                    Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
 
                     Text {
                         anchors.centerIn: parent

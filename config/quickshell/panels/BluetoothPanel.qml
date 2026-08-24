@@ -83,8 +83,11 @@ Item {
             currentIndex: panel.selectedIndex
             spacing: 6
             onCurrentIndexChanged: if (currentIndex >= 0) positionViewAtIndex(currentIndex, ListView.Contain)
-            highlight: SelectionHighlight {
+
+            SelectionHighlight {
+                parent: deviceList.contentItem
                 theme: panel.theme
+                target: deviceList.currentItem
                 active: navigation.keyboardNavigation && panel.devices.length > 0
             }
 
@@ -94,8 +97,10 @@ Item {
                 width: ListView.view.width
                 height: 58
                 radius: Design.radiusSm
-                color: navigation.keyboardNavigation && panel.selectedIndex === index ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
+                color: navigation.keyboardNavigation ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
                 border.width: 0
+
+                Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
 
                 StatusIcon {
                     anchors {

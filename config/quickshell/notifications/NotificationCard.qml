@@ -8,7 +8,7 @@ Glass {
     required property var controller
     signal dismissed()
     width: 360
-    height: Math.min(144, Math.max(86, content.implicitHeight + 24))
+    height: Math.min(136, Math.max(Design.notificationCardMinimumHeight, content.implicitHeight + Design.notificationPaddingY * 2))
     radius: Design.radiusMd
     surfaceOpacity: .96
     outlined: notification && notification.urgency === 2
@@ -31,7 +31,7 @@ Glass {
         anchors.left: parent.left
         anchors.leftMargin: 13
         anchors.right: closeButton.left
-        anchors.rightMargin: 9
+        anchors.rightMargin: Design.spacingSm
         anchors.verticalCenter: parent.verticalCenter
         spacing: 5
 
@@ -123,8 +123,8 @@ Glass {
         id: closeButton
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.rightMargin: 9
-        anchors.topMargin: 9
+        anchors.rightMargin: Design.spacingSm
+        anchors.topMargin: Design.spacingSm
         width: 32
         height: 32
 
@@ -135,6 +135,8 @@ Glass {
             radius: Design.radiusDefault
             color: closePointer.containsMouse || closeButton.activeFocus ? card.theme.colors.surfaceHover : card.theme.colors.surfaceVariant
             border.width: 0
+
+            Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
 
             StatusIcon {
                 anchors.centerIn: parent

@@ -173,8 +173,11 @@ Item {
             activeFocusOnTab: true
             spacing: 6
             onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
-            highlight: SelectionHighlight {
+
+            SelectionHighlight {
+                parent: networksList.contentItem
                 theme: panel.theme
+                target: networksList.currentItem
                 active: navigation.keyboardNavigation && panel.networks.length > 0
             }
 
@@ -184,8 +187,10 @@ Item {
                 width: ListView.view.width
                 height: 56
                 radius: Design.radiusSm
-                color: navigation.keyboardNavigation && panel.selectedIndex === index ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
+                color: navigation.keyboardNavigation ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
                 border.width: 0
+
+                Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
 
                 StatusIcon {
                     anchors {

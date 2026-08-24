@@ -194,8 +194,11 @@ FocusScope {
             model: panel.filteredWallpapers
             currentIndex: panel.controller.wallpaperSelectedIndex
             onCurrentIndexChanged: if (currentIndex >= 0) positionViewAtIndex(currentIndex, GridView.Contain)
-            highlight: SelectionHighlight {
+
+            SelectionHighlight {
+                parent: grid.contentItem
                 theme: panel.theme
+                target: grid.currentItem
                 active: navigation.keyboardNavigation && grid.activeFocus && panel.filteredWallpapers.length > 0
                 inset: 2
             }
@@ -219,26 +222,28 @@ FocusScope {
                     color: panel.theme.colors.surfaceVariant
                     border.width: 0
                     clip: true
-                    scale: navigation.keyboardNavigation && grid.activeFocus && panel.controller.wallpaperSelectedIndex === index ? .96 : 1
 
-                    Behavior on scale { NumberAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
-
-                    Image {
+                    RoundedImage {
                         anchors.fill: parent
                         source: "file://" + Design.safeText(modelData, "")
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         cache: true
+                        radius: parent.radius
                     }
 
                     Rectangle {
                         anchors.fill: parent
-                        color: pointer.containsMouse && panel.controller.wallpaperSelectedIndex !== index ? panel.theme.colors.surfaceHover : "transparent"
-                        opacity: .28
+                        radius: parent.radius
+                        color: panel.theme.colors.surfaceHover
+                        opacity: pointer.containsMouse && !navigation.keyboardNavigation ? .28 : 0
+
+                        Behavior on opacity { NumberAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
                     }
 
                     Rectangle {
                         anchors.fill: parent
+                        radius: parent.radius
                         visible: navigation.keyboardNavigation && grid.activeFocus && panel.controller.wallpaperSelectedIndex === index
                         color: panel.theme.colors.accentDim
                         opacity: .34
@@ -264,9 +269,12 @@ FocusScope {
                         }
                     }
 
-                    Rectangle {
+                    RoundedSurfaceSlice {
                         anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
                         height: 30
+                        surfaceHeight: parent.height
+                        cornerRadius: parent.radius
+                        bottomAligned: true
                         color: "#b0000000"
                     }
 

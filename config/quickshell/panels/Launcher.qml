@@ -105,6 +105,7 @@ Item {
             width: parent.width
             height: 46
             theme: panel.theme
+            focusedSurfaceColor: panel.theme.colors.surfaceVariant
             placeholderText: "Pesquisar aplicativos…"
             onTextChanged: {
                 panel.query = text
@@ -124,8 +125,11 @@ Item {
             currentIndex: panel.selected
             spacing: 5
             onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
-            highlight: SelectionHighlight {
+
+            SelectionHighlight {
+                parent: resultList.contentItem
                 theme: panel.theme
+                target: resultList.currentItem
                 active: navigation.keyboardNavigation && panel.resultCount > 0
             }
 
@@ -135,8 +139,10 @@ Item {
                 width: ListView.view.width
                 height: Design.launcherResultRowHeight
                 radius: Design.radiusSm
-                color: pointer.containsMouse ? panel.theme.colors.surfaceHover : "transparent"
+                color: pointer.containsMouse && !navigation.keyboardNavigation ? panel.theme.colors.surfaceHover : "transparent"
                 border.width: 0
+
+                Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
 
                 Row {
                     anchors.fill: parent

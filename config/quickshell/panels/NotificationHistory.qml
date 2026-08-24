@@ -9,7 +9,7 @@ Column {
     required property var server
     property var notifications: server && Array.isArray(server.historyNotifications) ? server.historyNotifications : []
     property int selectedIndex: 0
-    spacing: 8
+    spacing: Design.notificationSpacing
     activeFocusOnTab: true
     onNotificationsChanged: selectedIndex = navigation.clamp(selectedIndex, notifications.length)
 
@@ -70,15 +70,18 @@ Column {
         width: parent.width
         height: {
             const visibleCount = Math.min(3, count)
-            return visibleCount * 76 + Math.max(0, visibleCount - 1) * spacing
+            return visibleCount * Design.notificationHistoryRowHeight + Math.max(0, visibleCount - 1) * spacing
         }
-        spacing: 8
+        spacing: Design.notificationSpacing
         clip: true
         model: history.notifications
         currentIndex: history.selectedIndex
         onCurrentIndexChanged: if (currentIndex >= 0) positionViewAtIndex(currentIndex, ListView.Contain)
-        highlight: SelectionHighlight {
+
+        SelectionHighlight {
+            parent: historyList.contentItem
             theme: history.theme
+            target: historyList.currentItem
             active: navigation.keyboardNavigation && history.activeFocus && history.notifications.length > 0
         }
 
@@ -86,10 +89,12 @@ Column {
             required property var modelData
             required property int index
             width: ListView.view.width
-            height: 76
+            height: Design.notificationHistoryRowHeight
             radius: Design.radiusSm
-            color: navigation.keyboardNavigation && history.activeFocus && history.selectedIndex === index ? "transparent" : pointer.containsMouse ? history.theme.colors.surfaceHover : history.theme.colors.surfaceVariant
+            color: navigation.keyboardNavigation && history.activeFocus ? "transparent" : pointer.containsMouse ? history.theme.colors.surfaceHover : history.theme.colors.surfaceVariant
             border.width: 0
+
+            Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
 
             Rectangle {
                 anchors {

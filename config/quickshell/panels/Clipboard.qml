@@ -106,6 +106,7 @@ Item {
         }
 
         ListView {
+            id: entriesList
             width: parent.width
             height: Math.max(120, parent.height - 104)
             model: panel.filteredEntries
@@ -113,8 +114,11 @@ Item {
             clip: true
             spacing: 6
             onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
-            highlight: SelectionHighlight {
+
+            SelectionHighlight {
+                parent: entriesList.contentItem
                 theme: panel.theme
+                target: entriesList.currentItem
                 active: navigation.keyboardNavigation && panel.filteredEntries.length > 0
             }
 
@@ -124,8 +128,10 @@ Item {
                 width: ListView.view.width
                 height: modelData.type === "image" ? 126 : 58
                 radius: Design.radiusSm
-                color: navigation.keyboardNavigation && panel.selectedIndex === index ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
+                color: navigation.keyboardNavigation ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
                 border.width: 0
+
+                Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
 
                 StatusIcon {
                     visible: modelData.type !== "image"
