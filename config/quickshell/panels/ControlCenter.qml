@@ -11,6 +11,7 @@ Item {
     required property var notificationServer
     property int selectedAction: 0
     property int pendingBrightnessValue: 0
+    readonly property int availablePillCount: (volumeControl.available ? 1 : 0) + (microphoneControl.available ? 1 : 0) + (brightnessControl.available ? 1 : 0)
 
     function command(text) {
         controller.run(["sh", "-lc", text])
@@ -115,6 +116,14 @@ Item {
                     elide: Text.ElideRight
                 }
 
+                BatteryStatus {
+                    Layout.preferredWidth: implicitWidth
+                    theme: panel.theme
+                    controller: panel.controller
+                    showPercentage: true
+                    filled: true
+                }
+
                 ShellButton {
                     id: power
                     Layout.preferredWidth: implicitWidth
@@ -131,19 +140,22 @@ Item {
                 columns: 2
                 spacing: 8
 
-                ActionButton {
+                SplitActionButton {
                     id: networkAction
                     width: (parent.width - 8) / 2
                     theme: panel.theme
                     label: controller.networkLabel()
                     iconName: controller.networkIconName()
-                    active: controller.system.network.enabled
+                    active: controller.system.network.wifiEnabled
                     available: controller.system.network.available
-                    onActiveFocusChanged: if (activeFocus) panel.selectedAction = 0
-                    onClicked: controller.openNetwork(controller.targetScreenName)
+                    toggleAvailable: controller.system.network.wifiAvailable
+                    pending: controller.pendingWifi
+                    onFocusEntered: panel.selectedAction = 0
+                    onPrimaryClicked: controller.toggleWifi()
+                    onDetailClicked: controller.openNetwork(controller.targetScreenName)
                 }
 
-                ActionButton {
+                SplitActionButton {
                     id: bluetoothAction
                     width: (parent.width - 8) / 2
                     theme: panel.theme
@@ -152,8 +164,9 @@ Item {
                     active: controller.system.bluetooth.powered
                     available: controller.system.bluetooth.available
                     pending: controller.pendingBluetooth
-                    onActiveFocusChanged: if (activeFocus) panel.selectedAction = 1
-                    onClicked: controller.openBluetooth(controller.targetScreenName)
+                    onFocusEntered: panel.selectedAction = 1
+                    onPrimaryClicked: controller.toggleBluetooth()
+                    onDetailClicked: controller.openBluetooth(controller.targetScreenName)
                 }
 
                 ActionButton {
@@ -183,40 +196,53 @@ Item {
                 }
             }
 
-            SliderRow {
-                id: volumeControl
+            Row {
                 width: parent.width
-                theme: panel.theme
-                label: controller.system.audio.muted ? "Mudo" : "Volume"
-                iconName: controller.volumeIconName()
-                value: controller.system.audio.percent
-                available: controller.system.audio.available
-                onFocusEntered: panel.selectedAction = 4
-                onChanged: value => panel.setVolume(value)
-            }
+                height: panel.availablePillCount > 0 ? 52 : 0
+                visible: panel.availablePillCount > 0
+                spacing: Design.spacingSm
 
-            SliderRow {
-                id: microphoneControl
-                width: parent.width
-                theme: panel.theme
-                label: "Microfone"
-                iconName: controller.microphoneIconName()
-                value: controller.system.microphone.percent
-                available: controller.system.microphone.available
-                onFocusEntered: panel.selectedAction = panel.controls().indexOf(microphoneControl)
-                onChanged: value => panel.command("wpctl set-volume @DEFAULT_AUDIO_SOURCE@ " + value / 100)
-            }
+                LevelPill {
+                    id: volumeControl
+                    width: (parent.width - Math.max(0, panel.availablePillCount - 1) * parent.spacing) / Math.max(1, panel.availablePillCount)
+                    theme: panel.theme
+                    label: "Volume"
+                    iconName: controller.volumeIconName()
+                    value: controller.system.audio.percent
+                    available: controller.system.audio.available
+                    muted: controller.system.audio.muted
+                    muteable: true
+                    onFocusEntered: panel.selectedAction = panel.controls().indexOf(volumeControl)
+                    onChanged: value => panel.setVolume(value)
+                    onMuteClicked: panel.command("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")
+                }
 
-            SliderRow {
-                id: brightnessControl
-                width: parent.width
-                theme: panel.theme
-                label: "Brilho"
-                iconName: "brightness"
-                value: controller.system.brightness.percent
-                available: controller.system.brightness.available
-                onFocusEntered: panel.selectedAction = panel.controls().indexOf(brightnessControl)
-                onChanged: value => panel.setBrightness(value)
+                LevelPill {
+                    id: microphoneControl
+                    width: (parent.width - Math.max(0, panel.availablePillCount - 1) * parent.spacing) / Math.max(1, panel.availablePillCount)
+                    theme: panel.theme
+                    label: "Microfone"
+                    iconName: controller.microphoneIconName()
+                    value: controller.system.microphone.percent
+                    available: controller.system.microphone.available
+                    muted: controller.system.microphone.muted
+                    muteable: true
+                    onFocusEntered: panel.selectedAction = panel.controls().indexOf(microphoneControl)
+                    onChanged: value => panel.command("wpctl set-volume @DEFAULT_AUDIO_SOURCE@ " + value / 100)
+                    onMuteClicked: panel.command("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle")
+                }
+
+                LevelPill {
+                    id: brightnessControl
+                    width: (parent.width - Math.max(0, panel.availablePillCount - 1) * parent.spacing) / Math.max(1, panel.availablePillCount)
+                    theme: panel.theme
+                    label: "Brilho"
+                    iconName: "brightness"
+                    value: controller.system.brightness.percent
+                    available: controller.system.brightness.available
+                    onFocusEntered: panel.selectedAction = panel.controls().indexOf(brightnessControl)
+                    onChanged: value => panel.setBrightness(value)
+                }
             }
 
             Rectangle {
@@ -258,8 +284,6 @@ Item {
                     }
                 }
             }
-
-            Rectangle { width: parent.width; height: 1; color: panel.theme.colors.borderSubtle; opacity: .55 }
 
             MediaStrip {
                 width: parent.width
