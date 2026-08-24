@@ -6,6 +6,7 @@ Item {
     required property var shellScreen
     required property var controller
     required property var theme
+    required property var notifications
 
     Item {
         anchors.fill: parent
@@ -115,6 +116,11 @@ Item {
                 iconOnly: true
                 filled: false
                 horizontalPadding: Design.compactPlainPadding
+            }
+
+            DndIndicator {
+                theme: compact.theme
+                notifications: compact.notifications
             }
 
             BatteryStatus {

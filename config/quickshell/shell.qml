@@ -28,6 +28,7 @@ ShellRoot {
     property var popupDeadlines: ({})
     property var notificationHistory: []
     property int popupOverflowCount: 0
+    property bool doNotDisturb: false
     readonly property var focusedScreen: screenByName(focusedScreenName())
     readonly property var transientScreen: screenByName(shellController.targetScreenName) || focusedScreen
     readonly property var osdScreen: shellController.mode === "compact" ? focusedScreen : transientScreen
@@ -128,6 +129,7 @@ ShellRoot {
     }
 
     function showPopup(notification): void {
+        if (notificationServer.doNotDisturb) return
         const existing = popupNotifications.filter(item => item && item.id !== notification.id && item.lastGeneration !== false)
         const next = existing.concat([notification])
         const limit = popupLimit()
@@ -154,6 +156,18 @@ ShellRoot {
         }
     }
 
+    function setDoNotDisturb(enabled): void {
+        const next = !!enabled
+        if (doNotDisturb === next) return
+        doNotDisturb = next
+        dndStateFile.setText(JSON.stringify({ doNotDisturb: next }) + "\n")
+        if (!next) return
+        popupNotifications = []
+        popupDeadlines = ({})
+        popupOverflowCount = 0
+        notificationServer.newest = null
+    }
+
     function developmentNotification(identifier, index, summary, body): var {
         return {
             id: identifier,
@@ -173,6 +187,13 @@ ShellRoot {
     }
 
     function syncTrackedPopups(): void {
+        if (doNotDisturb) {
+            popupNotifications = []
+            popupDeadlines = ({})
+            popupOverflowCount = 0
+            notificationServer.newest = null
+            return
+        }
         popupNotifications = popupNotifications.filter(notification => notification && notification.tracked && notification.lastGeneration !== false)
         const deadlines = {}
         const now = Date.now()
@@ -259,6 +280,8 @@ ShellRoot {
         function togglePowerMenu(): void { shellController.togglePowerMenu(root.focusedScreenName()) }
         function toggleEmojiPicker(): void { shellController.toggleEmojiPicker(root.focusedScreenName()) }
         function toggleRecording(): void { shellController.toggleRecording(root.focusedScreenName()) }
+        function toggleDoNotDisturb(): void { root.setDoNotDisturb(!notificationServer.doNotDisturb) }
+        function setDoNotDisturb(enabled: bool): void { root.setDoNotDisturb(enabled) }
         function launchApplication(desktopId: string): bool {
             for (let index = 0; index < shellController.appEntries.length; index++) {
                 if (shellController.appEntries[index].id === desktopId) return shellController.launchApplication(shellController.appEntries[index])
@@ -311,6 +334,7 @@ ShellRoot {
                 popupCount: root.popupNotifications.length,
                 popupOverflowCount: root.popupOverflowCount,
                 notificationHistoryCount: root.notificationHistory.length,
+                doNotDisturb: notificationServer.doNotDisturb,
                 clipboardCount: shellController.clipboardEntries.length,
                 switcherMetadata: Array.from({ length: shellController.switcherWindows.count }, (_, index) => shellController.switcherWindows.get(index)),
                 widgets: root.widgetStatus(),
@@ -448,6 +472,23 @@ ShellRoot {
         onTextChanged: themeReload.restart()
         onFileChanged: reload()
     }
+    FileView {
+        id: dndStateFile
+        path: (Quickshell.env("HYPRISM_CACHE_DIR") || (Quickshell.env("XDG_CACHE_HOME") || Quickshell.env("HOME") + "/.cache") + "/hyprism") + "/state/shell.json"
+        blockLoading: true
+        preload: true
+        printErrors: false
+        onLoaded: {
+            try {
+                const state = JSON.parse(text())
+                root.doNotDisturb = !!state.doNotDisturb
+                if (root.doNotDisturb) root.syncTrackedPopups()
+            } catch (error) {
+                setText(JSON.stringify({ doNotDisturb: false }) + "\n")
+            }
+        }
+        onLoadFailed: setText(JSON.stringify({ doNotDisturb: false }) + "\n")
+    }
     Timer { id: configReload; interval: 90; onTriggered: root.reloadConfig() }
     Timer { id: themeReload; interval: 90; onTriggered: root.reloadTheme() }
     Timer { interval: 250; repeat: true; running: root.popupNotifications.length > 0; onTriggered: root.expireDuePopups() }
@@ -462,8 +503,10 @@ ShellRoot {
         imageSupported: true
         property var newest: null
         property var historyNotifications: root.notificationHistory
+        readonly property bool doNotDisturb: root.doNotDisturb
         function removeHistory(notification: var): void { root.removeHistoryNotification(notification) }
         function clearHistory(): void { root.clearNotificationHistory() }
+        function toggleDoNotDisturb(): void { root.setDoNotDisturb(!doNotDisturb) }
         onNotification: notification => {
             notification.tracked = true
             root.notificationScreenName = root.focusedScreenName()
@@ -518,7 +561,7 @@ ShellRoot {
             shellScreen: root.notificationScreen
             notifications: root.popupNotifications
             overflowCount: root.popupOverflowCount
-            suppressed: shellController.mode === "control"
+            suppressed: shellController.mode === "control" || notificationServer.doNotDisturb
             controller: shellController
             theme: shellTheme
             onDismissRequested: notification => root.dismissPopup(notification)

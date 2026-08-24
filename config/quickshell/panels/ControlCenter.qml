@@ -12,6 +12,7 @@ Item {
     property int selectedAction: 0
     property int pendingBrightnessValue: 0
     readonly property int availablePillCount: (volumeControl.available ? 1 : 0) + (microphoneControl.available ? 1 : 0) + (brightnessControl.available ? 1 : 0)
+    readonly property int quickActionCount: 5
 
     function command(text) {
         controller.run(["sh", "-lc", text])
@@ -28,7 +29,7 @@ Item {
     }
 
     function controls() {
-        const items = [networkAction, bluetoothAction, nightAction, saverAction]
+        const items = [networkAction, bluetoothAction, nightAction, saverAction, dndAction]
         if (volumeControl.available) items.push(volumeControl)
         if (microphoneControl.available) items.push(microphoneControl)
         if (brightnessControl.available) items.push(brightnessControl)
@@ -68,17 +69,17 @@ Item {
         if (event.key === Qt.Key_Escape) {
             controller.close()
             event.accepted = true
-        } else if (event.key === Qt.Key_Left && selectedAction < 4) {
-            focusAction(navigation.grid(selectedAction, -1, 0, 2, 4))
+        } else if (event.key === Qt.Key_Left && selectedAction < quickActionCount) {
+            focusAction(navigation.grid(selectedAction, -1, 0, 2, quickActionCount))
             event.accepted = true
-        } else if (event.key === Qt.Key_Right && selectedAction < 4) {
-            focusAction(navigation.grid(selectedAction, 1, 0, 2, 4))
+        } else if (event.key === Qt.Key_Right && selectedAction < quickActionCount) {
+            focusAction(navigation.grid(selectedAction, 1, 0, 2, quickActionCount))
             event.accepted = true
         } else if (event.key === Qt.Key_Up) {
-            focusAction(selectedAction < 4 ? navigation.grid(selectedAction, 0, -1, 2, 4) : selectedAction - 1)
+            focusAction(selectedAction < quickActionCount ? navigation.grid(selectedAction, 0, -1, 2, quickActionCount) : selectedAction - 1)
             event.accepted = true
         } else if (event.key === Qt.Key_Down) {
-            focusAction(selectedAction < 2 ? selectedAction + 2 : selectedAction < 4 ? 4 : selectedAction + 1)
+            focusAction(selectedAction < quickActionCount - 2 ? selectedAction + 2 : selectedAction < quickActionCount ? quickActionCount : selectedAction + 1)
             event.accepted = true
         }
     }
@@ -194,6 +195,17 @@ Item {
                     onActiveFocusChanged: if (activeFocus) panel.selectedAction = 3
                     onClicked: controller.togglePowerSaver()
                 }
+
+                ActionButton {
+                    id: dndAction
+                    width: (parent.width - 8) / 2
+                    theme: panel.theme
+                    label: "Não perturbe"
+                    iconName: panel.notificationServer.doNotDisturb ? "notificationOff" : "notification"
+                    active: panel.notificationServer.doNotDisturb
+                    onActiveFocusChanged: if (activeFocus) panel.selectedAction = 4
+                    onClicked: panel.notificationServer.toggleDoNotDisturb()
+                }
             }
 
             Row {
@@ -293,17 +305,24 @@ Item {
                 theme: panel.theme
             }
 
-            Row {
+            Item {
                 width: parent.width
-                spacing: Design.spacingXs
+                implicitHeight: notificationHeading.implicitHeight + Design.hubNotificationSectionSpacing
 
-                StatusIcon { name: "notification"; iconSize: Design.iconSm; color: panel.theme.colors.accent }
-                Text {
-                    text: "Notificações"
-                    color: panel.theme.colors.foreground
-                    font.family: Design.fontFamily
-                    font.pixelSize: Design.fontSizeMd
-                    font.weight: Design.fontWeightSemibold
+                Row {
+                    id: notificationHeading
+                    anchors.left: parent.left
+                    anchors.bottom: parent.bottom
+                    spacing: Design.spacingXs
+
+                    StatusIcon { name: "notification"; iconSize: Design.iconSm; color: panel.theme.colors.accent }
+                    Text {
+                        text: "Notificações"
+                        color: panel.theme.colors.foreground
+                        font.family: Design.fontFamily
+                        font.pixelSize: Design.fontSizeMd
+                        font.weight: Design.fontWeightSemibold
+                    }
                 }
             }
 

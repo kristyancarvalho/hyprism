@@ -256,6 +256,7 @@ PanelWindow {
             shellScreen: window.shellScreen
             controller: window.controller
             theme: window.theme
+            notifications: window.notifications
         }
     }
 
@@ -381,6 +382,13 @@ PanelWindow {
                     iconOnly: window.morphWidth < 840
                     labelMaximumWidth: 130
                     filled: false
+                }
+
+                DndIndicator {
+                    Layout.preferredWidth: implicitWidth
+                    Layout.preferredHeight: implicitHeight
+                    theme: window.theme
+                    notifications: window.notifications
                 }
 
                 BatteryStatus {
