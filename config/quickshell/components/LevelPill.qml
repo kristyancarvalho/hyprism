@@ -22,7 +22,6 @@ Rectangle {
     activeFocusOnTab: available
     radius: Design.radiusSm
     color: theme.colors.surfaceVariant
-    clip: true
     opacity: available ? 1 : .5
 
     function setPreview(next) {
@@ -41,15 +40,25 @@ Rectangle {
     onValueChanged: if (!pointer.pressed) previewValue = Design.clamp(value, 0, 100)
     onActiveFocusChanged: if (activeFocus) focusEntered()
 
-    Rectangle {
+    RoundedSurfaceSlice {
         width: pill.width * Design.clamp(pill.previewValue, 0, 100) / 100
         height: parent.height
+        surfaceWidth: pill.width
+        cornerRadius: pill.radius
         color: pill.muted ? pill.theme.colors.surfaceElevated : pill.theme.colors.accentDim
 
         Behavior on width {
             enabled: !pointer.pressed
             NumberAnimation { duration: Design.animationFast; easing.type: Design.easingMorph }
         }
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        color: pill.theme.colors.surfaceHover
+        opacity: pill.hovered || pointer.pressed ? .16 : 0
+
+        Behavior on opacity { NumberAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
     }
 
     Row {
@@ -68,6 +77,8 @@ Rectangle {
                 anchors.fill: parent
                 radius: Design.radiusDefault
                 color: mutePointer.containsMouse || muteArea.activeFocus ? pill.theme.colors.surfaceHover : "transparent"
+
+                Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
 
                 StatusIcon {
                     anchors.centerIn: parent

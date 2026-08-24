@@ -101,10 +101,11 @@ Item {
                     radius: Design.radiusSmall
                     color: media.theme.colors.surfaceVariant
 
-                    Rectangle {
+                    RoundedSurfaceSlice {
                         width: parent.width * media.controller.mediaProgress()
                         height: parent.height
-                        radius: Design.radiusSmall
+                        surfaceWidth: parent.width
+                        cornerRadius: parent.radius
                         color: media.theme.colors.accent
                     }
                 }

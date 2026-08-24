@@ -74,9 +74,13 @@ Rectangle {
         width: 42
         height: parent.height
         activeFocusOnTab: button.available
+        clip: true
 
-        Rectangle {
+        RoundedSurfaceSlice {
             anchors.fill: parent
+            surfaceWidth: button.width
+            cornerRadius: button.radius
+            rightAligned: true
             color: detailPointer.containsMouse || detailArea.activeFocus ? button.theme.colors.surfaceHover : "transparent"
             opacity: .86
         }
