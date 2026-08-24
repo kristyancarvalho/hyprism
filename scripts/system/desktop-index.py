@@ -163,7 +163,7 @@ def desktop_entries():
         if not root.exists():
             continue
         for path in root.rglob('*.desktop'):
-            parser = configparser.ConfigParser(interpolation=None)
+            parser = configparser.ConfigParser(interpolation=None, strict=False)
             parser.optionxform = str
             try:
                 parser.read(path, encoding='utf-8')
@@ -183,7 +183,8 @@ def desktop_entries():
                 ):
                     continue
                 command, executable, flatpak_id = command_details(section.get('Exec', ''))
-                if not command:
+                dbus_activatable = section.getboolean('DBusActivatable', fallback=False)
+                if not command and not dbus_activatable:
                     continue
                 startup_class = section.get('StartupWMClass', '')
                 if startup_class.startswith('@@'):
@@ -203,7 +204,7 @@ def desktop_entries():
                     'path': str(path),
                     'workingDirectory': section.get('Path', ''),
                     'terminal': section.getboolean('Terminal', fallback=False),
-                    'dbusActivatable': section.getboolean('DBusActivatable', fallback=False),
+                    'dbusActivatable': dbus_activatable,
                     'noDisplay': no_display,
                     'hidden': hidden,
                     'onlyShowIn': desktop_list(section.get('OnlyShowIn', '')),
