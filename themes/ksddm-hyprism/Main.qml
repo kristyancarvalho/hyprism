@@ -183,7 +183,7 @@ FocusScope {
 
         Item {
             width: parent.width
-            height: 96
+            height: 108
 
             Controls.Button {
                 anchors.verticalCenter: parent.verticalCenter
@@ -200,52 +200,70 @@ FocusScope {
                 contentItem: Text { text: parent.text; color: root.foregroundColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font: parent.font }
             }
 
-            Rectangle {
+            Item {
                 anchors.centerIn: parent
-                width: 88
-                height: 88
-                radius: 24
-                color: Qt.rgba(root.surfaceColor.r, root.surfaceColor.g, root.surfaceColor.b, .72)
-                border.width: 1
-                border.color: Qt.rgba(root.foregroundColor.r, root.foregroundColor.g, root.foregroundColor.b, .12)
-                clip: true
-                layer.enabled: true
-                layer.smooth: true
+                width: 104
+                height: 104
 
-                Image {
-                    id: avatarImage
-                    anchors.fill: parent
-                    anchors.margins: 3
-                    source: root.userIcon
-                    fillMode: Image.PreserveAspectCrop
-                    visible: false
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 98
+                    height: 98
+                    radius: 29
+                    color: Qt.rgba(root.surfaceColor.r, root.surfaceColor.g, root.surfaceColor.b, .92)
+                    layer.enabled: true
+                    layer.effect: MultiEffect {
+                        shadowEnabled: true
+                        shadowColor: "#b0000000"
+                        shadowBlur: .82
+                        shadowVerticalOffset: 3
+                    }
                 }
 
                 Rectangle {
-                    id: avatarMask
-                    anchors.fill: avatarImage
-                    radius: parent.radius - 3
-                    color: "white"
-                    visible: false
-                    layer.enabled: true
-                }
-
-                MultiEffect {
-                    anchors.fill: avatarImage
-                    source: avatarImage
-                    maskEnabled: true
-                    maskSource: avatarMask
-                    visible: avatarImage.status === Image.Ready
-                }
-
-                Text {
                     anchors.centerIn: parent
-                    visible: avatarImage.status !== Image.Ready
-                    text: root.realName.length ? root.realName.charAt(0).toUpperCase() : "U"
-                    color: root.primaryColor
-                    font.family: "Google Sans Flex"
-                    font.pixelSize: 31
-                    font.weight: Font.DemiBold
+                    width: 88
+                    height: 88
+                    radius: 24
+                    color: root.surfaceContainerColor
+                    clip: true
+                    layer.enabled: true
+                    layer.smooth: true
+
+                    Image {
+                        id: avatarImage
+                        anchors.fill: parent
+                        source: root.userIcon
+                        fillMode: Image.PreserveAspectCrop
+                        visible: false
+                    }
+
+                    Rectangle {
+                        id: avatarMask
+                        anchors.fill: avatarImage
+                        radius: parent.radius
+                        color: "white"
+                        visible: false
+                        layer.enabled: true
+                    }
+
+                    MultiEffect {
+                        anchors.fill: avatarImage
+                        source: avatarImage
+                        maskEnabled: true
+                        maskSource: avatarMask
+                        visible: avatarImage.status === Image.Ready
+                    }
+
+                    Text {
+                        anchors.centerIn: parent
+                        visible: avatarImage.status !== Image.Ready
+                        text: root.realName.length ? root.realName.charAt(0).toUpperCase() : "U"
+                        color: root.primaryColor
+                        font.family: "Google Sans Flex"
+                        font.pixelSize: 31
+                        font.weight: Font.DemiBold
+                    }
                 }
             }
 
@@ -325,13 +343,12 @@ FocusScope {
 
                 Rectangle {
                     anchors.fill: parent
-                    color: Qt.rgba(root.surfaceColor.r, root.surfaceColor.g, root.surfaceColor.b, .74)
-                    border.width: password.activeFocus ? 2 : 1
-                    border.color: password.activeFocus ? root.primaryColor : Qt.rgba(root.foregroundColor.r, root.foregroundColor.g, root.foregroundColor.b, .12)
+                    color: password.activeFocus ? Qt.rgba(root.surfaceContainerHighColor.r, root.surfaceContainerHighColor.g, root.surfaceContainerHighColor.b, .88) : Qt.rgba(root.surfaceColor.r, root.surfaceColor.g, root.surfaceColor.b, .74)
+                    border.width: 0
                     radius: parent.radius
                     clip: true
 
-                    Behavior on border.color { ColorAnimation { duration: 110 } }
+                    Behavior on color { ColorAnimation { duration: 110 } }
                 }
 
                 Text {
@@ -404,8 +421,7 @@ FocusScope {
                     radius: 15
                     color: parent.enabled ? root.primaryColor : root.surfaceContainerColor
                     opacity: parent.enabled ? parent.hovered || parent.activeFocus ? 1 : .9 : .58
-                    border.width: parent.activeFocus ? 2 : 0
-                    border.color: root.foregroundColor
+                    border.width: 0
                     Behavior on color { ColorAnimation { duration: 110 } }
                 }
                 contentItem: Text { text: parent.text; color: root.onPrimaryColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font: parent.font }
@@ -452,8 +468,7 @@ FocusScope {
         background: Rectangle {
             radius: 13
             color: parent.hovered || parent.activeFocus || root.sessionsVisible ? root.surfaceContainerHighColor : Qt.rgba(root.surfaceColor.r, root.surfaceColor.g, root.surfaceColor.b, .72)
-            border.width: root.sessionsVisible ? 1 : 0
-            border.color: root.primaryColor
+            border.width: 0
         }
         contentItem: Item {
             anchors.centerIn: parent
@@ -486,8 +501,7 @@ FocusScope {
         opacity: root.sessionsVisible ? 1 : 0
         visible: opacity > 0
         enabled: root.sessionsVisible
-        border.width: 1
-        border.color: Qt.rgba(root.foregroundColor.r, root.foregroundColor.g, root.foregroundColor.b, .12)
+        border.width: 0
         clip: true
 
         ListView {
@@ -513,8 +527,7 @@ FocusScope {
                 background: Rectangle {
                     radius: 12
                     color: sessionItem.selected ? Qt.rgba(root.primaryColor.r, root.primaryColor.g, root.primaryColor.b, .22) : sessionItem.hovered || sessionItem.activeFocus ? root.surfaceHoverColor : "transparent"
-                    border.width: sessionItem.selected ? 1 : 0
-                    border.color: root.primaryColor
+                    border.width: 0
                     Behavior on color { ColorAnimation { duration: 100 } }
                 }
                 contentItem: Item {
@@ -572,8 +585,7 @@ FocusScope {
             background: Rectangle {
                 radius: 13
                 color: parent.hovered || parent.activeFocus || root.keyboardVisible ? root.surfaceContainerHighColor : Qt.rgba(root.surfaceColor.r, root.surfaceColor.g, root.surfaceColor.b, .72)
-                border.width: root.keyboardVisible ? 1 : 0
-                border.color: root.primaryColor
+                border.width: 0
             }
             contentItem: Text { text: parent.text; color: root.keyboardVisible ? root.primaryColor : root.foregroundColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font: parent.font }
             Controls.ToolTip.visible: hovered
@@ -596,8 +608,7 @@ FocusScope {
             background: Rectangle {
                 radius: 13
                 color: parent.hovered || parent.activeFocus || root.powerVisible ? root.surfaceContainerHighColor : Qt.rgba(root.surfaceColor.r, root.surfaceColor.g, root.surfaceColor.b, .72)
-                border.width: root.powerVisible ? 1 : 0
-                border.color: root.primaryColor
+                border.width: 0
             }
             contentItem: Text { text: parent.text; color: root.foregroundColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font: parent.font }
             Controls.ToolTip.visible: hovered
@@ -620,8 +631,7 @@ FocusScope {
         opacity: root.powerVisible ? 1 : 0
         visible: opacity > 0
         enabled: root.powerVisible
-        border.width: 1
-        border.color: Qt.rgba(root.foregroundColor.r, root.foregroundColor.g, root.foregroundColor.b, .12)
+        border.width: 0
 
         RowLayout {
             anchors.fill: parent
