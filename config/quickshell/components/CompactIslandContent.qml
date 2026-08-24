@@ -73,6 +73,11 @@ Item {
                 }
             }
 
+            DndIndicator {
+                theme: compact.theme
+                notifications: compact.notifications
+            }
+
             CompactBarItem {
                 theme: compact.theme
                 filled: false
@@ -116,11 +121,6 @@ Item {
                 iconOnly: true
                 filled: false
                 horizontalPadding: Design.compactPlainPadding
-            }
-
-            DndIndicator {
-                theme: compact.theme
-                notifications: compact.notifications
             }
 
             BatteryStatus {

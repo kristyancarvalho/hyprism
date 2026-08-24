@@ -287,30 +287,54 @@ PanelWindow {
 
                 MediaStrip {
                     visible: controller.mediaAvailable() && !controller.recording
-                    anchors.fill: parent
+                    anchors {
+                        left: mediaDnd.right
+                        right: parent.right
+                        top: parent.top
+                        bottom: parent.bottom
+                        leftMargin: mediaDnd.visible ? Design.compactItemSpacing : 0
+                    }
                     controller: window.controller
                     theme: window.theme
                 }
 
-                Column {
+                DndIndicator {
+                    id: mediaDnd
+                    visible: controller.mediaAvailable() && !controller.recording && (active || opacity > 0)
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    theme: window.theme
+                    notifications: window.notifications
+                }
+
+                Row {
                     visible: !controller.mediaAvailable() && !controller.recording
                     anchors.centerIn: parent
+                    spacing: Design.compactItemSpacing
 
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: controller.formattedDate("HH:mm")
-                        color: theme.colors.foreground
-                        font.family: Design.fontFamily
-                        font.pixelSize: Design.fontSizeLg
-                        font.weight: Design.fontWeightSemibold
+                    DndIndicator {
+                        anchors.verticalCenter: parent.verticalCenter
+                        theme: window.theme
+                        notifications: window.notifications
                     }
 
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: controller.formattedDate("ddd, dd MMM")
-                        color: theme.colors.mutedForeground
-                        font.family: Design.fontFamily
-                        font.pixelSize: Design.fontSizeXs
+                    Column {
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: controller.formattedDate("HH:mm")
+                            color: theme.colors.foreground
+                            font.family: Design.fontFamily
+                            font.pixelSize: Design.fontSizeLg
+                            font.weight: Design.fontWeightSemibold
+                        }
+
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: controller.formattedDate("ddd, dd MMM")
+                            color: theme.colors.mutedForeground
+                            font.family: Design.fontFamily
+                            font.pixelSize: Design.fontSizeXs
+                        }
                     }
                 }
 
@@ -318,6 +342,12 @@ PanelWindow {
                     visible: controller.recording
                     anchors.centerIn: parent
                     spacing: Design.spacingSm
+
+                    DndIndicator {
+                        anchors.verticalCenter: parent.verticalCenter
+                        theme: window.theme
+                        notifications: window.notifications
+                    }
 
                     Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
@@ -382,13 +412,6 @@ PanelWindow {
                     iconOnly: window.morphWidth < 840
                     labelMaximumWidth: 130
                     filled: false
-                }
-
-                DndIndicator {
-                    Layout.preferredWidth: implicitWidth
-                    Layout.preferredHeight: implicitHeight
-                    theme: window.theme
-                    notifications: window.notifications
                 }
 
                 BatteryStatus {
