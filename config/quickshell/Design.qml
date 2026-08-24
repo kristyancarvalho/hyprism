@@ -92,6 +92,7 @@ QtObject {
     readonly property int notificationSpacing: 7
     readonly property int notificationPaddingY: 9
     readonly property int hubPillSectionSpacing: spacingXs
+    readonly property int hubNotificationSectionSpacing: spacingSm
     readonly property var icons: ({
         application: "󰀻",
         search: "󰍉",
@@ -138,6 +139,7 @@ QtObject {
         microphoneMuted: "󰍭",
         brightness: "󰃠",
         notification: "󰂚",
+        notificationOff: "󰂛",
         power: "󰐥",
         reboot: "󰜉",
         suspend: "󰒲",

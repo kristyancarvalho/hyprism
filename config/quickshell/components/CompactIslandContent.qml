@@ -6,6 +6,7 @@ Item {
     required property var shellScreen
     required property var controller
     required property var theme
+    required property var notifications
 
     Item {
         anchors.fill: parent
@@ -70,6 +71,11 @@ Item {
                     NumberAnimation { from: 1; to: .4; duration: 650; easing.type: Easing.InOutSine }
                     NumberAnimation { from: .4; to: 1; duration: 650; easing.type: Easing.InOutSine }
                 }
+            }
+
+            DndIndicator {
+                theme: compact.theme
+                notifications: compact.notifications
             }
 
             CompactBarItem {

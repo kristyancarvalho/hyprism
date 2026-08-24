@@ -15,6 +15,10 @@
 
 ## Demonstração
 
+[![Tour automatizado do Hyprism](assets/screenshots/tour-preview.png)](assets/demo/hyprism-tour.mp4)
+
+[Assistir ao tour completo em MP4 (2:57 · sem áudio)](assets/demo/hyprism-tour.mp4)
+
 | Desktop e ilha compacta | Ilha expandida |
 | --- | --- |
 | ![Desktop com ilha compacta e paleta verde](assets/screenshots/desktop.png) | ![Ilha expandida e paleta verde](assets/screenshots/island-expanded.png) |
@@ -30,6 +34,10 @@
 | ![Menu de energia com paleta laranja](assets/screenshots/power-menu.png) | ![Seletor de gravação com paleta laranja](assets/screenshots/recording.png) |
 | **Papéis de parede** | **Troca de janelas** |
 | ![Seletor de papéis de parede com paleta roxa](assets/screenshots/wallpaper-picker.png) | ![Troca de janelas com clientes reais em outros workspaces](assets/screenshots/window-switcher.png) |
+
+### Kitty e Fastfetch
+
+![Kitty executando o Fastfetch com a paleta gerada pelo Hyprism](assets/screenshots/kitty-fastfetch.png)
 
 ## O que configura
 
