@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Controls
 import "../components"
 import ".."
 
@@ -69,31 +68,19 @@ Item {
             width: parent.width
             spacing: 8
 
-            TextField {
+            SearchField {
                 id: search
                 width: parent.width - clear.width - 8
                 height: 42
-                leftPadding: 14
-                focus: true
+                theme: panel.theme
                 placeholderText: "Pesquisar na área de transferência…"
-                color: panel.theme.colors.foreground
-                placeholderTextColor: panel.theme.colors.mutedForeground
-                font.family: Design.fontFamily
-                font.pixelSize: Design.fontSizeSm
                 onTextChanged: {
                     panel.query = text
                     panel.selectedIndex = 0
                     navigation.keyboardNavigation = false
                 }
-                Keys.priority: Keys.BeforeItem
-                Keys.onPressed: event => panel.handleKey(event)
-                background: Rectangle {
-                    radius: Design.radiusSm
-                    color: search.activeFocus ? panel.theme.colors.surfaceActive : panel.theme.colors.surfaceVariant
-                    border.width: 0
-
-                    Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
-                }
+                onKeyPressed: event => panel.handleKey(event)
+                onClearRequested: text = ""
             }
 
             ShellButton {
@@ -122,16 +109,20 @@ Item {
                 active: navigation.keyboardNavigation && panel.filteredEntries.length > 0
             }
 
-            delegate: Rectangle {
+            delegate: Item {
+                id: clipboardDelegate
                 required property var modelData
                 required property int index
                 width: ListView.view.width
                 height: modelData.type === "image" ? 126 : 58
-                radius: Design.radiusSm
-                color: navigation.keyboardNavigation ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
-                border.width: 0
+                z: 2
 
-                Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
+                DelegateSurface {
+                    host: entriesList.contentItem
+                    target: clipboardDelegate
+                    theme: panel.theme
+                    hovered: pointer.containsMouse && !navigation.keyboardNavigation
+                }
 
                 StatusIcon {
                     visible: modelData.type !== "image"

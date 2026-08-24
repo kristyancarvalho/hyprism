@@ -214,6 +214,7 @@ FocusScope {
                 required property int index
                 width: GridView.view.cellWidth
                 height: GridView.view.cellHeight
+                z: 2
 
                 Rectangle {
                     anchors.fill: parent
@@ -242,20 +243,12 @@ FocusScope {
                     }
 
                     Rectangle {
-                        anchors.fill: parent
-                        radius: parent.radius
-                        visible: navigation.keyboardNavigation && grid.activeFocus && panel.controller.wallpaperSelectedIndex === index
-                        color: panel.theme.colors.accentDim
-                        opacity: .34
-                    }
-
-                    Rectangle {
                         anchors {
                             top: parent.top
                             right: parent.right
                             margins: Design.spacingSm
                         }
-                        visible: navigation.keyboardNavigation && grid.activeFocus && panel.controller.wallpaperSelectedIndex === index
+                        visible: Design.safeText(modelData, "") === panel.controller.wallpaperCurrent
                         width: 26
                         height: 26
                         radius: 13

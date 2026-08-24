@@ -29,7 +29,7 @@ Item {
     }
 
     opacity: active && target && geometryReady ? strength : 0
-    z: -1
+    z: 1
 
     Rectangle {
         anchors.fill: parent

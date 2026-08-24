@@ -7,7 +7,9 @@ FocusScope {
     property alias text: input.text
     property string placeholderText: ""
     property bool clearButtonEnabled: true
-    property color focusedSurfaceColor: theme.colors.surfaceActive
+    property color focusedSurfaceColor: theme.colors.surfaceVariant
+    property bool focusIndicatorEnabled: true
+    property color focusIndicatorColor: theme.colors.accent
     property Item tabTarget: null
     property Item backtabTarget: null
     readonly property bool inputActiveFocus: input.activeFocus
@@ -32,6 +34,22 @@ FocusScope {
 
         Behavior on color {
             ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph }
+        }
+
+        Rectangle {
+            anchors {
+                left: parent.left
+                right: parent.right
+                bottom: parent.bottom
+                leftMargin: Design.spacingMd
+                rightMargin: Design.spacingMd
+            }
+            height: 1
+            radius: .5
+            color: control.focusIndicatorColor
+            opacity: control.focusIndicatorEnabled && input.activeFocus ? .7 : 0
+
+            Behavior on opacity { NumberAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
         }
 
         StatusIcon {

@@ -198,7 +198,7 @@ Item {
 
             Row {
                 width: parent.width
-                height: panel.availablePillCount > 0 ? 52 : 0
+                height: panel.availablePillCount > 0 ? 52 + Design.hubPillSectionSpacing : 0
                 visible: panel.availablePillCount > 0
                 spacing: Design.spacingSm
 

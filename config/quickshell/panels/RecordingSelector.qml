@@ -15,9 +15,15 @@ FocusScope {
     }
 
     function select(index) {
+        navigation.useKeyboard()
         selectedIndex = Math.max(0, Math.min(1, index))
         const target = selectedIndex === 0 ? regionButton : monitorButton
         target.forceActiveFocus(Qt.TabFocusReason)
+    }
+
+    function pointerSelect(index) {
+        navigation.usePointer()
+        selectedIndex = index
     }
 
     function takeInitialFocus() {
@@ -29,6 +35,7 @@ FocusScope {
     }
 
     focus: true
+    Navigation { id: navigation; keyboardNavigation: true }
     Keys.priority: Keys.BeforeItem
     Keys.onPressed: event => {
         if (event.key === Qt.Key_Escape) {
@@ -71,40 +78,73 @@ FocusScope {
             }
         }
 
-        RowLayout {
+        Item {
+            id: optionsLayer
             Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: Design.spacingSm
 
-            ActionButton {
-                id: regionButton
-                Layout.fillWidth: true
-                Layout.fillHeight: true
+            SelectionHighlight {
+                parent: optionsLayer
                 theme: panel.theme
-                label: "Região"
-                iconName: "recordRegion"
-                active: panel.selectedIndex === 0
-                KeyNavigation.right: monitorButton
-                onActiveFocusChanged: if (activeFocus) panel.selectedIndex = 0
-                onClicked: {
-                    panel.selectedIndex = 0
-                    panel.choose()
-                }
+                target: panel.selectedIndex === 0 ? regionButton : monitorButton
+                active: navigation.keyboardNavigation
             }
 
-            ActionButton {
-                id: monitorButton
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                theme: panel.theme
-                label: "Tela inteira"
-                iconName: "recordMonitor"
-                active: panel.selectedIndex === 1
-                KeyNavigation.left: regionButton
-                onActiveFocusChanged: if (activeFocus) panel.selectedIndex = 1
-                onClicked: {
-                    panel.selectedIndex = 1
-                    panel.choose()
+            RowLayout {
+                anchors.fill: parent
+                spacing: Design.spacingSm
+                z: 2
+
+                ActionButton {
+                    id: regionButton
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    z: 2
+                    theme: panel.theme
+                    label: "Região"
+                    iconName: "recordRegion"
+                    managedSurface: true
+                    suppressHover: navigation.keyboardNavigation
+                    KeyNavigation.right: monitorButton
+                    onHoveredChanged: if (hovered) panel.pointerSelect(0)
+                    onActiveFocusChanged: if (activeFocus) panel.selectedIndex = 0
+                    onClicked: {
+                        panel.selectedIndex = 0
+                        panel.choose()
+                    }
+
+                    DelegateSurface {
+                        host: optionsLayer
+                        target: regionButton
+                        theme: panel.theme
+                        hovered: regionButton.hovered && !navigation.keyboardNavigation
+                    }
+                }
+
+                ActionButton {
+                    id: monitorButton
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    z: 2
+                    theme: panel.theme
+                    label: "Tela inteira"
+                    iconName: "recordMonitor"
+                    managedSurface: true
+                    suppressHover: navigation.keyboardNavigation
+                    KeyNavigation.left: regionButton
+                    onHoveredChanged: if (hovered) panel.pointerSelect(1)
+                    onActiveFocusChanged: if (activeFocus) panel.selectedIndex = 1
+                    onClicked: {
+                        panel.selectedIndex = 1
+                        panel.choose()
+                    }
+
+                    DelegateSurface {
+                        host: optionsLayer
+                        target: monitorButton
+                        theme: panel.theme
+                        hovered: monitorButton.hovered && !navigation.keyboardNavigation
+                    }
                 }
             }
         }

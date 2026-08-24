@@ -166,20 +166,25 @@ FocusScope {
             }
 
             delegate: Item {
+                id: emojiDelegate
                 required property var modelData
                 required property int index
                 width: grid.cellWidth
                 height: grid.cellHeight
+                z: 2
 
-                Rectangle {
+                DelegateSurface {
+                    host: grid.contentItem
+                    target: emojiDelegate
+                    theme: panel.theme
+                    hovered: pointer.containsMouse && !navigation.keyboardNavigation
+                    inset: Design.spacingXs
+                }
+
+                Item {
                     anchors.centerIn: parent
                     width: Design.emojiButtonSize
                     height: Design.emojiButtonSize
-                    radius: Design.radiusSm
-                    color: navigation.keyboardNavigation ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
-                    border.width: 0
-
-                    Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
 
                     Text {
                         anchors.centerIn: parent

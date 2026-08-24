@@ -32,15 +32,19 @@ Item {
             controller.close()
             event.accepted = true
         } else if (event.key === Qt.Key_Left) {
+            navigation.useKeyboard()
             selectedIndex = navigation.grid(selectedIndex, -1, 0, 3, entries.length)
             event.accepted = true
         } else if (event.key === Qt.Key_Right) {
+            navigation.useKeyboard()
             selectedIndex = navigation.grid(selectedIndex, 1, 0, 3, entries.length)
             event.accepted = true
         } else if (event.key === Qt.Key_Up) {
+            navigation.useKeyboard()
             selectedIndex = navigation.grid(selectedIndex, 0, -1, 3, entries.length)
             event.accepted = true
         } else if (event.key === Qt.Key_Down) {
+            navigation.useKeyboard()
             selectedIndex = navigation.grid(selectedIndex, 0, 1, 3, entries.length)
             event.accepted = true
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
@@ -49,7 +53,7 @@ Item {
         }
     }
 
-    Navigation { id: navigation }
+    Navigation { id: navigation; keyboardNavigation: true }
 
     Column {
         anchors.centerIn: parent
@@ -64,24 +68,54 @@ Item {
             font.weight: Design.fontWeightSemibold
         }
 
-        Grid {
-            columns: 3
-            spacing: 8
+        Item {
+            id: optionsLayer
+            width: 526
+            height: 144
 
-            Repeater {
-                model: panel.entries
+            SelectionHighlight {
+                parent: optionsLayer
+                theme: panel.theme
+                target: optionRepeater.count > panel.selectedIndex ? optionRepeater.itemAt(panel.selectedIndex) : null
+                active: navigation.keyboardNavigation
+            }
 
-                ActionButton {
-                    required property var modelData
-                    required property int index
-                    theme: panel.theme
-                    label: modelData.label
-                    iconName: modelData.icon
-                    active: panel.selectedIndex === index
-                    onActiveFocusChanged: if (activeFocus) panel.selectedIndex = index
-                    onClicked: {
-                        panel.selectedIndex = index
-                        panel.action(modelData)
+            Grid {
+                anchors.fill: parent
+                columns: 3
+                spacing: 8
+                z: 2
+
+                Repeater {
+                    id: optionRepeater
+                    model: panel.entries
+
+                    ActionButton {
+                        id: optionButton
+                        required property var modelData
+                        required property int index
+                        z: 2
+                        theme: panel.theme
+                        label: modelData.label
+                        iconName: modelData.icon
+                        managedSurface: true
+                        suppressHover: navigation.keyboardNavigation
+                        onHoveredChanged: if (hovered) {
+                            navigation.usePointer()
+                            panel.selectedIndex = index
+                        }
+                        onActiveFocusChanged: if (activeFocus) panel.selectedIndex = index
+                        onClicked: {
+                            panel.selectedIndex = index
+                            panel.action(modelData)
+                        }
+
+                        DelegateSurface {
+                            host: optionsLayer
+                            target: optionButton
+                            theme: panel.theme
+                            hovered: optionButton.hovered && !navigation.keyboardNavigation
+                        }
                     }
                 }
             }

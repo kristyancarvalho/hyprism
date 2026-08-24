@@ -105,7 +105,6 @@ Item {
             width: parent.width
             height: 46
             theme: panel.theme
-            focusedSurfaceColor: panel.theme.colors.surfaceVariant
             placeholderText: "Pesquisar aplicativos…"
             onTextChanged: {
                 panel.query = text
@@ -133,16 +132,20 @@ Item {
                 active: navigation.keyboardNavigation && panel.resultCount > 0
             }
 
-            delegate: Rectangle {
+            delegate: Item {
+                id: resultDelegate
                 required property var modelData
                 required property int index
                 width: ListView.view.width
                 height: Design.launcherResultRowHeight
-                radius: Design.radiusSm
-                color: pointer.containsMouse && !navigation.keyboardNavigation ? panel.theme.colors.surfaceHover : "transparent"
-                border.width: 0
+                z: 2
 
-                Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
+                DelegateSurface {
+                    host: resultList.contentItem
+                    target: resultDelegate
+                    theme: panel.theme
+                    hovered: pointer.containsMouse && !navigation.keyboardNavigation
+                }
 
                 Row {
                     anchors.fill: parent

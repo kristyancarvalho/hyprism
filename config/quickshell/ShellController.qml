@@ -11,6 +11,7 @@ Item {
     property string targetScreenName: ""
     property string osdKind: ""
     property string osdValue: ""
+    readonly property bool hubOpen: mode === "control"
     property int switcherIndex: 0
     property alias switcherWindows: switcherWindowModel
     property var mruWindowAddresses: []
@@ -227,9 +228,19 @@ Item {
     }
 
     function showOsd(kind, value) {
-        osdKind = Design.safeText(kind, "Sistema")
+        const safeKind = Design.safeText(kind, "Sistema")
+        if (hubOpen && ["Volume", "Brilho", "Microfone"].indexOf(safeKind) >= 0) return
+        osdKind = safeKind
         osdValue = Design.safeText(value, "Indisponível")
         osdTimer.restart()
+    }
+
+    onHubOpenChanged: {
+        if (hubOpen && ["Volume", "Brilho", "Microfone"].indexOf(osdKind) >= 0) {
+            osdTimer.stop()
+            osdKind = ""
+            osdValue = ""
+        }
     }
 
     function run(command) {

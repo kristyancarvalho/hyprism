@@ -81,8 +81,18 @@ Rectangle {
             surfaceWidth: button.width
             cornerRadius: button.radius
             rightAligned: true
-            color: detailPointer.containsMouse || detailArea.activeFocus ? button.theme.colors.surfaceHover : "transparent"
-            opacity: .86
+            color: detailPointer.containsMouse || detailArea.activeFocus ? button.theme.colors.surfaceElevated : button.active ? button.theme.colors.surfaceVariant : "transparent"
+        }
+
+        Rectangle {
+            anchors {
+                left: parent.left
+                verticalCenter: parent.verticalCenter
+            }
+            width: 1
+            height: parent.height - Design.spacingLg
+            color: button.theme.colors.borderSubtle
+            opacity: .68
         }
 
         StatusIcon {
