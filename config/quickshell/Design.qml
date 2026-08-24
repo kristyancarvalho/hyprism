@@ -54,12 +54,15 @@ QtObject {
     readonly property int easingEnter: Easing.OutQuart
     readonly property int easingExit: Easing.InCubic
     readonly property int easingMorph: Easing.OutQuart
+    readonly property int easingPanelMorph: Easing.OutBack
     readonly property int easingMove: Easing.InOutCubic
+    readonly property real panelMorphOvershoot: .8
     readonly property int recordingDotCompactSize: 11
     readonly property int workspaceCellSize: 24
     readonly property int workspaceCellSpacing: 4
     readonly property int morphSurfaceMaxWidth: 920
     readonly property int morphSurfaceMaxHeight: 700
+    readonly property int morphOvershootMargin: 16
     readonly property int launcherMaximumVisibleResults: 6
     readonly property int launcherResultRowHeight: 54
     readonly property int launcherResultSpacing: 5

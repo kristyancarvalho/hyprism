@@ -14,7 +14,7 @@ PanelWindow {
     required property var apps
     required property var clipboard
     required property var notifications
-    readonly property bool targetScreen: controller.targetScreenName === shellScreen.name
+    readonly property bool targetScreen: !!shellScreen && controller.targetScreenName === shellScreen.name
     readonly property string localMode: controller.mode === "compact" || !targetScreen ? "compact" : controller.mode
     readonly property bool interactive: localMode !== "compact" && localMode !== "hover"
     readonly property bool fullscreenActive: HyprlandService.monitorHasFullscreen(shellScreen)
@@ -29,8 +29,8 @@ PanelWindow {
     property var morphTarget: ({ width: compactWidth, height: Design.compactHeight(controller.config.shell), radius: Design.radiusDefault })
     property real morphProgress: 1
     property bool acceptsFocusDismissal: false
-    readonly property real morphWidth: morphFrom.width + (morphTarget.width - morphFrom.width) * morphProgress
-    readonly property real morphHeight: morphFrom.height + (morphTarget.height - morphFrom.height) * morphProgress
+    readonly property real morphWidth: Design.clamp(morphFrom.width + (morphTarget.width - morphFrom.width) * morphProgress, 320, implicitWidth)
+    readonly property real morphHeight: Design.clamp(morphFrom.height + (morphTarget.height - morphFrom.height) * morphProgress, Design.compactHeight(controller.config.shell), implicitHeight)
     readonly property real morphRadius: morphFrom.radius + (morphTarget.radius - morphFrom.radius) * morphProgress
 
     function geometryForMode(mode) {
@@ -80,7 +80,14 @@ PanelWindow {
     }
 
     function startMorph(nextGeometry) {
+        if (morphAnimation.running && Math.abs(morphTarget.width - nextGeometry.width) < .5 && Math.abs(morphTarget.height - nextGeometry.height) < .5 && Math.abs(morphTarget.radius - nextGeometry.radius) < .1) return
         const currentGeometry = { width: morphWidth, height: morphHeight, radius: morphRadius }
+        if (Math.abs(currentGeometry.width - nextGeometry.width) < .5 && Math.abs(currentGeometry.height - nextGeometry.height) < .5 && Math.abs(currentGeometry.radius - nextGeometry.radius) < .1) {
+            morphFrom = nextGeometry
+            morphTarget = nextGeometry
+            morphProgress = 1
+            return
+        }
         morphAnimation.stop()
         morphFrom = currentGeometry
         morphTarget = nextGeometry
@@ -99,8 +106,8 @@ PanelWindow {
     visible: shellScreen !== null && (!fullscreenActive || interactive)
     anchors.top: true
     margins.top: Design.compactTopMargin(controller.config.shell)
-    implicitWidth: Math.min(safeWidth, Design.morphSurfaceMaxWidth)
-    implicitHeight: Math.min(safeHeight, Design.morphSurfaceMaxHeight)
+    implicitWidth: Math.min(safeWidth, Design.morphSurfaceMaxWidth + Design.morphOvershootMargin)
+    implicitHeight: Math.min(safeHeight, Design.morphSurfaceMaxHeight + Design.morphOvershootMargin)
     color: "transparent"
     surfaceFormat.opaque: false
     exclusionMode: ExclusionMode.Ignore
@@ -156,12 +163,7 @@ PanelWindow {
             anchors.fill: parent
             opacity: 1
             sourceComponent: window.localMode === "launcher" ? launcher : window.localMode === "wallpaper" ? wallpaper : window.localMode === "clipboard" ? clipboardPanel : window.localMode === "control" ? control : window.localMode === "network" ? network : window.localMode === "bluetooth" ? bluetooth : window.localMode === "power" ? power : window.localMode === "emoji" ? emoji : window.localMode === "switcher" ? switcher : window.localMode === "recordingSelector" ? recordingSelector : window.localMode === "hover" ? expanded : compactContent
-            onLoaded: {
-                contentReveal.stop()
-                opacity = 0
-                contentReveal.start()
-                focusTimer.restart()
-            }
+            onLoaded: focusTimer.restart()
         }
     }
 
@@ -172,7 +174,8 @@ PanelWindow {
         from: 0
         to: 1
         duration: window.morphDuration
-        easing.type: Design.easingMorph
+        easing.type: Design.easingPanelMorph
+        easing.overshoot: Design.panelMorphOvershoot
     }
 
     Timer {
@@ -207,16 +210,6 @@ PanelWindow {
         id: focusDismissalReady
         interval: 240
         onTriggered: if (window.interactive) window.acceptsFocusDismissal = true
-    }
-
-    NumberAnimation {
-        id: contentReveal
-        target: content
-        property: "opacity"
-        from: 0
-        to: 1
-        duration: window.morphDuration
-        easing.type: Design.easingEnter
     }
 
     Timer {
