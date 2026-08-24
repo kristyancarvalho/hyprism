@@ -13,12 +13,13 @@ Rectangle {
     signal clicked()
     activeFocusOnTab: available
     radius: Design.radiusSm
-    color: active && available ? theme.colors.accentDim : hovered ? theme.colors.surfaceHover : theme.colors.surfaceVariant
-    border.width: activeFocus ? 2 : 0
-    border.color: theme.colors.borderFocused
+    color: active && available ? theme.colors.accentDim : hovered || activeFocus ? theme.colors.surfaceHover : theme.colors.surfaceVariant
+    border.width: 0
     opacity: available ? pending ? .72 : 1 : .5
     implicitWidth: 170
     implicitHeight: 68
+
+    Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
 
     Row {
         anchors.fill: parent

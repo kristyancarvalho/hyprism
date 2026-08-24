@@ -14,9 +14,11 @@ Item {
             controller.close()
             event.accepted = true
         } else if (event.key === Qt.Key_Left || event.key === Qt.Key_Up) {
+            navigation.useKeyboard()
             controller.switcher(-1)
             event.accepted = true
         } else if (event.key === Qt.Key_Right || event.key === Qt.Key_Down || event.key === Qt.Key_Tab) {
+            navigation.useKeyboard()
             controller.switcher(event.modifiers & Qt.ShiftModifier ? -1 : 1)
             event.accepted = true
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
@@ -24,6 +26,8 @@ Item {
             event.accepted = true
         }
     }
+
+    Navigation { id: navigation; keyboardNavigation: true }
 
     Column {
         anchors.fill: parent
@@ -66,6 +70,10 @@ Item {
             preferredHighlightEnd: width * .66
             highlightRangeMode: ListView.ApplyRange
             onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
+            highlight: SelectionHighlight {
+                theme: panel.theme
+                active: navigation.keyboardNavigation && windows.count > 0
+            }
 
             delegate: Rectangle {
                 required property int index
@@ -77,9 +85,8 @@ Item {
                 width: Math.max(148, Math.min(180, (ListView.view.width - 30) / Math.min(4, Math.max(1, ListView.view.count))))
                 height: ListView.view.height
                 radius: Design.radiusMd
-                color: selected ? panel.theme.colors.surfaceActive : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
-                border.width: selected ? 2 : 0
-                border.color: panel.theme.colors.accent
+                color: navigation.keyboardNavigation && selected ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
+                border.width: 0
 
                 Column {
                     anchors.fill: parent
@@ -124,7 +131,10 @@ Item {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onEntered: controller.switcherIndex = index
+                    onEntered: {
+                        navigation.usePointer()
+                        controller.switcherIndex = index
+                    }
                     onClicked: controller.commitSwitcher()
                 }
             }

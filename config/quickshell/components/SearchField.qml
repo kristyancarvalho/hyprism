@@ -6,7 +6,6 @@ FocusScope {
     required property var theme
     property alias text: input.text
     property string placeholderText: ""
-    property int focusBorderWidth: 1
     property bool clearButtonEnabled: true
     property Item tabTarget: null
     property Item backtabTarget: null
@@ -28,8 +27,7 @@ FocusScope {
         anchors.fill: parent
         radius: Design.radiusSm
         color: input.activeFocus ? control.theme.colors.surfaceActive : control.theme.colors.surfaceVariant
-        border.width: input.activeFocus ? control.focusBorderWidth : 0
-        border.color: control.theme.colors.accent
+        border.width: 0
 
         Behavior on color {
             ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph }

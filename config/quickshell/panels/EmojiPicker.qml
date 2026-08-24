@@ -66,15 +66,19 @@ FocusScope {
             controller.close()
             event.accepted = true
         } else if (event.key === Qt.Key_Left) {
+            navigation.useKeyboard()
             selectedIndex = navigation.grid(selectedIndex, -1, 0, grid.columns, resultCount)
             event.accepted = true
         } else if (event.key === Qt.Key_Right) {
+            navigation.useKeyboard()
             selectedIndex = navigation.grid(selectedIndex, 1, 0, grid.columns, resultCount)
             event.accepted = true
         } else if (event.key === Qt.Key_Up) {
+            navigation.useKeyboard()
             selectedIndex = navigation.grid(selectedIndex, 0, -1, grid.columns, resultCount)
             event.accepted = true
         } else if (event.key === Qt.Key_Down) {
+            navigation.useKeyboard()
             selectedIndex = navigation.grid(selectedIndex, 0, 1, grid.columns, resultCount)
             event.accepted = true
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
@@ -118,6 +122,7 @@ FocusScope {
             onTextChanged: {
                 panel.query = text
                 panel.selectedIndex = 0
+                navigation.keyboardNavigation = false
             }
             onClearRequested: text = ""
             onKeyPressed: event => {
@@ -150,6 +155,11 @@ FocusScope {
             KeyNavigation.tab: search
             KeyNavigation.backtab: search.clearVisible ? search.clearButtonItem : search
             onCurrentIndexChanged: if (currentIndex >= 0) positionViewAtIndex(currentIndex, GridView.Contain)
+            highlight: SelectionHighlight {
+                theme: panel.theme
+                active: navigation.keyboardNavigation && panel.resultCount > 0
+                inset: Design.spacingXs
+            }
 
             delegate: Item {
                 required property var modelData
@@ -162,9 +172,8 @@ FocusScope {
                     width: Design.emojiButtonSize
                     height: Design.emojiButtonSize
                     radius: Design.radiusSm
-                    color: panel.selectedIndex === index ? panel.theme.colors.surfaceActive : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
-                    border.width: panel.selectedIndex === index ? (grid.activeFocus ? 2 : 1) : 0
-                    border.color: panel.theme.colors.accent
+                    color: navigation.keyboardNavigation && panel.selectedIndex === index ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
+                    border.width: 0
 
                     Behavior on color {
                         ColorAnimation { duration: Design.animationInstant; easing.type: Design.easingMorph }
@@ -181,7 +190,10 @@ FocusScope {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onEntered: panel.selectedIndex = index
+                        onEntered: {
+                            navigation.usePointer()
+                            panel.selectedIndex = index
+                        }
                         onClicked: panel.copy(modelData.glyph)
                     }
                 }

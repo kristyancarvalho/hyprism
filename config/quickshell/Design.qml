@@ -92,6 +92,7 @@ QtObject {
         search: "󰍉",
         refresh: "󰑐",
         close: "󰅖",
+        check: "󰄬",
         clear: "󰆴",
         clipboard: "󰅌",
         image: "󰋩",

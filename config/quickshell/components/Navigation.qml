@@ -1,6 +1,16 @@
 import QtQuick
 
 QtObject {
+    property bool keyboardNavigation: false
+
+    function useKeyboard() {
+        keyboardNavigation = true
+    }
+
+    function usePointer() {
+        keyboardNavigation = false
+    }
+
     function wrap(index, step, count) {
         if (count <= 0) return 0
         return (index + step + count) % count

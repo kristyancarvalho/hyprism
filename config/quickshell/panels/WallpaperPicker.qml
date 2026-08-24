@@ -58,6 +58,7 @@ FocusScope {
         const count = filteredWallpapers.length
         if (!count) return
         initialSelectionPending = false
+        navigation.useKeyboard()
         controller.wallpaperSelectedIndex = navigation.grid(controller.wallpaperSelectedIndex, horizontal, vertical, grid.columns, count)
         grid.positionViewAtIndex(controller.wallpaperSelectedIndex, GridView.Contain)
     }
@@ -99,6 +100,7 @@ FocusScope {
 
     function takeInitialFocus() {
         initialSelectionPending = true
+        navigation.useKeyboard()
         Qt.callLater(() => filteredWallpapers.length ? focusGrid() : focusSearch())
     }
 
@@ -157,9 +159,13 @@ FocusScope {
             placeholderText: "Pesquisar papel de parede..."
             tabTarget: refreshButton
             backtabTarget: grid
-            onTextChanged: if (text !== panel.controller.wallpaperQuery) panel.controller.wallpaperQuery = text
+            onTextChanged: {
+                navigation.keyboardNavigation = false
+                if (text !== panel.controller.wallpaperQuery) panel.controller.wallpaperQuery = text
+            }
             onKeyPressed: event => {
                 if (event.key === Qt.Key_Down) {
+                    navigation.useKeyboard()
                     panel.focusGrid()
                     event.accepted = true
                 } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
@@ -188,6 +194,11 @@ FocusScope {
             model: panel.filteredWallpapers
             currentIndex: panel.controller.wallpaperSelectedIndex
             onCurrentIndexChanged: if (currentIndex >= 0) positionViewAtIndex(currentIndex, GridView.Contain)
+            highlight: SelectionHighlight {
+                theme: panel.theme
+                active: navigation.keyboardNavigation && grid.activeFocus && panel.filteredWallpapers.length > 0
+                inset: 2
+            }
             activeFocusOnTab: true
             Keys.priority: Keys.BeforeItem
             Keys.onPressed: event => panel.handleGridKey(event)
@@ -203,12 +214,14 @@ FocusScope {
 
                 Rectangle {
                     anchors.fill: parent
-                    anchors.margins: Design.spacingXs
+                    anchors.margins: Design.spacingSm
                     radius: Design.radiusSm
                     color: panel.theme.colors.surfaceVariant
-                    border.width: panel.controller.wallpaperSelectedIndex === index ? (grid.activeFocus ? 3 : 2) : Design.safeText(modelData, "") === panel.controller.wallpaperCurrent ? 1 : 0
-                    border.color: panel.controller.wallpaperSelectedIndex === index ? panel.theme.colors.accent : panel.theme.colors.foreground
+                    border.width: 0
                     clip: true
+                    scale: navigation.keyboardNavigation && grid.activeFocus && panel.controller.wallpaperSelectedIndex === index ? .96 : 1
+
+                    Behavior on scale { NumberAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
 
                     Image {
                         anchors.fill: parent
@@ -226,9 +239,29 @@ FocusScope {
 
                     Rectangle {
                         anchors.fill: parent
-                        visible: grid.activeFocus && panel.controller.wallpaperSelectedIndex === index
+                        visible: navigation.keyboardNavigation && grid.activeFocus && panel.controller.wallpaperSelectedIndex === index
                         color: panel.theme.colors.accentDim
-                        opacity: .16
+                        opacity: .34
+                    }
+
+                    Rectangle {
+                        anchors {
+                            top: parent.top
+                            right: parent.right
+                            margins: Design.spacingSm
+                        }
+                        visible: navigation.keyboardNavigation && grid.activeFocus && panel.controller.wallpaperSelectedIndex === index
+                        width: 26
+                        height: 26
+                        radius: 13
+                        color: panel.theme.colors.accent
+
+                        StatusIcon {
+                            anchors.centerIn: parent
+                            name: "check"
+                            iconSize: Design.iconXs
+                            color: panel.theme.colors.background
+                        }
                     }
 
                     Rectangle {
@@ -253,6 +286,10 @@ FocusScope {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
+                    onEntered: {
+                        navigation.usePointer()
+                        panel.controller.wallpaperSelectedIndex = index
+                    }
                     onClicked: {
                         panel.controller.wallpaperSelectedIndex = index
                         panel.focusGrid()
@@ -276,8 +313,11 @@ FocusScope {
         const currentIndex = currentWallpaperIndex()
         if (initialSelectionPending && !controller.wallpaperQuery.length && currentIndex >= 0) controller.wallpaperSelectedIndex = currentIndex
         clampSelection()
-        if (!filteredWallpapers.length) Qt.callLater(() => focusSearch())
-        if (initialSelectionPending && filteredWallpapers.length && !searchInput.inputActiveFocus) Qt.callLater(() => focusGrid())
+        if (!filteredWallpapers.length) {
+            if (!controller.wallpaperQuery.length) initialSelectionPending = true
+            Qt.callLater(() => focusSearch())
+        }
+        if (initialSelectionPending && filteredWallpapers.length) Qt.callLater(() => focusGrid())
     }
     Component.onCompleted: {
         appService.refreshWallpapers()
