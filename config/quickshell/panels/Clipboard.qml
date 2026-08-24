@@ -8,11 +8,16 @@ Item {
     required property var theme
     required property var clipboard
     property string query: ""
-    property int selectedIndex: 0
+    property int selectedIndex: -1
     readonly property var filteredEntries: results()
 
     function results() {
         return controller.clipboardEntries.filter(item => Design.safeText(item ? item.searchText : "", Design.safeText(item ? item.text : "", "")).toLowerCase().indexOf(query.toLowerCase()) >= 0)
+    }
+
+    function resultSelectable(index) {
+        const entry = filteredEntries[index]
+        return entry && entry.disabled !== true
     }
 
     function handleKey(event) {
@@ -22,11 +27,11 @@ Item {
             event.accepted = true
         } else if (event.key === Qt.Key_Up) {
             navigation.useKeyboard()
-            selectedIndex = navigation.wrap(selectedIndex, -1, items.length)
+            selectedIndex = navigation.move(selectedIndex, -1, items.length, resultSelectable)
             event.accepted = true
         } else if (event.key === Qt.Key_Down) {
             navigation.useKeyboard()
-            selectedIndex = navigation.wrap(selectedIndex, 1, items.length)
+            selectedIndex = navigation.move(selectedIndex, 1, items.length, resultSelectable)
             event.accepted = true
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
             if (items[selectedIndex]) clipboard.select(items[selectedIndex])
@@ -38,7 +43,16 @@ Item {
     }
 
     function takeInitialFocus() {
+        resetSelection()
         search.forceActiveFocus(Qt.ShortcutFocusReason)
+    }
+
+    function resetSelection() {
+        selectedIndex = navigation.reset(filteredEntries.length, resultSelectable)
+        entriesList.positionViewAtBeginning()
+        Qt.callLater(() => {
+            if (selectedIndex >= 0) entriesList.positionViewAtIndex(selectedIndex, ListView.Beginning)
+        })
     }
 
     function initialFocusReady() {
@@ -47,7 +61,7 @@ Item {
 
     focus: true
     Keys.onPressed: event => handleKey(event)
-    onFilteredEntriesChanged: selectedIndex = navigation.clamp(selectedIndex, filteredEntries.length)
+    onFilteredEntriesChanged: if (selectedIndex < 0 || selectedIndex >= filteredEntries.length) resetSelection()
 
     Navigation { id: navigation }
 
@@ -76,8 +90,7 @@ Item {
                 placeholderText: "Pesquisar na área de transferência…"
                 onTextChanged: {
                     panel.query = text
-                    panel.selectedIndex = 0
-                    navigation.keyboardNavigation = false
+                    panel.resetSelection()
                 }
                 onKeyPressed: event => panel.handleKey(event)
                 onClearRequested: text = ""

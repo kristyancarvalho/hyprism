@@ -12,7 +12,7 @@ Item {
     property var networks: []
     property string selectedSsid: ""
     property string password: ""
-    property int selectedIndex: 0
+    property int selectedIndex: -1
 
     function scan() {
         scanner.running = true
@@ -20,6 +20,11 @@ Item {
 
     function command(args) {
         controller.run(args)
+    }
+
+    function resultSelectable(index) {
+        const entry = networks[index]
+        return entry && Design.safeText(entry.ssid, "").length > 0 && entry.disabled !== true
     }
 
     function connect(ssid) {
@@ -47,7 +52,16 @@ Item {
     }
 
     function takeInitialFocus() {
+        resetSelection()
         forceActiveFocus(Qt.ShortcutFocusReason)
+    }
+
+    function resetSelection() {
+        selectedIndex = navigation.reset(networks.length, resultSelectable)
+        networksList.positionViewAtBeginning()
+        Qt.callLater(() => {
+            if (selectedIndex >= 0) networksList.positionViewAtIndex(selectedIndex, ListView.Beginning)
+        })
     }
 
     function initialFocusReady() {
@@ -61,11 +75,11 @@ Item {
             event.accepted = true
         } else if (event.key === Qt.Key_Up) {
             navigation.useKeyboard()
-            selectedIndex = navigation.wrap(selectedIndex, -1, networks.length)
+            selectedIndex = navigation.move(selectedIndex, -1, networks.length, resultSelectable)
             event.accepted = true
         } else if (event.key === Qt.Key_Down) {
             navigation.useKeyboard()
-            selectedIndex = navigation.wrap(selectedIndex, 1, networks.length)
+            selectedIndex = navigation.move(selectedIndex, 1, networks.length, resultSelectable)
             event.accepted = true
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
             chooseCurrent()
@@ -299,9 +313,10 @@ Item {
             onRead: data => {
                 try {
                     panel.networks = JSON.parse(data)
-                    panel.selectedIndex = navigation.clamp(panel.selectedIndex, panel.networks.length)
+                    panel.resetSelection()
                 } catch (error) {
                     panel.networks = []
+                    panel.resetSelection()
                 }
             }
         }

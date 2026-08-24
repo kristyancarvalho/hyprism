@@ -7,17 +7,41 @@ Item {
     id: panel
     required property var controller
     required property var theme
-    property int selectedIndex: 0
+    property int selectedIndex: -1
+    property bool selectionInitialized: false
     readonly property var devices: controller.system.bluetooth.devices || []
 
     function command(args) {
         controller.run(args)
     }
 
+    function resultSelectable(index) {
+        const entry = devices[index]
+        return entry && Design.safeText(entry.address, "").length > 0 && entry.disabled !== true
+    }
+
     function activateSelected() {
         const device = devices[selectedIndex]
         if (!device) return
         command(["python3", controller.rootDir + "/scripts/system/bluetooth.py", device.connected ? "disconnect" : "connect", device.address])
+    }
+
+    function resetSelection() {
+        selectedIndex = navigation.reset(devices.length, resultSelectable)
+        selectionInitialized = true
+        deviceList.positionViewAtBeginning()
+        Qt.callLater(() => {
+            if (selectedIndex >= 0) deviceList.positionViewAtIndex(selectedIndex, ListView.Beginning)
+        })
+    }
+
+    function takeInitialFocus() {
+        resetSelection()
+        forceActiveFocus(Qt.ShortcutFocusReason)
+    }
+
+    function initialFocusReady() {
+        return activeFocus
     }
 
     focus: true
@@ -27,11 +51,11 @@ Item {
             event.accepted = true
         } else if (event.key === Qt.Key_Up) {
             navigation.useKeyboard()
-            selectedIndex = navigation.wrap(selectedIndex, -1, devices.length)
+            selectedIndex = navigation.move(selectedIndex, -1, devices.length, resultSelectable)
             event.accepted = true
         } else if (event.key === Qt.Key_Down) {
             navigation.useKeyboard()
-            selectedIndex = navigation.wrap(selectedIndex, 1, devices.length)
+            selectedIndex = navigation.move(selectedIndex, 1, devices.length, resultSelectable)
             event.accepted = true
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
             activateSelected()
@@ -40,6 +64,10 @@ Item {
     }
 
     Navigation { id: navigation }
+
+    onDevicesChanged: {
+        if (!selectionInitialized || selectedIndex < 0 || selectedIndex >= devices.length) resetSelection()
+    }
 
     Column {
         anchors.fill: parent
@@ -179,5 +207,5 @@ Item {
         }
     }
 
-    Component.onCompleted: forceActiveFocus()
+    Component.onCompleted: takeInitialFocus()
 }

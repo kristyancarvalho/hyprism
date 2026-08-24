@@ -26,6 +26,17 @@ Item {
         controller.close()
     }
 
+    function takeInitialFocus() {
+        confirming = ""
+        selectedIndex = navigation.reset(entries.length, index => entries[index] && entries[index].disabled !== true)
+        forceActiveFocus(Qt.ShortcutFocusReason)
+        Qt.callLater(() => selection.updateGeometry(false))
+    }
+
+    function initialFocusReady() {
+        return activeFocus
+    }
+
     focus: true
     Keys.onPressed: event => {
         if (event.key === Qt.Key_Escape) {
@@ -74,6 +85,7 @@ Item {
             height: 144
 
             SelectionHighlight {
+                id: selection
                 parent: optionsLayer
                 theme: panel.theme
                 target: optionRepeater.count > panel.selectedIndex ? optionRepeater.itemAt(panel.selectedIndex) : null
@@ -122,5 +134,5 @@ Item {
         }
     }
 
-    Component.onCompleted: forceActiveFocus()
+    Component.onCompleted: takeInitialFocus()
 }

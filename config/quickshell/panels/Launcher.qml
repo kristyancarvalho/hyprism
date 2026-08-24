@@ -8,7 +8,7 @@ Item {
     required property var controller
     required property var theme
     property string query: ""
-    property int selected: 0
+    property int selected: -1
     readonly property var resultModel: results()
     readonly property int resultCount: resultModel.length
 
@@ -35,8 +35,22 @@ Item {
         controller.launchApplication(app)
     }
 
+    function resultSelectable(index) {
+        const entry = resultModel[index]
+        return entry && entry.disabled !== true
+    }
+
     function takeInitialFocus() {
+        resetSelection()
         search.forceInputFocus(Qt.ShortcutFocusReason)
+    }
+
+    function resetSelection() {
+        selected = navigation.reset(resultCount, resultSelectable)
+        resultList.positionViewAtBeginning()
+        Qt.callLater(() => {
+            if (selected >= 0) resultList.positionViewAtIndex(selected, ListView.Beginning)
+        })
     }
 
     function initialFocusReady() {
@@ -50,11 +64,11 @@ Item {
             event.accepted = true
         } else if (event.key === Qt.Key_Down) {
             navigation.useKeyboard()
-            selected = navigation.wrap(selected, 1, count)
+            selected = navigation.move(selected, 1, count, resultSelectable)
             event.accepted = true
         } else if (event.key === Qt.Key_Up) {
             navigation.useKeyboard()
-            selected = navigation.wrap(selected, -1, count)
+            selected = navigation.move(selected, -1, count, resultSelectable)
             event.accepted = true
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
             launch(resultModel[selected])
@@ -65,8 +79,8 @@ Item {
     focus: true
     Keys.onPressed: event => handleKey(event)
     onResultCountChanged: {
-        selected = navigation.clamp(selected, resultCount)
         controller.launcherResultCount = resultCount
+        if (selected < 0 || selected >= resultCount) resetSelection()
     }
 
     Navigation { id: navigation }
@@ -108,8 +122,7 @@ Item {
             placeholderText: "Pesquisar aplicativos…"
             onTextChanged: {
                 panel.query = text
-                panel.selected = 0
-                navigation.keyboardNavigation = false
+                panel.resetSelection()
             }
             onKeyPressed: event => panel.handleKey(event)
             onClearRequested: text = ""
@@ -123,7 +136,7 @@ Item {
             model: panel.resultModel
             currentIndex: panel.selected
             spacing: 5
-            onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
+            onCurrentIndexChanged: if (currentIndex >= 0) positionViewAtIndex(currentIndex, ListView.Contain)
 
             SelectionHighlight {
                 parent: resultList.contentItem

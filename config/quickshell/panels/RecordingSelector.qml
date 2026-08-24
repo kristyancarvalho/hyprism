@@ -27,7 +27,7 @@ FocusScope {
     }
 
     function takeInitialFocus() {
-        select(0)
+        select(navigation.reset(2))
     }
 
     function initialFocusReady() {
