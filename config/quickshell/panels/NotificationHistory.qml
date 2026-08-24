@@ -25,9 +25,11 @@ Column {
 
     Keys.onPressed: event => {
         if (event.key === Qt.Key_Up) {
+            navigation.useKeyboard()
             selectedIndex = navigation.wrap(selectedIndex, -1, notifications.length)
             event.accepted = true
         } else if (event.key === Qt.Key_Down) {
+            navigation.useKeyboard()
             selectedIndex = navigation.wrap(selectedIndex, 1, notifications.length)
             event.accepted = true
         } else if (event.key === Qt.Key_Delete || event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
@@ -75,6 +77,10 @@ Column {
         model: history.notifications
         currentIndex: history.selectedIndex
         onCurrentIndexChanged: if (currentIndex >= 0) positionViewAtIndex(currentIndex, ListView.Contain)
+        highlight: SelectionHighlight {
+            theme: history.theme
+            active: navigation.keyboardNavigation && history.activeFocus && history.notifications.length > 0
+        }
 
         delegate: Rectangle {
             required property var modelData
@@ -82,9 +88,8 @@ Column {
             width: ListView.view.width
             height: 76
             radius: Design.radiusSm
-            color: history.activeFocus && history.selectedIndex === index ? history.theme.colors.surfaceActive : pointer.containsMouse ? history.theme.colors.surfaceHover : history.theme.colors.surfaceVariant
-            border.width: history.activeFocus && history.selectedIndex === index ? 2 : 0
-            border.color: history.theme.colors.accent
+            color: navigation.keyboardNavigation && history.activeFocus && history.selectedIndex === index ? "transparent" : pointer.containsMouse ? history.theme.colors.surfaceHover : history.theme.colors.surfaceVariant
+            border.width: 0
 
             Rectangle {
                 anchors {
@@ -168,7 +173,10 @@ Column {
                     bottom: parent.bottom
                 }
                 hoverEnabled: true
-                onEntered: history.selectedIndex = index
+                onEntered: {
+                    navigation.usePointer()
+                    history.selectedIndex = index
+                }
                 onClicked: history.forceActiveFocus()
             }
         }

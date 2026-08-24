@@ -60,9 +60,11 @@ Item {
             controller.close()
             event.accepted = true
         } else if (event.key === Qt.Key_Up) {
+            navigation.useKeyboard()
             selectedIndex = navigation.wrap(selectedIndex, -1, networks.length)
             event.accepted = true
         } else if (event.key === Qt.Key_Down) {
+            navigation.useKeyboard()
             selectedIndex = navigation.wrap(selectedIndex, 1, networks.length)
             event.accepted = true
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
@@ -154,9 +156,10 @@ Item {
             font.pixelSize: Design.fontSizeSm
             background: Rectangle {
                 radius: Design.radiusSm
-                color: panel.theme.colors.surfaceVariant
-                border.width: passwordField.activeFocus ? 2 : 0
-                border.color: passwordField.activeFocus ? panel.theme.colors.accent : panel.theme.colors.outline
+                color: passwordField.activeFocus ? panel.theme.colors.surfaceActive : panel.theme.colors.surfaceVariant
+                border.width: 0
+
+                Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
             }
         }
 
@@ -170,6 +173,10 @@ Item {
             activeFocusOnTab: true
             spacing: 6
             onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
+            highlight: SelectionHighlight {
+                theme: panel.theme
+                active: navigation.keyboardNavigation && panel.networks.length > 0
+            }
 
             delegate: Rectangle {
                 required property var modelData
@@ -177,9 +184,8 @@ Item {
                 width: ListView.view.width
                 height: 56
                 radius: Design.radiusSm
-                color: panel.selectedIndex === index ? panel.theme.colors.surfaceActive : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
-                border.width: panel.selectedIndex === index ? 2 : 0
-                border.color: panel.theme.colors.accent
+                color: navigation.keyboardNavigation && panel.selectedIndex === index ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
+                border.width: 0
 
                 StatusIcon {
                     anchors {
@@ -254,8 +260,14 @@ Item {
                         bottom: parent.bottom
                     }
                     hoverEnabled: true
-                    onEntered: panel.selectedIndex = index
-                    onClicked: panel.chooseCurrent()
+                    onEntered: {
+                        navigation.usePointer()
+                        panel.selectedIndex = index
+                    }
+                    onClicked: {
+                        panel.selectedIndex = index
+                        panel.chooseCurrent()
+                    }
                 }
             }
 

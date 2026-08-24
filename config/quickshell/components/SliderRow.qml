@@ -23,8 +23,7 @@ Item {
         anchors.fill: parent
         radius: Design.radiusSm
         color: "transparent"
-        border.width: slider.activeFocus ? 2 : 0
-        border.color: row.theme.colors.accent
+        border.width: 0
     }
 
     Column {

@@ -26,9 +26,11 @@ Item {
             controller.close()
             event.accepted = true
         } else if (event.key === Qt.Key_Up) {
+            navigation.useKeyboard()
             selectedIndex = navigation.wrap(selectedIndex, -1, devices.length)
             event.accepted = true
         } else if (event.key === Qt.Key_Down) {
+            navigation.useKeyboard()
             selectedIndex = navigation.wrap(selectedIndex, 1, devices.length)
             event.accepted = true
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
@@ -72,18 +74,28 @@ Item {
             }
         }
 
-        Repeater {
+        ListView {
+            id: deviceList
+            width: parent.width
+            height: Math.max(58, parent.height - y)
+            clip: true
             model: panel.devices
+            currentIndex: panel.selectedIndex
+            spacing: 6
+            onCurrentIndexChanged: if (currentIndex >= 0) positionViewAtIndex(currentIndex, ListView.Contain)
+            highlight: SelectionHighlight {
+                theme: panel.theme
+                active: navigation.keyboardNavigation && panel.devices.length > 0
+            }
 
-            Rectangle {
+            delegate: Rectangle {
                 required property var modelData
                 required property int index
-                width: panel.width - 36
+                width: ListView.view.width
                 height: 58
                 radius: Design.radiusSm
-                color: panel.selectedIndex === index ? panel.theme.colors.surfaceActive : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
-                border.width: panel.selectedIndex === index ? 2 : 0
-                border.color: panel.theme.colors.accent
+                color: navigation.keyboardNavigation && panel.selectedIndex === index ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
+                border.width: 0
 
                 StatusIcon {
                     anchors {
@@ -136,18 +148,25 @@ Item {
                         bottom: parent.bottom
                     }
                     hoverEnabled: true
-                    onEntered: panel.selectedIndex = index
-                    onClicked: panel.activateSelected()
+                    onEntered: {
+                        navigation.usePointer()
+                        panel.selectedIndex = index
+                    }
+                    onClicked: {
+                        panel.selectedIndex = index
+                        panel.activateSelected()
+                    }
                 }
             }
-        }
 
-        Text {
-            visible: controller.system.bluetooth.available && panel.devices.length === 0
-            text: "Nenhum dispositivo pareado"
-            color: panel.theme.colors.mutedForeground
-            font.family: Design.fontFamily
-            font.pixelSize: Design.fontSizeSm
+            Text {
+                anchors.centerIn: parent
+                visible: controller.system.bluetooth.available && parent.count === 0
+                text: "Nenhum dispositivo pareado"
+                color: panel.theme.colors.mutedForeground
+                font.family: Design.fontFamily
+                font.pixelSize: Design.fontSizeSm
+            }
         }
     }
 

@@ -22,9 +22,11 @@ Item {
             controller.close()
             event.accepted = true
         } else if (event.key === Qt.Key_Up) {
+            navigation.useKeyboard()
             selectedIndex = navigation.wrap(selectedIndex, -1, items.length)
             event.accepted = true
         } else if (event.key === Qt.Key_Down) {
+            navigation.useKeyboard()
             selectedIndex = navigation.wrap(selectedIndex, 1, items.length)
             event.accepted = true
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
@@ -81,14 +83,16 @@ Item {
                 onTextChanged: {
                     panel.query = text
                     panel.selectedIndex = 0
+                    navigation.keyboardNavigation = false
                 }
                 Keys.priority: Keys.BeforeItem
                 Keys.onPressed: event => panel.handleKey(event)
                 background: Rectangle {
                     radius: Design.radiusSm
-                    color: panel.theme.colors.surfaceVariant
-                    border.width: search.activeFocus ? 2 : 0
-                    border.color: search.activeFocus ? panel.theme.colors.accent : panel.theme.colors.outline
+                    color: search.activeFocus ? panel.theme.colors.surfaceActive : panel.theme.colors.surfaceVariant
+                    border.width: 0
+
+                    Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
                 }
             }
 
@@ -109,6 +113,10 @@ Item {
             clip: true
             spacing: 6
             onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
+            highlight: SelectionHighlight {
+                theme: panel.theme
+                active: navigation.keyboardNavigation && panel.filteredEntries.length > 0
+            }
 
             delegate: Rectangle {
                 required property var modelData
@@ -116,9 +124,8 @@ Item {
                 width: ListView.view.width
                 height: modelData.type === "image" ? 126 : 58
                 radius: Design.radiusSm
-                color: panel.selectedIndex === index ? panel.theme.colors.surfaceActive : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
-                border.width: panel.selectedIndex === index ? 2 : 0
-                border.color: panel.theme.colors.accent
+                color: navigation.keyboardNavigation && panel.selectedIndex === index ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
+                border.width: 0
 
                 StatusIcon {
                     visible: modelData.type !== "image"
@@ -231,7 +238,10 @@ Item {
                         bottom: parent.bottom
                     }
                     hoverEnabled: true
-                    onEntered: panel.selectedIndex = index
+                    onEntered: {
+                        navigation.usePointer()
+                        panel.selectedIndex = index
+                    }
                     onClicked: panel.clipboard.select(modelData)
                 }
             }

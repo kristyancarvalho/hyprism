@@ -117,12 +117,10 @@ Item {
                 horizontalPadding: Design.compactPlainPadding
             }
 
-            CompactBarItem {
-                visible: compact.controller.system.battery.available
+            BatteryStatus {
                 theme: compact.theme
-                iconName: compact.controller.batteryIconName()
-                iconColor: compact.theme.colors[compact.controller.batteryColorRole()]
-                iconOnly: true
+                controller: compact.controller
+                showPercentage: false
                 filled: false
                 horizontalPadding: Design.compactPlainPadding
             }

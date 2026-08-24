@@ -49,9 +49,11 @@ Item {
             controller.close()
             event.accepted = true
         } else if (event.key === Qt.Key_Down) {
+            navigation.useKeyboard()
             selected = navigation.wrap(selected, 1, count)
             event.accepted = true
         } else if (event.key === Qt.Key_Up) {
+            navigation.useKeyboard()
             selected = navigation.wrap(selected, -1, count)
             event.accepted = true
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
@@ -103,11 +105,11 @@ Item {
             width: parent.width
             height: 46
             theme: panel.theme
-            focusBorderWidth: 2
             placeholderText: "Pesquisar aplicativos…"
             onTextChanged: {
                 panel.query = text
                 panel.selected = 0
+                navigation.keyboardNavigation = false
             }
             onKeyPressed: event => panel.handleKey(event)
             onClearRequested: text = ""
@@ -122,6 +124,10 @@ Item {
             currentIndex: panel.selected
             spacing: 5
             onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
+            highlight: SelectionHighlight {
+                theme: panel.theme
+                active: navigation.keyboardNavigation && panel.resultCount > 0
+            }
 
             delegate: Rectangle {
                 required property var modelData
@@ -129,9 +135,8 @@ Item {
                 width: ListView.view.width
                 height: Design.launcherResultRowHeight
                 radius: Design.radiusSm
-                color: panel.selected === index ? panel.theme.colors.surfaceActive : pointer.containsMouse ? panel.theme.colors.surfaceHover : "transparent"
-                border.width: panel.selected === index ? 2 : 0
-                border.color: panel.theme.colors.accent
+                color: pointer.containsMouse ? panel.theme.colors.surfaceHover : "transparent"
+                border.width: 0
 
                 Row {
                     anchors.fill: parent
@@ -180,7 +185,10 @@ Item {
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: panel.launch(modelData)
-                    onEntered: panel.selected = index
+                    onEntered: {
+                        navigation.usePointer()
+                        panel.selected = index
+                    }
                 }
             }
 

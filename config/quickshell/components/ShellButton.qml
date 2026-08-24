@@ -18,10 +18,11 @@ Rectangle {
     implicitWidth: content.implicitWidth + (compact ? 18 : 26)
     implicitHeight: compact ? 30 : 38
     radius: Design.radiusDefault
-    color: warning && available ? theme.colors.warning : destructive && available ? theme.colors.error : active && available ? theme.colors.accentDim : hovered ? theme.colors.surfaceHover : theme.colors.surfaceVariant
-    border.width: activeFocus ? 2 : 0
-    border.color: theme.colors.borderFocused
+    color: warning && available ? theme.colors.warning : destructive && available ? theme.colors.error : active && available ? theme.colors.accentDim : hovered || activeFocus ? theme.colors.surfaceHover : theme.colors.surfaceVariant
+    border.width: 0
     opacity: available ? pending ? .72 : 1 : .5
+
+    Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
 
     Row {
         id: content

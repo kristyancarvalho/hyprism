@@ -383,14 +383,10 @@ PanelWindow {
                     filled: false
                 }
 
-                CompactBarItem {
-                    visible: controller.system.battery.available
+                BatteryStatus {
                     theme: window.theme
-                    iconName: controller.batteryIconName()
-                    iconColor: window.theme.colors[controller.batteryColorRole()]
-                    trailingIconName: controller.batteryCharging() ? "charging" : ""
-                    label: controller.batteryExpandedText()
-                    iconOnly: window.morphWidth < 800
+                    controller: window.controller
+                    showPercentage: window.morphWidth >= 800
                     labelMaximumWidth: 105
                     filled: false
                 }
