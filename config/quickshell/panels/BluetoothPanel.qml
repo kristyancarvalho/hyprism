@@ -91,16 +91,20 @@ Item {
                 active: navigation.keyboardNavigation && panel.devices.length > 0
             }
 
-            delegate: Rectangle {
+            delegate: Item {
+                id: bluetoothDelegate
                 required property var modelData
                 required property int index
                 width: ListView.view.width
                 height: 58
-                radius: Design.radiusSm
-                color: navigation.keyboardNavigation ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
-                border.width: 0
+                z: 2
 
-                Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
+                DelegateSurface {
+                    host: deviceList.contentItem
+                    target: bluetoothDelegate
+                    theme: panel.theme
+                    hovered: pointer.containsMouse && !navigation.keyboardNavigation
+                }
 
                 StatusIcon {
                     anchors {

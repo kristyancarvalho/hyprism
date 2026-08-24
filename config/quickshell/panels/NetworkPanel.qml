@@ -181,16 +181,20 @@ Item {
                 active: navigation.keyboardNavigation && panel.networks.length > 0
             }
 
-            delegate: Rectangle {
+            delegate: Item {
+                id: networkDelegate
                 required property var modelData
                 required property int index
                 width: ListView.view.width
                 height: 56
-                radius: Design.radiusSm
-                color: navigation.keyboardNavigation ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
-                border.width: 0
+                z: 2
 
-                Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
+                DelegateSurface {
+                    host: networksList.contentItem
+                    target: networkDelegate
+                    theme: panel.theme
+                    hovered: pointer.containsMouse && !navigation.keyboardNavigation
+                }
 
                 StatusIcon {
                     anchors {

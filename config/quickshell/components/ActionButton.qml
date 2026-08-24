@@ -1,7 +1,7 @@
 import QtQuick
 import ".."
 
-Rectangle {
+Item {
     id: button
     property var theme
     property string label: ""
@@ -10,16 +10,22 @@ Rectangle {
     property bool available: true
     property bool pending: false
     property bool hovered: pointer.containsMouse && available && !pending
+    property bool managedSurface: false
+    property bool suppressHover: false
     signal clicked()
     activeFocusOnTab: available
-    radius: Design.radiusSm
-    color: active && available ? theme.colors.accentDim : hovered || activeFocus ? theme.colors.surfaceHover : theme.colors.surfaceVariant
-    border.width: 0
     opacity: available ? pending ? .72 : 1 : .5
     implicitWidth: 170
     implicitHeight: 68
 
-    Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
+    Rectangle {
+        anchors.fill: parent
+        visible: !button.managedSurface
+        radius: Design.radiusSm
+        color: button.active && button.available ? button.theme.colors.accentDim : button.hovered && !button.suppressHover ? button.theme.colors.surfaceElevated : button.activeFocus ? button.theme.colors.surfaceHover : button.theme.colors.surfaceVariant
+
+        Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
+    }
 
     Row {
         anchors.fill: parent

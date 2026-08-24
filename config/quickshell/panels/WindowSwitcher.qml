@@ -78,7 +78,8 @@ Item {
                 active: navigation.keyboardNavigation && windows.count > 0
             }
 
-            delegate: Rectangle {
+            delegate: Item {
+                id: windowDelegate
                 required property int index
                 required property string icon
                 required property string applicationName
@@ -87,11 +88,15 @@ Item {
                 property bool selected: controller.switcherIndex === index
                 width: Math.max(148, Math.min(180, (ListView.view.width - 30) / Math.min(4, Math.max(1, ListView.view.count))))
                 height: ListView.view.height
-                radius: Design.radiusMd
-                color: navigation.keyboardNavigation ? "transparent" : pointer.containsMouse ? panel.theme.colors.surfaceHover : panel.theme.colors.surfaceVariant
-                border.width: 0
+                z: 2
 
-                Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
+                DelegateSurface {
+                    host: windows.contentItem
+                    target: windowDelegate
+                    theme: panel.theme
+                    hovered: pointer.containsMouse && !navigation.keyboardNavigation
+                    cornerRadius: Design.radiusMd
+                }
 
                 Column {
                     anchors.fill: parent
@@ -104,7 +109,7 @@ Item {
                         fallback: "application-x-executable"
                         iconSize: 38
                         framed: true
-                        frameColor: selected ? panel.theme.colors.accentDim : panel.theme.colors.surface
+                        frameColor: panel.theme.colors.surface
                     }
 
                     Text {

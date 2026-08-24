@@ -85,16 +85,20 @@ Column {
             active: navigation.keyboardNavigation && history.activeFocus && history.notifications.length > 0
         }
 
-        delegate: Rectangle {
+        delegate: Item {
+            id: historyDelegate
             required property var modelData
             required property int index
             width: ListView.view.width
             height: Design.notificationHistoryRowHeight
-            radius: Design.radiusSm
-            color: navigation.keyboardNavigation && history.activeFocus ? "transparent" : pointer.containsMouse ? history.theme.colors.surfaceHover : history.theme.colors.surfaceVariant
-            border.width: 0
+            z: 2
 
-            Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
+            DelegateSurface {
+                host: historyList.contentItem
+                target: historyDelegate
+                theme: history.theme
+                hovered: pointer.containsMouse && !navigation.keyboardNavigation
+            }
 
             Rectangle {
                 anchors {

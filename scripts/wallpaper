@@ -16,6 +16,25 @@ list() {
     supported "$file" && printf '%s\n' "$file"
   done | sort
 }
+apply_kitty_colors() {
+  command -v kitten >/dev/null || return 0
+  local socket runtime_dir
+  local applied=0
+  local sockets=()
+  runtime_dir="${XDG_RUNTIME_DIR:-/tmp}"
+  shopt -s nullglob
+  sockets=("$runtime_dir"/kitty-*)
+  shopt -u nullglob
+  for socket in "${sockets[@]}"; do
+    [[ -S $socket ]] || continue
+    if kitten @ --to "unix:$socket" set-colors --all --configured "$cache_dir/theme/kitty.conf" >/dev/null 2>&1; then
+      applied=1
+    fi
+  done
+  if ((!applied)) && [[ -n ${KITTY_LISTEN_ON:-} ]]; then
+    kitten @ set-colors --all --configured "$cache_dir/theme/kitty.conf" >/dev/null 2>&1 || true
+  fi
+}
 apply() {
   local image state_candidate link_candidate
   image=$(realpath -e -- "${1:?caminho do papel de parede obrigatório}")
@@ -32,11 +51,7 @@ apply() {
   link_candidate="$state_dir/.lock-wallpaper.$$"
   ln -s -- "$image" "$link_candidate"
   mv -Tf -- "$link_candidate" "$lock_wallpaper"
-  if command -v kitten >/dev/null; then
-    kitten @ --to "unix:${XDG_RUNTIME_DIR:-/tmp}/kitty" set-colors --all --configured "$cache_dir/theme/kitty.conf" >/dev/null 2>&1 \
-      || kitten @ set-colors --all --configured "$cache_dir/theme/kitty.conf" >/dev/null 2>&1 \
-      || true
-  fi
+  apply_kitty_colors
   hyprctl reload >/dev/null 2>&1 || true
   command -v qs >/dev/null && "$root_dir/scripts/system/shell-ipc" shell themeChanged "$image" >/dev/null 2>&1 || true
 }

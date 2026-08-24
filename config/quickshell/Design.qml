@@ -91,6 +91,7 @@ QtObject {
     readonly property int notificationHistoryRowHeight: 68
     readonly property int notificationSpacing: 7
     readonly property int notificationPaddingY: 9
+    readonly property int hubPillSectionSpacing: spacingXs
     readonly property var icons: ({
         application: "󰀻",
         search: "󰍉",
