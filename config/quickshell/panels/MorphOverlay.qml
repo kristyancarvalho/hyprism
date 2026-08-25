@@ -25,8 +25,8 @@ PanelWindow {
     readonly property int compactWidth: Design.compactWidth(controller.config.shell, availableWidth)
     readonly property int morphDuration: Math.max(1, Math.round(Design.safeNumber(controller.config.shell.animationNormal, Design.animationMorph)))
     readonly property var desiredGeometry: geometryForMode(localMode)
-    property var morphFrom: ({ width: compactWidth, height: Design.compactHeight(controller.config.shell), radius: Design.radiusDefault })
-    property var morphTarget: ({ width: compactWidth, height: Design.compactHeight(controller.config.shell), radius: Design.radiusDefault })
+    property var morphFrom: ({ width: compactWidth, height: Design.compactHeight(controller.config.shell), radius: Design.radiusIslandCompact })
+    property var morphTarget: ({ width: compactWidth, height: Design.compactHeight(controller.config.shell), radius: Design.radiusIslandCompact })
     property real morphProgress: 1
     property bool acceptsFocusDismissal: false
     readonly property real morphWidth: Design.clamp(morphFrom.width + (morphTarget.width - morphFrom.width) * morphProgress, 320, implicitWidth)
@@ -75,7 +75,7 @@ PanelWindow {
         return {
             width: Math.round(Design.clamp(width, 320, Math.min(safeWidth, Design.morphSurfaceMaxWidth))),
             height: Math.round(Design.clamp(height, Design.compactBarHeight, Math.min(safeHeight, Design.morphSurfaceMaxHeight))),
-            radius: Design.radiusDefault
+            radius: mode === "compact" ? Design.radiusIslandCompact : Design.radiusIslandExpanded
         }
     }
 
