@@ -261,4 +261,8 @@ QtObject {
         const rows = Math.ceil(cells / columnCount)
         return rows ? rows * Math.max(0, safeNumber(cellHeight, 0)) : Math.max(0, safeNumber(emptyHeight, cellHeight))
     }
+
+    function gridColumnCount(width, cellWidth) {
+        return Math.max(1, Math.floor(Math.max(0, safeNumber(width, 0)) / Math.max(1, safeNumber(cellWidth, 1))))
+    }
 }

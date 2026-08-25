@@ -65,7 +65,8 @@ PanelWindow {
             height = 300
         } else if (mode === "emoji") {
             width = Math.min(safeWidth, Design.emojiPickerWidth)
-            height = Math.min(360, 90 + Design.gridContentHeight(controller.emojiResultCount, controller.emojiColumnCount, Design.emojiCellSize, Design.emojiCellSize))
+            const columns = Design.gridColumnCount(width - 2 * Design.spacingLg, Design.emojiCellSize)
+            height = Math.min(360, 90 + Design.gridContentHeight(controller.emojiResultCount, columns, Design.emojiCellSize, Design.emojiCellSize))
         } else if (mode === "switcher") {
             width = Math.min(safeWidth, 920)
             height = 220

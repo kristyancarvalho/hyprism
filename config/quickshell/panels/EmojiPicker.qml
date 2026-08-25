@@ -156,7 +156,7 @@ FocusScope {
 
         GridView {
             id: grid
-            readonly property int columns: Math.max(1, Math.floor(width / cellWidth))
+            readonly property int columns: Design.gridColumnCount(width, cellWidth)
             width: parent.width
             height: Math.max(0, parent.height - search.height - parent.spacing)
             cellWidth: Design.emojiCellSize
