@@ -5,9 +5,17 @@ hl.curve("hyprism", {
     points = { { 0.2, 0.8 }, { 0.2, 1.0 } },
 })
 
+hl.curve("hyprismWindow", {
+    type = "spring",
+    mass = 1,
+    stiffness = 220,
+    dampening = 21,
+})
+
 hl.animation({ leaf = "windows", enabled = true, speed = 2.4, bezier = "hyprism" })
-hl.animation({ leaf = "windowsIn", enabled = true, speed = 1.8, bezier = "hyprism", style = "popin 94%" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.4, bezier = "hyprism", style = "popin 96%" })
+hl.animation({ leaf = "windowsIn", enabled = true, speed = 1.7, spring = "hyprismWindow", style = "popin 92%" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.4, spring = "hyprismWindow", style = "popin 92%" })
+hl.animation({ leaf = "windowsMove", enabled = true, speed = 2.2, bezier = "hyprism" })
 hl.animation({ leaf = "fade", enabled = true, speed = 1.4, bezier = "hyprism" })
 hl.animation({ leaf = "fadeIn", enabled = true, speed = 1.2, bezier = "hyprism" })
 hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.0, bezier = "hyprism" })
