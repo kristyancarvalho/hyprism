@@ -188,6 +188,8 @@ FocusScope {
             height: Math.max(0, parent.height - header.height - searchInput.height - parent.spacing * 2)
             cellWidth: width / columns
             cellHeight: Math.max(112, Math.min(142, cellWidth * .66))
+            cacheBuffer: cellHeight
+            reuseItems: true
             clip: true
             model: panel.filteredWallpapers
             currentIndex: panel.controller.wallpaperSelectedIndex
@@ -215,6 +217,7 @@ FocusScope {
                 z: 2
 
                 Rectangle {
+                    id: wallpaperCard
                     anchors.fill: parent
                     anchors.margins: Design.spacingSm
                     radius: Design.radiusSm
@@ -222,18 +225,22 @@ FocusScope {
                     border.width: 0
                     clip: true
 
-                    RoundedImage {
+                    Image {
+                        id: thumbnail
                         anchors.fill: parent
                         source: "file://" + Design.safeText(modelData, "")
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         cache: true
-                        radius: parent.radius
+                        sourceSize: Qt.size(Math.max(1, Math.ceil(width)), Math.max(1, Math.ceil(height)))
+                        opacity: status === Image.Ready ? 1 : 0
+
+                        Behavior on opacity { NumberAnimation { duration: Design.animationInstant; easing.type: Design.easingMorph } }
                     }
 
                     Rectangle {
                         anchors.fill: parent
-                        radius: parent.radius
+                        radius: wallpaperCard.radius
                         color: panel.theme.colors.surfaceHover
                         opacity: pointer.containsMouse && !navigation.keyboardNavigation ? .28 : 0
 
@@ -264,7 +271,7 @@ FocusScope {
                         anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
                         height: 30
                         surfaceHeight: parent.height
-                        cornerRadius: parent.radius
+                        cornerRadius: wallpaperCard.radius
                         bottomAligned: true
                         color: "#b0000000"
                     }
