@@ -40,7 +40,7 @@ QtObject {
     readonly property int compactSeparatorWidth: 1
     readonly property int radiusSmall: 6
     readonly property int radiusDefault: 9
-    readonly property int radiusLarge: 14
+    readonly property int radiusLarge: 16
     readonly property int radiusXs: radiusSmall
     readonly property int radiusSm: radiusDefault
     readonly property int radiusMd: radiusLarge
