@@ -89,6 +89,11 @@ Item {
 
     Navigation { id: navigation }
 
+    onNetworksChanged: {
+        controller.networkResultCount = networks.length
+        resetSelection()
+    }
+
     Column {
         anchors.fill: parent
         anchors.margins: 18
@@ -313,16 +318,15 @@ Item {
             onRead: data => {
                 try {
                     panel.networks = JSON.parse(data)
-                    panel.resetSelection()
                 } catch (error) {
                     panel.networks = []
-                    panel.resetSelection()
                 }
             }
         }
     }
 
     Component.onCompleted: {
+        controller.networkResultCount = networks.length
         if (controller.system.network.wifiAvailable) scan()
         takeInitialFocus()
     }

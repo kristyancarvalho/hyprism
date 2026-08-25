@@ -104,7 +104,8 @@ FocusScope {
     focus: true
     Keys.onPressed: event => handleGridKey(event)
     onResultCountChanged: {
-        if (selectedIndex < 0 || selectedIndex >= resultCount) resetSelection()
+        controller.emojiResultCount = resultCount
+        resetSelection()
         if (!resultCount) search.forceInputFocus(Qt.OtherFocusReason)
     }
 
@@ -155,7 +156,7 @@ FocusScope {
 
         GridView {
             id: grid
-            readonly property int columns: Design.emojiColumnCount
+            readonly property int columns: Math.max(1, Math.floor(width / cellWidth))
             width: parent.width
             height: Math.max(0, parent.height - search.height - parent.spacing)
             cellWidth: Design.emojiCellSize
@@ -230,5 +231,14 @@ FocusScope {
         }
     }
 
-    Component.onCompleted: takeInitialFocus()
+    Component.onCompleted: {
+        controller.emojiColumnCount = grid.columns
+        controller.emojiResultCount = resultCount
+        takeInitialFocus()
+    }
+
+    Connections {
+        target: grid
+        function onColumnsChanged() { panel.controller.emojiColumnCount = grid.columns }
+    }
 }

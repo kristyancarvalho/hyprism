@@ -242,4 +242,23 @@ QtObject {
         const visibleRows = Math.max(1, Math.min(launcherMaximumVisibleResults, Math.floor(safeNumber(resultCount, 0))))
         return launcherBaseHeight + visibleRows * launcherResultRowHeight + Math.max(0, visibleRows - 1) * launcherResultSpacing
     }
+
+    function listContentHeight(count, rowHeight, spacing, emptyHeight) {
+        const rows = Math.max(0, Math.floor(safeNumber(count, 0)))
+        if (!rows) return Math.max(0, safeNumber(emptyHeight, rowHeight))
+        return rows * Math.max(0, safeNumber(rowHeight, 0)) + Math.max(0, rows - 1) * Math.max(0, safeNumber(spacing, 0))
+    }
+
+    function variableListContentHeight(itemHeight, count, spacing, emptyHeight) {
+        const rows = Math.max(0, Math.floor(safeNumber(count, 0)))
+        if (!rows) return Math.max(0, safeNumber(emptyHeight, 0))
+        return Math.max(0, safeNumber(itemHeight, 0)) + Math.max(0, rows - 1) * Math.max(0, safeNumber(spacing, 0))
+    }
+
+    function gridContentHeight(count, columns, cellHeight, emptyHeight) {
+        const cells = Math.max(0, Math.floor(safeNumber(count, 0)))
+        const columnCount = Math.max(1, Math.floor(safeNumber(columns, 1)))
+        const rows = Math.ceil(cells / columnCount)
+        return rows ? rows * Math.max(0, safeNumber(cellHeight, 0)) : Math.max(0, safeNumber(emptyHeight, cellHeight))
+    }
 }

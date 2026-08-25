@@ -46,25 +46,26 @@ PanelWindow {
             width = Math.min(safeWidth, 880)
             const columns = width >= 796 ? 4 : width >= 536 ? 3 : 2
             const rows = Math.max(1, Math.ceil(controller.wallpaperResultCount / columns))
-            height = Math.min(560, 154 + rows * 142)
+            const cellHeight = Math.max(112, Math.min(142, (width - Design.spacingLg * 2) / columns * .66))
+            height = Math.min(560, 132 + rows * cellHeight)
         } else if (mode === "clipboard") {
             width = Math.min(safeWidth, 700)
-            height = 500
+            height = Math.min(500, 120 + Math.max(58, controller.clipboardResultHeight))
         } else if (mode === "control") {
             width = Math.min(safeWidth, 600)
             height = 700
         } else if (mode === "network") {
             width = Math.min(safeWidth, 560)
-            height = 440
+            height = controller.networkResultCount ? Math.min(440, 76 + Design.listContentHeight(controller.networkResultCount, 56, 6, 58)) : 170
         } else if (mode === "bluetooth") {
             width = Math.min(safeWidth, 560)
-            height = controller.system.bluetooth.available ? Math.min(460, 130 + controller.system.bluetooth.devices.length * 68) : 170
+            height = controller.system.bluetooth.available && controller.system.bluetooth.devices.length ? Math.min(460, 76 + Design.listContentHeight(controller.system.bluetooth.devices.length, 58, 6, 58)) : 170
         } else if (mode === "power") {
             width = Math.min(safeWidth, 640)
             height = 300
         } else if (mode === "emoji") {
             width = Math.min(safeWidth, Design.emojiPickerWidth)
-            height = 360
+            height = Math.min(360, 90 + Design.gridContentHeight(controller.emojiResultCount, controller.emojiColumnCount, Design.emojiCellSize, Design.emojiCellSize))
         } else if (mode === "switcher") {
             width = Math.min(safeWidth, 920)
             height = 220
