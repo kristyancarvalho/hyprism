@@ -11,6 +11,13 @@ Item {
     property int selectedIndex: -1
     readonly property var filteredEntries: results()
 
+    function updateResultMetrics() {
+        const count = filteredEntries.length
+        const itemHeight = filteredEntries.reduce((total, entry) => total + (entry.type === "image" ? 126 : 58), 0)
+        controller.clipboardResultCount = count
+        controller.clipboardResultHeight = Design.variableListContentHeight(itemHeight, count, 6, 58)
+    }
+
     function results() {
         return controller.clipboardEntries.filter(item => Design.safeText(item ? item.searchText : "", Design.safeText(item ? item.text : "", "")).toLowerCase().indexOf(query.toLowerCase()) >= 0)
     }
@@ -61,7 +68,10 @@ Item {
 
     focus: true
     Keys.onPressed: event => handleKey(event)
-    onFilteredEntriesChanged: if (selectedIndex < 0 || selectedIndex >= filteredEntries.length) resetSelection()
+    onFilteredEntriesChanged: {
+        updateResultMetrics()
+        resetSelection()
+    }
 
     Navigation { id: navigation }
 
@@ -71,6 +81,7 @@ Item {
         spacing: 10
 
         Text {
+            id: title
             text: "Área de transferência"
             color: panel.theme.colors.foreground
             font.family: Design.fontFamily
@@ -79,6 +90,7 @@ Item {
         }
 
         Row {
+            id: searchRow
             width: parent.width
             spacing: 8
 
@@ -108,7 +120,7 @@ Item {
         ListView {
             id: entriesList
             width: parent.width
-            height: Math.max(120, parent.height - 104)
+            height: Math.max(0, parent.height - title.height - searchRow.height - parent.spacing * 2)
             model: panel.filteredEntries
             currentIndex: panel.selectedIndex
             clip: true
@@ -269,6 +281,7 @@ Item {
 
     Component.onCompleted: {
         clipboard.refresh()
+        updateResultMetrics()
         takeInitialFocus()
     }
 }

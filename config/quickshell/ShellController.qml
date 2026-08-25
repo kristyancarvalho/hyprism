@@ -17,6 +17,11 @@ Item {
     property var mruWindowAddresses: []
     property var mediaPlayer: null
     property int launcherResultCount: 0
+    property int clipboardResultCount: 0
+    property real clipboardResultHeight: 0
+    property int emojiResultCount: 0
+    property int emojiColumnCount: Design.emojiColumnCount
+    property int networkResultCount: 0
     property bool pendingNightMode: false
     property bool pendingPowerSaver: false
     property bool pendingWifi: false
