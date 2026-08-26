@@ -1,0 +1,213 @@
+{
+  "common": {
+    "unavailable": "Unavailable",
+    "refresh": "Refresh",
+    "search": "Search",
+    "stop": "Stop",
+    "clear": "Clear",
+    "unknownTitle": "Untitled",
+    "window": "Window",
+    "minimizedWindow": "Minimized window",
+    "information": "Information",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "none": "None",
+    "now": "now",
+    "yesterday": "yesterday",
+    "upToDate": "Up to date",
+    "connectedDevice": "Connected device",
+    "application": "Application",
+    "open": "Open",
+    "details": "No details",
+    "muted": "Muted",
+    "turnOn": "Turn on",
+    "turnOff": "Turn off",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "select": "Select"
+  },
+  "launcher": {
+    "title": "Applications",
+    "hint": "↑ ↓ navigate  ·  Enter to open",
+    "search": "Search applications…",
+    "empty": "No applications found"
+  },
+  "clipboard": {
+    "title": "Clipboard",
+    "search": "Search clipboard…",
+    "empty": "The clipboard is empty",
+    "copiedImage": "Image copied",
+    "copiedText": "Text copied",
+    "unavailableContent": "Content unavailable",
+    "unavailablePreview": "Preview unavailable"
+  },
+  "emoji": {
+    "search": "Search emoji…",
+    "empty": "No emoji found",
+    "loadError": "Could not load emoji"
+  },
+  "wallpaper": {
+    "title": "Wallpapers",
+    "search": "Search wallpapers…",
+    "current": "Current",
+    "fallbackName": "Wallpaper",
+    "emptySearch": "No wallpapers found",
+    "emptyDirectory": "No wallpapers in ~/Imagens/Wallpapers"
+  },
+  "network": {
+    "title": "Network",
+    "virtualAdapter": "Virtual adapter · Connected",
+    "password": "Password for {ssid} (empty for a known or open network)",
+    "virtualInfo": "The virtual machine network uses a virtual adapter",
+    "empty": "No Wi-Fi networks available",
+    "unavailable": "Wi-Fi unavailable",
+    "disconnected": "Disconnected",
+    "networks": "Networks",
+    "connecting": "Connecting to {ssid}",
+    "unnamed": "Unnamed network"
+  },
+  "bluetooth": {
+    "title": "Bluetooth",
+    "unavailable": "Bluetooth unavailable",
+    "empty": "No paired devices",
+    "connected": "Bluetooth connected",
+    "on": "Bluetooth on",
+    "off": "Bluetooth off",
+    "unnamedDevice": "Unnamed device"
+  },
+  "power": {
+    "title": "Session controls",
+    "confirm": "Activate again to confirm: {action}",
+    "lock": "Lock",
+    "suspend": "Suspend",
+    "logout": "Log out",
+    "reboot": "Restart",
+    "shutdown": "Shut down"
+  },
+  "recording": {
+    "title": "Record screen",
+    "region": "Region",
+    "screen": "Full screen",
+    "saved": "Recording saved",
+    "failed": "Recording failed",
+    "startError": "Could not start recording",
+    "monitorError": "The focused monitor could not be identified",
+    "exitError": "The recorder exited without saving"
+  },
+  "hub": {
+    "power": "Power",
+    "notifications": "Notifications",
+    "doNotDisturb": "Do Not Disturb",
+    "volume": "Volume",
+    "microphone": "Microphone",
+    "brightness": "Brightness",
+    "nightMode": "Night mode",
+    "nightModeUnavailable": "Night mode unavailable",
+    "powerSaver": "Power saver",
+    "powerUnavailable": "Power unavailable"
+  },
+  "notifications": {
+    "notification": "Notification",
+    "savedNone": "No saved notifications",
+    "savedOne": "1 saved notification",
+    "savedMany": "{count} saved notifications",
+    "clearAll": "Clear all",
+    "inHistory": "+{count} in history"
+  },
+  "switcher": {
+    "title": "Switch window",
+    "hint": "← → navigate  ·  release Super to open"
+  },
+  "widgets": {
+    "system": "System",
+    "network": "Network",
+    "download": "Download",
+    "upload": "Upload",
+    "storage": "Storage",
+    "kernel": "Kernel",
+    "uptime": "Uptime",
+    "lastSnapshot": "Last snapshot",
+    "session": "Session",
+    "updates": "Updates",
+    "sensors": "Sensors",
+    "temperature": "Temperature",
+    "services": "Services",
+    "service": "Service",
+    "healthy": "All good",
+    "attention": "Attention needed",
+    "servicesHealthy": "All monitored services are active",
+    "tasks": "Tasks",
+    "task": "Task",
+    "activeOne": "1 active",
+    "activeMany": "{count} active",
+    "remaining": "{minutes} min remaining",
+    "inProgress": "In progress",
+    "processes": "Processes",
+    "process": "Process",
+    "memory": "Memory",
+    "snapshotUnavailable": "Unavailable",
+    "agoMinutes": "{count} min ago",
+    "agoHours": "{count} h ago",
+    "agoDays": "{count} d ago",
+    "updateOne": "1 update",
+    "updateMany": "{count} updates"
+  },
+  "weather": {
+    "local": "Local weather",
+    "clear": "Clear sky",
+    "mainlyClear": "Mainly clear",
+    "partlyCloudy": "Partly cloudy",
+    "overcast": "Overcast",
+    "fog": "Fog",
+    "drizzle": "Drizzle",
+    "rain": "Rain",
+    "snow": "Snow",
+    "showers": "Showers",
+    "thunderstorm": "Thunderstorm",
+    "unavailable": "Weather unavailable"
+  },
+  "status": {
+    "systemFailure": "Could not change state",
+    "active": "active",
+    "inactive": "inactive",
+    "stopped": "stopped",
+    "failed": "failed",
+    "unknown": "unknown",
+    "onDisconnected": "On · Disconnected",
+    "connected": "Connected"
+  },
+  "battery": {
+    "charging": "Charging",
+    "discharging": "Discharging",
+    "full": "Full",
+    "notCharging": "Not charging"
+  },
+  "media": {
+    "unknownTrack": "Untitled track",
+    "unknownArtist": "Unknown artist"
+  },
+  "profile": {
+    "powerSaver": "Power saver",
+    "balanced": "Balanced"
+  },
+  "osd": {
+    "theme": "Theme",
+    "updated": "Updated",
+    "screenshot": "Screenshot",
+    "color": "Color"
+  },
+  "development": {
+    "testApplication": "Test application",
+    "notification": "Notification {count}",
+    "longNotification": "A long notification title used to validate ellipsis",
+    "notificationBody": "Safe test content",
+    "longBody": "This text spans multiple lines to validate height, spacing, and content limits without covering other cards.",
+    "transfer": "Transfer in progress",
+    "complete": "{percent}% complete",
+    "clipboardText": "Copied text excerpt used to validate the list",
+    "clipboardOther": "Another text item",
+    "image": "Image · {dimensions}",
+    "preparingTheme": "Preparing theme",
+    "applyingPalette": "Applying new palette"
+  }
+}

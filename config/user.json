@@ -1,4 +1,5 @@
 {
+  "language": "en",
   "paths": {
     "wallpapers": "~/Imagens/Wallpapers",
     "screenshots": "~/Imagens/Screenshots"
@@ -26,7 +27,7 @@
         "enabled": true,
         "problemOnly": false,
         "items": [
-          { "name": "Rede", "unit": "NetworkManager.service", "scope": "system" },
+          { "name": "Network", "unit": "NetworkManager.service", "scope": "system" },
           { "name": "Bluetooth", "unit": "bluetooth.service", "scope": "system" },
           { "name": "PipeWire", "unit": "pipewire.service", "scope": "user" }
         ]

@@ -33,6 +33,7 @@ Item {
     property bool systemServiceAvailable: false
     property bool panelFocusReady: false
     property var recordingService: null
+    property var weatherService: null
     readonly property bool recording: recordingService ? recordingService.recording : false
     readonly property bool recordingPending: recordingService ? recordingService.pending : false
     readonly property bool recordingSelecting: recordingService ? recordingService.selecting : false
@@ -61,8 +62,8 @@ Item {
     property var downloadHistory: []
     property var uploadHistory: []
     property var tasks: []
-    property var weather: ({ city: "São Paulo", condition: "Indisponível", temperature: null, apparentTemperature: null, minimum: null, maximum: null, weatherCode: -1 })
-    property var system: ({ audio: { available: false, percent: 0, muted: false }, microphone: { available: false, percent: 0, muted: false }, network: { available: false, kind: "disconnected", name: "Desconectado", enabled: false, signal: 0, receiveKib: 0, transmitKib: 0, wifiAvailable: false, wifiEnabled: false, virtualized: false }, bluetooth: { available: false, powered: false, connected: false, devices: [] }, battery: { available: false, percent: 0, status: "" }, brightness: { available: false, percent: 0 }, nightMode: { available: false, enabled: false }, powerProfile: { available: false, mode: "" }, memory: { percent: 0, used: 0, total: 0 }, cpu: { percent: 0 }, gpu: { available: false, percent: 0 }, temperature: { available: false, celsius: 0 } })
+    property var weather: ({ city: "", condition: "", temperature: null, apparentTemperature: null, minimum: null, maximum: null, weatherCode: -1 })
+    property var system: ({ audio: { available: false, percent: 0, muted: false }, microphone: { available: false, percent: 0, muted: false }, network: { available: false, kind: "disconnected", name: "", enabled: false, signal: 0, receiveKib: 0, transmitKib: 0, wifiAvailable: false, wifiEnabled: false, virtualized: false }, bluetooth: { available: false, powered: false, connected: false, devices: [] }, battery: { available: false, percent: 0, status: "" }, brightness: { available: false, percent: 0 }, nightMode: { available: false, enabled: false }, powerProfile: { available: false, mode: "" }, memory: { percent: 0, used: 0, total: 0 }, cpu: { percent: 0 }, gpu: { available: false, percent: 0 }, temperature: { available: false, celsius: 0 } })
     property var monitoring: ({ storage: { available: false, mounts: [] }, sensors: { available: false, items: [] }, uptime: { available: false, uptimeSeconds: 0, processCount: 0 }, systemInfo: { available: false, kernel: "", session: "", snapshotStatus: "unavailable", snapshotTimestamp: 0, updatesKnown: false, updateCount: 0 }, services: { available: false, healthy: false, items: [] }, processes: { available: false, cpu: [], memory: [], limit: 3 } })
     readonly property var widgetDefaults: ({
         clock: { enabled: true },
@@ -74,7 +75,7 @@ Item {
         sensors: { enabled: true },
         uptime: { enabled: true },
         services: { enabled: true, problemOnly: false, items: [
-            { name: "Rede", unit: "NetworkManager.service", scope: "system" },
+            { name: "Network", unit: "NetworkManager.service", scope: "system" },
             { name: "Bluetooth", unit: "bluetooth.service", scope: "system" },
             { name: "PipeWire", unit: "pipewire.service", scope: "user" }
         ] },
@@ -233,15 +234,15 @@ Item {
     }
 
     function showOsd(kind, value) {
-        const safeKind = Design.safeText(kind, "Sistema")
-        if (hubOpen && ["Volume", "Brilho", "Microfone"].indexOf(safeKind) >= 0) return
+        const safeKind = Design.safeText(kind, I18n.tr("widgets.system"))
+        if (hubOpen && [I18n.tr("hub.volume"), I18n.tr("hub.brightness"), I18n.tr("hub.microphone")].indexOf(safeKind) >= 0) return
         osdKind = safeKind
-        osdValue = Design.safeText(value, "Indisponível")
+        osdValue = Design.safeText(value, I18n.tr("common.unavailable"))
         osdTimer.restart()
     }
 
     onHubOpenChanged: {
-        if (hubOpen && ["Volume", "Brilho", "Microfone"].indexOf(osdKind) >= 0) {
+        if (hubOpen && [I18n.tr("hub.volume"), I18n.tr("hub.brightness"), I18n.tr("hub.microphone")].indexOf(osdKind) >= 0) {
             osdTimer.stop()
             osdKind = ""
             osdValue = ""
@@ -252,8 +253,12 @@ Item {
         commandRunner.exec(command)
     }
 
+    function refreshWeather() {
+        if (weatherService) weatherService.refresh()
+    }
+
     function toggleNightMode() {
-        if (!system.nightMode.available) { showOsd("Modo noturno", "Indisponível"); return }
+        if (!system.nightMode.available) { showOsd(I18n.tr("hub.nightMode"), I18n.tr("common.unavailable")); return }
         if (pendingNightMode) return
         desiredNightMode = !nightMode
         pendingNightMode = true
@@ -262,7 +267,7 @@ Item {
     }
 
     function togglePowerSaver() {
-        if (!system.powerProfile.available) { showOsd("Economia de energia", "Indisponível"); return }
+        if (!system.powerProfile.available) { showOsd(I18n.tr("hub.powerSaver"), I18n.tr("common.unavailable")); return }
         if (pendingPowerSaver) return
         desiredPowerSaver = !powerSaver
         pendingPowerSaver = true
@@ -271,7 +276,7 @@ Item {
     }
 
     function toggleWifi() {
-        if (!system.network.wifiAvailable) { showOsd("Wi-Fi", "Indisponível"); return }
+        if (!system.network.wifiAvailable) { showOsd("Wi-Fi", I18n.tr("common.unavailable")); return }
         if (pendingWifi) return
         desiredWifi = !system.network.wifiEnabled
         pendingWifi = true
@@ -280,7 +285,7 @@ Item {
     }
 
     function toggleBluetooth() {
-        if (!system.bluetooth.available) { showOsd("Bluetooth", "Indisponível"); return }
+        if (!system.bluetooth.available) { showOsd("Bluetooth", I18n.tr("common.unavailable")); return }
         if (pendingBluetooth) return
         desiredBluetooth = !system.bluetooth.powered
         pendingBluetooth = true
@@ -328,19 +333,19 @@ Item {
         }
         if (pendingNightMode && system.nightMode.available && system.nightMode.enabled === desiredNightMode) {
             pendingNightMode = false
-            showOsd("Modo noturno", desiredNightMode ? "Ativado" : "Desativado")
+            showOsd(I18n.tr("hub.nightMode"), desiredNightMode ? I18n.tr("common.enabled") : I18n.tr("common.disabled"))
         }
         if (pendingPowerSaver && system.powerProfile.available && powerSaver === desiredPowerSaver) {
             pendingPowerSaver = false
-            showOsd("Economia de energia", desiredPowerSaver ? "Ativada" : "Desativada")
+            showOsd(I18n.tr("hub.powerSaver"), desiredPowerSaver ? I18n.tr("common.enabled") : I18n.tr("common.disabled"))
         }
         if (pendingWifi && system.network.wifiAvailable && system.network.wifiEnabled === desiredWifi) {
             pendingWifi = false
-            showOsd("Wi-Fi", desiredWifi ? "Ativado" : "Desativado")
+            showOsd("Wi-Fi", desiredWifi ? I18n.tr("common.enabled") : I18n.tr("common.disabled"))
         }
         if (pendingBluetooth && system.bluetooth.available && system.bluetooth.powered === desiredBluetooth) {
             pendingBluetooth = false
-            showOsd("Bluetooth", desiredBluetooth ? "Ativado" : "Desativado")
+            showOsd("Bluetooth", desiredBluetooth ? I18n.tr("common.enabled") : I18n.tr("common.disabled"))
         }
     }
 
@@ -367,7 +372,7 @@ Item {
         if (!id) throw new Error("identificador de tarefa ausente")
         return {
             id: id,
-            title: Design.safeText(value.title, "Tarefa"),
+            title: Design.safeText(value.title, I18n.tr("widgets.task")),
             subtitle: Design.safeText(value.subtitle, ""),
             progress: Design.clamp(value.progress, 0, 100),
             indeterminate: !!value.indeterminate,
@@ -449,33 +454,39 @@ Item {
 
     function snapshotAgeText() {
         const info = monitoring.systemInfo || {}
-        if (info.snapshotStatus === "none") return "Nenhuma"
-        if (info.snapshotStatus !== "available" || Design.safeNumber(info.snapshotTimestamp, 0) <= 0) return "Indisponível"
+        if (info.snapshotStatus === "none") return I18n.tr("common.none")
+        if (info.snapshotStatus !== "available" || Design.safeNumber(info.snapshotTimestamp, 0) <= 0) return I18n.tr("common.unavailable")
         const elapsed = Math.max(0, Math.floor(currentTime.getTime() / 1000 - info.snapshotTimestamp))
         const minutes = Math.floor(elapsed / 60)
         const hours = Math.floor(elapsed / 3600)
         const days = Math.floor(elapsed / 86400)
-        if (minutes < 1) return "agora"
-        if (minutes < 60) return "há " + minutes + " min"
-        if (hours < 24) return "há " + hours + " h"
-        if (days === 1) return "ontem"
-        return "há " + days + " d"
+        if (minutes < 1) return I18n.tr("common.now")
+        if (minutes < 60) return I18n.tr("widgets.agoMinutes", { count: minutes })
+        if (hours < 24) return I18n.tr("widgets.agoHours", { count: hours })
+        if (days === 1) return I18n.tr("common.yesterday")
+        return I18n.tr("widgets.agoDays", { count: days })
     }
 
     function updateCountText() {
         const info = monitoring.systemInfo || {}
-        if (!info.updatesKnown) return "Indisponível"
+        if (!info.updatesKnown) return I18n.tr("common.unavailable")
         const count = Math.max(0, Math.floor(Design.safeNumber(info.updateCount, 0)))
-        if (count === 0) return "Em dia"
-        return count === 1 ? "1 atualização" : count + " atualizações"
+        if (count === 0) return I18n.tr("common.upToDate")
+        return count === 1 ? I18n.tr("widgets.updateOne") : I18n.tr("widgets.updateMany", { count: count })
     }
 
     function serviceStateText(state) {
-        if (state === "running") return "ativo"
-        if (state === "stopped") return "parado"
-        if (state === "failed") return "falhou"
-        if (state === "unavailable") return "indisponível"
-        return "desconhecido"
+        if (state === "running") return I18n.tr("status.active")
+        if (state === "stopped") return I18n.tr("status.stopped")
+        if (state === "failed") return I18n.tr("status.failed")
+        if (state === "unavailable") return I18n.tr("common.unavailable").toLowerCase()
+        return I18n.tr("status.unknown")
+    }
+
+    function serviceName(item) {
+        if (!item) return I18n.tr("widgets.service")
+        if (item.unit === "NetworkManager.service") return I18n.tr("network.title")
+        return Design.safeText(item.name, I18n.tr("widgets.service"))
     }
 
     function rememberWindow(window) {
@@ -513,8 +524,8 @@ Item {
             appId: Design.safeText(client.class, ""),
             initialClass: Design.safeText(client.initialClass, ""),
             icon: application ? Design.safeText(application.icon, "application-x-executable") : "application-x-executable",
-            applicationName: application ? Design.safeText(application.name, "Janela") : applicationName(candidates),
-            title: Design.safeText(client.title, "Sem título"),
+            applicationName: application ? Design.safeText(application.name, I18n.tr("common.window")) : applicationName(candidates),
+            title: Design.safeText(client.title, I18n.tr("common.unknownTitle")),
             minimized: false
         }
     }
@@ -570,15 +581,16 @@ Item {
     }
 
     function weatherCondition(code) {
-        if (code === 0) return "Céu limpo"
-        if (code === 1 || code === 2) return "Parcialmente nublado"
-        if (code === 3) return "Nublado"
-        if (code === 45 || code === 48) return "Neblina"
-        if (code >= 51 && code <= 67) return "Chuva"
-        if (code >= 71 && code <= 77) return "Neve"
-        if (code >= 80 && code <= 82) return "Pancadas de chuva"
-        if (code >= 95) return "Tempestade"
-        return "Tempo indisponível"
+        if (code === 0) return I18n.tr("weather.clear")
+        if (code === 1) return I18n.tr("weather.mainlyClear")
+        if (code === 2) return I18n.tr("weather.partlyCloudy")
+        if (code === 3) return I18n.tr("weather.overcast")
+        if (code === 45 || code === 48) return I18n.tr("weather.fog")
+        if (code >= 51 && code <= 67) return I18n.tr("weather.rain")
+        if (code >= 71 && code <= 77) return I18n.tr("weather.snow")
+        if (code >= 80 && code <= 82) return I18n.tr("weather.showers")
+        if (code >= 95) return I18n.tr("weather.thunderstorm")
+        return I18n.tr("weather.unavailable")
     }
 
     function networkIconName() {
@@ -596,8 +608,8 @@ Item {
     }
 
     function networkLabel() {
-        if (system.network.kind === "ethernet") return system.network.virtualized ? "Rede" : "Ethernet"
-        return system.network.kind === "wifi" ? Design.safeText(system.network.name, "Wi-Fi") : "Sem rede"
+        if (system.network.kind === "ethernet") return system.network.virtualized ? I18n.tr("network.title") : "Ethernet"
+        return system.network.kind === "wifi" ? Design.safeText(system.network.name, "Wi-Fi") : I18n.tr("network.disconnected")
     }
 
     function bluetoothIconName() {
@@ -607,12 +619,12 @@ Item {
     }
 
     function bluetoothExpandedText() {
-        if (!system.bluetooth.available) return "Indisponível"
-        if (!system.bluetooth.powered) return "Desligado"
+        if (!system.bluetooth.available) return I18n.tr("common.unavailable")
+        if (!system.bluetooth.powered) return I18n.tr("common.disabled")
         const devices = Array.isArray(system.bluetooth.devices) ? system.bluetooth.devices.filter(device => device && device.connected) : []
-        if (!devices.length) return "Ligado · Desconectado"
-        const first = Design.safeText(devices[0].name, "Dispositivo conectado")
-        return devices.length === 1 ? first + " · Conectado" : first + " · +" + (devices.length - 1)
+        if (!devices.length) return I18n.tr("status.onDisconnected")
+        const first = Design.safeText(devices[0].name, I18n.tr("common.connectedDevice"))
+        return devices.length === 1 ? first + " · " + I18n.tr("status.connected") : first + " · +" + (devices.length - 1)
     }
 
     function batteryIconName() {
@@ -664,15 +676,15 @@ Item {
     function batteryExpandedText() {
         if (!system.battery.available) return ""
         const percentage = batteryText()
-        return batteryCharging() ? percentage + " · Carregando" : percentage
+        return batteryCharging() ? percentage + " · " + I18n.tr("battery.charging") : percentage
     }
 
     function batteryStatus() {
-        if (system.battery.status === "Charging") return "Carregando"
-        if (system.battery.status === "Discharging") return "Descarregando"
-        if (system.battery.status === "Full") return "Carregada"
-        if (system.battery.status === "Not charging") return "Sem carregar"
-        return "Indisponível"
+        if (system.battery.status === "Charging") return I18n.tr("battery.charging")
+        if (system.battery.status === "Discharging") return I18n.tr("battery.discharging")
+        if (system.battery.status === "Full") return I18n.tr("battery.full")
+        if (system.battery.status === "Not charging") return I18n.tr("battery.notCharging")
+        return I18n.tr("common.unavailable")
     }
 
     function mediaAvailable() {
@@ -680,11 +692,11 @@ Item {
     }
 
     function mediaTitle() {
-        return mediaAvailable() ? Design.safeText(mediaPlayer.trackTitle, "Faixa sem título") : ""
+        return mediaAvailable() ? Design.safeText(mediaPlayer.trackTitle, I18n.tr("media.unknownTrack")) : ""
     }
 
     function mediaArtist() {
-        return mediaAvailable() ? Design.safeText(mediaPlayer.trackArtist, Design.safeText(mediaPlayer.identity, "Artista desconhecido")) : ""
+        return mediaAvailable() ? Design.safeText(mediaPlayer.trackArtist, Design.safeText(mediaPlayer.identity, I18n.tr("media.unknownArtist"))) : ""
     }
 
     function mediaArtUrl() {
@@ -781,15 +793,15 @@ Item {
 
     function applicationName(candidates) {
         const entry = applicationEntry(candidates)
-        if (entry) return Design.safeText(entry.name, "Janela")
+        if (entry) return Design.safeText(entry.name, I18n.tr("common.window"))
         const values = Array.isArray(candidates) ? candidates : [candidates]
-        const raw = Design.safeText(values[0], Design.safeText(values[1], "Janela"))
+        const raw = Design.safeText(values[0], Design.safeText(values[1], I18n.tr("common.window")))
         const tail = raw.split(".").pop().replace(/[-_]/g, " ")
-        return tail.length ? tail.charAt(0).toUpperCase() + tail.slice(1) : "Janela"
+        return tail.length ? tail.charAt(0).toUpperCase() + tail.slice(1) : I18n.tr("common.window")
     }
 
     function formattedDate(format) {
-        return Qt.locale("pt_BR").toString(currentTime, format)
+        return Qt.locale(I18n.locale === "pt-BR" ? "pt_BR" : "en_US").toString(currentTime, format)
     }
 
     Process { id: commandRunner }
@@ -811,7 +823,7 @@ Item {
             pendingPowerSaver = false
             pendingWifi = false
             pendingBluetooth = false
-            if (failed) showOsd("Sistema", "Não foi possível alterar o estado")
+            if (failed) showOsd(I18n.tr("widgets.system"), I18n.tr("status.systemFailure"))
         }
     }
     Connections {

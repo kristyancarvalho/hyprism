@@ -125,7 +125,7 @@ PanelWindow {
         Text {
             id: overflowText
             anchors.centerIn: parent
-            text: "+" + popup.overflowCount + " no histórico"
+            text: I18n.tr("notifications.inHistory", { count: popup.overflowCount })
             color: popup.theme.colors.mutedForeground
             font.family: Design.fontFamily
             font.pixelSize: Design.fontSizeXs

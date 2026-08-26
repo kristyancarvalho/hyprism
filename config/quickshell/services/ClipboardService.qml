@@ -20,7 +20,7 @@ Item {
         if (!item) return
         const mime = Design.safeText(item.mime, item.type === "image" ? "image/png" : "text/plain;charset=utf-8")
         controller.run([service.controller.rootDir + "/scripts/system/action", "clipboard-restore", String(item.id), mime])
-        controller.showOsd("Área de transferência", item.type === "image" ? "Imagem copiada" : "Texto copiado")
+        controller.showOsd(I18n.tr("clipboard.title"), item.type === "image" ? I18n.tr("clipboard.copiedImage") : I18n.tr("clipboard.copiedText"))
         controller.close()
     }
     function remove(id) { controller.run([service.controller.rootDir + "/scripts/system/action", "clipboard-delete", String(id)]); refreshDelay.restart() }

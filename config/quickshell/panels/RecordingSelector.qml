@@ -63,7 +63,7 @@ FocusScope {
 
             Text {
                 Layout.fillWidth: true
-                text: "Gravar tela"
+                text: I18n.tr("recording.title")
                 color: panel.theme.colors.foreground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeLg
@@ -101,7 +101,7 @@ FocusScope {
                     Layout.fillHeight: true
                     z: 2
                     theme: panel.theme
-                    label: "Região"
+                    label: I18n.tr("recording.region")
                     iconName: "recordRegion"
                     managedSurface: true
                     suppressHover: navigation.keyboardNavigation
@@ -127,7 +127,7 @@ FocusScope {
                     Layout.fillHeight: true
                     z: 2
                     theme: panel.theme
-                    label: "Tela inteira"
+                    label: I18n.tr("recording.screen")
                     iconName: "recordMonitor"
                     managedSurface: true
                     suppressHover: navigation.keyboardNavigation

@@ -30,7 +30,7 @@ Item {
     function connect(ssid) {
         if (!Design.safeText(ssid, "")) return
         command(["python3", controller.rootDir + "/scripts/system/network.py", "connect", ssid, password])
-        controller.showOsd("Wi-Fi", "Conectando a " + ssid)
+        controller.showOsd("Wi-Fi", I18n.tr("network.connecting", { ssid: ssid }))
         controller.close()
     }
 
@@ -107,7 +107,7 @@ Item {
                 Layout.fillWidth: true
 
                 Text {
-                    text: controller.system.network.virtualized && !controller.system.network.wifiAvailable ? "Rede" : "Redes"
+                    text: controller.system.network.virtualized && !controller.system.network.wifiAvailable ? I18n.tr("network.title") : I18n.tr("network.networks")
                     color: panel.theme.colors.foreground
                     font.family: Design.fontFamily
                     font.pixelSize: Design.fontSizeLg
@@ -116,7 +116,7 @@ Item {
 
                 Text {
                     visible: controller.system.network.virtualized && controller.system.network.kind === "ethernet"
-                    text: "Adaptador virtual · Conectado"
+                    text: I18n.tr("network.virtualAdapter")
                     color: panel.theme.colors.mutedForeground
                     font.family: Design.fontFamily
                     font.pixelSize: Design.fontSizeXs
@@ -129,7 +129,7 @@ Item {
                 visible: controller.system.network.wifiAvailable
                 theme: panel.theme
                 compact: true
-                text: controller.system.network.wifiEnabled ? "Desligar" : "Ligar"
+                text: controller.system.network.wifiEnabled ? I18n.tr("common.turnOff") : I18n.tr("common.turnOn")
                 iconName: controller.system.network.wifiEnabled ? controller.networkIconName() : "wifiDisconnected"
                 active: controller.system.network.wifiEnabled
                 pending: controller.pendingWifi
@@ -142,7 +142,7 @@ Item {
                 visible: controller.system.network.wifiAvailable
                 theme: panel.theme
                 compact: true
-                text: "Buscar"
+                text: I18n.tr("common.search")
                 iconName: "refresh"
                 onClicked: panel.scan()
             }
@@ -153,7 +153,7 @@ Item {
             width: parent.width
             height: 42
             visible: selectedSsid.length > 0
-            placeholderText: "Senha de " + selectedSsid + " (vazio para rede conhecida ou aberta)"
+            placeholderText: I18n.tr("network.password", { ssid: selectedSsid })
             echoMode: TextInput.Password
             onTextChanged: panel.password = text
             Keys.priority: Keys.BeforeItem
@@ -232,7 +232,7 @@ Item {
                         leftMargin: 47
                         verticalCenter: parent.verticalCenter
                     }
-                    text: Design.safeText(modelData.ssid, "Rede sem nome")
+                    text: Design.safeText(modelData.ssid, I18n.tr("network.unnamed"))
                     color: panel.theme.colors.foreground
                     width: parent.width - 200
                     elide: Text.ElideRight
@@ -272,7 +272,7 @@ Item {
                     }
                     theme: panel.theme
                     compact: true
-                    text: selectedSsid === Design.safeText(modelData.ssid, "") ? "Conectar" : "Selecionar"
+                    text: selectedSsid === Design.safeText(modelData.ssid, "") ? I18n.tr("common.connect") : I18n.tr("common.select")
                     onClicked: {
                         panel.selectedIndex = index
                         panel.chooseCurrent()
@@ -302,7 +302,7 @@ Item {
             Text {
                 anchors.centerIn: parent
                 visible: parent.count === 0
-                text: controller.system.network.virtualized && controller.system.network.kind === "ethernet" ? "A rede da máquina virtual usa um adaptador virtual" : controller.system.network.wifiAvailable ? "Nenhuma rede Wi-Fi disponível" : "Wi-Fi indisponível"
+                text: controller.system.network.virtualized && controller.system.network.kind === "ethernet" ? I18n.tr("network.virtualInfo") : controller.system.network.wifiAvailable ? I18n.tr("network.empty") : I18n.tr("network.unavailable")
                 color: panel.theme.colors.mutedForeground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeSm

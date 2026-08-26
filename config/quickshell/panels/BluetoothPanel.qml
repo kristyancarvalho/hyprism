@@ -80,7 +80,7 @@ Item {
 
             Text {
                 Layout.fillWidth: true
-                text: !controller.system.bluetooth.available ? "Bluetooth indisponível" : "Bluetooth"
+                text: !controller.system.bluetooth.available ? I18n.tr("bluetooth.unavailable") : I18n.tr("bluetooth.title")
                 color: panel.theme.colors.foreground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeLg
@@ -94,7 +94,7 @@ Item {
                 visible: controller.system.bluetooth.available
                 theme: panel.theme
                 compact: true
-                text: controller.system.bluetooth.powered ? "Desligar" : "Ligar"
+                text: controller.system.bluetooth.powered ? I18n.tr("common.turnOff") : I18n.tr("common.turnOn")
                 iconName: controller.bluetoothIconName()
                 active: controller.system.bluetooth.powered
                 pending: controller.pendingBluetooth
@@ -152,7 +152,7 @@ Item {
                         leftMargin: 48
                     }
                     width: parent.width - action.width - 62
-                    text: Design.safeText(modelData.name, "Dispositivo sem nome")
+                    text: Design.safeText(modelData.name, I18n.tr("bluetooth.unnamedDevice"))
                     color: panel.theme.colors.foreground
                     elide: Text.ElideRight
                     font.family: Design.fontFamily
@@ -169,7 +169,7 @@ Item {
                     }
                     theme: panel.theme
                     compact: true
-                    text: modelData.connected ? "Desconectar" : "Conectar"
+                    text: modelData.connected ? I18n.tr("common.disconnect") : I18n.tr("common.connect")
                     onClicked: {
                         panel.selectedIndex = index
                         panel.activateSelected()
@@ -199,7 +199,7 @@ Item {
             Text {
                 anchors.centerIn: parent
                 visible: controller.system.bluetooth.available && parent.count === 0
-                text: "Nenhum dispositivo pareado"
+                text: I18n.tr("bluetooth.empty")
                 color: panel.theme.colors.mutedForeground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeSm

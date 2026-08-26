@@ -23,6 +23,19 @@ FORMAT_MIME = {
 }
 MAX_ENTRIES = 80
 MAX_THUMBNAILS = 64
+MESSAGES = {
+    "en": {"binary": "Binary content", "text": "Copied text", "searchText": "text", "image": "Image", "searchImage": "image"},
+    "pt-BR": {"binary": "Conteúdo binário", "text": "Texto copiado", "searchText": "texto", "image": "Imagem", "searchImage": "imagem"},
+}
+
+
+def messages():
+    path = Path(os.environ.get("HYPRISM_CONFIG", Path.home() / ".config/hyprism/user.json"))
+    try:
+        language = json.loads(path.read_text(encoding="utf-8")).get("language", "en")
+    except (OSError, ValueError):
+        language = "en"
+    return MESSAGES.get(language, MESSAGES["en"])
 
 
 def cache_directory():
@@ -68,15 +81,15 @@ def thumbnail(identifier, preview, directory):
         return None
 
 
-def text_entry(identifier, preview):
+def text_entry(identifier, preview, labels):
     replacement = "�" in preview or any(ord(character) < 32 for character in preview)
     entry_type = "unknown" if replacement else "text"
-    label = "Conteúdo binário" if replacement else preview
+    label = labels["binary"] if replacement else preview
     return {
         "id": identifier,
         "type": entry_type,
-        "text": label or "Texto copiado",
-        "searchText": label or "texto",
+        "text": label or labels["text"],
+        "searchText": label or labels["searchText"],
         "mime": "application/octet-stream" if replacement else "text/plain;charset=utf-8",
         "thumbnail": "",
         "width": 0,
@@ -84,7 +97,7 @@ def text_entry(identifier, preview):
     }
 
 
-def image_entry(identifier, preview, match, directory, generate_thumbnail):
+def image_entry(identifier, preview, match, directory, generate_thumbnail, labels):
     image_format = match.group(2).lower()
     width = int(match.group(3))
     height = int(match.group(4))
@@ -93,8 +106,8 @@ def image_entry(identifier, preview, match, directory, generate_thumbnail):
     return {
         "id": identifier,
         "type": "image",
-        "text": f"Imagem · {dimensions}",
-        "searchText": f"imagem {image_format} {dimensions}",
+        "text": f"{labels['image']} · {dimensions}",
+        "searchText": f"{labels['searchImage']} {image_format} {dimensions}",
         "mime": FORMAT_MIME.get(image_format, f"image/{image_format}"),
         "thumbnail": generated.as_uri() if generated else "",
         "width": width,
@@ -122,6 +135,7 @@ def history():
         return []
     directory = cache_directory()
     entries = []
+    labels = messages()
     image_count = 0
     for raw_line in result.stdout.decode("utf-8", errors="replace").splitlines()[:MAX_ENTRIES]:
         identifier, separator, preview = raw_line.partition("\t")
@@ -129,10 +143,10 @@ def history():
             continue
         match = IMAGE_PREVIEW.match(preview)
         if match:
-            entries.append(image_entry(identifier, preview, match, directory, image_count < MAX_THUMBNAILS))
+            entries.append(image_entry(identifier, preview, match, directory, image_count < MAX_THUMBNAILS, labels))
             image_count += 1
         else:
-            entries.append(text_entry(identifier, preview))
+            entries.append(text_entry(identifier, preview, labels))
     cleanup(directory)
     return entries
 

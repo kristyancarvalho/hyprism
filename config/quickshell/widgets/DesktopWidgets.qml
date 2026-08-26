@@ -104,7 +104,7 @@ PanelWindow {
 
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: controller.formattedDate("dd 'de' MMMM")
+                            text: controller.formattedDate(I18n.locale === "pt-BR" ? "dd 'de' MMMM" : "MMMM dd")
                             color: theme.colors.mutedForeground
                             font.family: Design.fontFamily
                             font.pixelSize: 9
@@ -157,7 +157,7 @@ PanelWindow {
 
                             Text {
                                 width: parent.width
-                                text: Design.safeText(controller.weather.city, "São Paulo")
+                                text: Design.safeText(controller.weather.city, I18n.tr("weather.local"))
                                 color: theme.colors.mutedForeground
                                 font.family: Design.fontFamily
                                 font.pixelSize: 9
@@ -174,7 +174,7 @@ PanelWindow {
                 visible: controller.widgetEnabled("system")
                 height: visible ? implicitHeight : 0
                 iconName: "cpu"
-                title: "Sistema"
+                title: I18n.tr("widgets.system")
                 value: Math.round(Design.clamp(controller.system.cpu.percent, 0, 100)) + "% CPU"
                 contentHeight: 88
 
@@ -237,7 +237,7 @@ PanelWindow {
                 visible: controller.widgetEnabled("network")
                 height: visible ? implicitHeight : 0
                 iconName: "networkSpeed"
-                title: "Rede"
+                title: I18n.tr("widgets.network")
                 value: controller.networkLabel()
                 contentHeight: 110
 
@@ -253,7 +253,7 @@ PanelWindow {
                         Column {
                             width: 86
                             anchors.verticalCenter: parent.verticalCenter
-                            Text { text: "Download"; color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
+                            Text { text: I18n.tr("widgets.download"); color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
                             Text { text: controller.formatRate(controller.system.network.receiveKib); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold }
                         }
                         Sparkline { width: parent.width - 124; height: parent.height; samples: controller.downloadHistory; maximum: widgetWindow.historyPeak(controller.downloadHistory); lineColor: theme.colors.accent }
@@ -267,7 +267,7 @@ PanelWindow {
                         Column {
                             width: 86
                             anchors.verticalCenter: parent.verticalCenter
-                            Text { text: "Upload"; color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
+                            Text { text: I18n.tr("widgets.upload"); color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
                             Text { text: controller.formatRate(controller.system.network.transmitKib); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold }
                         }
                         Sparkline { width: parent.width - 124; height: parent.height; samples: controller.uploadHistory; maximum: widgetWindow.historyPeak(controller.uploadHistory); lineColor: theme.colors.secondary }
@@ -281,7 +281,7 @@ PanelWindow {
                 visible: controller.widgetEnabled("storage") && controller.monitoring.storage.available
                 height: visible ? implicitHeight : 0
                 iconName: "storage"
-                title: "Armazenamento"
+                title: I18n.tr("widgets.storage")
                 contentHeight: Math.max(38, storageRepeater.count * 42)
 
                 Column {
@@ -326,7 +326,7 @@ PanelWindow {
                 visible: controller.widgetEnabled("uptime") && controller.monitoring.systemInfo.available
                 height: visible ? implicitHeight : 0
                 iconName: "uptime"
-                title: "Sistema"
+                title: I18n.tr("widgets.system")
                 contentHeight: systemRows.count * Design.widgetDataRowHeight
 
                 Column {
@@ -335,11 +335,11 @@ PanelWindow {
                     Repeater {
                         id: systemRows
                         model: [
-                            { label: "Kernel", value: controller.monitoring.systemInfo.kernel },
-                            { label: "Uptime", value: controller.formatUptime(controller.monitoring.uptime.uptimeSeconds) },
-                            { label: "Última snapshot", value: controller.snapshotAgeText() },
-                            { label: "Sessão", value: controller.monitoring.systemInfo.session },
-                            { label: "Atualizações", value: controller.updateCountText() }
+                            { label: I18n.tr("widgets.kernel"), value: controller.monitoring.systemInfo.kernel },
+                            { label: I18n.tr("widgets.uptime"), value: controller.formatUptime(controller.monitoring.uptime.uptimeSeconds) },
+                            { label: I18n.tr("widgets.lastSnapshot"), value: controller.snapshotAgeText() },
+                            { label: I18n.tr("widgets.session"), value: controller.monitoring.systemInfo.session },
+                            { label: I18n.tr("widgets.updates"), value: controller.updateCountText() }
                         ]
 
                         WidgetInfoRow {
@@ -360,7 +360,7 @@ PanelWindow {
                 visible: widgetWindow.hasSensors
                 height: visible ? implicitHeight : 0
                 iconName: "temperature"
-                title: "Sensores"
+                title: I18n.tr("widgets.sensors")
                 contentHeight: Math.max(Design.widgetDataRowHeight, sensorRepeater.count * Design.widgetDataRowHeight)
 
                 Column {
@@ -373,7 +373,7 @@ PanelWindow {
                             width: parent.width
                             height: Design.widgetDataRowHeight
                             theme: widgetWindow.theme
-                            label: Design.safeText(modelData.label, "Temperatura")
+                            label: Design.safeText(modelData.label, I18n.tr("widgets.temperature"))
                             value: Math.round(Design.safeNumber(modelData.celsius, 0)) + "°C"
                             labelWidth: parent.width - 68
                             labelColor: theme.colors.foreground
@@ -389,8 +389,8 @@ PanelWindow {
                 visible: widgetWindow.hasServices
                 height: visible ? implicitHeight : 0
                 iconName: "services"
-                title: "Serviços"
-                value: controller.monitoring.services.healthy ? "Tudo normal" : "Atenção necessária"
+                title: I18n.tr("widgets.services")
+                value: controller.monitoring.services.healthy ? I18n.tr("widgets.healthy") : I18n.tr("widgets.attention")
                 contentHeight: controller.monitoring.services.healthy ? 28 : Math.max(28, serviceRepeater.count * 27)
 
                 Column {
@@ -400,7 +400,7 @@ PanelWindow {
                         visible: controller.monitoring.services.healthy
                         width: parent.width
                         height: parent.height
-                        text: "Todos os serviços monitorados estão ativos"
+                        text: I18n.tr("widgets.servicesHealthy")
                         color: theme.colors.mutedForeground
                         font.family: Design.fontFamily
                         font.pixelSize: Design.fontSizeXs
@@ -415,7 +415,7 @@ PanelWindow {
                             width: parent.width
                             height: 27
                             theme: widgetWindow.theme
-                            label: Design.safeText(modelData.name, "Serviço")
+                            label: controller.serviceName(modelData)
                             value: controller.serviceStateText(modelData.state)
                             labelWidth: parent.width - 108
                             labelColor: theme.colors.foreground
@@ -431,8 +431,8 @@ PanelWindow {
                 visible: widgetWindow.hasTasks
                 height: visible ? implicitHeight : 0
                 iconName: "tasks"
-                title: "Tarefas"
-                value: controller.tasks.length + (controller.tasks.length === 1 ? " ativa" : " ativas")
+                title: I18n.tr("widgets.tasks")
+                value: controller.tasks.length === 1 ? I18n.tr("widgets.activeOne") : I18n.tr("widgets.activeMany", { count: controller.tasks.length })
                 contentHeight: Math.min(widgetWindow.visibleTaskLimit, controller.tasks.length) * 58
 
                 Column {
@@ -447,7 +447,7 @@ PanelWindow {
                             spacing: 3
                             Row {
                                 width: parent.width
-                                Text { width: parent.width - 52; text: Design.safeText(modelData.title, "Tarefa"); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold; elide: Text.ElideRight }
+                                Text { width: parent.width - 52; text: Design.safeText(modelData.title, I18n.tr("widgets.task")); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold; elide: Text.ElideRight }
                                 Text { width: 52; horizontalAlignment: Text.AlignRight; text: modelData.indeterminate ? "…" : Math.round(Design.clamp(modelData.progress, 0, 100)) + "%"; color: modelData.status === "failed" ? theme.colors.error : theme.colors.accent; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs }
                             }
                             Rectangle {
@@ -457,7 +457,7 @@ PanelWindow {
                                 color: theme.colors.surfaceVariant
                                 Rectangle { width: modelData.indeterminate ? parent.width * .35 : parent.width * Design.clamp(modelData.progress, 0, 100) / 100; height: parent.height; radius: parent.radius; color: modelData.status === "failed" ? theme.colors.error : theme.colors.accent }
                             }
-                            Text { width: parent.width; text: modelData.eta > 0 ? Math.ceil(modelData.eta / 60) + " min restante" : Design.safeText(modelData.subtitle, "Em andamento"); color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9; elide: Text.ElideRight }
+                            Text { width: parent.width; text: modelData.eta > 0 ? I18n.tr("widgets.remaining", { minutes: Math.ceil(modelData.eta / 60) }) : Design.safeText(modelData.subtitle, I18n.tr("widgets.inProgress")); color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9; elide: Text.ElideRight }
                         }
                     }
                 }
@@ -469,8 +469,8 @@ PanelWindow {
                 visible: controller.widgetEnabled("processes") && controller.monitoring.processes.available
                 height: visible ? implicitHeight : 0
                 iconName: "processes"
-                title: "Processos"
-                value: controller.monitoring.uptime.processCount > 0 ? controller.monitoring.uptime.processCount + " ativos" : ""
+                title: I18n.tr("widgets.processes")
+                value: controller.monitoring.uptime.processCount > 0 ? I18n.tr("widgets.activeMany", { count: controller.monitoring.uptime.processCount }) : ""
                 contentHeight: 34 + widgetWindow.visibleProcessLimit * 28
 
                 Row {
@@ -489,7 +489,7 @@ PanelWindow {
                                 width: parent.width
                                 height: 28
                                 theme: widgetWindow.theme
-                                label: Design.safeText(modelData.name, "Processo")
+                                label: Design.safeText(modelData.name, I18n.tr("widgets.process"))
                                 value: Math.round(Design.safeNumber(modelData.cpuPercent, 0)) + "%"
                                 labelWidth: parent.width - 50
                                 fontSize: 9
@@ -503,7 +503,7 @@ PanelWindow {
                         width: (parent.width - parent.spacing) / 2
                         height: parent.height
                         spacing: 3
-                        Text { text: "Memória"; color: theme.colors.secondary; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold }
+                        Text { text: I18n.tr("widgets.memory"); color: theme.colors.secondary; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold }
                         Repeater {
                             model: (controller.monitoring.processes.memory || []).slice(0, widgetWindow.visibleProcessLimit)
                             WidgetInfoRow {
@@ -511,7 +511,7 @@ PanelWindow {
                                 width: parent.width
                                 height: 28
                                 theme: widgetWindow.theme
-                                label: Design.safeText(modelData.name, "Processo")
+                                label: Design.safeText(modelData.name, I18n.tr("widgets.process"))
                                 value: controller.formatBytes(modelData.memoryBytes)
                                 labelWidth: parent.width - 66
                                 fontSize: 9

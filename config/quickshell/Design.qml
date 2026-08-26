@@ -208,8 +208,8 @@ QtObject {
 
     function notificationCount(count) {
         const value = Math.max(0, Math.floor(safeNumber(count, 0)))
-        if (value === 0) return "Nenhuma notificação salva"
-        return value === 1 ? "1 notificação salva" : value + " notificações salvas"
+        if (value === 0) return I18n.tr("notifications.savedNone")
+        return value === 1 ? I18n.tr("notifications.savedOne") : I18n.tr("notifications.savedMany", { count: value })
     }
 
     function compactTopMargin(shellConfig) {

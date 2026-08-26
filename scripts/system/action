@@ -89,8 +89,8 @@ clipboard_clear() {
 case "${1:-}" in
   volume-up) volume 5%+ ;;
   volume-down) volume 5%- ;;
-  volume-mute) wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle; notify volume "mudo" ;;
-  mic-mute) wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle; notify microphone "mudo" ;;
+  volume-mute) wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle; notify volume muted ;;
+  mic-mute) wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle; notify microphone muted ;;
   brightness-up) brightness 5%+ ;;
   brightness-down) brightness 5%- ;;
   brightness-set) brightness "${2:-0}%" ;;
@@ -108,14 +108,14 @@ case "${1:-}" in
   night-mode)
     mode=${2:-toggle}
     if [[ $mode == toggle ]]; then systemctl --user is-active --quiet hyprism-hyprsunset.service && mode=off || mode=on; fi
-    if [[ $mode == on ]]; then systemctl --user start hyprism-hyprsunset.service && notify night Ativado
-    else systemctl --user stop hyprism-hyprsunset.service && notify night Desativado
+    if [[ $mode == on ]]; then systemctl --user start hyprism-hyprsunset.service && notify night enabled
+    else systemctl --user stop hyprism-hyprsunset.service && notify night disabled
     fi
     ;;
   power-save)
     profile=${2:-power-saver}
     powerprofilesctl set "$profile" >/dev/null 2>&1
-    notify power "$([[ $profile == power-saver ]] && printf 'Economia' || printf 'Equilibrado')"
+    notify power "$profile"
     ;;
   *) printf 'Uso: %s {volume-up|volume-down|volume-mute|mic-mute|brightness-up|brightness-down|brightness-set|screenshot-area|screenshot-monitor|color-picker|clipboard-watch|clipboard-store|clipboard-restore|clipboard-delete|clipboard-clear|night-mode|power-save}\n' "$0" >&2; exit 2 ;;
 esac

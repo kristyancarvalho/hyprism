@@ -82,7 +82,7 @@ Item {
 
         Text {
             id: title
-            text: "Área de transferência"
+            text: I18n.tr("clipboard.title")
             color: panel.theme.colors.foreground
             font.family: Design.fontFamily
             font.pixelSize: Design.fontSizeLg
@@ -99,7 +99,7 @@ Item {
                 width: parent.width - clear.width - 8
                 height: 42
                 theme: panel.theme
-                placeholderText: "Pesquisar na área de transferência…"
+                placeholderText: I18n.tr("clipboard.search")
                 onTextChanged: {
                     panel.query = text
                     panel.resetSelection()
@@ -111,7 +111,7 @@ Item {
             ShellButton {
                 id: clear
                 theme: panel.theme
-                text: "Limpar"
+                text: I18n.tr("common.clear")
                 iconName: "clear"
                 onClicked: panel.clipboard.clear()
             }
@@ -170,7 +170,7 @@ Item {
                         leftMargin: 46
                         rightMargin: 8
                     }
-                    text: Design.safeText(modelData.text, "Conteúdo indisponível").replace(/\n/g, " ")
+                    text: Design.safeText(modelData.text, I18n.tr("clipboard.unavailableContent")).replace(/\n/g, " ")
                     elide: Text.ElideRight
                     color: panel.theme.colors.foreground
                     font.family: Design.fontFamily
@@ -222,7 +222,7 @@ Item {
 
                     Text {
                         width: parent.width
-                        text: "Imagem copiada"
+                        text: I18n.tr("clipboard.copiedImage")
                         color: panel.theme.colors.foreground
                         font.family: Design.fontFamily
                         font.pixelSize: Design.fontSizeSm
@@ -231,7 +231,7 @@ Item {
 
                     Text {
                         width: parent.width
-                        text: Design.safeNumber(modelData.width, 0) > 0 && Design.safeNumber(modelData.height, 0) > 0 ? Math.round(modelData.width) + " × " + Math.round(modelData.height) : "Prévia indisponível"
+                        text: Design.safeNumber(modelData.width, 0) > 0 && Design.safeNumber(modelData.height, 0) > 0 ? Math.round(modelData.width) + " × " + Math.round(modelData.height) : I18n.tr("clipboard.unavailablePreview")
                         color: panel.theme.colors.mutedForeground
                         font.family: Design.fontFamily
                         font.pixelSize: Design.fontSizeXs
@@ -271,7 +271,7 @@ Item {
             Text {
                 anchors.centerIn: parent
                 visible: parent.count === 0
-                text: "A área de transferência está vazia"
+                text: I18n.tr("clipboard.empty")
                 color: panel.theme.colors.mutedForeground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeSm

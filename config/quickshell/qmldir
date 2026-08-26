@@ -1,4 +1,5 @@
 singleton Design 1.0 Design.qml
 singleton HyprlandService 1.0 HyprlandService.qml
+singleton I18n 1.0 I18n.qml
 Theme 1.0 Theme.qml
 ShellController 1.0 ShellController.qml

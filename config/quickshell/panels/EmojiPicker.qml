@@ -131,7 +131,7 @@ FocusScope {
             width: parent.width
             height: 42
             theme: panel.theme
-            placeholderText: "Pesquisar emoji…"
+            placeholderText: I18n.tr("emoji.search")
             tabTarget: grid
             backtabTarget: grid
             onTextChanged: {
@@ -223,7 +223,7 @@ FocusScope {
             Text {
                 anchors.centerIn: parent
                 visible: parent.count === 0
-                text: panel.dataError ? "Não foi possível carregar os emojis" : "Nenhum emoji encontrado"
+                text: panel.dataError ? I18n.tr("emoji.loadError") : I18n.tr("emoji.empty")
                 color: panel.theme.colors.mutedForeground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeSm

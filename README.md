@@ -2,7 +2,7 @@
 
 # Hyprism
 
-**Dotfiles automatizados para um ambiente Hyprland pessoal, coeso e dinâmico.**
+**Automated dotfiles for a cohesive, dynamic Hyprland desktop.**
 
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=archlinux&logoColor=white)](https://archlinux.org/)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-58E1FF?style=flat-square)](https://hypr.land/)
@@ -11,83 +11,105 @@
 
 </div>
 
-> Hyprism é um conjunto de dotfiles automatizados para uma experiência personalizada no Hyprland. Quickshell fornece a ilha, os painéis e os widgets; Matugen propaga as cores do wallpaper por toda a sessão.
+> Hyprism is an automated dotfiles setup for a personalized Hyprland experience. Quickshell provides the island, panels, and widgets, while Matugen propagates wallpaper colors throughout the session.
 
-## Demonstração
+## Demo
 
-[![Tour automatizado do Hyprism](assets/demo/hyprism-tour.webp)](assets/demo/hyprism-tour.mp4)
+[![Automated Hyprism tour](assets/demo/hyprism-tour.webp)](assets/demo/hyprism-tour.mp4)
 
-| Desktop e ilha compacta | Ilha expandida |
+| Desktop and compact island | Expanded island |
 | --- | --- |
-| ![Desktop com ilha compacta e paleta verde](assets/screenshots/desktop.png) | ![Ilha expandida e paleta verde](assets/screenshots/island-expanded.png) |
-| **Widgets do desktop** | **Launcher** |
-| ![Widgets do desktop com paleta roxa](assets/screenshots/desktop-widgets.png) | ![Launcher com paleta azul](assets/screenshots/launcher.png) |
-| **Central de controle** | **Histórico de notificações** |
-| ![Central de controle com paleta laranja](assets/screenshots/control-center.png) | ![Histórico de notificações com paleta laranja](assets/screenshots/notifications.png) |
-| **Rede** | **Bluetooth** |
-| ![Painel de rede com paleta azul](assets/screenshots/network.png) | ![Painel Bluetooth com paleta roxa](assets/screenshots/bluetooth.png) |
-| **Área de transferência** | **Seletor de emoji** |
-| ![Área de transferência com paleta roxa](assets/screenshots/clipboard.png) | ![Seletor de emoji com paleta roxa](assets/screenshots/emoji-picker.png) |
-| **Energia** | **Gravação** |
-| ![Menu de energia com paleta laranja](assets/screenshots/power-menu.png) | ![Seletor de gravação com paleta laranja](assets/screenshots/recording.png) |
-| **Papéis de parede** | **Troca de janelas** |
-| ![Seletor de papéis de parede com paleta roxa](assets/screenshots/wallpaper-picker.png) | ![Troca de janelas com clientes reais em outros workspaces](assets/screenshots/window-switcher.png) |
+| ![Desktop with compact island and green palette](assets/screenshots/desktop.png) | ![Expanded island and green palette](assets/screenshots/island-expanded.png) |
+| **Desktop widgets** | **Launcher** |
+| ![Desktop widgets with purple palette](assets/screenshots/desktop-widgets.png) | ![Launcher with blue palette](assets/screenshots/launcher.png) |
+| **Control center** | **Notification history** |
+| ![Control center with orange palette](assets/screenshots/control-center.png) | ![Notification history with orange palette](assets/screenshots/notifications.png) |
+| **Network** | **Bluetooth** |
+| ![Network panel with blue palette](assets/screenshots/network.png) | ![Bluetooth panel with purple palette](assets/screenshots/bluetooth.png) |
+| **Clipboard** | **Emoji picker** |
+| ![Clipboard with purple palette](assets/screenshots/clipboard.png) | ![Emoji picker with purple palette](assets/screenshots/emoji-picker.png) |
+| **Power** | **Recording** |
+| ![Power menu with orange palette](assets/screenshots/power-menu.png) | ![Recording selector with orange palette](assets/screenshots/recording.png) |
+| **Wallpapers** | **Window switcher** |
+| ![Wallpaper picker with purple palette](assets/screenshots/wallpaper-picker.png) | ![Window switcher with real clients on other workspaces](assets/screenshots/window-switcher.png) |
 
-## O que configura
+## What it configures
 
-- Hyprland em Lua: monitores, workspaces, gestos, regras, ambiente, atalhos e autostart.
-- Quickshell: ilha morfológica, launcher, troca de janelas, controles, notificações, OSD e widgets de monitoramento.
-- Temas Matugen para Hyprland, Hyprlock, SDDM, GTK, Kvantum, Kitty, Foot, Starship, tmux, Neovim, Fastfetch e Zathura.
-- Índice de aplicativos nativos e Flatpak com atualização ao vivo, além de portais Wayland integrados.
-- Capturas, gravação de região ou monitor, clipboard, modo noturno e controles de áudio, brilho, rede e Bluetooth.
+- Hyprland in Lua: monitors, workspaces, gestures, rules, environment, keybindings, and autostart.
+- Quickshell: morphing island, launcher, window switcher, controls, notifications, OSD, and monitoring widgets.
+- Matugen themes for Hyprland, Hyprlock, SDDM, GTK, Kvantum, Kitty, Foot, Starship, tmux, Neovim, Fastfetch, Zathura, and hyprtoolkit.
+- Live native and Flatpak application indexing with integrated Wayland portals.
+- Screenshots, region or monitor recording, clipboard history, night mode, and audio, brightness, network, and Bluetooth controls.
+- English and Brazilian Portuguese interfaces with live language switching.
 
-## Requisitos
+## Requirements
 
-- Arch Linux com acesso à internet durante o provisionamento.
-- Um usuário normal com `sudo`; o instalador precisa de root para pacotes, fontes e SDDM.
-- Hardware e drivers compatíveis com uma sessão Hyprland/Wayland atual.
+- Arch Linux with internet access during provisioning.
+- A regular user with `sudo`; installation needs root access for packages, fonts, and SDDM.
+- Hardware and drivers compatible with a current Hyprland/Wayland session.
 
-## Instalação
+## Installation
+
+English is the default for new installations:
 
 ```bash
 git clone https://github.com/kristyancarvalho/hyprism.git
 cd hyprism
-sudo ./install.sh --user "$USER"
+make install
+```
+
+Install in Brazilian Portuguese explicitly:
+
+```bash
+make install-ptbr
+```
+
+The equivalent variable form is `make install LANG=pt-BR`. Updates preserve an existing language and user configuration:
+
+```bash
+make update
 ```
 
 > [!WARNING]
-> A instalação atualiza pacotes e substitui configurações gerenciadas do usuário. Conflitos são movidos para `~/.local/state/hyprism/backups/` antes da criação dos links.
+> Installation updates packages and replaces user paths managed by Hyprism. Conflicts are moved to `~/.local/state/hyprism/backups/` before links are created.
 
-Para reaplicar apenas os arquivos depois que todas as dependências já estiverem instaladas:
+Use `make help` to list maintenance targets. Use `make uninstall` to remove Hyprism-managed paths; the uninstaller archives the runtime and `user.json` under `~/.local/state/hyprism/uninstalled/`.
 
-```bash
-sudo ./install.sh --user "$USER" --no-packages
-```
+## Command line
 
-Os wallpapers ficam em `~/Imagens/Wallpapers`. Para aplicar um arquivo pela mesma pipeline usada pelo seletor:
+`hyprism-shell` is installed in `~/.local/bin` and provides the stable interface for common actions:
 
 ```bash
-hyprism-wallpaper set ~/Imagens/Wallpapers/arquivo.png
+hyprism-shell --help
+hyprism-shell widgets list
+hyprism-shell widgets toggle weather
+hyprism-shell widgets disable --all
+hyprism-shell weather location "São Paulo"
+hyprism-shell language set pt-BR
+hyprism-shell wallpaper random
+hyprism-shell screenshot region
 ```
 
-## Atalhos essenciais
+See [the CLI guide](docs/cli.md) for the complete command inventory.
 
-| Atalho | Ação |
+## Essential keybindings
+
+| Keybinding | Action |
 | --- | --- |
-| `Super+Return` | Abrir Kitty |
-| `Super+R` | Abrir o launcher |
-| `Super+Tab` / `Super+Shift+Tab` | Navegar pelas janelas; soltar `Super` confirma |
-| `Super+K` / `Super+Alt+K` | Escolher / sortear wallpaper |
-| `Super+Shift+V` | Abrir a área de transferência |
-| `Super+Shift+N` | Abrir o painel de rede |
-| `Ctrl+.` | Abrir o seletor de emoji |
-| `Super+Shift+R` | Selecionar ou encerrar uma gravação |
-| `Super+Shift+S` / `Super+Shift+F` | Capturar região / monitor focado |
-| `Super+L` | Bloquear com Hyprlock |
-| `Super+Ctrl+S` | Alternar o modo noturno |
-| `Super+B` | Abrir o Zen Browser |
-| `Super+1…0` | Ir aos workspaces 1–10 |
+| `Super+Return` | Open Kitty |
+| `Super+R` | Open the launcher |
+| `Super+Tab` / `Super+Shift+Tab` | Navigate windows; releasing `Super` confirms |
+| `Super+K` / `Super+Alt+K` | Choose / randomize wallpaper |
+| `Super+Shift+V` | Open the clipboard |
+| `Super+Shift+N` | Open the network panel |
+| `Ctrl+.` | Open the emoji picker |
+| `Super+Shift+R` | Select or stop a recording |
+| `Super+Shift+S` / `Super+Shift+F` | Capture a region / focused monitor |
+| `Super+L` | Lock with Hyprlock |
+| `Super+Ctrl+S` | Toggle night mode |
+| `Super+B` | Open Zen Browser |
+| `Super+1…0` | Go to workspaces 1–10 |
 
-## Créditos e licenças
+## Credits and licenses
 
-Hyprism integra projetos como [Hyprland](https://hypr.land/), [Quickshell](https://quickshell.org/), [Matugen](https://github.com/InioX/matugen), [Colloid](https://github.com/vinceliuice/Colloid-gtk-theme) e [Papirus](https://github.com/PapirusDevelopmentTeam/papirus-icon-theme). Os componentes vendorizados mantêm suas atribuições e licenças nos respectivos diretórios, incluindo [KSDDM](themes/ksddm-hyprism/LICENSE) e [NvChad](config/nvim/LICENSE).
+Hyprism integrates projects including [Hyprland](https://hypr.land/), [Quickshell](https://quickshell.org/), [Matugen](https://github.com/InioX/matugen), [Colloid](https://github.com/vinceliuice/Colloid-gtk-theme), and [Papirus](https://github.com/PapirusDevelopmentTeam/papirus-icon-theme). Vendored components retain their attribution and licenses in their respective directories, including [KSDDM](themes/ksddm-hyprism/LICENSE) and [NvChad](config/nvim/LICENSE).

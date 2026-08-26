@@ -123,7 +123,7 @@ Rectangle {
 
             Text {
                 width: parent.width
-                text: pill.muted ? "Mudo" : Math.round(pill.previewValue) + "%"
+                text: pill.muted ? I18n.tr("common.muted") : Math.round(pill.previewValue) + "%"
                 color: pill.muted ? pill.theme.colors.error : pill.theme.colors.foreground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeSm

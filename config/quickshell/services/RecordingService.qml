@@ -47,9 +47,9 @@ Item {
     }
 
     function fail(message) {
-        const detail = Design.safeText(message, "Não foi possível iniciar a gravação")
+        const detail = Design.safeText(message, I18n.tr("recording.startError"))
         resetRuntime()
-        controller.showOsd("Falha na gravação", detail)
+        controller.showOsd(I18n.tr("recording.failed"), detail)
     }
 
     function launch(modeName, target) {
@@ -87,7 +87,7 @@ Item {
         const monitor = Design.safeText(monitorName, "")
         controller.close()
         if (!monitor) {
-            fail("O monitor focado não foi identificado")
+            fail(I18n.tr("recording.monitorError"))
             return
         }
         launch("tela", monitor)
@@ -96,7 +96,7 @@ Item {
     function stop() {
         if (developmentRecording) {
             saved = true
-            controller.showOsd("Gravação salva", displayPath(outputPath))
+            controller.showOsd(I18n.tr("recording.saved"), displayPath(outputPath))
             resetRuntime()
             return
         }
@@ -203,8 +203,8 @@ Item {
             const path = service.outputPath
             const hadStarted = service.recording
             service.resetRuntime()
-            if (completed) service.controller.showOsd("Gravação salva", service.displayPath(path))
-            else if (hadStarted || exitCode !== 0) service.controller.showOsd("Falha na gravação", Design.safeText(service.lastError, "O gravador foi encerrado sem salvar"))
+            if (completed) service.controller.showOsd(I18n.tr("recording.saved"), service.displayPath(path))
+            else if (hadStarted || exitCode !== 0) service.controller.showOsd(I18n.tr("recording.failed"), I18n.tr("recording.exitError"))
         }
     }
 

@@ -5,21 +5,24 @@ repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 target_user="${SUDO_USER:-${USER:-}}"
 install_packages=1
 dry_run=0
+install_language=en
 timestamp="$(date +%Y%m%d-%H%M%S)-$$"
 
-usage() { printf 'Uso: %s [--user USUÁRIO] [--no-packages] [--dry-run]\n' "$0"; }
+usage() { printf 'Usage: %s [--user USER] [--lang {en|pt-BR}] [--no-packages] [--dry-run]\n' "$0"; }
 while (($#)); do
   case "$1" in
-    --user) target_user=${2:?--user exige um usuário}; shift 2 ;;
+    --user) target_user=${2:?--user requires a user}; shift 2 ;;
+    --lang) install_language=${2:?--lang requires a locale}; shift 2 ;;
     --no-packages) install_packages=0; shift ;;
     --dry-run) dry_run=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) usage >&2; exit 2 ;;
   esac
 done
+[[ $install_language == en || $install_language == pt-BR ]] || { printf 'Unsupported language: %s\n' "$install_language" >&2; exit 2; }
 
 run() {
-  if ((dry_run)); then printf '[simulação] '; printf '%q ' "$@"; printf '\n'; else "$@"; fi
+  if ((dry_run)); then printf '[dry-run] '; printf '%q ' "$@"; printf '\n'; else "$@"; fi
 }
 as_user() {
   if [[ $(id -un) == "$target_user" ]]; then run env HOME="$target_home" "$@"; else run runuser -u "$target_user" -- env HOME="$target_home" "$@"; fi
@@ -31,7 +34,7 @@ backup_path() {
   relative=${destination#"$target_home"/}; backup="$target_home/.local/state/hyprism/backups/$timestamp/$relative"
   run install -d -o "$target_user" -g "$target_group" "$(dirname "$backup")"
   run mv "$destination" "$backup"
-  printf 'Backup criado: %s → %s\n' "$destination" "$backup"
+  printf 'Backup created: %s → %s\n' "$destination" "$backup"
 }
 backup_copy() {
   local source=$1 relative backup
@@ -39,7 +42,7 @@ backup_copy() {
   relative=${source#"$target_home"/}; backup="$target_home/.local/state/hyprism/backups/$timestamp/$relative"
   run install -d -o "$target_user" -g "$target_group" "$(dirname "$backup")"
   run cp -a "$source" "$backup"
-  printf 'Backup criado: %s → %s\n' "$source" "$backup"
+  printf 'Backup created: %s → %s\n' "$source" "$backup"
 }
 ensure_user_line() {
   local destination=$1 line=$2
@@ -58,9 +61,9 @@ link_path() {
 }
 verify_link() {
   local source=$1 destination=$2
-  [[ -L $destination ]] || { printf 'O link simbólico esperado não foi criado: %s\n' "$destination" >&2; exit 1; }
+  [[ -L $destination ]] || { printf 'Expected symbolic link was not created: %s\n' "$destination" >&2; exit 1; }
   [[ $(readlink -f "$destination") == $(readlink -f "$source") ]] \
-    || { printf 'O destino do link simbólico está incorreto: %s\n' "$destination" >&2; exit 1; }
+    || { printf 'Symbolic link target is incorrect: %s\n' "$destination" >&2; exit 1; }
 }
 package_lines() { sed -E '/^[[:space:]]*(#|$)/d' "$1"; }
 hyprlock_animations_current() {
@@ -72,28 +75,28 @@ hyprlock_animations_current() {
   done
 }
 
-[[ -r /etc/arch-release ]] || { printf 'O Hyprism oferece suporte apenas ao Arch Linux.\n' >&2; exit 1; }
-command -v pacman >/dev/null || { printf 'O pacman é obrigatório.\n' >&2; exit 1; }
-[[ -n $target_user ]] || { printf 'Não foi possível determinar o usuário; use --user.\n' >&2; exit 1; }
+[[ -r /etc/arch-release ]] || { printf 'Hyprism supports Arch Linux only.\n' >&2; exit 1; }
+command -v pacman >/dev/null || { printf 'pacman is required.\n' >&2; exit 1; }
+[[ -n $target_user ]] || { printf 'Could not determine the user; use --user.\n' >&2; exit 1; }
 passwd_entry=$(getent passwd "$target_user" || true)
-[[ -n $passwd_entry ]] || { printf 'Usuário desconhecido: %s\n' "$target_user" >&2; exit 1; }
+[[ -n $passwd_entry ]] || { printf 'Unknown user: %s\n' "$target_user" >&2; exit 1; }
 target_home=$(cut -d: -f6 <<<"$passwd_entry")
 target_group=$(id -gn "$target_user")
 target_shell=$(basename "$(cut -d: -f7 <<<"$passwd_entry")")
-[[ -d $target_home ]] || { printf 'A pasta pessoal não existe: %s\n' "$target_home" >&2; exit 1; }
+[[ -d $target_home ]] || { printf 'Home directory does not exist: %s\n' "$target_home" >&2; exit 1; }
 if ((dry_run == 0)) && [[ $(id -u) -ne 0 ]]; then
-  printf 'Execute o instalador com sudo para configurar o SDDM com segurança.\n' >&2
+  printf 'Run the installer with sudo to configure SDDM safely.\n' >&2
   exit 1
 fi
 
 if ((install_packages)); then
-  [[ $(id -u) -eq 0 ]] || { printf 'Execute com sudo para instalar pacotes ou use --no-packages.\n' >&2; exit 1; }
+  [[ $(id -u) -eq 0 ]] || { printf 'Run with sudo to install packages or use --no-packages.\n' >&2; exit 1; }
   mapfile -t official < <(package_lines "$repo_dir/packages/pacman.txt")
   run pacman -Syu --needed --noconfirm "${official[@]}"
   mapfile -t aur < <(package_lines "$repo_dir/packages/aur.txt")
   if ((${#aur[@]})); then
     helper=$(command -v paru || command -v yay || true)
-    [[ -n $helper ]] || { printf 'Há pacotes AUR, mas paru e yay não estão instalados. Instale um deles e tente novamente.\n' >&2; exit 1; }
+    [[ -n $helper ]] || { printf 'AUR packages are required, but neither paru nor yay is installed. Install one and try again.\n' >&2; exit 1; }
     as_user "$helper" -S --needed --noconfirm "${aur[@]}"
   fi
 fi
@@ -104,6 +107,13 @@ state_dir="$target_home/.cache/hyprism/state"
 quickshell_parent="$target_home/.config/quickshell"
 quickshell_config="$quickshell_parent/hyprism"
 quickshell_default="$quickshell_parent/default"
+existing_user_config=
+installed_user_config="$target_home/.config/hyprism/user.json"
+if ((dry_run == 0)) && [[ -s $installed_user_config ]]; then
+  existing_user_config="$target_home/.cache/hyprism/.user-config-$timestamp.json"
+  install -d -o "$target_user" -g "$target_group" "$(dirname "$existing_user_config")"
+  install -m 0600 -o "$target_user" -g "$target_group" "$installed_user_config" "$existing_user_config"
+fi
 
 run install -d -o "$target_user" -g "$target_group" "$target_home/.config" "$target_home/.cache" "$target_home/.cache/hyprism" "$target_home/.local/bin" "$target_home/.local/share" "$target_home/Imagens/Wallpapers" "$target_home/Imagens/Screenshots" "$target_home/Vídeos/gravacoes"
 backup_path "$runtime_root"
@@ -112,7 +122,13 @@ run cp -a "$repo_dir/config/." "$runtime_root/config/"
 run cp -a "$repo_dir/scripts/." "$runtime_root/scripts/"
 if ((dry_run == 0)); then
   chown -R "$target_user:$target_group" "$runtime_root"
-  chmod +x "$runtime_root/scripts/wallpaper" "$runtime_root"/scripts/theme/*.py "$runtime_root"/scripts/system/*
+  chmod +x "$runtime_root/scripts/hyprism-shell" "$runtime_root/scripts/wallpaper" "$runtime_root"/scripts/theme/*.py "$runtime_root"/scripts/system/*
+fi
+if ((dry_run == 0)); then
+  migrate_arguments=(_migrate --language "$install_language")
+  [[ -n $existing_user_config ]] && migrate_arguments+=(--existing "$existing_user_config")
+  as_user env HYPRISM_ROOT="$runtime_root" HYPRISM_CONFIG="$runtime_root/config/user.json" "$runtime_root/scripts/hyprism-shell" "${migrate_arguments[@]}"
+  [[ -z $existing_user_config ]] || run rm -f "$existing_user_config"
 fi
 
 sddm_theme_dir="/usr/share/sddm/themes/hyprism-ksddm"
@@ -127,7 +143,7 @@ run ln -sfn "$sddm_state_dir/theme.conf" "$sddm_theme_dir/theme.conf"
 run install -m 0644 "$repo_dir/config/sddm/20-hyprism.conf" "$sddm_dropin"
 
 locale -a 2>/dev/null | grep -Eiq '^C\.UTF-?8$|^C\.utf8$|^en_US\.UTF-?8$' \
-  || { printf 'O sistema precisa oferecer ao menos um locale UTF-8.\n' >&2; exit 1; }
+  || { printf 'The system must provide at least one UTF-8 locale.\n' >&2; exit 1; }
 
 font_dir="$target_home/.local/share/fonts/google-sans-flex"
 font_regular="$font_dir/GoogleSansFlex-Regular.ttf"
@@ -136,7 +152,7 @@ font_semibold="$font_dir/GoogleSansFlex-SemiBold.ttf"
 if [[ ! -s $font_regular || ! -s $font_medium || ! -s $font_semibold ]]; then
   as_user "$runtime_root/scripts/system/install-google-sans-flex"
 else
-  printf 'Google Sans Flex já está instalada.\n'
+  printf 'Google Sans Flex is already installed.\n'
 fi
 run install -d -m 0755 /usr/local/share/fonts/hyprism
 run install -m 0644 "$font_regular" "$font_medium" "$font_semibold" /usr/local/share/fonts/hyprism/
@@ -148,7 +164,7 @@ for image in "$repo_dir"/wallpapers/*.{png,jpg,jpeg,webp}; do
   if [[ ! -e $destination ]]; then run install -m 0644 -o "$target_user" -g "$target_group" "$image" "$destination"; fi
 done
 if ! find -P "$target_home/Imagens/Wallpapers" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print -quit | grep -q .; then
-  command -v magick >/dev/null || { printf 'ImageMagick é obrigatório para criar o wallpaper inicial.\n' >&2; exit 1; }
+  command -v magick >/dev/null || { printf 'ImageMagick is required to create the initial wallpaper.\n' >&2; exit 1; }
   as_user magick -background none "$repo_dir/wallpapers/abyss.svg" "$target_home/Imagens/Wallpapers/hyprism-abyss.png"
 fi
 
@@ -202,7 +218,7 @@ case "$target_shell" in
     link_path "$runtime_root/config/shell/starship.fish" "$target_home/.config/hyprism/starship.fish"
     ensure_user_line "$target_home/.config/fish/config.fish" 'source "$HOME/.config/hyprism/starship.fish"'
     ;;
-  *) printf 'Shell %s mantido sem inicialização automática do Starship.\n' "$target_shell" ;;
+  *) printf 'Shell %s kept without automatic Starship initialization.\n' "$target_shell" ;;
 esac
 
 link_path "$runtime_root/scripts/wallpaper" "$target_home/.local/bin/hyprism-wallpaper"
@@ -211,6 +227,7 @@ link_path "$runtime_root/scripts/system/reload-shell" "$target_home/.local/bin/h
 link_path "$runtime_root/scripts/system/start-shell" "$target_home/.local/bin/hyprism-start-shell"
 link_path "$runtime_root/scripts/system/shell-ipc" "$target_home/.local/bin/hyprism-shell-ipc"
 link_path "$runtime_root/scripts/system/lock" "$target_home/.local/bin/hyprism-lock"
+link_path "$runtime_root/scripts/hyprism-shell" "$target_home/.local/bin/hyprism-shell"
 
 run install -d -o "$target_user" -g "$target_group" "$theme_dir" "$state_dir"
 if [[ ! -s $theme_dir/fastfetch/logo-palette.json ]]; then
@@ -245,7 +262,7 @@ if [[ ! -x $tpm_dir/tpm || $tpm_head != "$tpm_revision" ]]; then
 fi
 if ((dry_run == 0)); then
   [[ -x $tpm_dir/tpm && $(as_user git -C "$tpm_dir" rev-parse HEAD 2>/dev/null || true) == "$tpm_revision" ]] \
-    || { printf 'O TPM não foi instalado na revisão esperada.\n' >&2; exit 1; }
+    || { printf 'TPM was not installed at the expected revision.\n' >&2; exit 1; }
   if as_user tmux list-sessions >/dev/null 2>&1; then
     as_user tmux source-file "$target_home/.tmux.conf"
   fi
@@ -278,7 +295,7 @@ if ((dry_run == 0)); then
       break
     fi
   done < <(find /usr/local/share/applications /usr/share/applications -maxdepth 1 -type f -name '*.desktop' -print 2>/dev/null)
-  [[ -n $browser_desktop ]] || { printf 'A entrada desktop instalada do Zen não foi encontrada.\n' >&2; exit 1; }
+  [[ -n $browser_desktop ]] || { printf 'The installed Zen desktop entry was not found.\n' >&2; exit 1; }
   as_user xdg-settings set default-web-browser "$browser_desktop"
   for scheme in http https; do
     as_user xdg-settings set default-url-scheme-handler "$scheme" "$browser_desktop"
@@ -312,6 +329,7 @@ if ((dry_run == 0)); then
   verify_link "$runtime_root/config/hypr" "$target_home/.config/hypr"
   verify_link "$runtime_root/config/quickshell" "$quickshell_default"
   verify_link "$runtime_root/config/quickshell" "$quickshell_config"
+  verify_link "$runtime_root/scripts/hyprism-shell" "$target_home/.local/bin/hyprism-shell"
   verify_link "$theme_dir/fastfetch/config.jsonc" "$target_home/.config/fastfetch/config.jsonc"
   verify_link "$runtime_root/config/fastfetch/images/archlinux.svg" "$target_home/.config/fastfetch/images/archlinux-source.svg"
   verify_link "$runtime_root/config/tmux/tmux.conf" "$target_home/.tmux.conf"
@@ -365,7 +383,7 @@ if [[ -f $legacy_hypr_theme ]]; then
   legacy_backup="$target_home/.local/state/hyprism/backups/$timestamp/.cache/hyprism/theme/hyprland.conf"
   run install -d -o "$target_user" -g "$target_group" "$(dirname "$legacy_backup")"
   run mv "$legacy_hypr_theme" "$legacy_backup"
-  printf 'Configuração obsoleta do Hyprland arquivada em %s\n' "$legacy_backup"
+  printf 'Legacy Hyprland configuration archived at %s\n' "$legacy_backup"
 fi
 
 if ((dry_run == 0)); then
@@ -376,11 +394,16 @@ fi
 
 missing=()
 for command in Hyprland hyprlock qs foot kitty fastfetch matugen starship tmux nvim awww awww-daemon python3 jq curl git sassc magick kvantummanager qt5ct qt6ct fc-cache fc-match wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp hyprpicker brightnessctl ddcutil wf-recorder hyprsunset zen-browser xdg-settings powerprofilesctl sddm-greeter-qt6 flatpak zathura; do command -v "$command" >/dev/null || missing+=("$command"); done
-printf '\nHyprism instalado para %s.\n' "$target_user"
-printf 'Configurações: %s/.config/{hypr,quickshell/default,quickshell/hyprism,foot,kitty,gtk-3.0,gtk-4.0,Kvantum,qt5ct,qt6ct}\n' "$target_home"
-printf 'Papéis de parede: %s/Imagens/Wallpapers\nCapturas de tela: %s/Imagens/Screenshots\n' "$target_home" "$target_home"
-printf 'Gravações: %s/Vídeos/gravacoes\nTema de login: %s\nWallpaper do SDDM: %s/current-wallpaper.jpg\n' "$target_home" "$sddm_theme_dir" "$sddm_state_dir"
-printf 'Starship: %s/.config/starship.toml\ntmux: %s/.tmux.conf (TPM em %s/.tmux/plugins)\nNvChad: %s/.config/nvim\n' "$target_home" "$target_home" "$target_home" "$target_home"
-printf 'Fastfetch: %s/.config/fastfetch/config.jsonc\nLogo do Fastfetch: %s/.config/fastfetch/images/archlinux.png\n' "$target_home" "$target_home"
-if ((${#missing[@]})); then printf 'Executáveis ausentes: %s\n' "${missing[*]}" >&2; exit 1; else printf 'Todos os executáveis essenciais foram validados.\n'; fi
-printf 'Encerre a sessão e selecione o Hyprland para iniciar.\n'
+effective_language=$install_language
+if ((dry_run == 0)) && [[ -s $runtime_root/config/user.json ]]; then
+  effective_language=$(as_user jq -r '.language // "en"' "$runtime_root/config/user.json")
+fi
+printf '\nHyprism installed for %s.\n' "$target_user"
+printf 'Language: %s\n' "$effective_language"
+printf 'Configuration: %s/.config/{hypr,quickshell/default,quickshell/hyprism,foot,kitty,gtk-3.0,gtk-4.0,Kvantum,qt5ct,qt6ct}\n' "$target_home"
+printf 'Wallpapers: %s/Imagens/Wallpapers\nScreenshots: %s/Imagens/Screenshots\n' "$target_home" "$target_home"
+printf 'Recordings: %s/Vídeos/gravacoes\nLogin theme: %s\nSDDM wallpaper: %s/current-wallpaper.jpg\n' "$target_home" "$sddm_theme_dir" "$sddm_state_dir"
+printf 'Starship: %s/.config/starship.toml\ntmux: %s/.tmux.conf (TPM at %s/.tmux/plugins)\nNvChad: %s/.config/nvim\n' "$target_home" "$target_home" "$target_home" "$target_home"
+printf 'Fastfetch: %s/.config/fastfetch/config.jsonc\nFastfetch logo: %s/.config/fastfetch/images/archlinux.png\n' "$target_home" "$target_home"
+if ((${#missing[@]})); then printf 'Missing executables: %s\n' "${missing[*]}" >&2; exit 1; else printf 'All essential executables were validated.\n'; fi
+printf 'Log out and select Hyprland to start.\n'

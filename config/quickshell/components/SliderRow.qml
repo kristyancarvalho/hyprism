@@ -47,7 +47,7 @@ Item {
             Text {
                 width: parent.width - percentage.width - 38
                 height: 24
-                text: Design.safeText(row.label, "Indisponível")
+                text: Design.safeText(row.label, I18n.tr("common.unavailable"))
                 color: row.theme.colors.foreground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeSm

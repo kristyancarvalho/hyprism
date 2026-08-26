@@ -9,11 +9,11 @@ Item {
     property string confirming: ""
     property int selectedIndex: 0
     readonly property var entries: [
-        { label: "Bloquear", icon: "lock", command: "hyprlock", destructive: false },
-        { label: "Suspender", icon: "suspend", command: "systemctl suspend", destructive: true },
-        { label: "Encerrar sessão", icon: "logout", command: "command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch exit", destructive: true },
-        { label: "Reiniciar", icon: "reboot", command: "systemctl reboot", destructive: true },
-        { label: "Desligar", icon: "power", command: "systemctl poweroff", destructive: true }
+        { label: I18n.tr("power.lock"), icon: "lock", command: "hyprlock", destructive: false },
+        { label: I18n.tr("power.suspend"), icon: "suspend", command: "systemctl suspend", destructive: true },
+        { label: I18n.tr("power.logout"), icon: "logout", command: "command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch exit", destructive: true },
+        { label: I18n.tr("power.reboot"), icon: "reboot", command: "systemctl reboot", destructive: true },
+        { label: I18n.tr("power.shutdown"), icon: "power", command: "systemctl poweroff", destructive: true }
     ]
 
     function action(entry) {
@@ -72,7 +72,7 @@ Item {
 
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: confirming ? "Ative novamente para confirmar: " + confirming.toLowerCase() : "Controles da sessão"
+            text: confirming ? I18n.tr("power.confirm", { action: confirming.toLowerCase() }) : I18n.tr("power.title")
             color: theme.colors.foreground
             font.family: Design.fontFamily
             font.pixelSize: Design.fontSizeMd
