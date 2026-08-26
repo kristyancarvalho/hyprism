@@ -35,6 +35,14 @@ apply_kitty_colors() {
     kitten @ set-colors --all --configured "$cache_dir/theme/kitty.conf" >/dev/null 2>&1 || true
   fi
 }
+refresh_hyprpolkitagent() {
+  command -v systemctl >/dev/null && command -v hyprctl >/dev/null && command -v jq >/dev/null || return 0
+  systemctl --user is-active --quiet hyprpolkitagent.service || return 0
+  if hyprctl clients -j 2>/dev/null | jq -e 'any(.[]; .class == "hyprpolkitagent")' >/dev/null 2>&1; then
+    return 0
+  fi
+  systemctl --user try-restart hyprpolkitagent.service >/dev/null 2>&1 || true
+}
 apply() {
   local image state_candidate link_candidate
   image=$(realpath -e -- "${1:?caminho do papel de parede obrigatório}")
@@ -45,6 +53,7 @@ apply() {
     awww img "$image" --transition-type grow --transition-duration .55 || true
   fi
   HYPRISM_CACHE_DIR="$cache_dir" "$root_dir/scripts/theme/generate-theme.py" "$image"
+  refresh_hyprpolkitagent
   state_candidate=$(mktemp "$state_dir/.current-wallpaper.XXXXXX")
   printf '%s\n' "$image" >"$state_candidate"
   mv -f -- "$state_candidate" "$current_file"

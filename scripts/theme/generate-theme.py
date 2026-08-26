@@ -285,6 +285,20 @@ def render_hyprland(theme):
     )
 
 
+def render_hyprtoolkit(theme):
+    values = {
+        "background": theme["background"],
+        "base": theme["surface"],
+        "alternate_base": theme["surfaceContainerHigh"],
+        "text": theme["onSurface"],
+        "bright_text": mix(theme["foreground"], "#ffffff", .18),
+        "link_text": theme["primary"],
+        "accent": theme["primary"],
+        "accent_secondary": theme["secondary"],
+    }
+    return "".join(f"{name} = rgba({color[1:]}ff)\n" for name, color in values.items())
+
+
 def render_hyprlock(theme):
     values = {
         "background": theme["background"],
@@ -808,6 +822,13 @@ def validate_colors(content):
         raise ValueError("valor não resolvido")
 
 
+def validate_hyprtoolkit(content):
+    validate_colors(content)
+    names = "background|base|alternate_base|text|bright_text|link_text|accent|accent_secondary"
+    if len(re.findall(rf"^({names}) = rgba\([0-9a-f]{{8}}\)$", content, re.MULTILINE)) != 8:
+        raise ValueError("paleta do hyprtoolkit inválida")
+
+
 def main():
     image = sys.argv[1] if len(sys.argv) > 1 else ""
     try:
@@ -822,6 +843,7 @@ def main():
     publish(OUT / "kitty.conf", render_kitty(theme), validate_colors)
     publish(OUT / "foot.ini", render_foot(theme), validate_colors)
     publish(OUT / "hyprland.lua", render_hyprland(theme), validate_colors)
+    publish(OUT / "hyprtoolkit-colors.conf", render_hyprtoolkit(theme), validate_hyprtoolkit)
     publish(OUT / "hyprlock-colors.conf", render_hyprlock(theme), validate_colors)
     publish(OUT / "hyprlock.conf", render_hyprlock_config(theme), validate_colors)
     publish(OUT / "sddm/theme.conf", render_sddm(theme), validate_colors)
