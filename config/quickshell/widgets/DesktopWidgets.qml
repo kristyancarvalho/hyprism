@@ -187,8 +187,8 @@ PanelWindow {
                 width: parent.width
                 visible: controller.widgetEnabled("system")
                 height: visible ? implicitHeight : 0
-                iconName: "cpu"
-                title: I18n.tr("widgets.system")
+                iconName: "performance"
+                title: I18n.tr("widgets.performance")
                 contentHeight: 82
 
                 Row {

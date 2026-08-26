@@ -140,6 +140,7 @@
   },
   "widgets": {
     "system": "Sistema",
+    "performance": "Desempenho",
     "network": "Rede",
     "download": "Download",
     "upload": "Upload",
