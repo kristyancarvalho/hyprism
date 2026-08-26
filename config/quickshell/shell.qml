@@ -255,6 +255,7 @@ ShellRoot {
         shellController.config = {
             appearance: {
                 mode: incomingAppearance.mode === "light" ? "light" : "dark",
+                warmWhite: incomingAppearance.warmWhite === true,
                 schedule: {
                     enabled: incomingSchedule.enabled === true,
                     lightStart: Design.safeText(incomingSchedule.lightStart, "07:00"),
@@ -274,8 +275,7 @@ ShellRoot {
         if (!source) return
         const parsed = JSON.parse(source)
         if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("a raiz deve ser um objeto JSON")
-        shellTheme.colors = Object.assign({}, shellTheme.colors, parsed)
-        shellTheme.generatedLoaded = true
+        shellTheme.applyPalette(parsed)
         themeError = ""
     }
     function reloadConfig(): void {
@@ -358,6 +358,7 @@ ShellRoot {
                 running: true,
                 language: I18n.locale,
                 appearanceMode: shellController.lightTheme ? "light" : "dark",
+                warmWhite: shellController.warmWhite,
                 appearanceSchedule: shellController.config.appearance.schedule,
                 pid: Quickshell.processId,
                 mode: shellController.mode,
@@ -369,6 +370,7 @@ ShellRoot {
                 themeLoaded: true,
                 themeSource: shellTheme.sourceName,
                 themeAccent: shellTheme.colors.accent,
+                themeBackground: shellTheme.colors.background,
                 islandWidth: shellController.config.shell.islandWidth,
                 configError: root.configError,
                 themeError: root.themeError,

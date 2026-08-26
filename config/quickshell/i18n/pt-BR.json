@@ -116,6 +116,7 @@
     "lightStart": "Claro a partir de",
     "darkStart": "Escuro a partir de",
     "automatic": "Alternância automática",
+    "warmWhite": "Warm White",
     "save": "Salvar horários",
     "saved": "Horários salvos",
     "invalidTime": "Use um horário válido de 24 horas (HH:MM).",

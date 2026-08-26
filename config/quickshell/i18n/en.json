@@ -116,6 +116,7 @@
     "lightStart": "Light starts",
     "darkStart": "Dark starts",
     "automatic": "Automatic switching",
+    "warmWhite": "Warm White",
     "save": "Save schedule",
     "saved": "Schedule saved",
     "invalidTime": "Use a valid 24-hour time (HH:MM).",

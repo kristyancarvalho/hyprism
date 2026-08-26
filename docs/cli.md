@@ -24,6 +24,10 @@ hyprism-shell theme get
 hyprism-shell theme set light
 hyprism-shell theme set dark
 hyprism-shell theme toggle
+hyprism-shell theme warm-white get
+hyprism-shell theme warm-white set on
+hyprism-shell theme warm-white set off
+hyprism-shell theme warm-white toggle
 hyprism-shell theme schedule set 07:00 18:30
 hyprism-shell theme schedule get
 hyprism-shell theme schedule enable
@@ -34,7 +38,7 @@ Weather locations are resolved through Open-Meteo's geocoding service. Hyprism s
 
 Desktop widget names are `clock`, `weather`, `media`, `system`, `network`, `storage`, `sensors`, `uptime`, `services`, `tasks`, and `processes`. All-widget operations affect only these desktop widgets.
 
-The theme schedule treats the first boundary as the start of the light interval and the second as the start of the dark interval. Intervals may cross midnight. Scheduling is opt-in, is reconciled when Quickshell starts, and waits efficiently until the next boundary. A manual Hub toggle, `theme set`, or `theme toggle` disables scheduling and returns appearance control to manual mode.
+The `warm-white` option gives light mode a warmer neutral palette and has no effect on dark mode. The theme schedule treats the first boundary as the start of the light interval and the second as the start of the dark interval. Intervals may cross midnight. Scheduling is opt-in, is reconciled when Quickshell starts, and waits efficiently until the next boundary. A manual Hub toggle, `theme set`, or `theme toggle` disables scheduling and returns appearance control to manual mode.
 
 ## Shell actions
 
