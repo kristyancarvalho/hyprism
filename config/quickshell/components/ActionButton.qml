@@ -49,7 +49,7 @@ Item {
 
         Text {
             anchors.verticalCenter: parent.verticalCenter
-            text: Design.safeText(button.label, "Indisponível")
+            text: Design.safeText(button.label, I18n.tr("common.unavailable"))
             color: button.available ? button.theme.colors.foreground : button.theme.colors.mutedForeground
             font.family: Design.fontFamily
             font.pixelSize: Design.fontSizeSm

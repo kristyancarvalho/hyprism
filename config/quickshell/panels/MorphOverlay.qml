@@ -363,7 +363,7 @@ PanelWindow {
 
                     ShellButton {
                         theme: window.theme
-                        text: "Parar"
+                        text: I18n.tr("common.stop")
                         iconName: "close"
                         compact: true
                         warning: true

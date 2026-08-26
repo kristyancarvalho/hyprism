@@ -19,7 +19,7 @@ Item {
             bottom: parent.bottom
         }
         width: Math.min(row.labelWidth, parent.width)
-        text: Design.safeText(row.label, "Informação")
+        text: Design.safeText(row.label, I18n.tr("common.information"))
         color: row.labelColor
         font.family: Design.fontFamily
         font.pixelSize: row.fontSize
@@ -35,7 +35,7 @@ Item {
             bottom: parent.bottom
             leftMargin: Math.min(row.labelWidth + Design.spacingSm, parent.width)
         }
-        text: Design.safeText(row.value, "Indisponível")
+        text: Design.safeText(row.value, I18n.tr("common.unavailable"))
         color: row.valueColor
         font.family: Design.fontFamily
         font.pixelSize: row.fontSize

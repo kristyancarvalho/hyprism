@@ -129,7 +129,7 @@ Item {
                     id: power
                     Layout.preferredWidth: implicitWidth
                     theme: panel.theme
-                    text: "Energia"
+                    text: I18n.tr("hub.power")
                     iconName: "power"
                     compact: true
                     onClicked: controller.openPowerMenu(controller.targetScreenName)
@@ -160,7 +160,7 @@ Item {
                     id: bluetoothAction
                     width: (parent.width - 8) / 2
                     theme: panel.theme
-                    label: !controller.system.bluetooth.available ? "Bluetooth indisponível" : controller.system.bluetooth.connected ? "Bluetooth conectado" : controller.system.bluetooth.powered ? "Bluetooth ligado" : "Bluetooth desligado"
+                    label: !controller.system.bluetooth.available ? I18n.tr("bluetooth.unavailable") : controller.system.bluetooth.connected ? I18n.tr("bluetooth.connected") : controller.system.bluetooth.powered ? I18n.tr("bluetooth.on") : I18n.tr("bluetooth.off")
                     iconName: controller.bluetoothIconName()
                     active: controller.system.bluetooth.powered
                     available: controller.system.bluetooth.available
@@ -174,7 +174,7 @@ Item {
                     id: nightAction
                     width: (parent.width - 8) / 2
                     theme: panel.theme
-                    label: controller.system.nightMode.available ? "Modo noturno" : "Modo noturno indisponível"
+                    label: controller.system.nightMode.available ? I18n.tr("hub.nightMode") : I18n.tr("hub.nightModeUnavailable")
                     iconName: "night"
                     active: controller.nightMode
                     available: controller.system.nightMode.available
@@ -187,7 +187,7 @@ Item {
                     id: saverAction
                     width: (parent.width - 8) / 2
                     theme: panel.theme
-                    label: controller.system.powerProfile.available ? "Economia de energia" : "Energia indisponível"
+                    label: controller.system.powerProfile.available ? I18n.tr("hub.powerSaver") : I18n.tr("hub.powerUnavailable")
                     iconName: "powerSaver"
                     active: controller.powerSaver
                     available: controller.system.powerProfile.available
@@ -200,7 +200,7 @@ Item {
                     id: dndAction
                     width: (parent.width - 8) / 2
                     theme: panel.theme
-                    label: "Não perturbe"
+                    label: I18n.tr("hub.doNotDisturb")
                     iconName: panel.notificationServer.doNotDisturb ? "notificationOff" : "notification"
                     active: panel.notificationServer.doNotDisturb
                     onActiveFocusChanged: if (activeFocus) panel.selectedAction = 4
@@ -218,7 +218,7 @@ Item {
                     id: volumeControl
                     width: (parent.width - Math.max(0, panel.availablePillCount - 1) * parent.spacing) / Math.max(1, panel.availablePillCount)
                     theme: panel.theme
-                    label: "Volume"
+                    label: I18n.tr("hub.volume")
                     iconName: controller.volumeIconName()
                     value: controller.system.audio.percent
                     available: controller.system.audio.available
@@ -233,7 +233,7 @@ Item {
                     id: microphoneControl
                     width: (parent.width - Math.max(0, panel.availablePillCount - 1) * parent.spacing) / Math.max(1, panel.availablePillCount)
                     theme: panel.theme
-                    label: "Microfone"
+                    label: I18n.tr("hub.microphone")
                     iconName: controller.microphoneIconName()
                     value: controller.system.microphone.percent
                     available: controller.system.microphone.available
@@ -248,7 +248,7 @@ Item {
                     id: brightnessControl
                     width: (parent.width - Math.max(0, panel.availablePillCount - 1) * parent.spacing) / Math.max(1, panel.availablePillCount)
                     theme: panel.theme
-                    label: "Brilho"
+                    label: I18n.tr("hub.brightness")
                     iconName: "brightness"
                     value: controller.system.brightness.percent
                     available: controller.system.brightness.available
@@ -288,7 +288,7 @@ Item {
                     ShellButton {
                         id: stopRecordingButton
                         theme: panel.theme
-                        text: "Parar"
+                        text: I18n.tr("common.stop")
                         iconName: "close"
                         compact: true
                         warning: true
@@ -317,7 +317,7 @@ Item {
 
                     StatusIcon { name: "notification"; iconSize: Design.iconSm; color: panel.theme.colors.accent }
                     Text {
-                        text: "Notificações"
+                        text: I18n.tr("hub.notifications")
                         color: panel.theme.colors.foreground
                         font.family: Design.fontFamily
                         font.pixelSize: Design.fontSizeMd

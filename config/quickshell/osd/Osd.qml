@@ -6,7 +6,7 @@ Glass {
     id: osd
     required property var controller
     property bool percentageValue: /^\d+%?$/.test(controller.osdValue)
-    property string iconName: controller.osdKind === "Volume" ? controller.volumeIconName() : controller.osdKind === "Brilho" ? "brightness" : controller.osdKind === "Microfone" ? controller.microphoneIconName() : controller.osdKind === "Captura" ? "screenshot" : controller.osdKind === "Cor" ? "colorPicker" : controller.osdKind === "Modo noturno" ? "night" : controller.osdKind === "Economia de energia" ? "powerSaver" : "settings"
+    property string iconName: controller.osdKind === I18n.tr("hub.volume") ? controller.volumeIconName() : controller.osdKind === I18n.tr("hub.brightness") ? "brightness" : controller.osdKind === I18n.tr("hub.microphone") ? controller.microphoneIconName() : controller.osdKind === I18n.tr("osd.screenshot") ? "screenshot" : controller.osdKind === I18n.tr("osd.color") ? "colorPicker" : controller.osdKind === I18n.tr("hub.nightMode") ? "night" : controller.osdKind === I18n.tr("hub.powerSaver") ? "powerSaver" : "settings"
     width: 320
     height: 58
     radius: Design.radiusMd
@@ -31,7 +31,7 @@ Glass {
         }
 
         Text {
-            text: Design.safeText(controller.osdKind, "Sistema")
+            text: Design.safeText(controller.osdKind, I18n.tr("widgets.system"))
             color: theme.colors.foreground
             width: osd.percentageValue ? 92 : 118
             anchors.verticalCenter: parent.verticalCenter
@@ -58,7 +58,7 @@ Glass {
 
         Text {
             width: osd.percentageValue ? 38 : 122
-            text: Design.safeText(controller.osdValue, "Indisponível")
+            text: Design.safeText(controller.osdValue, I18n.tr("common.unavailable"))
             elide: Text.ElideRight
             color: theme.colors.foreground
             anchors.verticalCenter: parent.verticalCenter

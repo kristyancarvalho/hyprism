@@ -57,7 +57,7 @@ Rectangle {
         Text {
             anchors.verticalCenter: parent.verticalCenter
             width: parent.width - 46
-            text: Design.safeText(button.label, "Indisponível")
+            text: Design.safeText(button.label, I18n.tr("common.unavailable"))
             color: button.available ? button.theme.colors.foreground : button.theme.colors.mutedForeground
             elide: Text.ElideRight
             wrapMode: Text.WordWrap

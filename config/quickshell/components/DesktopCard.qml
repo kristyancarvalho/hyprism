@@ -4,7 +4,7 @@ import ".."
 Glass {
     id: card
     property string iconName: "settings"
-    property string title: "Sistema"
+    property string title: I18n.tr("widgets.system")
     property string value: ""
     property int contentHeight: 60
     property color iconColor: theme ? theme.colors.accent : "white"

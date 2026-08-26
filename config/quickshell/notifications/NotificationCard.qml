@@ -67,7 +67,7 @@ Glass {
 
                 Text {
                     width: parent.width
-                    text: Design.safeText(card.notification ? card.notification.appName : "", "Notificação")
+                    text: Design.safeText(card.notification ? card.notification.appName : "", I18n.tr("notifications.notification"))
                     color: card.theme.colors.mutedForeground
                     elide: Text.ElideRight
                     font.family: Design.fontFamily
@@ -77,7 +77,7 @@ Glass {
 
                 Text {
                     width: parent.width
-                    text: Design.safeText(card.notification ? card.notification.summary : "", "Notificação")
+                    text: Design.safeText(card.notification ? card.notification.summary : "", I18n.tr("notifications.notification"))
                     color: card.theme.colors.foreground
                     elide: Text.ElideRight
                     font.family: Design.fontFamily
@@ -112,7 +112,7 @@ Glass {
                     required property var modelData
                     theme: card.theme
                     compact: true
-                    text: Design.safeText(modelData.text, "Abrir")
+                    text: Design.safeText(modelData.text, I18n.tr("common.open"))
                     onClicked: modelData.invoke()
                 }
             }

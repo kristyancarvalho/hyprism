@@ -97,7 +97,7 @@ Item {
 
             Text {
                 Layout.fillWidth: true
-                text: "Aplicativos"
+                text: I18n.tr("launcher.title")
                 color: panel.theme.colors.foreground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeLg
@@ -107,7 +107,7 @@ Item {
             Text {
                 id: hint
                 Layout.preferredWidth: implicitWidth
-                text: "↑ ↓ navegar  ·  Enter abrir"
+                text: I18n.tr("launcher.hint")
                 color: panel.theme.colors.mutedForeground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeXs
@@ -119,7 +119,7 @@ Item {
             width: parent.width
             height: 46
             theme: panel.theme
-            placeholderText: "Pesquisar aplicativos…"
+            placeholderText: I18n.tr("launcher.search")
             onTextChanged: {
                 panel.query = text
                 panel.resetSelection()
@@ -181,7 +181,7 @@ Item {
 
                         Text {
                             width: parent.width
-                            text: Design.safeText(modelData.name, "Aplicativo")
+                            text: Design.safeText(modelData.name, I18n.tr("common.application"))
                             elide: Text.ElideRight
                             color: panel.theme.colors.foreground
                             font.family: Design.fontFamily
@@ -217,7 +217,7 @@ Item {
             Text {
                 anchors.centerIn: parent
                 visible: parent.count === 0
-                text: "Nenhum aplicativo encontrado"
+                text: I18n.tr("launcher.empty")
                 color: panel.theme.colors.mutedForeground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeSm

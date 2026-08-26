@@ -68,7 +68,7 @@ FocusScope {
         const path = Design.safeText(filteredWallpapers[index], "")
         if (!path) return
         if (controller.developmentMode) {
-            controller.showOsd("Papel de parede", path.split("/").pop())
+            controller.showOsd(I18n.tr("wallpaper.fallbackName"), path.split("/").pop())
             return
         }
         controller.run([controller.rootDir + "/scripts/wallpaper", "set", path])
@@ -127,7 +127,7 @@ FocusScope {
 
             Text {
                 Layout.fillWidth: true
-                text: "Papéis de parede"
+                text: I18n.tr("wallpaper.title")
                 color: panel.theme.colors.foreground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeLg
@@ -139,7 +139,7 @@ FocusScope {
                 id: refreshButton
                 Layout.preferredWidth: implicitWidth
                 theme: panel.theme
-                text: "Atualizar"
+                text: I18n.tr("common.refresh")
                 iconName: "refresh"
                 compact: true
                 onClicked: panel.appService.refreshWallpapers()
@@ -155,7 +155,7 @@ FocusScope {
             height: 42
             theme: panel.theme
             text: panel.controller.wallpaperQuery
-            placeholderText: "Pesquisar papel de parede..."
+            placeholderText: I18n.tr("wallpaper.search")
             tabTarget: refreshButton
             backtabTarget: grid
             onTextChanged: {
@@ -278,7 +278,7 @@ FocusScope {
 
                     Text {
                         anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: Design.spacingSm }
-                        text: Design.safeText(modelData, "Papel de parede").split("/").pop().replace(/\.[^.]+$/, "") + (Design.safeText(modelData, "") === panel.controller.wallpaperCurrent ? " · Atual" : "")
+                        text: Design.safeText(modelData, I18n.tr("wallpaper.fallbackName")).split("/").pop().replace(/\.[^.]+$/, "") + (Design.safeText(modelData, "") === panel.controller.wallpaperCurrent ? " · " + I18n.tr("wallpaper.current") : "")
                         color: "white"
                         elide: Text.ElideRight
                         font.family: Design.fontFamily
@@ -307,7 +307,7 @@ FocusScope {
             Text {
                 anchors.centerIn: parent
                 visible: parent.count === 0
-                text: panel.controller.wallpaperQuery.length ? "Nenhum papel de parede encontrado" : "Nenhum papel de parede em ~/Imagens/Wallpapers"
+                text: panel.controller.wallpaperQuery.length ? I18n.tr("wallpaper.emptySearch") : I18n.tr("wallpaper.emptyDirectory")
                 color: panel.theme.colors.mutedForeground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeSm

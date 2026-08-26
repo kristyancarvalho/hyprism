@@ -63,7 +63,7 @@ Column {
             visible: history.notifications.length > 0
             theme: history.theme
             compact: true
-            text: "Limpar tudo"
+            text: I18n.tr("notifications.clearAll")
             iconName: "clear"
             onClicked: history.clearAll()
         }
@@ -136,7 +136,7 @@ Column {
 
                 Text {
                     width: parent.width
-                    text: Design.safeText(modelData.appName, "Notificação")
+                    text: Design.safeText(modelData.appName, I18n.tr("notifications.notification"))
                     color: history.theme.colors.mutedForeground
                     elide: Text.ElideRight
                     font.family: Design.fontFamily
@@ -146,7 +146,7 @@ Column {
 
                 Text {
                     width: parent.width
-                    text: Design.safeText(modelData.summary, Design.safeText(modelData.appName, "Notificação"))
+                    text: Design.safeText(modelData.summary, Design.safeText(modelData.appName, I18n.tr("notifications.notification")))
                     color: history.theme.colors.foreground
                     elide: Text.ElideRight
                     font.family: Design.fontFamily
@@ -156,7 +156,7 @@ Column {
 
                 Text {
                     width: parent.width
-                    text: Design.safeText(modelData.body, "Sem detalhes").replace(/<[^>]*>/g, "")
+                    text: Design.safeText(modelData.body, I18n.tr("common.details")).replace(/<[^>]*>/g, "")
                     color: history.theme.colors.mutedForeground
                     elide: Text.ElideRight
                     font.family: Design.fontFamily
@@ -202,7 +202,7 @@ Column {
 
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: "Nenhuma notificação salva"
+            text: I18n.tr("notifications.savedNone")
             color: history.theme.colors.mutedForeground
             font.family: Design.fontFamily
             font.pixelSize: Design.fontSizeSm

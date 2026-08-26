@@ -1,0 +1,213 @@
+{
+  "common": {
+    "unavailable": "Indisponível",
+    "refresh": "Atualizar",
+    "search": "Buscar",
+    "stop": "Parar",
+    "clear": "Limpar",
+    "unknownTitle": "Sem título",
+    "window": "Janela",
+    "minimizedWindow": "Janela minimizada",
+    "information": "Informação",
+    "enabled": "Ativado",
+    "disabled": "Desativado",
+    "none": "Nenhuma",
+    "now": "agora",
+    "yesterday": "ontem",
+    "upToDate": "Em dia",
+    "connectedDevice": "Dispositivo conectado",
+    "application": "Aplicativo",
+    "open": "Abrir",
+    "details": "Sem detalhes",
+    "muted": "Mudo",
+    "turnOn": "Ligar",
+    "turnOff": "Desligar",
+    "connect": "Conectar",
+    "disconnect": "Desconectar",
+    "select": "Selecionar"
+  },
+  "launcher": {
+    "title": "Aplicativos",
+    "hint": "↑ ↓ navegar  ·  Enter abrir",
+    "search": "Pesquisar aplicativos…",
+    "empty": "Nenhum aplicativo encontrado"
+  },
+  "clipboard": {
+    "title": "Área de transferência",
+    "search": "Pesquisar na área de transferência…",
+    "empty": "A área de transferência está vazia",
+    "copiedImage": "Imagem copiada",
+    "copiedText": "Texto copiado",
+    "unavailableContent": "Conteúdo indisponível",
+    "unavailablePreview": "Prévia indisponível"
+  },
+  "emoji": {
+    "search": "Pesquisar emoji…",
+    "empty": "Nenhum emoji encontrado",
+    "loadError": "Não foi possível carregar os emojis"
+  },
+  "wallpaper": {
+    "title": "Papéis de parede",
+    "search": "Pesquisar papel de parede…",
+    "current": "Atual",
+    "fallbackName": "Papel de parede",
+    "emptySearch": "Nenhum papel de parede encontrado",
+    "emptyDirectory": "Nenhum papel de parede em ~/Imagens/Wallpapers"
+  },
+  "network": {
+    "title": "Rede",
+    "virtualAdapter": "Adaptador virtual · Conectado",
+    "password": "Senha de {ssid} (vazio para rede conhecida ou aberta)",
+    "virtualInfo": "A rede da máquina virtual usa um adaptador virtual",
+    "empty": "Nenhuma rede Wi-Fi disponível",
+    "unavailable": "Wi-Fi indisponível",
+    "disconnected": "Desconectado",
+    "networks": "Redes",
+    "connecting": "Conectando a {ssid}",
+    "unnamed": "Rede sem nome"
+  },
+  "bluetooth": {
+    "title": "Bluetooth",
+    "unavailable": "Bluetooth indisponível",
+    "empty": "Nenhum dispositivo pareado",
+    "connected": "Bluetooth conectado",
+    "on": "Bluetooth ligado",
+    "off": "Bluetooth desligado",
+    "unnamedDevice": "Dispositivo sem nome"
+  },
+  "power": {
+    "title": "Controles da sessão",
+    "confirm": "Ative novamente para confirmar: {action}",
+    "lock": "Bloquear",
+    "suspend": "Suspender",
+    "logout": "Encerrar sessão",
+    "reboot": "Reiniciar",
+    "shutdown": "Desligar"
+  },
+  "recording": {
+    "title": "Gravar tela",
+    "region": "Região",
+    "screen": "Tela inteira",
+    "saved": "Gravação salva",
+    "failed": "Falha na gravação",
+    "startError": "Não foi possível iniciar a gravação",
+    "monitorError": "O monitor focado não foi identificado",
+    "exitError": "O gravador foi encerrado sem salvar"
+  },
+  "hub": {
+    "power": "Energia",
+    "notifications": "Notificações",
+    "doNotDisturb": "Não perturbe",
+    "volume": "Volume",
+    "microphone": "Microfone",
+    "brightness": "Brilho",
+    "nightMode": "Modo noturno",
+    "nightModeUnavailable": "Modo noturno indisponível",
+    "powerSaver": "Economia de energia",
+    "powerUnavailable": "Energia indisponível"
+  },
+  "notifications": {
+    "notification": "Notificação",
+    "savedNone": "Nenhuma notificação salva",
+    "savedOne": "1 notificação salva",
+    "savedMany": "{count} notificações salvas",
+    "clearAll": "Limpar tudo",
+    "inHistory": "+{count} no histórico"
+  },
+  "switcher": {
+    "title": "Trocar janela",
+    "hint": "← → navegar  ·  solte Super para abrir"
+  },
+  "widgets": {
+    "system": "Sistema",
+    "network": "Rede",
+    "download": "Download",
+    "upload": "Upload",
+    "storage": "Armazenamento",
+    "kernel": "Kernel",
+    "uptime": "Uptime",
+    "lastSnapshot": "Última snapshot",
+    "session": "Sessão",
+    "updates": "Atualizações",
+    "sensors": "Sensores",
+    "temperature": "Temperatura",
+    "services": "Serviços",
+    "service": "Serviço",
+    "healthy": "Tudo normal",
+    "attention": "Atenção necessária",
+    "servicesHealthy": "Todos os serviços monitorados estão ativos",
+    "tasks": "Tarefas",
+    "task": "Tarefa",
+    "activeOne": "1 ativa",
+    "activeMany": "{count} ativas",
+    "remaining": "{minutes} min restante",
+    "inProgress": "Em andamento",
+    "processes": "Processos",
+    "process": "Processo",
+    "memory": "Memória",
+    "snapshotUnavailable": "Indisponível",
+    "agoMinutes": "há {count} min",
+    "agoHours": "há {count} h",
+    "agoDays": "há {count} d",
+    "updateOne": "1 atualização",
+    "updateMany": "{count} atualizações"
+  },
+  "weather": {
+    "local": "Tempo local",
+    "clear": "Céu limpo",
+    "mainlyClear": "Predominantemente limpo",
+    "partlyCloudy": "Parcialmente nublado",
+    "overcast": "Nublado",
+    "fog": "Neblina",
+    "drizzle": "Garoa",
+    "rain": "Chuva",
+    "snow": "Neve",
+    "showers": "Pancadas de chuva",
+    "thunderstorm": "Tempestade",
+    "unavailable": "Tempo indisponível"
+  },
+  "status": {
+    "systemFailure": "Não foi possível alterar o estado",
+    "active": "ativo",
+    "inactive": "inativo",
+    "stopped": "parado",
+    "failed": "falhou",
+    "unknown": "desconhecido",
+    "onDisconnected": "Ligado · Desconectado",
+    "connected": "Conectado"
+  },
+  "battery": {
+    "charging": "Carregando",
+    "discharging": "Descarregando",
+    "full": "Carregada",
+    "notCharging": "Sem carregar"
+  },
+  "media": {
+    "unknownTrack": "Faixa sem título",
+    "unknownArtist": "Artista desconhecido"
+  },
+  "profile": {
+    "powerSaver": "Economia",
+    "balanced": "Equilibrado"
+  },
+  "osd": {
+    "theme": "Tema",
+    "updated": "Atualizado",
+    "screenshot": "Captura",
+    "color": "Cor"
+  },
+  "development": {
+    "testApplication": "Aplicativo de teste",
+    "notification": "Notificação {count}",
+    "longNotification": "Uma notificação com título longo para validar a elipse",
+    "notificationBody": "Conteúdo de teste seguro",
+    "longBody": "Este texto ocupa mais de uma linha para validar altura, espaçamento e limite do conteúdo sem cobrir os outros cartões.",
+    "transfer": "Transferência em andamento",
+    "complete": "{percent}% concluído",
+    "clipboardText": "Trecho de texto copiado para validar a lista",
+    "clipboardOther": "Outro item de texto",
+    "image": "Imagem · {dimensions}",
+    "preparingTheme": "Preparando tema",
+    "applyingPalette": "Aplicando nova paleta"
+  }
+}

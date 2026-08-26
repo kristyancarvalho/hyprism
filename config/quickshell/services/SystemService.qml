@@ -9,6 +9,9 @@ Item {
     required property var controller
     readonly property string rootDir: controller.rootDir
     readonly property string networkInterface: Design.safeText(controller.widgetConfig("network").interface, "auto")
+    function refresh() {
+        if (!weather.running) weather.running = true
+    }
     function synchronize() {
         stream.running = false
         restart.restart()
@@ -27,5 +30,8 @@ Item {
         stdout: SplitParser { splitMarker: "\n"; onRead: data => { try { service.controller.weather = Object.assign({}, service.controller.weather, JSON.parse(data)) } catch (error) {} } }
     }
     Timer { interval: 1800000; running: true; repeat: true; triggeredOnStart: true; onTriggered: weather.running = true }
-    Component.onCompleted: restart.start()
+    Component.onCompleted: {
+        controller.weatherService = service
+        restart.start()
+    }
 }

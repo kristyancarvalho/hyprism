@@ -81,10 +81,10 @@ ShellRoot {
         const next = notificationHistory.filter(item => item && notificationKey(item) !== key)
         notificationHistory = [{
             id: notification.id,
-            appName: Design.safeText(notification.appName, "Notificação"),
+            appName: Design.safeText(notification.appName, I18n.tr("notifications.notification")),
             appIcon: Design.safeText(notification.appIcon, ""),
             desktopEntry: Design.safeText(notification.desktopEntry, ""),
-            summary: Design.safeText(notification.summary, "Notificação"),
+            summary: Design.safeText(notification.summary, I18n.tr("notifications.notification")),
             body: Design.safeText(notification.body, ""),
             urgency: Design.safeNumber(notification.urgency, 1),
             receivedAt: Date.now(),
@@ -174,7 +174,7 @@ ShellRoot {
             tracked: true,
             lastGeneration: true,
             expireTimeout: 10000,
-            appName: index % 2 === 0 ? "Hyprism" : "Aplicativo de teste",
+            appName: index % 2 === 0 ? "Hyprism" : I18n.tr("development.testApplication"),
             appIcon: "",
             desktopEntry: "",
             summary: summary,
@@ -211,6 +211,7 @@ ShellRoot {
         if (!source) return
         const parsed = JSON.parse(source)
         if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("a raiz deve ser um objeto JSON")
+        I18n.locale = I18n.supportedLocales.indexOf(parsed.language) >= 0 ? parsed.language : "en"
         const incomingShell = parsed.shell || {}
         const defaultShell = shellController.defaultShellConfig()
         shellController.config = {
@@ -277,6 +278,7 @@ ShellRoot {
         function toggleClipboard(): void { shellController.toggleClipboard(root.focusedScreenName()) }
         function toggleWallpaperPicker(): void { shellController.toggleWallpaperPicker(root.focusedScreenName()) }
         function toggleNetwork(): void { shellController.toggleNetwork(root.focusedScreenName()) }
+        function toggleBluetooth(): void { shellController.toggleBluetooth(root.focusedScreenName()) }
         function togglePowerMenu(): void { shellController.togglePowerMenu(root.focusedScreenName()) }
         function toggleEmojiPicker(): void { shellController.toggleEmojiPicker(root.focusedScreenName()) }
         function toggleRecording(): void { shellController.toggleRecording(root.focusedScreenName()) }
@@ -298,13 +300,15 @@ ShellRoot {
         }
         function switcherCommit(): void { shellController.commitSwitcher() }
         function togglePowerSaver(): void { shellController.togglePowerSaver() }
+        function refreshWeather(): void { shellController.refreshWeather() }
         function randomWallpaper(): void { shellController.run([shellController.rootDir + "/scripts/wallpaper", "random"]) }
         function close(): void { shellController.close() }
-        function themeChanged(image: string): void { shellController.showOsd("Tema", "Atualizado") }
+        function themeChanged(image: string): void { shellController.showOsd(I18n.tr("osd.theme"), I18n.tr("osd.updated")) }
         function reload(): void { Quickshell.reload(true) }
         function status(): string {
             return JSON.stringify({
                 running: true,
+                language: I18n.locale,
                 pid: Quickshell.processId,
                 mode: shellController.mode,
                 targetScreen: shellController.targetScreenName,
@@ -367,13 +371,13 @@ ShellRoot {
     }
     IpcHandler {
         target: "osd"
-        function volume(value: string): void { shellController.showOsd("Volume", value) }
-        function brightness(value: string): void { shellController.showOsd("Brilho", value) }
-        function microphone(value: string): void { shellController.showOsd("Microfone", value) }
-        function screenshot(value: string): void { shellController.showOsd("Captura", value.split("/").pop()) }
-        function color(value: string): void { shellController.showOsd("Cor", value) }
-        function night(value: string): void { shellController.showOsd("Modo noturno", value) }
-        function power(value: string): void { shellController.showOsd("Economia de energia", value) }
+        function volume(value: string): void { shellController.showOsd(I18n.tr("hub.volume"), value === "muted" ? I18n.tr("common.muted") : value) }
+        function brightness(value: string): void { shellController.showOsd(I18n.tr("hub.brightness"), value) }
+        function microphone(value: string): void { shellController.showOsd(I18n.tr("hub.microphone"), value === "muted" ? I18n.tr("common.muted") : value) }
+        function screenshot(value: string): void { shellController.showOsd(I18n.tr("osd.screenshot"), value.split("/").pop()) }
+        function color(value: string): void { shellController.showOsd(I18n.tr("osd.color"), value) }
+        function night(value: string): void { shellController.showOsd(I18n.tr("hub.nightMode"), value === "enabled" ? I18n.tr("common.enabled") : I18n.tr("common.disabled")) }
+        function power(value: string): void { shellController.showOsd(I18n.tr("hub.powerSaver"), value === "power-saver" ? I18n.tr("profile.powerSaver") : I18n.tr("profile.balanced")) }
     }
     IpcHandler {
         target: "development"
@@ -386,8 +390,8 @@ ShellRoot {
                 const notification = root.developmentNotification(
                     sequence,
                     index,
-                    index === 1 ? "Uma notificação com título longo para validar a elipse" : "Notificação " + (index + 1),
-                    index === 2 ? "Este texto ocupa mais de uma linha para validar altura, espaçamento e limite do conteúdo sem cobrir os outros cartões." : "Conteúdo de teste seguro"
+                    index === 1 ? I18n.tr("development.longNotification") : I18n.tr("development.notification", { count: index + 1 }),
+                    index === 2 ? I18n.tr("development.longBody") : I18n.tr("development.notificationBody")
                 )
                 root.storeNotification(notification)
                 root.showPopup(notification)
@@ -397,8 +401,8 @@ ShellRoot {
             if (!root.developmentMode) return
             root.notificationScreenName = root.focusedScreenName()
             const identifier = Date.now()
-            const first = root.developmentNotification(identifier, 0, "Transferência em andamento", "25% concluído")
-            const replacement = root.developmentNotification(identifier, 0, "Transferência em andamento", "75% concluído")
+            const first = root.developmentNotification(identifier, 0, I18n.tr("development.transfer"), I18n.tr("development.complete", { percent: 25 }))
+            const replacement = root.developmentNotification(identifier, 0, I18n.tr("development.transfer"), I18n.tr("development.complete", { percent: 75 }))
             root.storeNotification(first)
             root.showPopup(first)
             root.storeNotification(replacement)
@@ -423,10 +427,10 @@ ShellRoot {
         function mockClipboard(): void {
             if (!root.developmentMode) return
             shellController.clipboardEntries = [
-                { id: "1", type: "text", text: "Trecho de texto copiado para validar a lista", searchText: "trecho texto", mime: "text/plain;charset=utf-8", thumbnail: "", width: 0, height: 0 },
-                { id: "2", type: "image", text: "Imagem · 1920×1080", searchText: "imagem png 1920×1080", mime: "image/png", thumbnail: "file://" + shellController.rootDir + "/wallpapers/abyss.png", width: 1920, height: 1080 },
-                { id: "3", type: "text", text: "Outro item de texto", searchText: "outro item texto", mime: "text/plain;charset=utf-8", thumbnail: "", width: 0, height: 0 },
-                { id: "4", type: "image", text: "Imagem · 1200×800", searchText: "imagem png 1200×800", mime: "image/png", thumbnail: "file://" + shellController.rootDir + "/wallpapers/ember.png", width: 1200, height: 800 }
+                { id: "1", type: "text", text: I18n.tr("development.clipboardText"), searchText: I18n.tr("development.clipboardText"), mime: "text/plain;charset=utf-8", thumbnail: "", width: 0, height: 0 },
+                { id: "2", type: "image", text: I18n.tr("development.image", { dimensions: "1920×1080" }), searchText: "image png 1920×1080", mime: "image/png", thumbnail: "file://" + shellController.rootDir + "/wallpapers/abyss.png", width: 1920, height: 1080 },
+                { id: "3", type: "text", text: I18n.tr("development.clipboardOther"), searchText: I18n.tr("development.clipboardOther"), mime: "text/plain;charset=utf-8", thumbnail: "", width: 0, height: 0 },
+                { id: "4", type: "image", text: I18n.tr("development.image", { dimensions: "1200×800" }), searchText: "image png 1200×800", mime: "image/png", thumbnail: "file://" + shellController.rootDir + "/wallpapers/ember.png", width: 1200, height: 800 }
             ]
         }
         function wallpaperSearch(query: string): void {
@@ -435,7 +439,7 @@ ShellRoot {
         }
         function mockTask(): void {
             if (!root.developmentMode) return
-            shellController.upsertTask(JSON.stringify({ id: "development", title: "Preparando tema", subtitle: "Aplicando nova paleta", progress: 64, status: "running", eta: 45, source: "Hyprism" }))
+            shellController.upsertTask(JSON.stringify({ id: "development", title: I18n.tr("development.preparingTheme"), subtitle: I18n.tr("development.applyingPalette"), progress: 64, status: "running", eta: 45, source: "Hyprism" }))
         }
         function openRecordingSelector(): void {
             if (!root.developmentMode) return

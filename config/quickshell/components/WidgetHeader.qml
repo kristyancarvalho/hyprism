@@ -25,7 +25,7 @@ Item {
         Text {
             width: parent.width - valueLabel.width - Design.widgetHeaderHeight - 12
             height: Design.widgetHeaderHeight
-            text: Design.safeText(header.title, "Sistema")
+            text: Design.safeText(header.title, I18n.tr("widgets.system"))
             color: header.theme.colors.foreground
             font.family: Design.fontFamily
             font.pixelSize: Design.fontSizeXs

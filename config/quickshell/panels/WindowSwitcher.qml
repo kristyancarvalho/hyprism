@@ -40,7 +40,7 @@ Item {
 
             Text {
                 Layout.fillWidth: true
-                text: "Trocar janela"
+                text: I18n.tr("switcher.title")
                 color: panel.theme.colors.foreground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeMd
@@ -50,7 +50,7 @@ Item {
             Text {
                 id: hint
                 Layout.preferredWidth: implicitWidth
-                text: "← → navegar  ·  solte Super para abrir"
+                text: I18n.tr("switcher.hint")
                 color: panel.theme.colors.mutedForeground
                 font.family: Design.fontFamily
                 font.pixelSize: Design.fontSizeXs
@@ -125,7 +125,7 @@ Item {
 
                     Text {
                         width: parent.width
-                        text: Design.safeText(title, minimized ? "Janela minimizada" : "Sem título")
+                        text: Design.safeText(title, minimized ? I18n.tr("common.minimizedWindow") : I18n.tr("common.unknownTitle"))
                         color: panel.theme.colors.mutedForeground
                         font.family: Design.fontFamily
                         font.pixelSize: Design.fontSizeXs
