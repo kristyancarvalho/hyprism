@@ -148,6 +148,7 @@ QtObject {
         suspend: "󰒲",
         logout: "󰍃",
         night: "󰖔",
+        lightTheme: "󰖨",
         powerSaver: "󰌪",
         screenshot: "󰹑",
         colorPicker: "󰏘",

@@ -169,7 +169,12 @@ if ! find -P "$target_home/Imagens/Wallpapers" -maxdepth 1 -type f \( -iname '*.
 fi
 
 colloid_revision=6c2dc65865628bda9fdc8157a30cd5eda6fd41f9
-colloid_name=Colloid-Hyprism-Dark-Matugen
+appearance_mode=dark
+if ((dry_run == 0)); then
+  appearance_mode=$(as_user jq -r '.appearance.mode // "dark"' "$runtime_root/config/user.json")
+fi
+[[ $appearance_mode == dark || $appearance_mode == light ]] || appearance_mode=dark
+if [[ $appearance_mode == light ]]; then colloid_name=Colloid-Hyprism-Light-Matugen; else colloid_name=Colloid-Hyprism-Dark-Matugen; fi
 colloid_theme="$target_home/.local/share/themes/$colloid_name"
 
 if [[ -L $quickshell_parent ]]; then backup_path "$quickshell_parent"; fi
@@ -183,9 +188,9 @@ link_path "$runtime_root/config/foot/foot.ini" "$target_home/.config/foot/foot.i
 link_path "$runtime_root/config/kitty/kitty.conf" "$target_home/.config/kitty/kitty.conf"
 link_path "$theme_dir/fastfetch/config.jsonc" "$target_home/.config/fastfetch/config.jsonc"
 link_path "$runtime_root/config/fastfetch/images/archlinux.svg" "$target_home/.config/fastfetch/images/archlinux-source.svg"
-link_path "$runtime_root/config/gtk-3.0/settings.ini" "$target_home/.config/gtk-3.0/settings.ini"
-link_path "$runtime_root/config/gtk-4.0/settings.ini" "$target_home/.config/gtk-4.0/settings.ini"
-link_path "$runtime_root/config/gtk-2.0/gtkrc" "$target_home/.gtkrc-2.0"
+link_path "$theme_dir/gtk-3.0/settings.ini" "$target_home/.config/gtk-3.0/settings.ini"
+link_path "$theme_dir/gtk-4.0/settings.ini" "$target_home/.config/gtk-4.0/settings.ini"
+link_path "$theme_dir/gtk-2.0/gtkrc" "$target_home/.gtkrc-2.0"
 link_path "$runtime_root/config/qt5ct/qt5ct.conf" "$target_home/.config/qt5ct/qt5ct.conf"
 link_path "$runtime_root/config/qt6ct/qt6ct.conf" "$target_home/.config/qt6ct/qt6ct.conf"
 link_path "$runtime_root/config/Kvantum/kvantum.kvconfig" "$target_home/.config/Kvantum/kvantum.kvconfig"
@@ -235,7 +240,7 @@ if [[ ! -s $theme_dir/fastfetch/logo-palette.json ]]; then
 fi
 first_wallpaper=$(find -P "$target_home/Imagens/Wallpapers" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print -quit)
 if hyprlock_animations_current "$theme_dir/hyprlock.conf"; then hyprlock_animations_stale=0; else hyprlock_animations_stale=1; fi
-if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprtoolkit-colors.conf || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/hyprlock.conf || $hyprlock_animations_stale -eq 1 || ! -s $theme_dir/colloid/_color-palette-matugen.scss || ! -s $theme_dir/colloid-gtk-4.0/gtk.css || ! -s $colloid_theme/gtk-3.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig || ! -s $theme_dir/icons/Hyprism-Papirus/index.theme || ! -s $theme_dir/starship.toml || ! -s $theme_dir/tmux.conf || ! -s $theme_dir/zathura/zathurarc || ! -s $theme_dir/nvim/matugen.lua || ! -s $target_home/.config/nvim/lua/themes/matugen.lua || ! -s $theme_dir/fastfetch/config.jsonc || ! -s $target_home/.config/fastfetch/images/archlinux.png || ! -e $state_dir/lock-wallpaper || ! -s $sddm_state_dir/current-wallpaper.jpg || ! -s $sddm_state_dir/theme.conf ]]; then
+if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprtoolkit-colors.conf || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/hyprlock.conf || ! -s $theme_dir/gtk-3.0/settings.ini || ! -s $theme_dir/gtk-4.0/settings.ini || ! -s $theme_dir/gtk-2.0/gtkrc || $hyprlock_animations_stale -eq 1 || ! -s $theme_dir/colloid/_color-palette-matugen.scss || ! -s $theme_dir/colloid-gtk-4.0/gtk.css || ! -s $colloid_theme/gtk-3.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig || ! -s $theme_dir/icons/Hyprism-Papirus/index.theme || ! -s $theme_dir/starship.toml || ! -s $theme_dir/tmux.conf || ! -s $theme_dir/zathura/zathurarc || ! -s $theme_dir/nvim/matugen.lua || ! -s $target_home/.config/nvim/lua/themes/matugen.lua || ! -s $theme_dir/fastfetch/config.jsonc || ! -s $target_home/.config/fastfetch/images/archlinux.png || ! -e $state_dir/lock-wallpaper || ! -s $sddm_state_dir/current-wallpaper.jpg || ! -s $sddm_state_dir/theme.conf ]]; then
   if [[ -n ${first_wallpaper:-} ]]; then
     as_user env HYPRISM_ROOT="$runtime_root" HYPRISM_SDDM_STATE_DIR="$sddm_state_dir" "$runtime_root/scripts/wallpaper" set "$first_wallpaper"
   else
@@ -284,7 +289,7 @@ fi
 if ((dry_run == 0)) && command -v gsettings >/dev/null; then
   as_user gsettings set org.gnome.desktop.interface gtk-theme "$colloid_name"
   as_user gsettings set org.gnome.desktop.interface icon-theme Hyprism-Papirus
-  as_user gsettings set org.gnome.desktop.interface color-scheme prefer-dark
+  as_user gsettings set org.gnome.desktop.interface color-scheme "prefer-$appearance_mode"
 fi
 
 if ((dry_run == 0)); then
@@ -331,6 +336,9 @@ if ((dry_run == 0)); then
   verify_link "$runtime_root/config/quickshell" "$quickshell_config"
   verify_link "$runtime_root/scripts/hyprism-shell" "$target_home/.local/bin/hyprism-shell"
   verify_link "$theme_dir/fastfetch/config.jsonc" "$target_home/.config/fastfetch/config.jsonc"
+  verify_link "$theme_dir/gtk-3.0/settings.ini" "$target_home/.config/gtk-3.0/settings.ini"
+  verify_link "$theme_dir/gtk-4.0/settings.ini" "$target_home/.config/gtk-4.0/settings.ini"
+  verify_link "$theme_dir/gtk-2.0/gtkrc" "$target_home/.gtkrc-2.0"
   verify_link "$runtime_root/config/fastfetch/images/archlinux.svg" "$target_home/.config/fastfetch/images/archlinux-source.svg"
   verify_link "$runtime_root/config/tmux/tmux.conf" "$target_home/.tmux.conf"
   verify_link "$runtime_root/config/systemd/user/hyprism-hyprsunset.service" "$target_home/.config/systemd/user/hyprism-hyprsunset.service"

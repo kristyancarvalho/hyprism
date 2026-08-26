@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+from datetime import datetime
 import json
 import os
 from pathlib import Path
@@ -24,6 +25,7 @@ PANELS = {
     "emoji": "toggleEmojiPicker",
     "recording": "toggleRecording",
 }
+THEME_MODES = ("dark", "light")
 
 
 def root_dir():
@@ -165,6 +167,109 @@ def language_command(args):
     return 0
 
 
+def appearance(config):
+    value = config.setdefault("appearance", {})
+    if value.get("mode") not in THEME_MODES:
+        value["mode"] = "dark"
+    schedule = value.setdefault("schedule", {})
+    schedule.setdefault("enabled", False)
+    schedule.setdefault("lightStart", "07:00")
+    schedule.setdefault("darkStart", "18:00")
+    return value
+
+
+def parse_time(value):
+    try:
+        parsed = datetime.strptime(value, "%H:%M")
+    except ValueError:
+        raise argparse.ArgumentTypeError("time must use 24-hour HH:MM format")
+    return parsed.strftime("%H:%M")
+
+
+def scheduled_mode(schedule, now=None):
+    current = now or datetime.now()
+    minute = current.hour * 60 + current.minute
+    light_hour, light_minute = map(int, schedule["lightStart"].split(":"))
+    dark_hour, dark_minute = map(int, schedule["darkStart"].split(":"))
+    light = light_hour * 60 + light_minute
+    dark = dark_hour * 60 + dark_minute
+    if light == dark:
+        raise SystemExit("Light and dark start times must differ")
+    active = light <= minute < dark if light < dark else minute >= light or minute < dark
+    return "light" if active else "dark"
+
+
+def regenerate_theme():
+    result = subprocess.run(
+        [str(root_dir() / "scripts/wallpaper"), "theme"],
+        text=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if result.returncode != 0:
+        detail = result.stderr.strip()
+        raise SystemExit(detail or "Theme generation failed")
+
+
+def set_theme_mode(config, mode, disable_schedule):
+    settings = appearance(config)
+    changed = settings["mode"] != mode
+    schedule_changed = disable_schedule and settings["schedule"]["enabled"]
+    settings["mode"] = mode
+    if disable_schedule:
+        settings["schedule"]["enabled"] = False
+    if changed or schedule_changed:
+        write_config(config)
+    if changed:
+        regenerate_theme()
+    return mode
+
+
+def reconcile_theme(config, now=None):
+    settings = appearance(config)
+    if not settings["schedule"]["enabled"]:
+        return settings["mode"]
+    return set_theme_mode(config, scheduled_mode(settings["schedule"], now), False)
+
+
+def theme_command(args):
+    config = configuration()
+    settings = appearance(config)
+    if args.theme_command == "get":
+        print(settings["mode"])
+        return 0
+    if args.theme_command == "set":
+        print(set_theme_mode(config, args.mode, True))
+        return 0
+    if args.theme_command == "toggle":
+        print(set_theme_mode(config, "dark" if settings["mode"] == "light" else "light", True))
+        return 0
+    schedule = settings["schedule"]
+    if args.schedule_command == "get":
+        print(f"{'enabled' if schedule['enabled'] else 'disabled'} {schedule['lightStart']} {schedule['darkStart']}")
+        return 0
+    if args.schedule_command == "set":
+        if args.light_start == args.dark_start:
+            raise SystemExit("Light and dark start times must differ")
+        schedule["lightStart"] = args.light_start
+        schedule["darkStart"] = args.dark_start
+        write_config(config)
+        if schedule["enabled"]:
+            reconcile_theme(config)
+        print(f"{args.light_start} {args.dark_start}")
+        return 0
+    if args.schedule_command == "enable":
+        schedule["enabled"] = True
+        write_config(config)
+        print(reconcile_theme(config))
+        return 0
+    schedule["enabled"] = False
+    write_config(config)
+    print(settings["mode"])
+    return 0
+
+
 def geocode(location):
     query = urllib.parse.urlencode({"name": location, "count": 1, "language": "en", "format": "json"})
     try:
@@ -238,6 +343,21 @@ def parser():
     language_set = language_commands.add_parser("set", help="set the interface language")
     language_set.add_argument("locale", choices=SUPPORTED_LANGUAGES)
 
+    theme = commands.add_parser("theme", help="manage light and dark appearance")
+    theme_commands = theme.add_subparsers(dest="theme_command", required=True)
+    theme_commands.add_parser("get", help="print the active appearance")
+    theme_set = theme_commands.add_parser("set", help="set the appearance and disable scheduling")
+    theme_set.add_argument("mode", choices=THEME_MODES)
+    theme_commands.add_parser("toggle", help="toggle the appearance and disable scheduling")
+    schedule = theme_commands.add_parser("schedule", help="manage automatic appearance switching")
+    schedule_commands = schedule.add_subparsers(dest="schedule_command", required=True)
+    schedule_commands.add_parser("get", help="print schedule state and boundaries")
+    schedule_set = schedule_commands.add_parser("set", help="set light and dark start times")
+    schedule_set.add_argument("light_start", type=parse_time)
+    schedule_set.add_argument("dark_start", type=parse_time)
+    schedule_commands.add_parser("enable", help="enable and apply the schedule")
+    schedule_commands.add_parser("disable", help="disable the schedule")
+
     wallpaper = commands.add_parser("wallpaper", help="manage wallpapers")
     wallpaper_commands = wallpaper.add_subparsers(dest="wallpaper_command", required=True)
     for action in ("random", "current", "list"):
@@ -265,6 +385,13 @@ def main():
         migrate.add_argument("--language", choices=SUPPORTED_LANGUAGES, default="en")
         migrate.add_argument("--existing")
         return migrate_command(migrate.parse_args(sys.argv[2:]))
+    if len(sys.argv) > 1 and sys.argv[1] == "_theme-reconcile":
+        reconcile = argparse.ArgumentParser(add_help=False)
+        reconcile.add_argument("--now", type=parse_time)
+        arguments = reconcile.parse_args(sys.argv[2:])
+        now = datetime.strptime(arguments.now, "%H:%M") if arguments.now else None
+        print(reconcile_theme(configuration(), now))
+        return 0
     args = parser().parse_args()
     if args.command == "widgets":
         return widgets_command(args)
@@ -272,6 +399,8 @@ def main():
         return weather_command(args)
     if args.command == "language":
         return language_command(args)
+    if args.command == "theme":
+        return theme_command(args)
     if args.command == "wallpaper":
         arguments = [args.wallpaper_command]
         if args.wallpaper_command == "set":

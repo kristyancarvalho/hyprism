@@ -43,6 +43,14 @@ refresh_hyprpolkitagent() {
   fi
   systemctl --user try-restart hyprpolkitagent.service >/dev/null 2>&1 || true
 }
+propagate() {
+  local image=${1:?caminho do papel de parede obrigatório}
+  HYPRISM_CACHE_DIR="$cache_dir" "$root_dir/scripts/theme/generate-theme.py" "$image"
+  refresh_hyprpolkitagent
+  apply_kitty_colors
+  hyprctl reload >/dev/null 2>&1 || true
+  command -v qs >/dev/null && "$root_dir/scripts/system/shell-ipc" shell themeChanged "$image" >/dev/null 2>&1 || true
+}
 apply() {
   local image state_candidate link_candidate
   image=$(realpath -e -- "${1:?caminho do papel de parede obrigatório}")
@@ -52,17 +60,13 @@ apply() {
     for _ in {1..20}; do awww query >/dev/null 2>&1 && break; sleep .1; done
     awww img "$image" --transition-type grow --transition-duration .55 || true
   fi
-  HYPRISM_CACHE_DIR="$cache_dir" "$root_dir/scripts/theme/generate-theme.py" "$image"
-  refresh_hyprpolkitagent
+  propagate "$image"
   state_candidate=$(mktemp "$state_dir/.current-wallpaper.XXXXXX")
   printf '%s\n' "$image" >"$state_candidate"
   mv -f -- "$state_candidate" "$current_file"
   link_candidate="$state_dir/.lock-wallpaper.$$"
   ln -s -- "$image" "$link_candidate"
   mv -Tf -- "$link_candidate" "$lock_wallpaper"
-  apply_kitty_colors
-  hyprctl reload >/dev/null 2>&1 || true
-  command -v qs >/dev/null && "$root_dir/scripts/system/shell-ipc" shell themeChanged "$image" >/dev/null 2>&1 || true
 }
 random() {
   mapfile -t files < <(list)
@@ -80,5 +84,6 @@ case "${1:-}" in
   current) current ;;
   list) list ;;
   restore) [[ -s $current_file ]] && apply "$(current)" || random ;;
-  *) printf 'Uso: %s {set IMAGEM|random|current|list|restore}\n' "$0" >&2; exit 2 ;;
+  theme) [[ -s $current_file ]] && propagate "$(current)" || { printf 'Nenhum papel de parede ativo.\n' >&2; exit 1; } ;;
+  *) printf 'Uso: %s {set IMAGEM|random|current|list|restore|theme}\n' "$0" >&2; exit 2 ;;
 esac

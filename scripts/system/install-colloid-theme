@@ -4,15 +4,19 @@ set -Eeuo pipefail
 revision=6c2dc65865628bda9fdc8157a30cd5eda6fd41f9
 repository=https://github.com/vinceliuice/Colloid-gtk-theme.git
 theme_name=Colloid-Hyprism
-installed_name=Colloid-Hyprism-Dark-Matugen
 root_dir="${HYPRISM_ROOT:-$HOME/.local/share/hyprism}"
 cache_dir="${HYPRISM_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/hyprism}"
 palette="${1:-$cache_dir/theme/colloid/_color-palette-matugen.scss}"
+mode="${2:-dark}"
+[[ $mode == dark || $mode == light ]] || { printf 'Modo GTK inválido: %s\n' "$mode" >&2; exit 2; }
+color_name="${mode^}"
+installed_name="$theme_name-$color_name-Matugen"
 theme_root="${HYPRISM_COLLOID_DEST:-${XDG_DATA_HOME:-$HOME/.local/share}/themes}"
 source_root="$cache_dir/colloid/source-$revision"
 source_patch="$root_dir/config/matugen/colloid-matugen.patch"
 lock_file="$cache_dir/colloid/install.lock"
-libadwaita_target="$cache_dir/theme/colloid-gtk-4.0"
+libadwaita_active="$cache_dir/theme/colloid-gtk-4.0"
+libadwaita_target="$cache_dir/theme/colloid-gtk-4.0-$mode"
 source_candidate=
 previous_source=
 build_root=
@@ -47,6 +51,18 @@ report_error() {
 }
 trap cleanup EXIT
 trap 'report_error "$?" "$BASH_COMMAND" "$LINENO"' ERR
+activate() {
+  local candidate="$cache_dir/theme/.colloid-gtk-4.0-$mode-$$"
+  if [[ -d $libadwaita_active && ! -L $libadwaita_active ]]; then
+    mv "$libadwaita_active" "$cache_dir/theme/.colloid-gtk-4.0-legacy-$(date +%s)-$$"
+  fi
+  ln -s "$(basename "$libadwaita_target")" "$candidate"
+  mv -Tf "$candidate" "$libadwaita_active"
+  if [[ ${HYPRISM_SKIP_GSETTINGS:-0} != 1 ]] && command -v gsettings >/dev/null 2>&1; then
+    gsettings set org.gnome.desktop.interface gtk-theme "$installed_name" >/dev/null 2>&1 || true
+    gsettings set org.gnome.desktop.interface color-scheme "prefer-$mode" >/dev/null 2>&1 || true
+  fi
+}
 stage='preparação dos diretórios'
 mkdir -p "$cache_dir/colloid" "$theme_root" "$(dirname "$libadwaita_target")"
 exec 9>"$lock_file"
@@ -93,6 +109,7 @@ if [[ -s $active_theme/.hyprism-palette.sha256 ]] \
   && [[ -s $active_theme/gtk-3.0/gtk.css ]] \
   && [[ -s $active_theme/gtk-4.0/gtk.css ]] \
   && [[ -s $libadwaita_target/gtk.css ]]; then
+  activate
   printf 'GTK: cores inalteradas; compilação do Colloid dispensada.\n'
   exit 0
 fi
@@ -108,12 +125,12 @@ stage='compilação GTK'
 if ! HOME="$build_home" XDG_DATA_HOME="$build_home/.local/share" "$source_root/install.sh" \
   --dest "$build_dest" \
   --name "$theme_name" \
-  --color dark \
+  --color "$mode" \
   --libadwaita fixed \
   --tweaks matugen rimless \
   >"$build_log" 2>&1; then
   printf 'Falha ao compilar o tema GTK com Colloid; o tema anterior foi preservado.\n' >&2
-  printf 'Etapa: %s\nComando: %s/install.sh --dest %s --name %s --color dark --libadwaita fixed --tweaks matugen rimless\n' "$stage" "$source_root" "$build_dest" "$theme_name" >&2
+  printf 'Etapa: %s\nComando: %s/install.sh --dest %s --name %s --color %s --libadwaita fixed --tweaks matugen rimless\n' "$stage" "$source_root" "$build_dest" "$theme_name" "$mode" >&2
   tail -n 12 "$build_log" | sed 's/^/  /' >&2
   exit 1
 fi
@@ -143,9 +160,6 @@ fi
 mv "$staged_libadwaita" "$libadwaita_target"
 publishing=0
 
-if command -v gsettings >/dev/null 2>&1; then
-  gsettings set org.gnome.desktop.interface gtk-theme "$installed_name" >/dev/null 2>&1 || true
-  gsettings set org.gnome.desktop.interface color-scheme prefer-dark >/dev/null 2>&1 || true
-fi
+activate
 
 printf 'GTK: Colloid recompilado com Matugen e publicado como %s.\n' "$installed_name"
