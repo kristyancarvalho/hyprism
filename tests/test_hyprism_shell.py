@@ -108,6 +108,17 @@ class HyprismShellTests(unittest.TestCase):
         self.assertEqual(self.read_config()["appearance"]["mode"], "dark")
         self.assertFalse(self.read_config()["appearance"]["schedule"]["enabled"])
 
+    def test_warm_white_persists_and_regenerates_in_light_mode(self):
+        self.use_fake_theme_runtime()
+        self.assertEqual(self.run_cli("theme", "warm-white", "get").stdout, "disabled\n")
+        enabled = self.run_cli("theme", "warm-white", "set", "on")
+        self.assertEqual(enabled.returncode, 0)
+        self.assertTrue(self.read_config()["appearance"]["warmWhite"])
+        self.run_cli("theme", "set", "light")
+        toggled = self.run_cli("theme", "warm-white", "toggle")
+        self.assertEqual(toggled.stdout, "disabled\n")
+        self.assertFalse(self.read_config()["appearance"]["warmWhite"])
+
     def test_theme_schedule_validation_and_cross_midnight(self):
         self.use_fake_theme_runtime()
         configured = self.run_cli("theme", "schedule", "set", "18:00", "06:00")
@@ -152,6 +163,7 @@ class HyprismShellTests(unittest.TestCase):
         migrated = self.read_config()
         self.assertEqual(migrated["language"], "pt-BR")
         self.assertEqual(migrated["appearance"]["mode"], "dark")
+        self.assertFalse(migrated["appearance"]["warmWhite"])
         self.assertFalse(migrated["appearance"]["schedule"]["enabled"])
         self.assertFalse(migrated["shell"]["widgets"]["clock"]["enabled"])
         self.assertEqual(migrated["weather"]["location"], "Recife")
@@ -161,6 +173,7 @@ class HyprismShellTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertEqual(self.read_config()["language"], "pt-BR")
         self.assertEqual(self.read_config()["appearance"]["mode"], "dark")
+        self.assertFalse(self.read_config()["appearance"]["warmWhite"])
 
     def test_public_actions_route_to_internal_implementations(self):
         fake_root = Path(self.temporary.name) / "runtime"

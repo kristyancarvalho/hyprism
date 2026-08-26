@@ -15,7 +15,7 @@ FocusScope {
         return match && Number(match[1]) < 24 && Number(match[2]) < 60
     }
 
-    function save(enabled) {
+    function save() {
         feedback = ""
         if (!validTime(lightStart.text) || !validTime(darkStart.text)) {
             feedback = I18n.tr("themeSchedule.invalidTime")
@@ -25,16 +25,29 @@ FocusScope {
             feedback = I18n.tr("themeSchedule.sameTime")
             return
         }
-        controller.setThemeSchedule(lightStart.text, darkStart.text, enabled)
+        controller.setThemeSchedule(lightStart.text, darkStart.text, true)
         feedback = I18n.tr("themeSchedule.saved")
     }
 
+    function setAutomatic(enabled) {
+        feedback = ""
+        if (enabled) {
+            save()
+            return
+        }
+        controller.setThemeSchedule(
+            Design.safeText(schedule.lightStart, "07:00"),
+            Design.safeText(schedule.darkStart, "18:00"),
+            false
+        )
+    }
+
     function takeInitialFocus() {
-        lightStart.forceInputFocus(Qt.ShortcutFocusReason)
+        automatic.forceActiveFocus(Qt.ShortcutFocusReason)
     }
 
     function initialFocusReady() {
-        return lightStart.inputActiveFocus || darkStart.inputActiveFocus || automatic.activeFocus || saveButton.activeFocus
+        return lightStart.inputActiveFocus || darkStart.inputActiveFocus || automatic.activeFocus || warmWhite.activeFocus || saveButton.activeFocus
     }
 
     focus: true
@@ -82,9 +95,24 @@ FocusScope {
             }
         }
 
+        ActionButton {
+            id: automatic
+            Layout.fillWidth: true
+            Layout.preferredHeight: 58
+            theme: panel.theme
+            label: I18n.tr("themeSchedule.automatic")
+            iconName: "calendar"
+            active: panel.schedule.enabled === true
+            KeyNavigation.backtab: warmWhite
+            KeyNavigation.tab: panel.schedule.enabled === true ? lightStart : warmWhite
+            onClicked: panel.setAutomatic(panel.schedule.enabled !== true)
+        }
+
         RowLayout {
             Layout.fillWidth: true
             spacing: Design.spacingMd
+            visible: panel.schedule.enabled === true
+            enabled: visible
 
             ColumnLayout {
                 Layout.fillWidth: true
@@ -107,9 +135,10 @@ FocusScope {
                     placeholderText: "07:00"
                     clearButtonEnabled: false
                     tabTarget: darkStart
+                    backtabTarget: automatic
                     onKeyPressed: event => {
                         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                            panel.save(panel.schedule.enabled === true)
+                            panel.save()
                             event.accepted = true
                         }
                     }
@@ -136,11 +165,11 @@ FocusScope {
                     iconName: "night"
                     placeholderText: "18:00"
                     clearButtonEnabled: false
-                    tabTarget: automatic
+                    tabTarget: warmWhite
                     backtabTarget: lightStart
                     onKeyPressed: event => {
                         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                            panel.save(panel.schedule.enabled === true)
+                            panel.save()
                             event.accepted = true
                         }
                     }
@@ -149,21 +178,23 @@ FocusScope {
         }
 
         ActionButton {
-            id: automatic
+            id: warmWhite
             Layout.fillWidth: true
             Layout.preferredHeight: 58
             theme: panel.theme
-            label: I18n.tr("themeSchedule.automatic")
-            iconName: "calendar"
-            active: panel.schedule.enabled === true
-            KeyNavigation.backtab: darkStart
-            KeyNavigation.tab: saveButton
-            onClicked: panel.save(panel.schedule.enabled !== true)
+            label: I18n.tr("themeSchedule.warmWhite")
+            iconName: "warmWhite"
+            active: panel.controller.warmWhite
+            KeyNavigation.backtab: panel.schedule.enabled === true ? darkStart : automatic
+            KeyNavigation.tab: panel.schedule.enabled === true ? saveButton : automatic
+            onClicked: panel.controller.toggleWarmWhite()
         }
 
         RowLayout {
             Layout.fillWidth: true
             spacing: Design.spacingSm
+            visible: panel.schedule.enabled === true
+            enabled: visible
 
             Text {
                 Layout.fillWidth: true
@@ -180,9 +211,9 @@ FocusScope {
                 theme: panel.theme
                 text: I18n.tr("themeSchedule.save")
                 iconName: "check"
-                KeyNavigation.backtab: automatic
-                KeyNavigation.tab: lightStart
-                onClicked: panel.save(panel.schedule.enabled === true)
+                KeyNavigation.backtab: warmWhite
+                KeyNavigation.tab: automatic
+                onClicked: panel.save()
             }
         }
     }

@@ -39,6 +39,7 @@ SDDM_STATE_EXPLICIT = "HYPRISM_SDDM_STATE_DIR" in os.environ
 NVIM_THEME = pathlib.Path(os.environ.get("HYPRISM_NVIM_THEME_PATH", HOME / ".config/nvim/lua/themes/matugen.lua"))
 FASTFETCH_DIR = pathlib.Path(os.environ.get("HYPRISM_FASTFETCH_DIR", pathlib.Path(os.environ.get("XDG_CONFIG_HOME", HOME / ".config")) / "fastfetch"))
 FASTFETCH_LOGO_SOURCE = ROOT / "config/fastfetch/images/archlinux.svg"
+WARM_WHITE = "#fff0d5"
 
 
 def write(path, value, mode=None):
@@ -198,6 +199,17 @@ def light_contrast(candidate, background, target=3.2):
         if contrast(adjusted, background) >= target:
             return adjusted
     return mix(candidate, "#000000", .55)
+
+
+def warm_light_palette(raw, enabled):
+    if not enabled:
+        return dict(raw)
+    warmed = dict(raw)
+    for role in ("background", "surface_low", "surface_container", "surface_high", "surface_highest"):
+        warmed[role] = mix(raw[role], WARM_WHITE, .42)
+    warmed["inactive_border"] = mix(raw["inactive_border"], WARM_WHITE, .16)
+    warmed["outline"] = mix(raw["outline"], WARM_WHITE, .08)
+    return warmed
 
 
 def theme_from(raw, image, mode):
@@ -907,13 +919,16 @@ def validate_hyprtoolkit(content):
         raise ValueError("paleta do hyprtoolkit inválida")
 
 
-def appearance_mode():
+def appearance_settings():
     config = pathlib.Path(os.environ.get("HYPRISM_CONFIG", HOME / ".config/hyprism/user.json"))
     try:
-        value = json.loads(config.read_text(encoding="utf-8")).get("appearance", {}).get("mode", "dark")
+        appearance = json.loads(config.read_text(encoding="utf-8")).get("appearance", {})
+        mode = appearance.get("mode", "dark")
+        warm_white = appearance.get("warmWhite", False) is True
     except (OSError, AttributeError, json.JSONDecodeError):
-        value = "dark"
-    return value if value in ("dark", "light") else "dark"
+        mode = "dark"
+        warm_white = False
+    return (mode if mode in ("dark", "light") else "dark"), warm_white
 
 
 def fallback_palette(mode):
@@ -952,14 +967,15 @@ def render_gtk2_settings(theme):
 
 def main():
     image = sys.argv[1] if len(sys.argv) > 1 else ""
-    mode = appearance_mode()
+    mode, warm_white = appearance_settings()
     try:
         raw, matugen = matugen_palette(image, mode) if image else (fallback_palette(mode), {"fallback": True})
     except (OSError, KeyError, ValueError, json.JSONDecodeError, subprocess.SubprocessError) as error:
         print(f"Tema do Hyprism: o Matugen falhou ({error}); mantendo os artefatos atuais", file=sys.stderr)
         raise SystemExit(1)
 
-    theme = theme_from(raw, image, mode)
+    theme = theme_from(warm_light_palette(raw, mode == "light" and warm_white), image, mode)
+    theme["warmWhite"] = mode == "light" and warm_white
     publish(OUT / "matugen.json", json_text(matugen), json.loads)
     publish(OUT / "theme.json", json_text(theme), json.loads)
     publish(OUT / "kitty.conf", render_kitty(theme), validate_colors)

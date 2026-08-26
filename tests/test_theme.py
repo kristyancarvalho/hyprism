@@ -38,6 +38,17 @@ class ThemeTests(unittest.TestCase):
         self.assertIn("gtk-application-prefer-dark-theme=0", THEME.render_gtk_settings(theme))
         self.assertIn("Colloid-Hyprism-Light-Matugen", THEME.render_gtk_settings(theme))
 
+    def test_warm_white_changes_shared_light_surfaces_only(self):
+        raw = self.light_raw()
+        regular = THEME.theme_from(THEME.warm_light_palette(raw, False), "/tmp/wallpaper.png", "light")
+        warm = THEME.theme_from(THEME.warm_light_palette(raw, True), "/tmp/wallpaper.png", "light")
+        dark_raw = THEME.fallback_palette("dark")
+        self.assertNotEqual(warm["background"], regular["background"])
+        self.assertGreater(THEME.rgb(warm["background"])[0], THEME.rgb(warm["background"])[2])
+        self.assertIn(f'background = rgba({warm["background"][1:]}ff)', THEME.render_hyprtoolkit(warm))
+        self.assertIn(warm["background"], THEME.render_kitty(warm))
+        self.assertEqual(THEME.warm_light_palette(dark_raw, False), dark_raw)
+
     def test_hyprland_shadow_is_softened_only_in_light_mode(self):
         light = THEME.theme_from(self.light_raw(), "/tmp/wallpaper.png", "light")
         dark = dict(light, mode="dark")
