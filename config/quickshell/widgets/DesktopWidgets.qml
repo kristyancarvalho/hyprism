@@ -9,11 +9,14 @@ PanelWindow {
     required property var shellScreen
     required property var controller
     required property var theme
-    readonly property int columnGap: Design.spacingMd
+    readonly property int columnGap: Design.desktopWidgetColumnGap
+    readonly property int cardGap: Design.desktopWidgetGap
     readonly property bool hasClockRow: controller.widgetEnabled("clock") || controller.widgetEnabled("weather")
     readonly property bool hasSensors: controller.widgetEnabled("sensors") && controller.monitoring.sensors.available
     readonly property bool hasServices: controller.widgetEnabled("services") && controller.monitoring.services.available && (!controller.widgetConfig("services").problemOnly || !controller.monitoring.services.healthy)
     readonly property bool hasTasks: controller.widgetEnabled("tasks") && controller.tasks.length > 0
+    readonly property var serviceProblems: (controller.monitoring.services.items || []).filter(item => item.state !== "running")
+    readonly property var visibleSensors: (controller.monitoring.sensors.items || []).slice(0, compactViewport ? 2 : 5)
     readonly property bool compactViewport: shellScreen && shellScreen.height < 900
     readonly property int visibleTaskLimit: Math.min(controller.widgetNumber("tasks", "limit", 3, 1, 6), compactViewport ? 1 : 3)
     readonly property int visibleProcessLimit: Math.min(controller.widgetNumber("processes", "limit", 3, 1, 6), compactViewport ? 2 : 3)
@@ -53,6 +56,23 @@ PanelWindow {
         return peak * 1.15
     }
 
+    function sensorThresholds(item) {
+        return [
+            Design.safeNumber(item ? item.warmCelsius : 60, 60),
+            Design.safeNumber(item ? item.hotCelsius : 75, 75),
+            Design.safeNumber(item ? item.criticalCelsius : 90, 90)
+        ]
+    }
+
+    function sensorColor(item) {
+        const temperature = Design.safeNumber(item ? item.celsius : 0, 0)
+        const thresholds = sensorThresholds(item)
+        if (temperature >= thresholds[2]) return theme.colors.error
+        if (temperature >= thresholds[1]) return theme.colors.warning
+        if (temperature >= thresholds[0]) return theme.colors.accent
+        return theme.colors.mutedForeground
+    }
+
     Row {
         width: widgetWindow.logicalWidth
         height: widgetWindow.logicalHeight
@@ -63,13 +83,15 @@ PanelWindow {
         Column {
             id: primaryColumn
             width: widgetWindow.cardWidth
-            spacing: Design.spacingSm
+            spacing: widgetWindow.cardGap
 
             Row {
                 width: parent.width
-                height: visible ? 96 : 0
-                spacing: Design.spacingSm
+                height: visible ? 84 : 0
+                spacing: widgetWindow.cardGap
                 visible: widgetWindow.hasClockRow
+
+                Behavior on height { NumberAnimation { duration: Design.animationMorph; easing.type: Design.easingMorph } }
 
                 Glass {
                     id: clockCard
@@ -82,7 +104,7 @@ PanelWindow {
 
                     Column {
                         anchors.centerIn: parent
-                        spacing: 0
+                        spacing: 2
 
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
@@ -95,19 +117,11 @@ PanelWindow {
 
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: controller.formattedDate("dddd")
-                            color: theme.colors.foreground
-                            font.family: Design.fontFamily
-                            font.pixelSize: Design.fontSizeXs
-                            font.weight: Design.fontWeightMedium
-                        }
-
-                        Text {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: controller.formattedDate(I18n.locale === "pt-BR" ? "dd 'de' MMMM" : "MMMM dd")
+                            text: controller.formattedDate(I18n.locale === "pt-BR" ? "dddd · dd MMMM" : "dddd · MMMM dd")
                             color: theme.colors.mutedForeground
                             font.family: Design.fontFamily
                             font.pixelSize: 9
+                            font.weight: Design.fontWeightMedium
                         }
                     }
                 }
@@ -175,8 +189,7 @@ PanelWindow {
                 height: visible ? implicitHeight : 0
                 iconName: "cpu"
                 title: I18n.tr("widgets.system")
-                value: Math.round(Design.clamp(controller.system.cpu.percent, 0, 100)) + "% CPU"
-                contentHeight: 88
+                contentHeight: 82
 
                 Row {
                     anchors.fill: parent
@@ -239,38 +252,32 @@ PanelWindow {
                 iconName: "networkSpeed"
                 title: I18n.tr("widgets.network")
                 value: controller.networkLabel()
-                contentHeight: 110
+                contentHeight: 68
 
                 Column {
                     anchors.fill: parent
-                    spacing: Design.spacingSm
+                    spacing: Design.spacingXs
 
-                    Row {
+                    WidgetSparklineRow {
                         width: parent.width
-                        height: 51
-                        spacing: Design.spacingSm
-                        StatusIcon { name: "networkDownload"; color: theme.colors.accent; iconSize: Design.iconSm; anchors.verticalCenter: parent.verticalCenter }
-                        Column {
-                            width: 86
-                            anchors.verticalCenter: parent.verticalCenter
-                            Text { text: I18n.tr("widgets.download"); color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
-                            Text { text: controller.formatRate(controller.system.network.receiveKib); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold }
-                        }
-                        Sparkline { width: parent.width - 124; height: parent.height; samples: controller.downloadHistory; maximum: widgetWindow.historyPeak(controller.downloadHistory); lineColor: theme.colors.accent }
+                        theme: widgetWindow.theme
+                        iconName: "networkDownload"
+                        label: I18n.tr("widgets.download")
+                        value: controller.formatRate(controller.system.network.receiveKib)
+                        samples: controller.downloadHistory
+                        maximum: widgetWindow.historyPeak(controller.downloadHistory)
+                        lineColor: theme.colors.accent
                     }
 
-                    Row {
+                    WidgetSparklineRow {
                         width: parent.width
-                        height: 51
-                        spacing: Design.spacingSm
-                        StatusIcon { name: "networkUpload"; color: theme.colors.secondary; iconSize: Design.iconSm; anchors.verticalCenter: parent.verticalCenter }
-                        Column {
-                            width: 86
-                            anchors.verticalCenter: parent.verticalCenter
-                            Text { text: I18n.tr("widgets.upload"); color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
-                            Text { text: controller.formatRate(controller.system.network.transmitKib); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold }
-                        }
-                        Sparkline { width: parent.width - 124; height: parent.height; samples: controller.uploadHistory; maximum: widgetWindow.historyPeak(controller.uploadHistory); lineColor: theme.colors.secondary }
+                        theme: widgetWindow.theme
+                        iconName: "networkUpload"
+                        label: I18n.tr("widgets.upload")
+                        value: controller.formatRate(controller.system.network.transmitKib)
+                        samples: controller.uploadHistory
+                        maximum: widgetWindow.historyPeak(controller.uploadHistory)
+                        lineColor: theme.colors.secondary
                     }
                 }
             }
@@ -282,7 +289,7 @@ PanelWindow {
                 height: visible ? implicitHeight : 0
                 iconName: "storage"
                 title: I18n.tr("widgets.storage")
-                contentHeight: Math.max(38, storageRepeater.count * 42)
+                contentHeight: Math.max(46, storageRepeater.count * 50)
 
                 Column {
                     anchors.fill: parent
@@ -295,13 +302,14 @@ PanelWindow {
                         Column {
                             required property var modelData
                             width: parent.width
-                            height: 38
+                            height: 46
                             spacing: 3
                             Row {
                                 width: parent.width
-                                Text { width: parent.width * .24; text: Design.safeText(modelData.mount, "/"); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold }
-                                Text { width: parent.width * .76; horizontalAlignment: Text.AlignRight; text: controller.formatBytes(modelData.usedBytes) + " / " + controller.formatBytes(modelData.totalBytes) + "  ·  " + Math.round(Design.clamp(modelData.percent, 0, 100)) + "%"; color: modelData.percent >= 92 ? theme.colors.error : modelData.percent >= 80 ? theme.colors.warning : theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9 }
+                                Text { width: parent.width * .3; text: controller.storageName(modelData.mount); color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs; font.weight: Design.fontWeightSemibold; elide: Text.ElideRight }
+                                Text { width: parent.width * .7; horizontalAlignment: Text.AlignRight; text: controller.formatBytes(modelData.usedBytes) + " / " + controller.formatBytes(modelData.totalBytes) + "  ·  " + Math.round(Design.clamp(modelData.percent, 0, 100)) + "%"; color: modelData.percent >= 92 ? theme.colors.error : modelData.percent >= 80 ? theme.colors.warning : theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9; elide: Text.ElideRight }
                             }
+                            Text { width: parent.width; text: controller.storageMountLabel(modelData.mount); color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: 9; elide: Text.ElideMiddle }
                             Rectangle {
                                 width: parent.width
                                 height: 4
@@ -318,37 +326,76 @@ PanelWindow {
         Column {
             id: secondaryColumn
             width: widgetWindow.cardWidth
-            spacing: Design.spacingSm
+            spacing: widgetWindow.cardGap
 
             DesktopCard {
+                id: systemInfoCard
                 theme: widgetWindow.theme
                 width: parent.width
                 visible: controller.widgetEnabled("uptime") && controller.monitoring.systemInfo.available
                 height: visible ? implicitHeight : 0
                 iconName: "uptime"
                 title: I18n.tr("widgets.system")
-                contentHeight: systemRows.count * Design.widgetDataRowHeight
+                property var detailItems: controller.systemInfoDetails()
+                contentHeight: 35 + (detailItems.length > 0 ? Design.spacingSm + Math.ceil(detailItems.length / 2) * 39 : 0)
 
                 Column {
                     anchors.fill: parent
+                    spacing: 2
 
-                    Repeater {
-                        id: systemRows
-                        model: [
-                            { label: I18n.tr("widgets.kernel"), value: controller.monitoring.systemInfo.kernel },
-                            { label: I18n.tr("widgets.uptime"), value: controller.formatUptime(controller.monitoring.uptime.uptimeSeconds) },
-                            { label: I18n.tr("widgets.lastSnapshot"), value: controller.snapshotAgeText() },
-                            { label: I18n.tr("widgets.session"), value: controller.monitoring.systemInfo.session },
-                            { label: I18n.tr("widgets.updates"), value: controller.updateCountText() }
-                        ]
+                    Text {
+                        width: parent.width
+                        text: I18n.tr("widgets.kernel")
+                        color: theme.colors.mutedForeground
+                        font.family: Design.fontFamily
+                        font.pixelSize: 9
+                    }
 
-                        WidgetInfoRow {
-                            required property var modelData
-                            width: parent.width
-                            height: Design.widgetDataRowHeight
-                            theme: widgetWindow.theme
-                            label: modelData.label
-                            value: modelData.value
+                    Text {
+                        width: parent.width
+                        text: controller.monitoring.systemInfo.kernel
+                        color: theme.colors.foreground
+                        font.family: Design.fontFamily
+                        font.pixelSize: Design.fontSizeSm
+                        font.weight: Design.fontWeightSemibold
+                        elide: Text.ElideRight
+                    }
+
+                    Grid {
+                        width: parent.width
+                        columns: 2
+                        columnSpacing: Design.spacingMd
+                        rowSpacing: 3
+                        topPadding: Design.spacingSm - 2
+
+                        Repeater {
+                            model: systemInfoCard.detailItems
+
+                            Column {
+                                required property var modelData
+                                width: (systemInfoCard.width - Design.widgetInnerPadding * 2 - Design.spacingMd) / 2
+                                height: 36
+                                spacing: 1
+
+                                Text {
+                                    width: parent.width
+                                    text: modelData.label
+                                    color: theme.colors.mutedForeground
+                                    font.family: Design.fontFamily
+                                    font.pixelSize: 9
+                                    elide: Text.ElideRight
+                                }
+
+                                Text {
+                                    width: parent.width
+                                    text: modelData.value
+                                    color: theme.colors.foreground
+                                    font.family: Design.fontFamily
+                                    font.pixelSize: Design.fontSizeXs
+                                    font.weight: Design.fontWeightSemibold
+                                    elide: Text.ElideRight
+                                }
+                            }
                         }
                     }
                 }
@@ -361,23 +408,23 @@ PanelWindow {
                 height: visible ? implicitHeight : 0
                 iconName: "temperature"
                 title: I18n.tr("widgets.sensors")
-                contentHeight: Math.max(Design.widgetDataRowHeight, sensorRepeater.count * Design.widgetDataRowHeight)
+                contentHeight: Math.max(Design.widgetDataRowHeight, widgetWindow.visibleSensors.length * Design.widgetDataRowHeight)
 
                 Column {
                     anchors.fill: parent
                     Repeater {
                         id: sensorRepeater
-                        model: (controller.monitoring.sensors.items || []).slice(0, widgetWindow.compactViewport ? 2 : 4)
+                        model: widgetWindow.visibleSensors
                         WidgetInfoRow {
                             required property var modelData
                             width: parent.width
                             height: Design.widgetDataRowHeight
                             theme: widgetWindow.theme
-                            label: Design.safeText(modelData.label, I18n.tr("widgets.temperature"))
+                            label: controller.sensorName(modelData)
                             value: Math.round(Design.safeNumber(modelData.celsius, 0)) + "°C"
                             labelWidth: parent.width - 68
                             labelColor: theme.colors.foreground
-                            valueColor: modelData.celsius >= 90 ? theme.colors.error : modelData.celsius >= 78 ? theme.colors.warning : theme.colors.accent
+                            valueColor: widgetWindow.sensorColor(modelData)
                         }
                     }
                 }
@@ -390,30 +437,20 @@ PanelWindow {
                 height: visible ? implicitHeight : 0
                 iconName: "services"
                 title: I18n.tr("widgets.services")
-                value: controller.monitoring.services.healthy ? I18n.tr("widgets.healthy") : I18n.tr("widgets.attention")
-                contentHeight: controller.monitoring.services.healthy ? 28 : Math.max(28, serviceRepeater.count * 27)
+                value: controller.monitoring.services.healthy
+                    ? (controller.monitoring.services.items.length === 1 ? I18n.tr("widgets.monitoredOne") : I18n.tr("widgets.monitoredMany", { count: controller.monitoring.services.items.length })) + " · " + I18n.tr("widgets.healthy")
+                    : (widgetWindow.serviceProblems.length === 1 ? I18n.tr("widgets.issueOne") : I18n.tr("widgets.issueMany", { count: widgetWindow.serviceProblems.length }))
+                contentHeight: controller.monitoring.services.healthy ? 0 : Math.max(28, serviceRepeater.count * 28)
 
                 Column {
                     anchors.fill: parent
-
-                    Text {
-                        visible: controller.monitoring.services.healthy
-                        width: parent.width
-                        height: parent.height
-                        text: I18n.tr("widgets.servicesHealthy")
-                        color: theme.colors.mutedForeground
-                        font.family: Design.fontFamily
-                        font.pixelSize: Design.fontSizeXs
-                        verticalAlignment: Text.AlignVCenter
-                    }
-
                     Repeater {
                         id: serviceRepeater
-                        model: controller.monitoring.services.healthy ? [] : (controller.monitoring.services.items || []).filter(item => item.state !== "running")
+                        model: controller.monitoring.services.healthy ? [] : widgetWindow.serviceProblems
                         WidgetInfoRow {
                             required property var modelData
                             width: parent.width
-                            height: 27
+                            height: 28
                             theme: widgetWindow.theme
                             label: controller.serviceName(modelData)
                             value: controller.serviceStateText(modelData.state)

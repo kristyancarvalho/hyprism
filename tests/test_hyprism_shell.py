@@ -69,6 +69,23 @@ class HyprismShellTests(unittest.TestCase):
         self.assertEqual(toggled.returncode, 0)
         self.assertTrue(self.read_config()["shell"]["widgets"]["network"]["enabled"])
 
+    def test_widget_commands_preserve_explicit_false_in_partial_config(self):
+        self.config.write_text(json.dumps({
+            "shell": {"widgets": {"clock": False, "weather": {"enabled": False}}},
+            "custom": {"enabled": False},
+        }), encoding="utf-8")
+        listed = self.run_cli("widgets", "list")
+        self.assertEqual(listed.returncode, 0)
+        states = dict(line.split("\t") for line in listed.stdout.splitlines())
+        self.assertEqual(states["clock"], "disabled")
+        self.assertEqual(states["weather"], "disabled")
+        enabled = self.run_cli("widgets", "enable", "clock")
+        self.assertEqual(enabled.returncode, 0)
+        updated = self.read_config()
+        self.assertTrue(updated["shell"]["widgets"]["clock"]["enabled"])
+        self.assertFalse(updated["shell"]["widgets"]["weather"]["enabled"])
+        self.assertFalse(updated["custom"]["enabled"])
+
     def test_invalid_widget_does_not_change_configuration(self):
         before = self.config.read_bytes()
         invalid = self.run_cli("widgets", "disable", "does-not-exist")

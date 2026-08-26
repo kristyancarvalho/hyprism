@@ -113,8 +113,10 @@ Item {
         const names = Object.keys(widgetDefaults)
         for (let index = 0; index < names.length; index++) {
             const name = names[index]
+            const configured = Object.prototype.hasOwnProperty.call(source, name)
             const value = source[name]
-            if (typeof value === "boolean") merged[name] = Object.assign({}, widgetDefaults[name], { enabled: value })
+            if (!configured) merged[name] = Object.assign({}, widgetDefaults[name])
+            else if (typeof value === "boolean") merged[name] = Object.assign({}, widgetDefaults[name], { enabled: value })
             else merged[name] = Object.assign({}, widgetDefaults[name], value && typeof value === "object" ? value : {})
         }
         return merged
@@ -122,9 +124,10 @@ Item {
 
     function widgetConfig(name) {
         const widgets = config && config.shell && config.shell.widgets ? config.shell.widgets : {}
+        if (!Object.prototype.hasOwnProperty.call(widgets, name)) return widgetDefaults[name] || { enabled: false }
         const value = widgets[name]
         if (typeof value === "boolean") return { enabled: value }
-        return value && typeof value === "object" ? value : (widgetDefaults[name] || { enabled: false })
+        return value && typeof value === "object" ? value : { enabled: false }
     }
 
     function widgetEnabled(name) {
@@ -489,6 +492,41 @@ Item {
         const count = Math.max(0, Math.floor(Design.safeNumber(info.updateCount, 0)))
         if (count === 0) return I18n.tr("common.upToDate")
         return count === 1 ? I18n.tr("widgets.updateOne") : I18n.tr("widgets.updateMany", { count: count })
+    }
+
+    function systemInfoDetails() {
+        const info = monitoring.systemInfo || {}
+        const result = []
+        if (monitoring.uptime && monitoring.uptime.available) result.push({ label: I18n.tr("widgets.uptime"), value: formatUptime(monitoring.uptime.uptimeSeconds) })
+        if (info.snapshotStatus === "available" || info.snapshotStatus === "none") result.push({ label: I18n.tr("widgets.lastSnapshot"), value: snapshotAgeText() })
+        if (Design.safeText(info.session, "")) result.push({ label: I18n.tr("widgets.session"), value: info.session })
+        if (info.updatesKnown) result.push({ label: I18n.tr("widgets.updates"), value: updateCountText() })
+        return result
+    }
+
+    function storageName(mount) {
+        const value = Design.safeText(mount, "/")
+        if (value === "/") return I18n.tr("widgets.systemDisk")
+        if (value === "/home" || value === Quickshell.env("HOME")) return I18n.tr("widgets.homeDisk")
+        const parts = value.split("/").filter(part => part.length > 0)
+        return parts.length ? parts[parts.length - 1] : I18n.tr("widgets.storage")
+    }
+
+    function storageMountLabel(mount) {
+        const value = Design.safeText(mount, "/")
+        if (value === "/") return "/ · " + I18n.tr("widgets.root")
+        if (value === "/home" || value === Quickshell.env("HOME")) return value + " · " + I18n.tr("widgets.home")
+        return value
+    }
+
+    function sensorName(item) {
+        if (!item) return I18n.tr("widgets.temperature")
+        if (item.kind === "cpu") return "CPU"
+        if (item.kind === "gpu") return "GPU"
+        if (item.kind === "wifi") return I18n.tr("widgets.wifiSensor")
+        if (item.kind === "nvme") return "NVMe"
+        if (item.kind === "system") return I18n.tr("widgets.system")
+        return Design.safeText(item.label, I18n.tr("widgets.temperature"))
     }
 
     function serviceStateText(state) {
