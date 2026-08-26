@@ -3,6 +3,7 @@ local cache_home = os.getenv("XDG_CACHE_HOME") or home .. "/.cache"
 local palette = {
     active_border = "rgb(355b6e)",
     inactive_border = "rgb(293943)",
+    shadow = "rgba(0000006e)",
 }
 
 local palette_path = cache_home .. "/hyprism/theme/hyprland.lua"
@@ -12,6 +13,7 @@ if loader then
     if ok and type(generated) == "table" then
         palette.active_border = generated.active_border or palette.active_border
         palette.inactive_border = generated.inactive_border or palette.inactive_border
+        palette.shadow = generated.shadow or palette.shadow
     end
 end
 
@@ -31,7 +33,7 @@ hl.config({
             enabled = true,
             range = 20,
             render_power = 2,
-            color = "rgba(0000006e)",
+            color = palette.shadow,
         },
         blur = {
             enabled = true,

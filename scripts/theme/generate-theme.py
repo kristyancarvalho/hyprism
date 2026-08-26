@@ -348,14 +348,17 @@ def render_foot(theme):
 
 
 def render_hyprland(theme):
+    shadow = f'rgba({theme["onSurface"][1:]}2e)' if theme["mode"] == "light" else "rgba(0000006e)"
     return (
         "local theme = {\n"
         f'    secondary_container = "rgb({theme["secondaryContainer"][1:]})",\n'
         f'    inactive_border = "rgb({theme["inactiveBorder"][1:]})",\n'
+        f'    shadow = "{shadow}",\n'
         "}\n\n"
         "return {\n"
         "    active_border = theme.secondary_container,\n"
         "    inactive_border = theme.inactive_border,\n"
+        "    shadow = theme.shadow,\n"
         "}\n"
     )
 
