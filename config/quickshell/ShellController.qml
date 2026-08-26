@@ -113,8 +113,10 @@ Item {
         const names = Object.keys(widgetDefaults)
         for (let index = 0; index < names.length; index++) {
             const name = names[index]
+            const configured = Object.prototype.hasOwnProperty.call(source, name)
             const value = source[name]
-            if (typeof value === "boolean") merged[name] = Object.assign({}, widgetDefaults[name], { enabled: value })
+            if (!configured) merged[name] = Object.assign({}, widgetDefaults[name])
+            else if (typeof value === "boolean") merged[name] = Object.assign({}, widgetDefaults[name], { enabled: value })
             else merged[name] = Object.assign({}, widgetDefaults[name], value && typeof value === "object" ? value : {})
         }
         return merged
@@ -122,9 +124,10 @@ Item {
 
     function widgetConfig(name) {
         const widgets = config && config.shell && config.shell.widgets ? config.shell.widgets : {}
+        if (!Object.prototype.hasOwnProperty.call(widgets, name)) return widgetDefaults[name] || { enabled: false }
         const value = widgets[name]
         if (typeof value === "boolean") return { enabled: value }
-        return value && typeof value === "object" ? value : (widgetDefaults[name] || { enabled: false })
+        return value && typeof value === "object" ? value : { enabled: false }
     }
 
     function widgetEnabled(name) {
