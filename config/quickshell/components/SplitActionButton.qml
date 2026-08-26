@@ -11,6 +11,7 @@ Rectangle {
     property bool toggleAvailable: true
     property bool pending: false
     readonly property bool controlFocused: activeFocus || detailArea.activeFocus
+    readonly property color detailColor: Design.desaturate(color, .4)
     signal primaryClicked()
     signal detailClicked()
     signal focusEntered()
@@ -81,7 +82,7 @@ Rectangle {
             surfaceWidth: button.width
             cornerRadius: button.radius
             rightAligned: true
-            color: detailPointer.containsMouse || detailArea.activeFocus ? button.theme.colors.surfaceElevated : button.active ? button.theme.colors.surfaceVariant : "transparent"
+            color: detailPointer.containsMouse || detailArea.activeFocus ? Qt.lighter(button.detailColor, 1.08) : button.detailColor
         }
 
         Rectangle {
