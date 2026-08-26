@@ -1,0 +1,301 @@
+#!/usr/bin/env python3
+
+import argparse
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import urllib.parse
+import urllib.request
+
+
+SUPPORTED_LANGUAGES = ("en", "pt-BR")
+WIDGETS = ("clock", "weather", "media", "system", "network", "storage", "sensors", "uptime", "services", "tasks", "processes")
+PANELS = {
+    "hub": "openHub",
+    "launcher": "toggleLauncher",
+    "clipboard": "toggleClipboard",
+    "wallpapers": "toggleWallpaperPicker",
+    "network": "toggleNetwork",
+    "bluetooth": "toggleBluetooth",
+    "power": "togglePowerMenu",
+    "emoji": "toggleEmojiPicker",
+    "recording": "toggleRecording",
+}
+
+
+def root_dir():
+    configured = os.environ.get("HYPRISM_ROOT")
+    if configured:
+        return Path(configured).expanduser()
+    installed = Path.home() / ".local/share/hyprism"
+    if installed.is_dir():
+        return installed
+    return Path(__file__).resolve().parent.parent
+
+
+def config_path():
+    configured = os.environ.get("HYPRISM_CONFIG")
+    return Path(configured).expanduser() if configured else Path.home() / ".config/hyprism/user.json"
+
+
+def default_config():
+    with (root_dir() / "config/user.json").open(encoding="utf-8") as source:
+        return json.load(source)
+
+
+def read_json(path, required=True):
+    try:
+        with path.open(encoding="utf-8") as source:
+            value = json.load(source)
+    except FileNotFoundError:
+        if required:
+            raise SystemExit(f"Configuration not found: {path}")
+        return None
+    except (OSError, json.JSONDecodeError) as error:
+        raise SystemExit(f"Invalid configuration {path}: {error}")
+    if not isinstance(value, dict):
+        raise SystemExit(f"Invalid configuration root in {path}")
+    return value
+
+
+def merge_defaults(defaults, current):
+    if not isinstance(defaults, dict) or not isinstance(current, dict):
+        return current
+    merged = {}
+    for key, value in defaults.items():
+        merged[key] = merge_defaults(value, current[key]) if key in current else value
+    for key, value in current.items():
+        if key not in merged:
+            merged[key] = value
+    return merged
+
+
+def write_config(value, destination=None):
+    destination = destination or config_path()
+    if destination.is_symlink():
+        destination = destination.resolve()
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{destination.name}.", dir=destination.parent)
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as output:
+            json.dump(value, output, ensure_ascii=False, indent=2)
+            output.write("\n")
+            output.flush()
+            os.fsync(output.fileno())
+        os.replace(temporary, destination)
+        directory = os.open(destination.parent, os.O_RDONLY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def configuration():
+    return read_json(config_path())
+
+
+def invoke(arguments, replace=False):
+    try:
+        if replace:
+            os.execvp(arguments[0], arguments)
+        return subprocess.run(arguments, check=False).returncode
+    except FileNotFoundError:
+        raise SystemExit(f"Required command not found: {arguments[0]}")
+
+
+def internal(relative, *arguments, replace=False):
+    return invoke([str(root_dir() / relative), *arguments], replace=replace)
+
+
+def ipc(*arguments):
+    subprocess.run(
+        [str(root_dir() / "scripts/system/shell-ipc"), *arguments],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+
+
+def widget_config(config, name):
+    return config.setdefault("shell", {}).setdefault("widgets", {}).setdefault(name, {})
+
+
+def widget_enabled(config, name):
+    value = config.get("shell", {}).get("widgets", {}).get(name, {})
+    if isinstance(value, bool):
+        return value
+    return value.get("enabled", True) if isinstance(value, dict) else True
+
+
+def widgets_command(args):
+    config = configuration()
+    if args.widget_command == "list":
+        for name in WIDGETS:
+            print(f"{name}\t{'enabled' if widget_enabled(config, name) else 'disabled'}")
+        return 0
+    names = WIDGETS if args.all else (args.widget,)
+    for name in names:
+        current = widget_enabled(config, name)
+        enabled = not current if args.widget_command == "toggle" else args.widget_command == "enable"
+        value = config.setdefault("shell", {}).setdefault("widgets", {}).get(name)
+        if isinstance(value, bool):
+            config["shell"]["widgets"][name] = {"enabled": enabled}
+        else:
+            widget_config(config, name)["enabled"] = enabled
+    write_config(config)
+    for name in names:
+        print(f"{name}\t{'enabled' if widget_enabled(config, name) else 'disabled'}")
+    return 0
+
+
+def language_command(args):
+    config = configuration()
+    if args.language_command is None:
+        print(config.get("language", "en"))
+        return 0
+    config["language"] = args.locale
+    write_config(config)
+    print(args.locale)
+    return 0
+
+
+def geocode(location):
+    query = urllib.parse.urlencode({"name": location, "count": 1, "language": "en", "format": "json"})
+    try:
+        with urllib.request.urlopen(f"https://geocoding-api.open-meteo.com/v1/search?{query}", timeout=10) as response:
+            result = json.load(response)
+    except (OSError, ValueError) as error:
+        raise SystemExit(f"Could not resolve weather location: {error}")
+    entries = result.get("results") or []
+    if not entries:
+        raise SystemExit(f"Weather location not found: {location}")
+    return entries[0]
+
+
+def weather_command(args):
+    config = configuration()
+    weather = config.setdefault("weather", {})
+    if args.location is None:
+        print(weather.get("location", ""))
+        return 0
+    location = args.location.strip()
+    if not location:
+        raise SystemExit("Weather location cannot be empty")
+    result = geocode(location)
+    weather["location"] = result.get("name") or location
+    weather["latitude"] = result["latitude"]
+    weather["longitude"] = result["longitude"]
+    weather["timezone"] = result.get("timezone") or "auto"
+    write_config(config)
+    ipc("shell", "refreshWeather")
+    print(weather["location"])
+    return 0
+
+
+def migrate_command(args):
+    defaults = default_config()
+    existing = read_json(Path(args.existing), required=False) if args.existing else None
+    config = merge_defaults(defaults, existing or {})
+    if existing and "language" not in existing:
+        config["language"] = "pt-BR"
+    elif not existing:
+        config["language"] = args.language
+    elif existing.get("language") not in SUPPORTED_LANGUAGES:
+        config["language"] = "en"
+    write_config(config)
+    return 0
+
+
+def add_widget_target(parser):
+    target = parser.add_mutually_exclusive_group(required=True)
+    target.add_argument("widget", nargs="?", choices=WIDGETS)
+    target.add_argument("--all", action="store_true")
+
+
+def parser():
+    result = argparse.ArgumentParser(prog="hyprism-shell", description="Configure and control Hyprism")
+    commands = result.add_subparsers(dest="command", required=True)
+
+    widgets = commands.add_parser("widgets", help="manage desktop widgets")
+    widget_commands = widgets.add_subparsers(dest="widget_command", required=True)
+    widget_commands.add_parser("list", help="list widget state")
+    for action in ("enable", "disable", "toggle"):
+        add_widget_target(widget_commands.add_parser(action, help=f"{action} desktop widgets"))
+
+    weather = commands.add_parser("weather", help="manage weather settings")
+    weather_commands = weather.add_subparsers(dest="weather_command", required=True)
+    location = weather_commands.add_parser("location", help="get or set the weather location")
+    location.add_argument("location", nargs="?")
+
+    language = commands.add_parser("language", help="get or set the interface language")
+    language_commands = language.add_subparsers(dest="language_command")
+    language_set = language_commands.add_parser("set", help="set the interface language")
+    language_set.add_argument("locale", choices=SUPPORTED_LANGUAGES)
+
+    wallpaper = commands.add_parser("wallpaper", help="manage wallpapers")
+    wallpaper_commands = wallpaper.add_subparsers(dest="wallpaper_command", required=True)
+    for action in ("random", "current", "list"):
+        wallpaper_commands.add_parser(action)
+    wallpaper_set = wallpaper_commands.add_parser("set")
+    wallpaper_set.add_argument("image")
+
+    screenshot = commands.add_parser("screenshot", help="capture the screen")
+    screenshot.add_argument("mode", choices=("region", "monitor"))
+    commands.add_parser("color", help="pick a screen color")
+    commands.add_parser("lock", help="lock the session")
+    commands.add_parser("reload", help="reload Quickshell")
+    commands.add_parser("recording", help="open the screen recording selector")
+    night_mode = commands.add_parser("night-mode", help="set the night mode")
+    night_mode.add_argument("state", choices=("on", "off", "toggle"), nargs="?", default="toggle")
+    panel = commands.add_parser("open", help="open a shell panel")
+    panel.add_argument("panel", choices=tuple(PANELS))
+
+    return result
+
+
+def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "_migrate":
+        migrate = argparse.ArgumentParser(add_help=False)
+        migrate.add_argument("--language", choices=SUPPORTED_LANGUAGES, default="en")
+        migrate.add_argument("--existing")
+        return migrate_command(migrate.parse_args(sys.argv[2:]))
+    args = parser().parse_args()
+    if args.command == "widgets":
+        return widgets_command(args)
+    if args.command == "weather":
+        return weather_command(args)
+    if args.command == "language":
+        return language_command(args)
+    if args.command == "wallpaper":
+        arguments = [args.wallpaper_command]
+        if args.wallpaper_command == "set":
+            arguments.append(args.image)
+        return internal("scripts/wallpaper", *arguments, replace=True)
+    if args.command == "screenshot":
+        return internal("scripts/system/action", f"screenshot-{'area' if args.mode == 'region' else 'monitor'}", replace=True)
+    if args.command == "color":
+        return internal("scripts/system/action", "color-picker", replace=True)
+    if args.command == "lock":
+        return internal("scripts/system/lock", replace=True)
+    if args.command == "reload":
+        return internal("scripts/system/reload-shell", replace=True)
+    if args.command == "night-mode":
+        return internal("scripts/system/action", "night-mode", args.state, replace=True)
+    if args.command == "recording":
+        return internal("scripts/system/shell-ipc", "shell", "toggleRecording", replace=True)
+    if args.command == "open":
+        return internal("scripts/system/shell-ipc", "shell", PANELS[args.panel], replace=True)
+    return 2
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except KeyboardInterrupt:
+        raise SystemExit(130)

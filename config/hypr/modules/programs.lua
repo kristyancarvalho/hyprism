@@ -5,6 +5,7 @@ local programs = {
     home = home,
     root = root,
     scripts = root .. "/scripts",
+    cli = home .. "/.local/bin/hyprism-shell",
     quickshell = os.getenv("QS_CONFIG_NAME") or "default",
     modifier = "SUPER",
     terminal = os.getenv("TERMINAL") or "kitty",
