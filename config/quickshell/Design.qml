@@ -149,7 +149,7 @@ QtObject {
         logout: "󰍃",
         night: "󰖔",
         lightTheme: "󰖨",
-        warmWhite: "󰔏",
+        whiteTemperature: "󰔏",
         powerSaver: "󰌪",
         screenshot: "󰹑",
         colorPicker: "󰏘",

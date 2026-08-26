@@ -47,7 +47,7 @@ FocusScope {
     }
 
     function initialFocusReady() {
-        return lightStart.inputActiveFocus || darkStart.inputActiveFocus || automatic.activeFocus || warmWhite.activeFocus || saveButton.activeFocus
+        return lightStart.inputActiveFocus || darkStart.inputActiveFocus || automatic.activeFocus || temperature.activeFocus || saveButton.activeFocus
     }
 
     focus: true
@@ -103,8 +103,8 @@ FocusScope {
             label: I18n.tr("themeSchedule.automatic")
             iconName: "calendar"
             active: panel.schedule.enabled === true
-            KeyNavigation.backtab: warmWhite
-            KeyNavigation.tab: panel.schedule.enabled === true ? lightStart : warmWhite
+            KeyNavigation.backtab: temperature
+            KeyNavigation.tab: panel.schedule.enabled === true ? lightStart : temperature
             onClicked: panel.setAutomatic(panel.schedule.enabled !== true)
         }
 
@@ -199,22 +199,27 @@ FocusScope {
                 text: I18n.tr("themeSchedule.save")
                 iconName: "check"
                 KeyNavigation.backtab: darkStart
-                KeyNavigation.tab: warmWhite
+                KeyNavigation.tab: temperature
                 onClicked: panel.save()
             }
         }
 
-        ActionButton {
-            id: warmWhite
+        DiscreteLevelPill {
+            id: temperature
             Layout.fillWidth: true
-            Layout.preferredHeight: 58
             theme: panel.theme
-            label: I18n.tr("themeSchedule.warmWhite")
-            iconName: "warmWhite"
-            active: panel.controller.warmWhite
+            label: I18n.tr("themeSchedule.whiteTemperature")
+            iconName: "whiteTemperature"
+            options: [
+                I18n.tr("themeSchedule.temperatureNeutral"),
+                I18n.tr("themeSchedule.temperatureSoft"),
+                I18n.tr("themeSchedule.temperatureWarm"),
+                I18n.tr("themeSchedule.temperatureAmber")
+            ]
+            value: panel.controller.whiteTemperature
             KeyNavigation.backtab: panel.schedule.enabled === true ? saveButton : automatic
             KeyNavigation.tab: automatic
-            onClicked: panel.controller.toggleWarmWhite()
+            onChanged: value => panel.controller.setWhiteTemperature(value)
         }
     }
 }

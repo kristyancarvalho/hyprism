@@ -38,16 +38,18 @@ class ThemeTests(unittest.TestCase):
         self.assertIn("gtk-application-prefer-dark-theme=0", THEME.render_gtk_settings(theme))
         self.assertIn("Colloid-Hyprism-Light-Matugen", THEME.render_gtk_settings(theme))
 
-    def test_warm_white_changes_shared_light_surfaces_only(self):
+    def test_white_temperature_changes_shared_light_surfaces_in_steps(self):
         raw = self.light_raw()
-        regular = THEME.theme_from(THEME.warm_light_palette(raw, False), "/tmp/wallpaper.png", "light")
-        warm = THEME.theme_from(THEME.warm_light_palette(raw, True), "/tmp/wallpaper.png", "light")
+        themes = [THEME.theme_from(THEME.warm_light_palette(raw, level), "/tmp/wallpaper.png", "light") for level in range(4)]
+        regular, warm = themes[0], themes[2]
         dark_raw = THEME.fallback_palette("dark")
         self.assertNotEqual(warm["background"], regular["background"])
         self.assertGreater(THEME.rgb(warm["background"])[0], THEME.rgb(warm["background"])[2])
+        self.assertEqual(len({theme["background"] for theme in themes}), 4)
+        self.assertGreater(THEME.rgb(themes[3]["background"])[0] - THEME.rgb(themes[3]["background"])[2], THEME.rgb(themes[1]["background"])[0] - THEME.rgb(themes[1]["background"])[2])
         self.assertIn(f'background = rgba({warm["background"][1:]}ff)', THEME.render_hyprtoolkit(warm))
         self.assertIn(warm["background"], THEME.render_kitty(warm))
-        self.assertEqual(THEME.warm_light_palette(dark_raw, False), dark_raw)
+        self.assertEqual(THEME.warm_light_palette(dark_raw, 0), dark_raw)
 
     def test_hyprland_shadow_is_softened_only_in_light_mode(self):
         light = THEME.theme_from(self.light_raw(), "/tmp/wallpaper.png", "light")

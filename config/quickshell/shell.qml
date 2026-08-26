@@ -251,11 +251,12 @@ ShellRoot {
         const incomingShell = parsed.shell || {}
         const incomingAppearance = parsed.appearance || {}
         const incomingSchedule = incomingAppearance.schedule || {}
+        const incomingTemperature = incomingAppearance.whiteTemperature
         const defaultShell = shellController.defaultShellConfig()
         shellController.config = {
             appearance: {
                 mode: incomingAppearance.mode === "light" ? "light" : "dark",
-                warmWhite: incomingAppearance.warmWhite === true,
+                whiteTemperature: Number.isInteger(incomingTemperature) && incomingTemperature >= 0 && incomingTemperature <= 3 ? incomingTemperature : incomingAppearance.warmWhite === true ? 2 : 0,
                 schedule: {
                     enabled: incomingSchedule.enabled === true,
                     lightStart: Design.safeText(incomingSchedule.lightStart, "07:00"),
@@ -358,7 +359,7 @@ ShellRoot {
                 running: true,
                 language: I18n.locale,
                 appearanceMode: shellController.lightTheme ? "light" : "dark",
-                warmWhite: shellController.warmWhite,
+                whiteTemperature: shellController.whiteTemperature,
                 appearanceSchedule: shellController.config.appearance.schedule,
                 pid: Quickshell.processId,
                 mode: shellController.mode,

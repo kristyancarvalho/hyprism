@@ -45,7 +45,7 @@ Item {
     readonly property bool nightMode: system.nightMode.available && system.nightMode.enabled
     readonly property bool powerSaver: system.powerProfile.available && system.powerProfile.mode === "power-saver"
     readonly property bool lightTheme: config.appearance && config.appearance.mode === "light"
-    readonly property bool warmWhite: config.appearance && config.appearance.warmWhite === true
+    readonly property int whiteTemperature: config.appearance ? Math.round(Design.clamp(config.appearance.whiteTemperature, 0, 3)) : 0
     readonly property date currentTime: systemClock.date
     property var appEntries: []
     property var applicationIndex: ({})
@@ -85,7 +85,7 @@ Item {
         tasks: { enabled: true, limit: 3 },
         processes: { enabled: true, limit: 3 }
     })
-    property var config: ({ appearance: { mode: "dark", warmWhite: false, schedule: { enabled: false, lightStart: "07:00", darkStart: "18:00" } }, shell: { primaryMonitor: "", islandWidth: 560, compactHeight: Design.compactBarHeight, topMargin: Design.shellTopMargin, reserveGap: Design.compactBottomGap, surfaceOpacity: .9, animationFast: Design.animationFast, animationNormal: Design.animationMorph, widgetLayout: { side: "right", position: "legacy" }, widgets: widgetDefaults } })
+    property var config: ({ appearance: { mode: "dark", whiteTemperature: 0, schedule: { enabled: false, lightStart: "07:00", darkStart: "18:00" } }, shell: { primaryMonitor: "", islandWidth: 560, compactHeight: Design.compactBarHeight, topMargin: Design.shellTopMargin, reserveGap: Design.compactBottomGap, surfaceOpacity: .9, animationFast: Design.animationFast, animationNormal: Design.animationMorph, widgetLayout: { side: "right", position: "legacy" }, widgets: widgetDefaults } })
     property string rootDir: Quickshell.env("HYPRISM_ROOT") || Quickshell.shellDir + "/../.."
     readonly property bool developmentMode: Quickshell.env("HYPRISM_DEVELOPMENT") === "1"
     readonly property var panelModes: ["launcher", "wallpaper", "clipboard", "control", "network", "bluetooth", "themeSchedule", "power", "emoji", "switcher", "recordingSelector"]
@@ -278,8 +278,8 @@ Item {
         run([rootDir + "/scripts/hyprism-shell", "theme", "schedule", "set", lightStart, darkStart, enabled ? "--enable" : "--disable"])
     }
 
-    function toggleWarmWhite() {
-        run([rootDir + "/scripts/hyprism-shell", "theme", "warm-white", "toggle"])
+    function setWhiteTemperature(level) {
+        run([rootDir + "/scripts/hyprism-shell", "theme", "temperature", "set", String(Math.round(Design.clamp(level, 0, 3)))])
     }
 
     function togglePowerSaver() {
