@@ -165,7 +165,7 @@ FocusScope {
                     iconName: "night"
                     placeholderText: "18:00"
                     clearButtonEnabled: false
-                    tabTarget: warmWhite
+                    tabTarget: saveButton
                     backtabTarget: lightStart
                     onKeyPressed: event => {
                         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
@@ -175,19 +175,6 @@ FocusScope {
                     }
                 }
             }
-        }
-
-        ActionButton {
-            id: warmWhite
-            Layout.fillWidth: true
-            Layout.preferredHeight: 58
-            theme: panel.theme
-            label: I18n.tr("themeSchedule.warmWhite")
-            iconName: "warmWhite"
-            active: panel.controller.warmWhite
-            KeyNavigation.backtab: panel.schedule.enabled === true ? darkStart : automatic
-            KeyNavigation.tab: panel.schedule.enabled === true ? saveButton : automatic
-            onClicked: panel.controller.toggleWarmWhite()
         }
 
         RowLayout {
@@ -211,10 +198,23 @@ FocusScope {
                 theme: panel.theme
                 text: I18n.tr("themeSchedule.save")
                 iconName: "check"
-                KeyNavigation.backtab: warmWhite
-                KeyNavigation.tab: automatic
+                KeyNavigation.backtab: darkStart
+                KeyNavigation.tab: warmWhite
                 onClicked: panel.save()
             }
+        }
+
+        ActionButton {
+            id: warmWhite
+            Layout.fillWidth: true
+            Layout.preferredHeight: 58
+            theme: panel.theme
+            label: I18n.tr("themeSchedule.warmWhite")
+            iconName: "warmWhite"
+            active: panel.controller.warmWhite
+            KeyNavigation.backtab: panel.schedule.enabled === true ? saveButton : automatic
+            KeyNavigation.tab: automatic
+            onClicked: panel.controller.toggleWarmWhite()
         }
     }
 }

@@ -111,8 +111,8 @@
     "powerUnavailable": "Power unavailable"
   },
   "themeSchedule": {
-    "title": "Light theme schedule",
-    "description": "Use the light theme between these times.",
+    "title": "Light theme options",
+    "description": "Configure automatic switching and the light theme tone.",
     "lightStart": "Light starts",
     "darkStart": "Dark starts",
     "automatic": "Automatic switching",

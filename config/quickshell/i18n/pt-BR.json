@@ -111,8 +111,8 @@
     "powerUnavailable": "Energia indisponível"
   },
   "themeSchedule": {
-    "title": "Horário do tema claro",
-    "description": "Use o tema claro entre estes horários.",
+    "title": "Opções do tema claro",
+    "description": "Configure a alternância automática e a tonalidade do tema claro.",
     "lightStart": "Claro a partir de",
     "darkStart": "Escuro a partir de",
     "automatic": "Alternância automática",
