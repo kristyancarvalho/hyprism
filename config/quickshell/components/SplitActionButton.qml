@@ -11,7 +11,7 @@ Rectangle {
     property bool toggleAvailable: true
     property bool pending: false
     readonly property bool controlFocused: activeFocus || detailArea.activeFocus
-    readonly property color detailColor: Design.desaturate(color, .4)
+    readonly property color detailColor: theme.colors.surfaceElevated
     signal primaryClicked()
     signal detailClicked()
     signal focusEntered()
@@ -82,7 +82,7 @@ Rectangle {
             surfaceWidth: button.width
             cornerRadius: button.radius
             rightAligned: true
-            color: detailPointer.containsMouse || detailArea.activeFocus ? Qt.lighter(button.detailColor, 1.08) : button.detailColor
+            color: detailPointer.containsMouse || detailArea.activeFocus ? button.theme.colors.surfaceHover : button.detailColor
         }
 
         Rectangle {
@@ -93,7 +93,7 @@ Rectangle {
             width: 2
             height: parent.height - Design.spacingLg
             color: button.theme.colors.borderSubtle
-            opacity: .82
+            opacity: .7
         }
 
         StatusIcon {

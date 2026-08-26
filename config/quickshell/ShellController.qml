@@ -197,6 +197,7 @@ Item {
         else openWallpaperPicker(screenName)
     }
     function toggleNetwork(screenName) { togglePanel("network", screenName) }
+    function toggleBluetoothPanel(screenName) { togglePanel("bluetooth", screenName) }
     function togglePowerMenu(screenName) { togglePanel("power", screenName) }
     function toggleEmojiPicker(screenName) { togglePanel("emoji", screenName) }
 
@@ -496,12 +497,12 @@ Item {
 
     function systemInfoDetails() {
         const info = monitoring.systemInfo || {}
-        const result = []
-        if (monitoring.uptime && monitoring.uptime.available) result.push({ label: I18n.tr("widgets.uptime"), value: formatUptime(monitoring.uptime.uptimeSeconds) })
-        if (info.snapshotStatus === "available" || info.snapshotStatus === "none") result.push({ label: I18n.tr("widgets.lastSnapshot"), value: snapshotAgeText() })
-        if (Design.safeText(info.session, "")) result.push({ label: I18n.tr("widgets.session"), value: info.session })
-        if (info.updatesKnown) result.push({ label: I18n.tr("widgets.updates"), value: updateCountText() })
-        return result
+        return [
+            { label: I18n.tr("widgets.uptime"), value: monitoring.uptime && monitoring.uptime.available ? formatUptime(monitoring.uptime.uptimeSeconds) : I18n.tr("common.unavailable") },
+            { label: I18n.tr("widgets.lastSnapshot"), value: snapshotAgeText() },
+            { label: I18n.tr("widgets.session"), value: Design.safeText(info.session, I18n.tr("common.unavailable")) },
+            { label: I18n.tr("widgets.updates"), value: updateCountText() }
+        ]
     }
 
     function storageName(mount) {

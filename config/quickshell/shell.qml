@@ -326,7 +326,7 @@ ShellRoot {
         function toggleClipboard(): void { shellController.toggleClipboard(root.focusedScreenName()) }
         function toggleWallpaperPicker(): void { shellController.toggleWallpaperPicker(root.focusedScreenName()) }
         function toggleNetwork(): void { shellController.toggleNetwork(root.focusedScreenName()) }
-        function toggleBluetooth(): void { shellController.toggleBluetooth(root.focusedScreenName()) }
+        function toggleBluetooth(): void { shellController.toggleBluetoothPanel(root.focusedScreenName()) }
         function openThemeSchedule(): void { shellController.openThemeSchedule(root.focusedScreenName()) }
         function togglePowerMenu(): void { shellController.togglePowerMenu(root.focusedScreenName()) }
         function toggleEmojiPicker(): void { shellController.toggleEmojiPicker(root.focusedScreenName()) }

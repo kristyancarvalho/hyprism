@@ -161,6 +161,7 @@ QtObject {
         temperature: "󰔏",
         memory: "󰍛",
         cpu: "󰻠",
+        performance: "󰄧",
         gpu: "󰢮",
         networkSpeed: "󰓅",
         networkDownload: "󰇚",
