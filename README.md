@@ -19,19 +19,19 @@
 
 | Desktop and compact island | Expanded island |
 | --- | --- |
-| ![Desktop with compact island and green palette](assets/screenshots/desktop.png) | ![Expanded island and green palette](assets/screenshots/island-expanded.png) |
+| ![Dark and light desktop with compact island](assets/screenshots/desktop.webp) | ![Dark and light expanded island](assets/screenshots/island-expanded.webp) |
 | **Desktop widgets** | **Launcher** |
-| ![Desktop widgets with purple palette](assets/screenshots/desktop-widgets.png) | ![Launcher with blue palette](assets/screenshots/launcher.png) |
+| ![Dark and light desktop widgets](assets/screenshots/desktop-widgets.webp) | ![Dark and light launcher](assets/screenshots/launcher.webp) |
 | **Control center** | **Notification history** |
-| ![Control center with orange palette](assets/screenshots/control-center.png) | ![Notification history with orange palette](assets/screenshots/notifications.png) |
+| ![Dark and light control center](assets/screenshots/control-center.webp) | ![Dark and light notification history](assets/screenshots/notifications.webp) |
 | **Network** | **Bluetooth** |
-| ![Network panel with blue palette](assets/screenshots/network.png) | ![Bluetooth panel with purple palette](assets/screenshots/bluetooth.png) |
+| ![Dark and light network panel](assets/screenshots/network.webp) | ![Dark and light Bluetooth panel](assets/screenshots/bluetooth.webp) |
 | **Clipboard** | **Emoji picker** |
-| ![Clipboard with purple palette](assets/screenshots/clipboard.png) | ![Emoji picker with purple palette](assets/screenshots/emoji-picker.png) |
+| ![Dark and light clipboard](assets/screenshots/clipboard.webp) | ![Dark and light emoji picker](assets/screenshots/emoji-picker.webp) |
 | **Power** | **Recording** |
-| ![Power menu with orange palette](assets/screenshots/power-menu.png) | ![Recording selector with orange palette](assets/screenshots/recording.png) |
-| **Wallpapers** | **Window switcher** |
-| ![Wallpaper picker with purple palette](assets/screenshots/wallpaper-picker.png) | ![Window switcher with real clients on other workspaces](assets/screenshots/window-switcher.png) |
+| ![Dark and light power menu](assets/screenshots/power-menu.webp) | ![Dark and light recording selector](assets/screenshots/recording.webp) |
+| **Wallpapers** | **Light theme options** |
+| ![Dark and light wallpaper picker](assets/screenshots/wallpaper-picker.webp) | ![Dark and light theme options](assets/screenshots/theme-options.webp) |
 
 ## What it configures
 
