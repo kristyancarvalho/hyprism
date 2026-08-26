@@ -13,6 +13,14 @@ Glass {
     radius: Design.radiusMd
     implicitHeight: Design.widgetInnerPadding * 2 + Design.widgetHeaderHeight + Design.spacingSm + contentHeight
 
+    Behavior on height {
+        NumberAnimation {
+            duration: Design.animationMorph
+            easing.type: Design.easingPanelMorph
+            easing.overshoot: .35
+        }
+    }
+
     WidgetHeader {
         id: header
         anchors {

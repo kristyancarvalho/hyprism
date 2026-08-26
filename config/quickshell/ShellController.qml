@@ -494,6 +494,41 @@ Item {
         return count === 1 ? I18n.tr("widgets.updateOne") : I18n.tr("widgets.updateMany", { count: count })
     }
 
+    function systemInfoDetails() {
+        const info = monitoring.systemInfo || {}
+        const result = []
+        if (monitoring.uptime && monitoring.uptime.available) result.push({ label: I18n.tr("widgets.uptime"), value: formatUptime(monitoring.uptime.uptimeSeconds) })
+        if (info.snapshotStatus === "available" || info.snapshotStatus === "none") result.push({ label: I18n.tr("widgets.lastSnapshot"), value: snapshotAgeText() })
+        if (Design.safeText(info.session, "")) result.push({ label: I18n.tr("widgets.session"), value: info.session })
+        if (info.updatesKnown) result.push({ label: I18n.tr("widgets.updates"), value: updateCountText() })
+        return result
+    }
+
+    function storageName(mount) {
+        const value = Design.safeText(mount, "/")
+        if (value === "/") return I18n.tr("widgets.systemDisk")
+        if (value === "/home" || value === Quickshell.env("HOME")) return I18n.tr("widgets.homeDisk")
+        const parts = value.split("/").filter(part => part.length > 0)
+        return parts.length ? parts[parts.length - 1] : I18n.tr("widgets.storage")
+    }
+
+    function storageMountLabel(mount) {
+        const value = Design.safeText(mount, "/")
+        if (value === "/") return "/ · " + I18n.tr("widgets.root")
+        if (value === "/home" || value === Quickshell.env("HOME")) return value + " · " + I18n.tr("widgets.home")
+        return value
+    }
+
+    function sensorName(item) {
+        if (!item) return I18n.tr("widgets.temperature")
+        if (item.kind === "cpu") return "CPU"
+        if (item.kind === "gpu") return "GPU"
+        if (item.kind === "wifi") return I18n.tr("widgets.wifiSensor")
+        if (item.kind === "nvme") return "NVMe"
+        if (item.kind === "system") return I18n.tr("widgets.system")
+        return Design.safeText(item.label, I18n.tr("widgets.temperature"))
+    }
+
     function serviceStateText(state) {
         if (state === "running") return I18n.tr("status.active")
         if (state === "stopped") return I18n.tr("status.stopped")

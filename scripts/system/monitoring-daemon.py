@@ -76,13 +76,29 @@ def storage(config):
     return {"available": bool(result), "mounts": result}
 
 
-def sensor_label(device, label):
+def sensor_identity(device, label):
     source = f"{device} {label}".casefold()
     if any(value in source for value in ("amdgpu", "nvidia", "nouveau", "gpu")):
-        return "GPU"
+        return "gpu", "GPU"
     if any(value in source for value in ("coretemp", "k10temp", "zenpower", "package", "tdie", "tctl", "cpu")):
-        return "CPU"
-    return label.strip() or device.strip() or "Sensor"
+        return "cpu", "CPU"
+    if any(value in source for value in ("iwlwifi", "wifi", "wireless")):
+        return "wifi", "Wi-Fi"
+    if "nvme" in source:
+        return "nvme", "NVMe"
+    if any(value in source for value in ("acpitz", "pch_", "system")):
+        return "system", "System"
+    return "generic", label.strip() or device.strip() or "Sensor"
+
+
+def sensor_thresholds(kind):
+    if kind == "nvme":
+        return 58, 72, 85
+    if kind == "wifi":
+        return 55, 70, 85
+    if kind in ("cpu", "gpu"):
+        return 65, 80, 95
+    return 60, 75, 90
 
 
 def sensor_value(path):
@@ -110,8 +126,9 @@ def sensors():
                 raw_label = label_path.read_text().strip()
             except OSError:
                 raw_label = device
-            label = sensor_label(device, raw_label)
-            values[label] = max(value, values.get(label, value))
+            kind, label = sensor_identity(device, raw_label)
+            identity = (kind, label)
+            values[identity] = max(value, values.get(identity, value))
     if not values:
         for input_path in pathlib.Path("/sys/class/thermal").glob("thermal_zone*/temp"):
             value = sensor_value(input_path)
@@ -121,10 +138,15 @@ def sensors():
                 zone_type = (input_path.parent / "type").read_text().strip()
             except OSError:
                 zone_type = "Sensor"
-            label = sensor_label(zone_type, zone_type)
-            values[label] = max(value, values.get(label, value))
-    result = [{"label": label, "celsius": value} for label, value in values.items()]
-    preferred = sorted(result, key=lambda item: (item["label"] not in ("CPU", "GPU"), -item["celsius"]))
+            kind, label = sensor_identity(zone_type, zone_type)
+            identity = (kind, label)
+            values[identity] = max(value, values.get(identity, value))
+    result = []
+    for (kind, label), value in values.items():
+        warm, hot, critical = sensor_thresholds(kind)
+        result.append({"kind": kind, "label": label, "celsius": value, "warmCelsius": warm, "hotCelsius": hot, "criticalCelsius": critical})
+    order = {"cpu": 0, "gpu": 1, "system": 2, "wifi": 3, "nvme": 4, "generic": 5}
+    preferred = sorted(result, key=lambda item: (order.get(item["kind"], 6), -item["celsius"]))
     return {"available": bool(preferred), "items": preferred[:4]}
 
 
@@ -319,56 +341,61 @@ def processes(config):
     return {"available": bool(snapshot), "cpu": by_cpu, "memory": by_memory, "limit": limit}
 
 
-config = safe_config()
-loop_interval = 1 if any(enabled(config, name) for name in ("sensors", "uptime", "services", "processes")) else 60
-state = {
-    "storage": {"available": False, "mounts": []},
-    "sensors": {"available": False, "items": []},
-    "uptime": {"available": False, "uptimeSeconds": 0, "processCount": 0},
-    "systemInfo": system_identity(),
-    "services": {"available": False, "healthy": False, "items": []},
-    "processes": {"available": False, "cpu": [], "memory": [], "limit": 3}
-}
-tick = 0
-executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-snapshot_future = None
-updates_future = None
-while True:
-    changed = False
-    if snapshot_future is not None and snapshot_future.done():
-        try:
-            state["systemInfo"].update(snapshot_future.result())
-        except Exception:
-            state["systemInfo"].update({"snapshotStatus": "unavailable", "snapshotTimestamp": 0})
-        snapshot_future = None
-        changed = True
-    if updates_future is not None and updates_future.done():
-        try:
-            state["systemInfo"].update(updates_future.result())
-        except Exception:
-            state["systemInfo"].update({"updatesKnown": False, "updateCount": 0})
-        updates_future = None
-        changed = True
-    if enabled(config, "storage") and tick % 60 == 0:
-        state["storage"] = storage(config)
-        changed = True
-    if enabled(config, "sensors") and tick % 5 == 0:
-        state["sensors"] = sensors()
-        changed = True
-    if enabled(config, "uptime") and tick % 60 == 0:
-        state["uptime"] = uptime()
-        changed = True
-    if enabled(config, "uptime") and tick % 300 == 0 and snapshot_future is None:
-        snapshot_future = executor.submit(latest_snapshot)
-    if enabled(config, "uptime") and tick % 1800 == 0 and updates_future is None:
-        updates_future = executor.submit(pending_updates)
-    if enabled(config, "services") and tick % 15 == 0:
-        state["services"] = services(config)
-        changed = True
-    if enabled(config, "processes") and tick % 3 == 0:
-        state["processes"] = processes(config)
-        changed = True
-    if changed:
-        print(json.dumps(state), flush=True)
-    tick += loop_interval
-    time.sleep(loop_interval)
+def main():
+    config = safe_config()
+    loop_interval = 1 if any(enabled(config, name) for name in ("sensors", "uptime", "services", "processes")) else 60
+    state = {
+        "storage": {"available": False, "mounts": []},
+        "sensors": {"available": False, "items": []},
+        "uptime": {"available": False, "uptimeSeconds": 0, "processCount": 0},
+        "systemInfo": system_identity(),
+        "services": {"available": False, "healthy": False, "items": []},
+        "processes": {"available": False, "cpu": [], "memory": [], "limit": 3}
+    }
+    tick = 0
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+    snapshot_future = None
+    updates_future = None
+    while True:
+        changed = False
+        if snapshot_future is not None and snapshot_future.done():
+            try:
+                state["systemInfo"].update(snapshot_future.result())
+            except Exception:
+                state["systemInfo"].update({"snapshotStatus": "unavailable", "snapshotTimestamp": 0})
+            snapshot_future = None
+            changed = True
+        if updates_future is not None and updates_future.done():
+            try:
+                state["systemInfo"].update(updates_future.result())
+            except Exception:
+                state["systemInfo"].update({"updatesKnown": False, "updateCount": 0})
+            updates_future = None
+            changed = True
+        if enabled(config, "storage") and tick % 60 == 0:
+            state["storage"] = storage(config)
+            changed = True
+        if enabled(config, "sensors") and tick % 5 == 0:
+            state["sensors"] = sensors()
+            changed = True
+        if enabled(config, "uptime") and tick % 60 == 0:
+            state["uptime"] = uptime()
+            changed = True
+        if enabled(config, "uptime") and tick % 300 == 0 and snapshot_future is None:
+            snapshot_future = executor.submit(latest_snapshot)
+        if enabled(config, "uptime") and tick % 1800 == 0 and updates_future is None:
+            updates_future = executor.submit(pending_updates)
+        if enabled(config, "services") and tick % 15 == 0:
+            state["services"] = services(config)
+            changed = True
+        if enabled(config, "processes") and tick % 3 == 0:
+            state["processes"] = processes(config)
+            changed = True
+        if changed:
+            print(json.dumps(state), flush=True)
+        tick += loop_interval
+        time.sleep(loop_interval)
+
+
+if __name__ == "__main__":
+    main()
