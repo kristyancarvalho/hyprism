@@ -24,7 +24,7 @@ Rectangle {
     }
 
     function setFromPosition(next) {
-        previewValue = bounded(next / Math.max(1, pointer.width) * maximum)
+        previewValue = bounded(next / Math.max(1, width) * maximum)
     }
 
     function commit() {
@@ -106,8 +106,8 @@ Rectangle {
             left: parent.left
             right: parent.right
             bottom: parent.bottom
-            leftMargin: 52
-            rightMargin: 12
+            leftMargin: 4
+            rightMargin: 4
             bottomMargin: 6
         }
         height: 4
@@ -132,7 +132,7 @@ Rectangle {
 
     Rectangle {
         visible: pill.hovered || pointer.pressed || pill.activeFocus
-        x: 52 + pill.position * (parent.width - 68) - width / 2
+        x: Math.max(4, Math.min(parent.width - width - 4, parent.width * pill.position - width / 2))
         anchors.verticalCenter: parent.verticalCenter
         width: 4
         height: parent.height - 12
@@ -181,13 +181,13 @@ Rectangle {
         preventStealing: true
         onPressed: mouse => {
             pill.forceActiveFocus(Qt.MouseFocusReason)
-            pill.setFromPosition(mouse.x)
+            pill.setFromPosition(mouse.x + x)
         }
         onPositionChanged: mouse => {
-            if (pressed) pill.setFromPosition(mouse.x)
+            if (pressed) pill.setFromPosition(mouse.x + x)
         }
         onReleased: mouse => {
-            pill.setFromPosition(mouse.x)
+            pill.setFromPosition(mouse.x + x)
             pill.commit()
         }
         onCanceled: pill.previewValue = pill.bounded(pill.value)
