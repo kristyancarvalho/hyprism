@@ -89,10 +89,10 @@ Rectangle {
                 left: parent.left
                 verticalCenter: parent.verticalCenter
             }
-            width: 1
+            width: 2
             height: parent.height - Design.spacingLg
             color: button.theme.colors.borderSubtle
-            opacity: .68
+            opacity: .82
         }
 
         StatusIcon {

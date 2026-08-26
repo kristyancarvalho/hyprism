@@ -110,6 +110,17 @@
     "powerSaver": "Power saver",
     "powerUnavailable": "Power unavailable"
   },
+  "themeSchedule": {
+    "title": "Light theme schedule",
+    "description": "Use the light theme between these times.",
+    "lightStart": "Light starts",
+    "darkStart": "Dark starts",
+    "automatic": "Automatic switching",
+    "save": "Save schedule",
+    "saved": "Schedule saved",
+    "invalidTime": "Use a valid 24-hour time (HH:MM).",
+    "sameTime": "Light and dark start times must differ."
+  },
   "notifications": {
     "notification": "Notification",
     "savedNone": "No saved notifications",
