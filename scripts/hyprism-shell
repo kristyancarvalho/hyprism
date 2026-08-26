@@ -254,6 +254,8 @@ def theme_command(args):
             raise SystemExit("Light and dark start times must differ")
         schedule["lightStart"] = args.light_start
         schedule["darkStart"] = args.dark_start
+        if args.enabled is not None:
+            schedule["enabled"] = args.enabled
         write_config(config)
         if schedule["enabled"]:
             reconcile_theme(config)
@@ -355,6 +357,9 @@ def parser():
     schedule_set = schedule_commands.add_parser("set", help="set light and dark start times")
     schedule_set.add_argument("light_start", type=parse_time)
     schedule_set.add_argument("dark_start", type=parse_time)
+    schedule_state = schedule_set.add_mutually_exclusive_group()
+    schedule_state.add_argument("--enable", action="store_const", const=True, dest="enabled")
+    schedule_state.add_argument("--disable", action="store_const", const=False, dest="enabled")
     schedule_commands.add_parser("enable", help="enable and apply the schedule")
     schedule_commands.add_parser("disable", help="disable the schedule")
 

@@ -129,6 +129,21 @@ class HyprismShellTests(unittest.TestCase):
         self.assertEqual(day.returncode, 0)
         self.assertEqual(self.read_config()["appearance"]["mode"], "dark")
 
+    def test_theme_schedule_set_can_update_state_atomically(self):
+        self.use_fake_theme_runtime()
+        enabled = self.run_cli("theme", "schedule", "set", "08:15", "19:45", "--enable")
+        self.assertEqual(enabled.returncode, 0)
+        schedule = self.read_config()["appearance"]["schedule"]
+        self.assertEqual(schedule["lightStart"], "08:15")
+        self.assertEqual(schedule["darkStart"], "19:45")
+        self.assertTrue(schedule["enabled"])
+        disabled = self.run_cli("theme", "schedule", "set", "07:30", "18:30", "--disable")
+        self.assertEqual(disabled.returncode, 0)
+        schedule = self.read_config()["appearance"]["schedule"]
+        self.assertEqual(schedule["lightStart"], "07:30")
+        self.assertEqual(schedule["darkStart"], "18:30")
+        self.assertFalse(schedule["enabled"])
+
     def test_migration_preserves_legacy_preferences_and_ptbr(self):
         existing = Path(self.temporary.name) / "existing.json"
         existing.write_text(json.dumps({"shell": {"widgets": {"clock": {"enabled": False}}}, "weather": {"location": "Recife"}}), encoding="utf-8")

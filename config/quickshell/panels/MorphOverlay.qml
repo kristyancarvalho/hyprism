@@ -60,6 +60,9 @@ PanelWindow {
         } else if (mode === "bluetooth") {
             width = Math.min(safeWidth, 560)
             height = controller.system.bluetooth.available && controller.system.bluetooth.devices.length ? Math.min(460, 76 + Design.listContentHeight(controller.system.bluetooth.devices.length, 58, 6, 58)) : 170
+        } else if (mode === "themeSchedule") {
+            width = Math.min(safeWidth, 560)
+            height = 250
         } else if (mode === "power") {
             width = Math.min(safeWidth, 640)
             height = 300
@@ -164,7 +167,7 @@ PanelWindow {
             id: content
             anchors.fill: parent
             opacity: 1
-            sourceComponent: window.localMode === "launcher" ? launcher : window.localMode === "wallpaper" ? wallpaper : window.localMode === "clipboard" ? clipboardPanel : window.localMode === "control" ? control : window.localMode === "network" ? network : window.localMode === "bluetooth" ? bluetooth : window.localMode === "power" ? power : window.localMode === "emoji" ? emoji : window.localMode === "switcher" ? switcher : window.localMode === "recordingSelector" ? recordingSelector : window.localMode === "hover" ? expanded : compactContent
+            sourceComponent: window.localMode === "launcher" ? launcher : window.localMode === "wallpaper" ? wallpaper : window.localMode === "clipboard" ? clipboardPanel : window.localMode === "control" ? control : window.localMode === "network" ? network : window.localMode === "bluetooth" ? bluetooth : window.localMode === "themeSchedule" ? themeSchedule : window.localMode === "power" ? power : window.localMode === "emoji" ? emoji : window.localMode === "switcher" ? switcher : window.localMode === "recordingSelector" ? recordingSelector : window.localMode === "hover" ? expanded : compactContent
             onLoaded: focusTimer.restart()
         }
     }
@@ -427,6 +430,7 @@ PanelWindow {
     Component { id: control; ControlCenter { controller: window.controller; theme: window.theme; notificationServer: window.notifications } }
     Component { id: network; NetworkPanel { controller: window.controller; theme: window.theme } }
     Component { id: bluetooth; BluetoothPanel { controller: window.controller; theme: window.theme } }
+    Component { id: themeSchedule; ThemeSchedulePanel { controller: window.controller; theme: window.theme } }
     Component { id: power; PowerMenu { controller: window.controller; theme: window.theme } }
     Component { id: emoji; EmojiPicker { controller: window.controller; theme: window.theme } }
     Component { id: switcher; WindowSwitcher { controller: window.controller; theme: window.theme } }

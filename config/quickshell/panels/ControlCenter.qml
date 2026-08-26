@@ -207,15 +207,16 @@ Item {
                     onClicked: panel.notificationServer.toggleDoNotDisturb()
                 }
 
-                ActionButton {
+                SplitActionButton {
                     id: themeAction
                     width: (parent.width - 8) / 2
                     theme: panel.theme
                     label: I18n.tr("hub.lightTheme")
                     iconName: "lightTheme"
                     active: controller.lightTheme
-                    onActiveFocusChanged: if (activeFocus) panel.selectedAction = 5
-                    onClicked: controller.toggleLightTheme()
+                    onFocusEntered: panel.selectedAction = 5
+                    onPrimaryClicked: controller.toggleLightTheme()
+                    onDetailClicked: controller.openThemeSchedule(controller.targetScreenName)
                 }
             }
 
