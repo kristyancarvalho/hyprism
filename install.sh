@@ -292,6 +292,20 @@ if ((dry_run == 0)); then
   fi
 fi
 
+if command -v systemctl >/dev/null; then
+  for legacy_polkit_service in plasma-polkit-agent.service polkit-kde-agent.service; do
+    as_user systemctl --user disable --no-reload "$legacy_polkit_service" 2>/dev/null || true
+  done
+  as_user systemctl --user enable --no-reload hyprpolkitagent.service
+  if ((dry_run == 0)) && [[ -S ${user_runtime:-}/bus ]]; then
+    for legacy_polkit_service in plasma-polkit-agent.service polkit-kde-agent.service; do
+      as_user env XDG_RUNTIME_DIR="$user_runtime" DBUS_SESSION_BUS_ADDRESS="unix:path=$user_runtime/bus" systemctl --user stop "$legacy_polkit_service" 2>/dev/null || true
+    done
+    as_user pkill -f -- '^/usr/lib/polkit-kde-authentication-agent-1([[:space:]]|$)' 2>/dev/null || true
+    as_user env XDG_RUNTIME_DIR="$user_runtime" DBUS_SESSION_BUS_ADDRESS="unix:path=$user_runtime/bus" systemctl --user start hyprpolkitagent.service
+  fi
+fi
+
 if ((dry_run == 0)); then
   [[ -d $runtime_root && ! -L $runtime_root ]] \
     || { printf 'A cópia runtime está ausente ou ainda depende do clone.\n' >&2; exit 1; }
@@ -332,6 +346,10 @@ if ((dry_run == 0)); then
     || { printf 'O tema dinâmico do SDDM não foi instalado corretamente.\n' >&2; exit 1; }
   [[ -d /usr/lib/qt6/qml/QtQuick/VirtualKeyboard ]] \
     || { printf 'O teclado virtual do SDDM não foi instalado.\n' >&2; exit 1; }
+  [[ -x /usr/lib/hyprpolkitagent/hyprpolkitagent ]] \
+    || { printf 'O agente de autenticação do PolicyKit não foi instalado.\n' >&2; exit 1; }
+  as_user systemctl --user is-enabled --quiet hyprpolkitagent.service \
+    || { printf 'O agente de autenticação do PolicyKit não foi habilitado.\n' >&2; exit 1; }
   grep -qx 'InputMethod=qtvirtualkeyboard' "$sddm_dropin" \
     || { printf 'O método de entrada virtual do SDDM não foi configurado.\n' >&2; exit 1; }
   [[ $(stat -c '%U:%G:%a' "$sddm_state_dir") == "$target_user:$target_group:755" ]] \

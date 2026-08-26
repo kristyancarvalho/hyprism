@@ -38,7 +38,7 @@ pipewire
 wireplumber
 upower
 power-profiles-daemon
-polkit-kde-agent
+hyprpolkitagent
 
 python
 python-pillow
