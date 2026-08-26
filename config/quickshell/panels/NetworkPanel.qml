@@ -12,7 +12,12 @@ Item {
     property var networks: []
     property string selectedSsid: ""
     property string password: ""
+    property string connectionError: ""
+    property bool connecting: false
     property int selectedIndex: -1
+    readonly property var selectedNetwork: networks.find(network => Design.safeText(network.ssid, "") === selectedSsid)
+    readonly property bool passwordRequired: selectedNetwork ? selectedNetwork.secure && !selectedNetwork.known && !selectedNetwork.connected : false
+    readonly property int promptHeight: (passwordField.visible ? passwordField.height + 10 : 0) + (errorLabel.visible ? errorLabel.height + 6 : 0)
 
     function scan() {
         scanner.running = true
@@ -27,22 +32,40 @@ Item {
         return entry && Design.safeText(entry.ssid, "").length > 0 && entry.disabled !== true
     }
 
-    function connect(ssid) {
-        if (!Design.safeText(ssid, "")) return
-        command(["python3", controller.rootDir + "/scripts/system/network.py", "connect", ssid, password])
-        controller.showOsd("Wi-Fi", I18n.tr("network.connecting", { ssid: ssid }))
-        controller.close()
+    function connect(network) {
+        const ssid = Design.safeText(network ? network.ssid : "", "")
+        if (!ssid || connecting || network.connected) return
+        selectedSsid = ssid
+        connectionError = ""
+        const profile = network.known ? Design.safeText(network.profileUuid, "") : ""
+        connectProcess.command = ["python3", controller.rootDir + "/scripts/system/network.py", "connect", ssid].concat(profile ? [profile] : [])
+        connecting = true
+        connectProcess.running = true
     }
 
     function chooseCurrent() {
         const network = networks[selectedIndex]
         if (!network) return
         const ssid = Design.safeText(network.ssid, "")
-        if (selectedSsid === ssid) connect(ssid)
-        else {
+        if (network.connected) return
+        if (network.known || !network.secure) {
+            passwordField.text = ""
+            connect(network)
+        } else if (selectedSsid === ssid && password.length > 0) {
+            connect(network)
+        } else {
+            passwordField.text = ""
+            connectionError = ""
             selectedSsid = ssid
-            passwordField.forceActiveFocus()
+            Qt.callLater(() => passwordField.forceInputFocus(Qt.ShortcutFocusReason))
         }
+    }
+
+    function cancelPassword() {
+        selectedSsid = ""
+        passwordField.text = ""
+        connectionError = ""
+        focusNetworkList()
     }
 
     function focusNetworkList() {
@@ -65,13 +88,14 @@ Item {
     }
 
     function initialFocusReady() {
-        return activeFocus || passwordField.activeFocus || networksList.activeFocus
+        return activeFocus || passwordField.inputActiveFocus || networksList.activeFocus
     }
 
     focus: true
     Keys.onPressed: event => {
         if (event.key === Qt.Key_Escape) {
-            controller.close()
+            if (passwordRequired || connectionError.length > 0) cancelPassword()
+            else controller.close()
             event.accepted = true
         } else if (event.key === Qt.Key_Up) {
             navigation.useKeyboard()
@@ -93,6 +117,7 @@ Item {
         controller.networkResultCount = networks.length
         resetSelection()
     }
+    onPromptHeightChanged: controller.networkPromptHeight = promptHeight
 
     Column {
         anchors.fill: parent
@@ -148,44 +173,48 @@ Item {
             }
         }
 
-        TextField {
+        SearchField {
             id: passwordField
             width: parent.width
             height: 42
-            visible: selectedSsid.length > 0
+            visible: panel.passwordRequired
+            theme: panel.theme
             placeholderText: I18n.tr("network.password", { ssid: selectedSsid })
+            iconName: "lock"
+            clearButtonEnabled: true
             echoMode: TextInput.Password
             onTextChanged: panel.password = text
-            Keys.priority: Keys.BeforeItem
-            Keys.onPressed: event => {
+            onClearRequested: text = ""
+            onKeyPressed: event => {
                 if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                    panel.connect(panel.selectedSsid)
+                    if (panel.password.length > 0) panel.connect(panel.selectedNetwork)
                     event.accepted = true
                 } else if (event.key === Qt.Key_Down) {
                     panel.focusNetworkList()
                     event.accepted = true
                 } else if (event.key === Qt.Key_Escape) {
-                    panel.controller.close()
+                    panel.cancelPassword()
                     event.accepted = true
                 }
             }
-            color: panel.theme.colors.foreground
-            placeholderTextColor: panel.theme.colors.mutedForeground
-            font.family: Design.fontFamily
-            font.pixelSize: Design.fontSizeSm
-            background: Rectangle {
-                radius: Design.radiusSm
-                color: passwordField.activeFocus ? panel.theme.colors.surfaceActive : panel.theme.colors.surfaceVariant
-                border.width: 0
+        }
 
-                Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
-            }
+        Text {
+            id: errorLabel
+            width: parent.width
+            height: visible ? implicitHeight : 0
+            visible: panel.connectionError.length > 0
+            text: panel.connectionError
+            color: panel.theme.colors.error
+            font.family: Design.fontFamily
+            font.pixelSize: Design.fontSizeXs
+            elide: Text.ElideRight
         }
 
         ListView {
             id: networksList
             width: parent.width
-            height: Math.max(120, parent.height - 62 - (passwordField.visible ? passwordField.height + 10 : 0))
+            height: Math.max(120, parent.height - 62 - panel.promptHeight)
             clip: true
             model: panel.networks
             currentIndex: panel.selectedIndex
@@ -250,6 +279,17 @@ Item {
                     spacing: 4
 
                     StatusIcon {
+                        visible: modelData.known
+                        name: "check"
+                        iconSize: Design.iconXs
+                        color: panel.theme.colors.mutedForeground
+
+                        HoverHandler { id: savedHover }
+                        ToolTip.visible: savedHover.hovered
+                        ToolTip.text: I18n.tr("network.saved")
+                        ToolTip.delay: 450
+                    }
+                    StatusIcon {
                         visible: modelData.secure
                         name: "secure"
                         iconSize: Design.iconXs
@@ -272,7 +312,9 @@ Item {
                     }
                     theme: panel.theme
                     compact: true
-                    text: selectedSsid === Design.safeText(modelData.ssid, "") ? I18n.tr("common.connect") : I18n.tr("common.select")
+                    text: modelData.connected ? I18n.tr("network.connected") : modelData.known || !modelData.secure || selectedSsid === Design.safeText(modelData.ssid, "") ? I18n.tr("common.connect") : I18n.tr("common.select")
+                    available: !modelData.connected && !panel.connecting
+                    pending: panel.connecting && panel.selectedSsid === Design.safeText(modelData.ssid, "")
                     onClicked: {
                         panel.selectedIndex = index
                         panel.chooseCurrent()
@@ -325,9 +367,31 @@ Item {
         }
     }
 
+    Process {
+        id: connectProcess
+        stdinEnabled: true
+        onStarted: {
+            write(panel.passwordRequired ? panel.password + "\n" : "\n")
+            panel.password = ""
+            passwordField.text = ""
+        }
+        onExited: (exitCode, exitStatus) => {
+            panel.connecting = false
+            if (exitCode === 0) {
+                panel.controller.showOsd("Wi-Fi", I18n.tr("network.connecting", { ssid: panel.selectedSsid }))
+                panel.controller.close()
+            } else {
+                panel.connectionError = I18n.tr("network.connectionFailed", { ssid: panel.selectedSsid })
+                if (panel.passwordRequired) Qt.callLater(() => passwordField.forceInputFocus(Qt.ShortcutFocusReason))
+            }
+        }
+    }
+
     Component.onCompleted: {
         controller.networkResultCount = networks.length
+        controller.networkPromptHeight = promptHeight
         if (controller.system.network.wifiAvailable) scan()
         takeInitialFocus()
     }
+    Component.onDestruction: controller.networkPromptHeight = 0
 }

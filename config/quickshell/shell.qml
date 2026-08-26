@@ -206,6 +206,42 @@ ShellRoot {
         if (!popupNotifications.length) popupOverflowCount = 0
         notificationServer.newest = popupNotifications.length ? popupNotifications[popupNotifications.length - 1] : null
     }
+    function scheduleMinute(value: string): int {
+        const match = /^(\d{2}):(\d{2})$/.exec(Design.safeText(value, ""))
+        if (!match) return -1
+        const hour = Number(match[1])
+        const minute = Number(match[2])
+        return hour < 24 && minute < 60 ? hour * 60 + minute : -1
+    }
+    function nextThemeBoundary(schedule: var): int {
+        const light = scheduleMinute(schedule.lightStart)
+        const dark = scheduleMinute(schedule.darkStart)
+        if (light < 0 || dark < 0 || light === dark) return 0
+        const now = new Date()
+        const current = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60 + now.getMilliseconds() / 60000
+        let lightDelay = (light - current + 1440) % 1440
+        let darkDelay = (dark - current + 1440) % 1440
+        if (lightDelay < .01) lightDelay += 1440
+        if (darkDelay < .01) darkDelay += 1440
+        return Math.max(1000, Math.round(Math.min(lightDelay, darkDelay) * 60000) + 250)
+    }
+    function updateThemeSchedule(): void {
+        const appearance = shellController.config.appearance || {}
+        const schedule = appearance.schedule || {}
+        if (!schedule.enabled) {
+            themeScheduleReconcile.stop()
+            themeScheduleBoundary.stop()
+            return
+        }
+        const delay = nextThemeBoundary(schedule)
+        if (delay <= 0) {
+            themeScheduleBoundary.stop()
+            return
+        }
+        themeScheduleBoundary.interval = delay
+        themeScheduleBoundary.restart()
+        themeScheduleReconcile.restart()
+    }
     function applyConfig(raw: string): void {
         const source = Design.safeText(raw, "")
         if (!source) return
@@ -213,13 +249,24 @@ ShellRoot {
         if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("a raiz deve ser um objeto JSON")
         I18n.locale = I18n.supportedLocales.indexOf(parsed.language) >= 0 ? parsed.language : "en"
         const incomingShell = parsed.shell || {}
+        const incomingAppearance = parsed.appearance || {}
+        const incomingSchedule = incomingAppearance.schedule || {}
         const defaultShell = shellController.defaultShellConfig()
         shellController.config = {
+            appearance: {
+                mode: incomingAppearance.mode === "light" ? "light" : "dark",
+                schedule: {
+                    enabled: incomingSchedule.enabled === true,
+                    lightStart: Design.safeText(incomingSchedule.lightStart, "07:00"),
+                    darkStart: Design.safeText(incomingSchedule.darkStart, "18:00")
+                }
+            },
             shell: Object.assign({}, defaultShell, incomingShell, {
                 widgetLayout: Object.assign({}, defaultShell.widgetLayout, incomingShell.widgetLayout || {}),
                 widgets: shellController.mergedWidgetConfig(incomingShell.widgets || {})
             })
         }
+        updateThemeSchedule()
         configError = ""
     }
     function applyTheme(raw: string): void {
@@ -309,6 +356,8 @@ ShellRoot {
             return JSON.stringify({
                 running: true,
                 language: I18n.locale,
+                appearanceMode: shellController.lightTheme ? "light" : "dark",
+                appearanceSchedule: shellController.config.appearance.schedule,
                 pid: Quickshell.processId,
                 mode: shellController.mode,
                 targetScreen: shellController.targetScreenName,
@@ -500,6 +549,16 @@ ShellRoot {
     }
     Timer { id: configReload; interval: 90; onTriggered: root.reloadConfig() }
     Timer { id: themeReload; interval: 90; onTriggered: root.reloadTheme() }
+    Timer { id: themeScheduleReconcile; interval: 120; onTriggered: shellController.run([shellController.rootDir + "/scripts/hyprism-shell", "_theme-reconcile"]) }
+    Timer {
+        id: themeScheduleBoundary
+        repeat: false
+        onTriggered: {
+            shellController.run([shellController.rootDir + "/scripts/hyprism-shell", "_theme-reconcile"])
+            themeScheduleRearm.restart()
+        }
+    }
+    Timer { id: themeScheduleRearm; interval: 1500; onTriggered: root.updateThemeSchedule() }
     Timer { interval: 250; repeat: true; running: root.popupNotifications.length > 0; onTriggered: root.expireDuePopups() }
 
     NotificationServer {

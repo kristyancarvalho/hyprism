@@ -12,7 +12,7 @@ Item {
     property int selectedAction: 0
     property int pendingBrightnessValue: 0
     readonly property int availablePillCount: (volumeControl.available ? 1 : 0) + (microphoneControl.available ? 1 : 0) + (brightnessControl.available ? 1 : 0)
-    readonly property int quickActionCount: 5
+    readonly property int quickActionCount: 6
 
     function command(text) {
         controller.run(["sh", "-lc", text])
@@ -29,7 +29,7 @@ Item {
     }
 
     function controls() {
-        const items = [networkAction, bluetoothAction, nightAction, saverAction, dndAction]
+        const items = [networkAction, bluetoothAction, nightAction, saverAction, dndAction, themeAction]
         if (volumeControl.available) items.push(volumeControl)
         if (microphoneControl.available) items.push(microphoneControl)
         if (brightnessControl.available) items.push(brightnessControl)
@@ -205,6 +205,17 @@ Item {
                     active: panel.notificationServer.doNotDisturb
                     onActiveFocusChanged: if (activeFocus) panel.selectedAction = 4
                     onClicked: panel.notificationServer.toggleDoNotDisturb()
+                }
+
+                ActionButton {
+                    id: themeAction
+                    width: (parent.width - 8) / 2
+                    theme: panel.theme
+                    label: I18n.tr("hub.lightTheme")
+                    iconName: "lightTheme"
+                    active: controller.lightTheme
+                    onActiveFocusChanged: if (activeFocus) panel.selectedAction = 5
+                    onClicked: controller.toggleLightTheme()
                 }
             }
 

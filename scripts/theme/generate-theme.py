@@ -20,7 +20,10 @@ OUT = CACHE / "theme"
 COLLOID_TEMPLATE = ROOT / "config/matugen/templates/colloid-gtk-theme.scss"
 MATUGEN_TEMPLATES = ROOT / "config/matugen/templates"
 HYPRLOCK_BASE = ROOT / "config/hypr/hyprlock.conf"
-KVANTUM_BASE = pathlib.Path(os.environ.get("HYPRISM_KVANTUM_BASE", "/usr/share/Kvantum/KvArcDark"))
+KVANTUM_BASES = {
+    "dark": pathlib.Path(os.environ.get("HYPRISM_KVANTUM_BASE_DARK", "/usr/share/Kvantum/KvArcDark")),
+    "light": pathlib.Path(os.environ.get("HYPRISM_KVANTUM_BASE_LIGHT", "/usr/share/Kvantum/KvArc")),
+}
 PAPIRUS_BASE = pathlib.Path(os.environ.get("HYPRISM_PAPIRUS_BASE", "/usr/share/icons/Papirus"))
 FALLBACK = {
     "background": "#091015",
@@ -155,26 +158,97 @@ def wallpaper_source_color(image):
     return hexrgb(max(candidates, key=score)[1])
 
 
-def matugen_palette(image):
+def matugen_palette(image, mode):
     command = ["matugen", "image", image, "--source-color-index", "0", "-t", "scheme-content", "--dry-run", "--json", "hex"]
     result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=30)
     generated = json.loads(result.stdout)
     colors = generated["colors"]
     semantic = {
-        "background": colors["background"]["dark"]["color"],
-        "foreground": colors["on_surface"]["dark"]["color"],
-        "accent": wallpaper_source_color(image),
-        "matugenSource": colors["source_color"]["dark"]["color"],
-        "secondary": colors["secondary"]["dark"]["color"],
-        "secondary_container": colors["secondary_container"]["dark"]["color"],
-        "tertiary": colors["tertiary"]["dark"]["color"],
-        "inactive_border": colors["outline_variant"]["dark"]["color"],
-        "error": colors["error"]["dark"]["color"],
+        "background": colors["background"][mode]["color"],
+        "foreground": colors["on_surface"][mode]["color"],
+        "accent": wallpaper_source_color(image) if mode == "dark" else colors["primary"][mode]["color"],
+        "primary": colors["primary"][mode]["color"],
+        "on_primary": colors["on_primary"][mode]["color"],
+        "primary_container": colors["primary_container"][mode]["color"],
+        "matugenSource": colors["source_color"][mode]["color"],
+        "secondary": colors["secondary"][mode]["color"],
+        "on_secondary": colors["on_secondary"][mode]["color"],
+        "secondary_container": colors["secondary_container"][mode]["color"],
+        "tertiary": colors["tertiary"][mode]["color"],
+        "on_tertiary": colors["on_tertiary"][mode]["color"],
+        "surface_low": colors["surface_container_low"][mode]["color"],
+        "surface_container": colors["surface_container"][mode]["color"],
+        "surface_high": colors["surface_container_high"][mode]["color"],
+        "surface_highest": colors["surface_container_highest"][mode]["color"],
+        "on_surface_variant": colors["on_surface_variant"][mode]["color"],
+        "outline": colors["outline"][mode]["color"],
+        "inactive_border": colors["outline_variant"][mode]["color"],
+        "error": colors["error"][mode]["color"],
+        "on_error": colors["on_error"][mode]["color"],
+        "error_container": colors["error_container"][mode]["color"],
     }
     return semantic, generated
 
 
-def theme_from(raw, image):
+def light_contrast(candidate, background, target=3.2):
+    if contrast(candidate, background) >= target:
+        return candidate
+    for step in range(1, 22):
+        adjusted = mix(candidate, "#000000", step * .025)
+        if contrast(adjusted, background) >= target:
+            return adjusted
+    return mix(candidate, "#000000", .55)
+
+
+def theme_from(raw, image, mode):
+    if mode == "light":
+        background = raw["background"]
+        foreground = raw["foreground"]
+        accent = light_contrast(raw["primary"], background)
+        secondary = light_contrast(raw["secondary"], background, 3.0)
+        tertiary = light_contrast(raw["tertiary"], background, 3.0)
+        error = light_contrast(raw["error"], background, 3.2)
+        return {
+            "mode": mode,
+            "background": background,
+            "surface": raw["surface_low"],
+            "surfaceContainer": raw["surface_container"],
+            "surfaceContainerHigh": raw["surface_high"],
+            "surfaceContainerHighest": raw["surface_highest"],
+            "surfaceVariant": raw["surface_container"],
+            "surfaceElevated": raw["surface_high"],
+            "surfaceHover": raw["surface_highest"],
+            "surfaceActive": mix(accent, background, .82),
+            "foreground": foreground,
+            "onSurface": foreground,
+            "mutedForeground": raw["on_surface_variant"],
+            "onSurfaceVariant": raw["on_surface_variant"],
+            "primary": accent,
+            "onPrimary": raw["on_primary"],
+            "secondary": secondary,
+            "onSecondary": raw["on_secondary"],
+            "tertiary": tertiary,
+            "onTertiary": raw["on_tertiary"],
+            "secondaryContainer": mix(secondary, background, .78),
+            "inactiveBorder": raw["inactive_border"],
+            "accent": accent,
+            "accentForeground": raw["on_primary"],
+            "accentDim": mix(accent, background, .82),
+            "outline": raw["outline"],
+            "border": raw["outline"],
+            "borderSubtle": raw["inactive_border"],
+            "borderNormal": raw["outline"],
+            "borderFocused": accent,
+            "error": error,
+            "onError": raw["on_error"],
+            "errorContainer": raw["error_container"],
+            "onErrorContainer": foreground,
+            "warning": light_contrast("#b33b18", background, 3.2),
+            "success": light_contrast("#2e7d32", background, 3.2),
+            "wallpaper": image,
+            "sourceAccent": raw["accent"],
+            "matugenSource": raw.get("matugenSource", raw["accent"]),
+        }
     background = mix(raw["background"], "#000000", .62)
     foreground = accessible_text(raw["foreground"], background, 7)
     accent = faithful_accent(raw["accent"], background)
@@ -189,6 +263,7 @@ def theme_from(raw, image):
     error = accessible_text(raw.get("error", FALLBACK["error"]), background, 3.2)
     on_error = accessible_text(background, error, 4.5)
     return {
+        "mode": mode,
         "background": background,
         "surface": surface,
         "surfaceContainer": surface_variant,
@@ -291,7 +366,7 @@ def render_hyprtoolkit(theme):
         "base": theme["surface"],
         "alternate_base": theme["surfaceContainerHigh"],
         "text": theme["onSurface"],
-        "bright_text": mix(theme["foreground"], "#ffffff", .18),
+        "bright_text": mix(theme["foreground"], "#000000" if theme["mode"] == "light" else "#ffffff", .18),
         "link_text": theme["primary"],
         "accent": theme["primary"],
         "accent_secondary": theme["secondary"],
@@ -388,53 +463,49 @@ def render_colloid(matugen, theme):
     pattern = re.compile(r"\{\{colors\.([a-z0-9_]+)\.(light|dark)\.hex\}\}")
 
     def color(match):
-        name, mode = match.groups()
-        if name == "primary" and mode == "dark":
-            return theme["accent"]
-        if name == "on_primary" and mode == "dark":
-            return theme["accentForeground"]
+        name, _ = match.groups()
+        roles = {
+            "primary": theme["accent"],
+            "on_primary": theme["accentForeground"],
+            "primary_container": theme["surfaceActive"],
+            "on_primary_container": theme["foreground"],
+            "background": theme["background"],
+            "on_background": theme["foreground"],
+            "surface": theme["background"],
+            "on_surface": theme["foreground"],
+            "surface_variant": theme["surfaceVariant"],
+            "on_surface_variant": theme["mutedForeground"],
+            "surface_container_lowest": theme["background"],
+            "surface_container_low": theme["surface"],
+            "surface_container": theme["surfaceContainer"],
+            "surface_container_high": theme["surfaceContainerHigh"],
+            "surface_container_highest": theme["surfaceContainerHighest"],
+            "outline": theme["outline"],
+            "outline_variant": theme["inactiveBorder"],
+            "inverse_surface": theme["foreground"],
+            "inverse_on_surface": theme["background"],
+            "inverse_primary": theme["accentDim"],
+            "secondary": theme["secondary"],
+            "on_secondary": theme["onSecondary"],
+            "secondary_container": theme["secondaryContainer"],
+            "on_secondary_container": theme["foreground"],
+            "tertiary": theme["tertiary"],
+            "on_tertiary": theme["onTertiary"],
+            "tertiary_container": theme["surfaceActive"],
+            "on_tertiary_container": theme["foreground"],
+            "error": theme["error"],
+            "on_error": theme["onError"],
+            "error_container": theme["errorContainer"],
+            "on_error_container": theme["onErrorContainer"],
+            "shadow": "#000000",
+            "scrim": "#000000",
+        }
+        if name in roles:
+            return roles[name]
         try:
-            value = matugen["colors"][name][mode]["color"]
+            value = matugen["colors"][name][theme["mode"]]["color"]
         except (KeyError, TypeError) as error:
-            dark_roles = {
-                "primary": theme["accent"],
-                "on_primary": theme["accentForeground"],
-                "primary_container": theme["surfaceActive"],
-                "on_primary_container": theme["foreground"],
-                "background": theme["background"],
-                "on_background": theme["foreground"],
-                "surface": theme["background"],
-                "on_surface": theme["foreground"],
-                "surface_variant": theme["surfaceVariant"],
-                "on_surface_variant": theme["mutedForeground"],
-                "surface_container_lowest": mix(theme["background"], "#000000", .18),
-                "surface_container_low": theme["surface"],
-                "surface_container": theme["surfaceVariant"],
-                "surface_container_high": theme["surfaceElevated"],
-                "surface_container_highest": theme["surfaceHover"],
-                "outline": theme["outline"],
-                "outline_variant": theme["inactiveBorder"],
-                "inverse_surface": theme["foreground"],
-                "inverse_on_surface": theme["background"],
-                "inverse_primary": theme["accentDim"],
-                "secondary": theme["secondary"],
-                "on_secondary": theme["background"],
-                "secondary_container": theme["secondaryContainer"],
-                "on_secondary_container": theme["foreground"],
-                "tertiary": theme["success"],
-                "on_tertiary": theme["background"],
-                "tertiary_container": theme["surfaceActive"],
-                "on_tertiary_container": theme["foreground"],
-                "error": theme["error"],
-                "on_error": theme["background"],
-                "error_container": theme["error"],
-                "on_error_container": theme["foreground"],
-                "shadow": "#000000",
-                "scrim": "#000000",
-            }
-            if name not in dark_roles:
-                raise ValueError(f"cor Matugen ausente: {name}.{mode}") from error
-            value = dark_roles[name] if mode == "dark" else mix(dark_roles[name], "#ffffff", .72)
+            raise ValueError(f"cor Matugen ausente: {name}.{theme['mode']}") from error
         rgb(value)
         return value
 
@@ -485,9 +556,11 @@ def render_matugen_template(name, matugen, theme):
 
     def color(match):
         role, mode = match.groups()
+        if role in fallback_roles:
+            return fallback_roles[role]
         try:
             variants = matugen["colors"][role]
-            value = variants.get(mode, variants.get("dark", variants.get("default")))["color"]
+            value = variants.get(theme["mode"], variants.get(mode, variants.get("default")))["color"]
         except (KeyError, TypeError, AttributeError):
             if role not in fallback_roles:
                 raise ValueError(f"cor Matugen ausente: {role}.{mode}")
@@ -629,11 +702,11 @@ def reload_tmux(path):
         print(f"Tema do Hyprism: tmux ativo preservado após falha ({error})", file=sys.stderr)
 
 
-def update_colloid(palette_path):
+def update_colloid(palette_path, mode):
     if os.environ.get("HYPRISM_SKIP_COLLOID") == "1":
         print("Tema do Hyprism: compilação do Colloid ignorada neste ambiente")
         return
-    command = [str(ROOT / "scripts/system/install-colloid-theme"), str(palette_path)]
+    command = [str(ROOT / "scripts/system/install-colloid-theme"), str(palette_path), mode]
     result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=300)
     if result.returncode == 0:
         if result.stdout.strip():
@@ -682,12 +755,12 @@ def render_papirus_svg(content, theme):
     return content
 
 
-def papirus_index(directories):
+def papirus_index(directories, mode):
     lines = [
         "[Icon Theme]",
         "Name=Hyprism-Papirus",
         "Comment=Pastas Papirus com o acento dinâmico do Hyprism",
-        "Inherits=Papirus-Dark,Papirus,hicolor",
+        "Inherits=" + ("Papirus-Dark,Papirus,hicolor" if mode == "dark" else "Papirus,hicolor"),
         "Example=folder",
         "Directories=" + ",".join(f"{directory}/places" for directory in directories),
         "",
@@ -723,7 +796,7 @@ def publish_papirus(theme):
             directories.add(directory)
         if exact_hits == 0:
             raise ValueError("o acento exato não foi aplicado aos ícones")
-        (temporary / "index.theme").write_text(papirus_index(sorted(directories)), encoding="utf-8")
+        (temporary / "index.theme").write_text(papirus_index(sorted(directories), theme["mode"]), encoding="utf-8")
         cache_tool = shutil.which("gtk-update-icon-cache")
         if cache_tool:
             subprocess.run([cache_tool, "-f", "-t", str(temporary)], check=True, capture_output=True, timeout=30)
@@ -747,8 +820,10 @@ def replace_ini_value(content, key, value):
 
 
 def render_kvantum(theme):
-    svg_path = KVANTUM_BASE / "KvArcDark.svg"
-    config_path = KVANTUM_BASE / "KvArcDark.kvconfig"
+    base = KVANTUM_BASES[theme["mode"]]
+    name = "KvArcDark" if theme["mode"] == "dark" else "KvArc"
+    svg_path = base / f"{name}.svg"
+    config_path = base / f"{name}.kvconfig"
     svg = svg_path.read_text(encoding="utf-8")
     config = config_path.read_text(encoding="utf-8")
     color_map = {
@@ -829,15 +904,59 @@ def validate_hyprtoolkit(content):
         raise ValueError("paleta do hyprtoolkit inválida")
 
 
+def appearance_mode():
+    config = pathlib.Path(os.environ.get("HYPRISM_CONFIG", HOME / ".config/hyprism/user.json"))
+    try:
+        value = json.loads(config.read_text(encoding="utf-8")).get("appearance", {}).get("mode", "dark")
+    except (OSError, AttributeError, json.JSONDecodeError):
+        value = "dark"
+    return value if value in ("dark", "light") else "dark"
+
+
+def fallback_palette(mode):
+    if mode == "dark":
+        return dict(FALLBACK, primary=FALLBACK["accent"], on_primary=FALLBACK["background"], primary_container="#28495a", on_secondary=FALLBACK["background"], on_tertiary=FALLBACK["background"], surface_low="#131b21", surface_container="#202b33", surface_high="#26333c", surface_highest="#2e3d47", on_surface_variant="#9aa8b2", outline="#426172", on_error=FALLBACK["background"], error_container="#592c32", tertiary=FALLBACK["secondary"])
+    return {
+        "background": "#f9f9ff", "foreground": "#191c20", "accent": "#37618e", "primary": "#37618e",
+        "on_primary": "#ffffff", "primary_container": "#d1e4ff", "matugenSource": "#37618e",
+        "secondary": "#515f74", "on_secondary": "#ffffff", "secondary_container": "#d5e3f8",
+        "tertiary": "#695779", "on_tertiary": "#ffffff", "surface_low": "#f2f3fa",
+        "surface_container": "#eceef5", "surface_high": "#e6e8ef", "surface_highest": "#e0e2e9",
+        "on_surface_variant": "#42474e", "outline": "#72777f", "inactive_border": "#c2c7cf",
+        "error": "#ba1a1a", "on_error": "#ffffff", "error_container": "#ffdad6",
+    }
+
+
+def render_gtk_settings(theme):
+    name = f"Colloid-Hyprism-{'Light' if theme['mode'] == 'light' else 'Dark'}-Matugen"
+    return (
+        "[Settings]\n"
+        f"gtk-application-prefer-dark-theme={1 if theme['mode'] == 'dark' else 0}\n"
+        f"gtk-theme-name={name}\n"
+        "gtk-icon-theme-name=Hyprism-Papirus\n"
+        "gtk-font-name=Google Sans Flex 10\n"
+    )
+
+
+def render_gtk2_settings(theme):
+    name = f"Colloid-Hyprism-{'Light' if theme['mode'] == 'light' else 'Dark'}-Matugen"
+    return (
+        f'gtk-theme-name="{name}"\n'
+        'gtk-icon-theme-name="Hyprism-Papirus"\n'
+        'gtk-font-name="Google Sans Flex 10"\n'
+    )
+
+
 def main():
     image = sys.argv[1] if len(sys.argv) > 1 else ""
+    mode = appearance_mode()
     try:
-        raw, matugen = matugen_palette(image) if image else (FALLBACK, {"fallback": True})
+        raw, matugen = matugen_palette(image, mode) if image else (fallback_palette(mode), {"fallback": True})
     except (OSError, KeyError, ValueError, json.JSONDecodeError, subprocess.SubprocessError) as error:
         print(f"Tema do Hyprism: o Matugen falhou ({error}); mantendo os artefatos atuais", file=sys.stderr)
         raise SystemExit(1)
 
-    theme = theme_from(raw, image)
+    theme = theme_from(raw, image, mode)
     publish(OUT / "matugen.json", json_text(matugen), json.loads)
     publish(OUT / "theme.json", json_text(theme), json.loads)
     publish(OUT / "kitty.conf", render_kitty(theme), validate_colors)
@@ -846,6 +965,9 @@ def main():
     publish(OUT / "hyprtoolkit-colors.conf", render_hyprtoolkit(theme), validate_hyprtoolkit)
     publish(OUT / "hyprlock-colors.conf", render_hyprlock(theme), validate_colors)
     publish(OUT / "hyprlock.conf", render_hyprlock_config(theme), validate_colors)
+    publish(OUT / "gtk-3.0/settings.ini", render_gtk_settings(theme), validate_colors)
+    publish(OUT / "gtk-4.0/settings.ini", render_gtk_settings(theme), validate_colors)
+    publish(OUT / "gtk-2.0/gtkrc", render_gtk2_settings(theme), validate_colors)
     publish(OUT / "sddm/theme.conf", render_sddm(theme), validate_colors)
     publish_sddm(theme, image)
     try:
@@ -880,7 +1002,7 @@ def main():
     try:
         colloid_palette = OUT / "colloid/_color-palette-matugen.scss"
         if publish(colloid_palette, render_colloid(matugen, theme), validate_colors):
-            update_colloid(colloid_palette)
+            update_colloid(colloid_palette, mode)
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         print(f"Tema do Hyprism: Colloid preservado após falha ({error})", file=sys.stderr)
     publish_papirus(theme)

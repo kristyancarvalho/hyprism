@@ -19,11 +19,22 @@ hyprism-shell widgets toggle --all
 
 hyprism-shell weather location
 hyprism-shell weather location "São Paulo"
+
+hyprism-shell theme get
+hyprism-shell theme set light
+hyprism-shell theme set dark
+hyprism-shell theme toggle
+hyprism-shell theme schedule set 07:00 18:30
+hyprism-shell theme schedule get
+hyprism-shell theme schedule enable
+hyprism-shell theme schedule disable
 ```
 
 Weather locations are resolved through Open-Meteo's geocoding service. Hyprism stores the resolved display name, coordinates, and timezone, then refreshes the running weather service.
 
 Desktop widget names are `clock`, `weather`, `media`, `system`, `network`, `storage`, `sensors`, `uptime`, `services`, `tasks`, and `processes`. All-widget operations affect only these desktop widgets.
+
+The theme schedule treats the first boundary as the start of the light interval and the second as the start of the dark interval. Intervals may cross midnight. Scheduling is opt-in, is reconciled when Quickshell starts, and waits efficiently until the next boundary. A manual Hub toggle, `theme set`, or `theme toggle` disables scheduling and returns appearance control to manual mode.
 
 ## Shell actions
 

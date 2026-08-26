@@ -32,6 +32,14 @@ class HyprismShellTests(unittest.TestCase):
     def read_config(self):
         return json.loads(self.config.read_text(encoding="utf-8"))
 
+    def use_fake_theme_runtime(self):
+        runtime = Path(self.temporary.name) / "theme-runtime"
+        script = runtime / "scripts/wallpaper"
+        script.parent.mkdir(parents=True)
+        script.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+        script.chmod(0o755)
+        self.environment["HYPRISM_ROOT"] = str(runtime)
+
     def test_language_get_set_and_validation(self):
         self.assertEqual(self.run_cli("language").stdout, "en\n")
         changed = self.run_cli("language", "set", "pt-BR")
@@ -85,6 +93,42 @@ class HyprismShellTests(unittest.TestCase):
         self.assertNotEqual(invalid.returncode, 0)
         self.assertEqual(self.read_config()["weather"]["location"], "São Paulo")
 
+    def test_theme_mode_and_manual_override(self):
+        self.use_fake_theme_runtime()
+        self.assertEqual(self.run_cli("theme", "get").stdout, "dark\n")
+        selected = self.run_cli("theme", "set", "light")
+        self.assertEqual(selected.returncode, 0)
+        self.assertEqual(selected.stdout, "light\n")
+        self.assertEqual(self.read_config()["appearance"]["mode"], "light")
+        config = self.read_config()
+        config["appearance"]["schedule"]["enabled"] = True
+        self.config.write_text(json.dumps(config), encoding="utf-8")
+        toggled = self.run_cli("theme", "toggle")
+        self.assertEqual(toggled.returncode, 0)
+        self.assertEqual(self.read_config()["appearance"]["mode"], "dark")
+        self.assertFalse(self.read_config()["appearance"]["schedule"]["enabled"])
+
+    def test_theme_schedule_validation_and_cross_midnight(self):
+        self.use_fake_theme_runtime()
+        configured = self.run_cli("theme", "schedule", "set", "18:00", "06:00")
+        self.assertEqual(configured.returncode, 0)
+        self.assertEqual(self.run_cli("theme", "schedule", "get").stdout, "disabled 18:00 06:00\n")
+        before = self.config.read_bytes()
+        invalid = self.run_cli("theme", "schedule", "set", "25:00", "06:00")
+        self.assertNotEqual(invalid.returncode, 0)
+        self.assertEqual(self.config.read_bytes(), before)
+        same = self.run_cli("theme", "schedule", "set", "06:00", "06:00")
+        self.assertNotEqual(same.returncode, 0)
+        config = self.read_config()
+        config["appearance"]["schedule"]["enabled"] = True
+        self.config.write_text(json.dumps(config), encoding="utf-8")
+        night = self.run_cli("_theme-reconcile", "--now", "19:00")
+        self.assertEqual(night.returncode, 0)
+        self.assertEqual(self.read_config()["appearance"]["mode"], "light")
+        day = self.run_cli("_theme-reconcile", "--now", "12:00")
+        self.assertEqual(day.returncode, 0)
+        self.assertEqual(self.read_config()["appearance"]["mode"], "dark")
+
     def test_migration_preserves_legacy_preferences_and_ptbr(self):
         existing = Path(self.temporary.name) / "existing.json"
         existing.write_text(json.dumps({"shell": {"widgets": {"clock": {"enabled": False}}}, "weather": {"location": "Recife"}}), encoding="utf-8")
@@ -92,6 +136,8 @@ class HyprismShellTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         migrated = self.read_config()
         self.assertEqual(migrated["language"], "pt-BR")
+        self.assertEqual(migrated["appearance"]["mode"], "dark")
+        self.assertFalse(migrated["appearance"]["schedule"]["enabled"])
         self.assertFalse(migrated["shell"]["widgets"]["clock"]["enabled"])
         self.assertEqual(migrated["weather"]["location"], "Recife")
 
@@ -99,6 +145,7 @@ class HyprismShellTests(unittest.TestCase):
         result = self.run_cli("_migrate", "--language", "pt-BR")
         self.assertEqual(result.returncode, 0)
         self.assertEqual(self.read_config()["language"], "pt-BR")
+        self.assertEqual(self.read_config()["appearance"]["mode"], "dark")
 
     def test_public_actions_route_to_internal_implementations(self):
         fake_root = Path(self.temporary.name) / "runtime"

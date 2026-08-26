@@ -6,6 +6,7 @@ FocusScope {
     required property var theme
     property alias text: input.text
     property string placeholderText: ""
+    property string iconName: "search"
     property bool clearButtonEnabled: true
     property color focusedSurfaceColor: theme.colors.surfaceVariant
     property bool focusIndicatorEnabled: true
@@ -15,6 +16,7 @@ FocusScope {
     readonly property bool inputActiveFocus: input.activeFocus
     readonly property bool clearVisible: clearButton.visible
     readonly property Item clearButtonItem: clearButton
+    property alias echoMode: input.echoMode
     signal keyPressed(var event)
     signal inputFocusChanged(bool active)
     signal clearRequested()
@@ -57,7 +59,7 @@ FocusScope {
             anchors.left: parent.left
             anchors.leftMargin: Design.spacingMd
             anchors.verticalCenter: parent.verticalCenter
-            name: "search"
+            name: control.iconName
             iconSize: Design.iconSm
             color: control.theme.colors.mutedForeground
         }
