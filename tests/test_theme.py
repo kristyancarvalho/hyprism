@@ -38,6 +38,12 @@ class ThemeTests(unittest.TestCase):
         self.assertIn("gtk-application-prefer-dark-theme=0", THEME.render_gtk_settings(theme))
         self.assertIn("Colloid-Hyprism-Light-Matugen", THEME.render_gtk_settings(theme))
 
+    def test_hyprland_shadow_is_softened_only_in_light_mode(self):
+        light = THEME.theme_from(self.light_raw(), "/tmp/wallpaper.png", "light")
+        dark = dict(light, mode="dark")
+        self.assertIn('shadow = "rgba(2917132e)"', THEME.render_hyprland(light))
+        self.assertIn('shadow = "rgba(0000006e)"', THEME.render_hyprland(dark))
+
     def test_papirus_inheritance_follows_mode(self):
         self.assertIn("Inherits=Papirus,hicolor", THEME.papirus_index(["16x16"], "light"))
         self.assertIn("Inherits=Papirus-Dark,Papirus,hicolor", THEME.papirus_index(["16x16"], "dark"))
