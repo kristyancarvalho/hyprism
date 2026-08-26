@@ -56,7 +56,7 @@ PanelWindow {
             height = 700
         } else if (mode === "network") {
             width = Math.min(safeWidth, 560)
-            height = controller.networkResultCount ? Math.min(440, 76 + Design.listContentHeight(controller.networkResultCount, 56, 6, 58)) : 170
+            height = controller.networkResultCount ? Math.min(492, 76 + controller.networkPromptHeight + Design.listContentHeight(controller.networkResultCount, 56, 6, 58)) : 170
         } else if (mode === "bluetooth") {
             width = Math.min(safeWidth, 560)
             height = controller.system.bluetooth.available && controller.system.bluetooth.devices.length ? Math.min(460, 76 + Design.listContentHeight(controller.system.bluetooth.devices.length, 58, 6, 58)) : 170
