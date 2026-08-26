@@ -171,7 +171,11 @@ def appearance(config):
     value = config.setdefault("appearance", {})
     if value.get("mode") not in THEME_MODES:
         value["mode"] = "dark"
-    value.setdefault("warmWhite", False)
+    legacy_warm_white = value.get("warmWhite") is True
+    temperature = value.get("whiteTemperature", 2 if legacy_warm_white else 0)
+    if isinstance(temperature, bool) or not isinstance(temperature, int) or temperature not in range(4):
+        temperature = 0
+    value["whiteTemperature"] = temperature
     schedule = value.setdefault("schedule", {})
     schedule.setdefault("enabled", False)
     schedule.setdefault("lightStart", "07:00")
@@ -234,15 +238,16 @@ def reconcile_theme(config, now=None):
     return set_theme_mode(config, scheduled_mode(settings["schedule"], now), False)
 
 
-def set_warm_white(config, enabled):
+def set_white_temperature(config, temperature):
     settings = appearance(config)
-    changed = settings["warmWhite"] != enabled
-    settings["warmWhite"] = enabled
+    changed = settings["whiteTemperature"] != temperature or "warmWhite" in settings
+    settings["whiteTemperature"] = temperature
+    settings.pop("warmWhite", None)
     if changed:
         write_config(config)
         if settings["mode"] == "light":
             regenerate_theme()
-    return "enabled" if enabled else "disabled"
+    return temperature
 
 
 def theme_command(args):
@@ -257,12 +262,11 @@ def theme_command(args):
     if args.theme_command == "toggle":
         print(set_theme_mode(config, "dark" if settings["mode"] == "light" else "light", True))
         return 0
-    if args.theme_command == "warm-white":
-        if args.warm_white_command == "get":
-            print("enabled" if settings["warmWhite"] else "disabled")
+    if args.theme_command == "temperature":
+        if args.temperature_command == "get":
+            print(settings["whiteTemperature"])
             return 0
-        enabled = not settings["warmWhite"] if args.warm_white_command == "toggle" else args.state == "on"
-        print(set_warm_white(config, enabled))
+        print(set_white_temperature(config, args.level))
         return 0
     schedule = settings["schedule"]
     if args.schedule_command == "get":
@@ -334,6 +338,10 @@ def migrate_command(args):
         config["language"] = args.language
     elif existing.get("language") not in SUPPORTED_LANGUAGES:
         config["language"] = "en"
+    existing_appearance = existing.get("appearance", {}) if existing else {}
+    if "whiteTemperature" not in existing_appearance and existing_appearance.get("warmWhite") is True:
+        config.setdefault("appearance", {})["whiteTemperature"] = 2
+    config.setdefault("appearance", {}).pop("warmWhite", None)
     write_config(config)
     return 0
 
@@ -370,12 +378,11 @@ def parser():
     theme_set = theme_commands.add_parser("set", help="set the appearance and disable scheduling")
     theme_set.add_argument("mode", choices=THEME_MODES)
     theme_commands.add_parser("toggle", help="toggle the appearance and disable scheduling")
-    warm_white = theme_commands.add_parser("warm-white", help="manage the warmer light palette")
-    warm_white_commands = warm_white.add_subparsers(dest="warm_white_command", required=True)
-    warm_white_commands.add_parser("get", help="print the warm white state")
-    warm_white_set = warm_white_commands.add_parser("set", help="set the warm white state")
-    warm_white_set.add_argument("state", choices=("on", "off"))
-    warm_white_commands.add_parser("toggle", help="toggle the warm white state")
+    temperature = theme_commands.add_parser("temperature", help="manage the light palette temperature")
+    temperature_commands = temperature.add_subparsers(dest="temperature_command", required=True)
+    temperature_commands.add_parser("get", help="print the temperature level")
+    temperature_set = temperature_commands.add_parser("set", help="set the temperature level")
+    temperature_set.add_argument("level", type=int, choices=range(4))
     schedule = theme_commands.add_parser("schedule", help="manage automatic appearance switching")
     schedule_commands = schedule.add_subparsers(dest="schedule_command", required=True)
     schedule_commands.add_parser("get", help="print schedule state and boundaries")

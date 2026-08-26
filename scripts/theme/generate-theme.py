@@ -201,14 +201,16 @@ def light_contrast(candidate, background, target=3.2):
     return mix(candidate, "#000000", .55)
 
 
-def warm_light_palette(raw, enabled):
-    if not enabled:
+def warm_light_palette(raw, temperature):
+    level = max(0, min(3, int(temperature)))
+    if level == 0:
         return dict(raw)
+    strength = (0, .22, .42, .62)[level]
     warmed = dict(raw)
     for role in ("background", "surface_low", "surface_container", "surface_high", "surface_highest"):
-        warmed[role] = mix(raw[role], WARM_WHITE, .42)
-    warmed["inactive_border"] = mix(raw["inactive_border"], WARM_WHITE, .16)
-    warmed["outline"] = mix(raw["outline"], WARM_WHITE, .08)
+        warmed[role] = mix(raw[role], WARM_WHITE, strength)
+    warmed["inactive_border"] = mix(raw["inactive_border"], WARM_WHITE, strength * .38)
+    warmed["outline"] = mix(raw["outline"], WARM_WHITE, strength * .19)
     return warmed
 
 
@@ -924,11 +926,12 @@ def appearance_settings():
     try:
         appearance = json.loads(config.read_text(encoding="utf-8")).get("appearance", {})
         mode = appearance.get("mode", "dark")
-        warm_white = appearance.get("warmWhite", False) is True
+        raw_temperature = appearance.get("whiteTemperature", 2 if appearance.get("warmWhite") is True else 0)
+        white_temperature = raw_temperature if isinstance(raw_temperature, int) and not isinstance(raw_temperature, bool) and raw_temperature in range(4) else 0
     except (OSError, AttributeError, json.JSONDecodeError):
         mode = "dark"
-        warm_white = False
-    return (mode if mode in ("dark", "light") else "dark"), warm_white
+        white_temperature = 0
+    return (mode if mode in ("dark", "light") else "dark"), white_temperature
 
 
 def fallback_palette(mode):
@@ -967,15 +970,15 @@ def render_gtk2_settings(theme):
 
 def main():
     image = sys.argv[1] if len(sys.argv) > 1 else ""
-    mode, warm_white = appearance_settings()
+    mode, white_temperature = appearance_settings()
     try:
         raw, matugen = matugen_palette(image, mode) if image else (fallback_palette(mode), {"fallback": True})
     except (OSError, KeyError, ValueError, json.JSONDecodeError, subprocess.SubprocessError) as error:
         print(f"Tema do Hyprism: o Matugen falhou ({error}); mantendo os artefatos atuais", file=sys.stderr)
         raise SystemExit(1)
 
-    theme = theme_from(warm_light_palette(raw, mode == "light" and warm_white), image, mode)
-    theme["warmWhite"] = mode == "light" and warm_white
+    theme = theme_from(warm_light_palette(raw, white_temperature if mode == "light" else 0), image, mode)
+    theme["whiteTemperature"] = white_temperature if mode == "light" else 0
     publish(OUT / "matugen.json", json_text(matugen), json.loads)
     publish(OUT / "theme.json", json_text(theme), json.loads)
     publish(OUT / "kitty.conf", render_kitty(theme), validate_colors)
