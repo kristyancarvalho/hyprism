@@ -750,7 +750,7 @@ def render_papirus_svg(content, theme):
     replacements = {
         "#5294e2": theme["accent"],
         "#4877b1": mix(theme["accent"], "#000000", .18),
-        "#1d344f": mix(theme["accent"], "#000000", .62),
+        "#1d344f": theme["onPrimary"] if theme["mode"] == "light" else mix(theme["accent"], "#000000", .62),
     }
     for source, destination in replacements.items():
         content = re.sub(re.escape(source), destination, content, flags=re.IGNORECASE)

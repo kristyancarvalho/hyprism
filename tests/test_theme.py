@@ -48,6 +48,13 @@ class ThemeTests(unittest.TestCase):
         self.assertIn("Inherits=Papirus,hicolor", THEME.papirus_index(["16x16"], "light"))
         self.assertIn("Inherits=Papirus-Dark,Papirus,hicolor", THEME.papirus_index(["16x16"], "dark"))
 
+    def test_papirus_folder_details_follow_mode_contrast(self):
+        source = '<svg><path fill="#5294e2"/><path fill="#1d344f"/></svg>'
+        light = THEME.theme_from(self.light_raw(), "/tmp/wallpaper.png", "light")
+        dark = THEME.theme_from(THEME.fallback_palette("dark"), "/tmp/wallpaper.png", "dark")
+        self.assertIn(f'fill="{light["onPrimary"]}"', THEME.render_papirus_svg(source, light))
+        self.assertIn(f'fill="{THEME.mix(dark["accent"], "#000000", .62)}"', THEME.render_papirus_svg(source, dark))
+
 
 if __name__ == "__main__":
     unittest.main()
