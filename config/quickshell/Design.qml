@@ -192,6 +192,17 @@ QtObject {
         return Math.max(minimum, Math.min(maximum, safeNumber(value, minimum)))
     }
 
+    function desaturate(color, amount) {
+        const strength = clamp(amount, 0, 1)
+        const gray = color.r * .2126 + color.g * .7152 + color.b * .0722
+        return Qt.rgba(
+            color.r + (gray - color.r) * strength,
+            color.g + (gray - color.g) * strength,
+            color.b + (gray - color.b) * strength,
+            color.a
+        )
+    }
+
     function formatDuration(seconds) {
         const value = Math.max(0, Math.floor(safeNumber(seconds, 0)))
         const minutes = Math.floor(value / 60)
