@@ -1,0 +1,49 @@
+name: Publish stable AUR package
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aur-hyprism-shell
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Prepare Arch environment
+        run: |
+          pacman -Syu --noconfirm --needed git openssh curl jq
+          useradd --create-home --uid 1000 aurbuilder
+          chown -R aurbuilder:aurbuilder "$GITHUB_WORKSPACE"
+      - name: Configure AUR SSH
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          test -n "$AUR_SSH_PRIVATE_KEY"
+          install -d -m 0700 -o aurbuilder -g aurbuilder /home/aurbuilder/.ssh
+          install -m 0600 -o aurbuilder -g aurbuilder /dev/null /home/aurbuilder/.ssh/aur
+          printf '%s\n' "$AUR_SSH_PRIVATE_KEY" >/home/aurbuilder/.ssh/aur
+          ssh-keyscan -t ed25519 aur.archlinux.org >/home/aurbuilder/.ssh/known_hosts
+          chown aurbuilder:aurbuilder /home/aurbuilder/.ssh/known_hosts
+          chmod 0600 /home/aurbuilder/.ssh/known_hosts
+          printf '%s\n' 'Host aur.archlinux.org' '  IdentityFile ~/.ssh/aur' '  IdentitiesOnly yes' >/home/aurbuilder/.ssh/config
+          chown aurbuilder:aurbuilder /home/aurbuilder/.ssh/config
+          chmod 0600 /home/aurbuilder/.ssh/config
+      - name: Publish stable package
+        env:
+          AUR_PUSH: '1'
+          GITHUB_TOKEN: ${{ github.token }}
+        run: runuser -u aurbuilder -- env AUR_PUSH="$AUR_PUSH" GITHUB_TOKEN="$GITHUB_TOKEN" "$GITHUB_WORKSPACE/scripts/aur/publish" stable /home/aurbuilder/hyprism-shell
