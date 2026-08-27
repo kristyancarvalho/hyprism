@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 420" role="img" aria-labelledby="title desc">
+  <title id="title">Hyprism</title>
+  <desc id="desc">Hyprism project banner with a prism-shaped H and layered adaptive desktop surfaces.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1600" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1D1B19"/>
+      <stop offset=".56" stop-color="#282420"/>
+      <stop offset="1" stop-color="#423125"/>
+    </linearGradient>
+    <linearGradient id="left" x1="56" y1="48" x2="104" y2="208" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#BED0D9"/>
+      <stop offset="1" stop-color="#7899A8"/>
+    </linearGradient>
+    <linearGradient id="right" x1="152" y1="72" x2="202" y2="208" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E9E5DC"/>
+      <stop offset="1" stop-color="#C99C7B"/>
+    </linearGradient>
+    <linearGradient id="bridge" x1="90" y1="158" x2="170" y2="82" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D8C7B7"/>
+      <stop offset="1" stop-color="#C99C7B"/>
+    </linearGradient>
+    <linearGradient id="beam" x1="1020" y1="88" x2="1480" y2="330" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#BED0D9" stop-opacity=".18"/>
+      <stop offset=".5" stop-color="#D8C7B7" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#C99C7B" stop-opacity=".2"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="420" rx="42" fill="url(#background)"/>
+  <path d="M1002 0h260L960 420H700Z" fill="url(#beam)"/>
+  <rect x="1155" y="70" width="310" height="92" rx="28" fill="#E9E5DC" fill-opacity=".08"/>
+  <rect x="1078" y="181" width="388" height="166" rx="38" fill="#E9E5DC" fill-opacity=".06" stroke="#E9E5DC" stroke-opacity=".08" stroke-width="2"/>
+  <rect x="1120" y="217" width="132" height="94" rx="28" fill="#BED0D9" fill-opacity=".14"/>
+  <rect x="1270" y="217" width="154" height="94" rx="28" fill="#C99C7B" fill-opacity=".14"/>
+  <g transform="translate(112 82)">
+    <rect x="16" y="16" width="224" height="224" rx="60" fill="#282420"/>
+    <rect x="17" y="17" width="222" height="222" rx="59" fill="none" stroke="#E9E5DC" stroke-opacity=".18" stroke-width="2"/>
+    <path d="M54 50 96 72v134l-42-22Z" fill="url(#left)"/>
+    <path d="m160 72 42-22v134l-42 22Z" fill="url(#right)"/>
+    <path d="m96 112 64-34v52l-64 34Z" fill="url(#bridge)"/>
+    <path d="m96 164 64-34v24l-64 34Z" fill="#644A37" fill-opacity=".72"/>
+  </g>
+  <text x="420" y="203" fill="#E9E5DC" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="112" font-weight="760" letter-spacing="8">HYPRISM</text>
+  <text x="427" y="258" fill="#D8C7B7" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="26" font-weight="450" letter-spacing="1.5">YOUR WALLPAPER, REFRACTED THROUGH THE DESKTOP</text>
+  <rect x="428" y="288" width="250" height="5" rx="2.5" fill="#BED0D9"/>
+  <rect x="678" y="288" width="160" height="5" rx="2.5" fill="#D8C7B7"/>
+  <rect x="838" y="288" width="112" height="5" rx="2.5" fill="#C99C7B"/>
+</svg>
