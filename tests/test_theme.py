@@ -57,6 +57,17 @@ class ThemeTests(unittest.TestCase):
         self.assertIn('shadow = "rgba(2917132e)"', THEME.render_hyprland(light))
         self.assertIn('shadow = "rgba(0000006e)"', THEME.render_hyprland(dark))
 
+    def test_hyprlock_light_palette_uses_accessible_inverse_colors(self):
+        theme = THEME.theme_from(self.light_raw(), "/tmp/wallpaper.png", "light")
+        palette = THEME.hyprlock_palette(theme)
+        self.assertLess(THEME.luminance(palette["surface"]), .12)
+        self.assertGreaterEqual(THEME.contrast(palette["foreground"], palette["surface"]), 7)
+        for role in ("muted", "accent", "secondary", "error"):
+            self.assertGreaterEqual(THEME.contrast(palette[role], palette["surface"]), 4.5)
+        rendered = THEME.render_hyprlock_config(theme)
+        self.assertIn(f'$hyprism_surface = rgb({palette["surface"][1:]})', rendered)
+        self.assertIn(f'$hyprism_foreground = rgb({palette["foreground"][1:]})', rendered)
+
     def test_papirus_inheritance_follows_mode(self):
         self.assertIn("Inherits=Papirus,hicolor", THEME.papirus_index(["16x16"], "light"))
         self.assertIn("Inherits=Papirus-Dark,Papirus,hicolor", THEME.papirus_index(["16x16"], "dark"))

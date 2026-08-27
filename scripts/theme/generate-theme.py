@@ -201,6 +201,16 @@ def light_contrast(candidate, background, target=3.2):
     return mix(candidate, "#000000", .55)
 
 
+def dark_contrast(candidate, background, target=4.5):
+    if contrast(candidate, background) >= target:
+        return candidate
+    for step in range(1, 40):
+        adjusted = mix(candidate, "#ffffff", step * .025)
+        if contrast(adjusted, background) >= target:
+            return adjusted
+    return "#ffffff"
+
+
 def warm_light_palette(raw, temperature):
     level = max(0, min(3, int(temperature)))
     if level == 0:
@@ -391,17 +401,35 @@ def render_hyprtoolkit(theme):
     return "".join(f"{name} = rgba({color[1:]}ff)\n" for name, color in values.items())
 
 
-def render_hyprlock(theme):
-    values = {
-        "background": theme["background"],
-        "surface": theme["surface"],
-        "surface_active": theme["surfaceActive"],
-        "foreground": theme["foreground"],
-        "muted": theme["mutedForeground"],
-        "accent": theme["accent"],
-        "secondary": theme["secondary"],
-        "error": theme["error"],
+def hyprlock_palette(theme):
+    if theme["mode"] != "light":
+        return {
+            "background": theme["background"],
+            "surface": theme["surface"],
+            "surface_active": theme["surfaceActive"],
+            "foreground": theme["foreground"],
+            "muted": theme["mutedForeground"],
+            "accent": theme["accent"],
+            "secondary": theme["secondary"],
+            "error": theme["error"],
+        }
+    surface = mix(theme["foreground"], theme["background"], .18)
+    background = mix(surface, "#000000", .24)
+    accent = dark_contrast(theme["accent"], surface)
+    return {
+        "background": background,
+        "surface": surface,
+        "surface_active": mix(surface, accent, .24),
+        "foreground": dark_contrast(theme["background"], surface, 7),
+        "muted": dark_contrast(theme["mutedForeground"], surface),
+        "accent": accent,
+        "secondary": dark_contrast(theme["secondary"], surface),
+        "error": dark_contrast(theme["error"], surface),
     }
+
+
+def render_hyprlock(theme):
+    values = hyprlock_palette(theme)
     return "".join(f"$hyprism_{name} = rgb({color[1:]})\n" for name, color in values.items())
 
 
