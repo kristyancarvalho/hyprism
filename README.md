@@ -266,4 +266,6 @@ Keep changes focused, preserve English and PT-BR coverage for user-facing text, 
 
 Hyprism integrates projects including [Hyprland](https://hypr.land/), [Quickshell](https://quickshell.org/), [Matugen](https://github.com/InioX/matugen), [Colloid](https://github.com/vinceliuice/Colloid-gtk-theme), and [Papirus](https://github.com/PapirusDevelopmentTeam/papirus-icon-theme).
 
+Hyprism's original code and documentation are available under the [MIT License](LICENSE), copyright Hyprism contributors.
+
 Vendored and adapted components retain their attribution and licenses in their respective directories, including [KSDDM](themes/ksddm-hyprism/LICENSE) and [NvChad](config/nvim/LICENSE).
