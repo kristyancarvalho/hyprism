@@ -1,0 +1,81 @@
+name: Installation or update issue
+description: Report a problem installing, updating, or uninstalling Hyprism
+title: "[Install]: "
+labels:
+  - installation
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share only the relevant setup output. Remove passwords, tokens, host-specific secrets, and personal information.
+  - type: dropdown
+    id: operation
+    attributes:
+      label: Operation
+      options:
+        - Fresh English installation with make install
+        - Fresh PT-BR installation with make install-ptbr
+        - Update with make update
+        - Direct install.sh invocation
+        - Uninstall
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: installation_state
+    attributes:
+      label: Installation state
+      options:
+        - Fresh installation
+        - Existing installation being updated
+        - Existing installation being repaired
+        - Uninstallation
+    validations:
+      required: true
+  - type: input
+    id: distribution
+    attributes:
+      label: Linux distribution
+      placeholder: Arch Linux
+    validations:
+      required: true
+  - type: textarea
+    id: versions
+    attributes:
+      label: Versions
+      description: Include the Hyprism release or commit and, when available, Hyprland and Quickshell versions.
+      placeholder: |
+        Hyprism: v0.1.0
+        Hyprland: 0.x.x
+        Quickshell: 0.x.x
+    validations:
+      required: true
+  - type: input
+    id: command
+    attributes:
+      label: Command that failed
+      placeholder: make install
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Relevant terminal output
+      description: Include the error and nearby context, not the entire machine configuration. Remove sensitive values.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Describe any unusual setup details or previous recovery attempts that may be relevant.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission checks
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: I removed passwords, tokens, and other sensitive information from the report.
+          required: true
