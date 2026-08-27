@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+channel=${1:?usage: publish CHANNEL DESTINATION}
+destination=${2:?usage: publish CHANNEL DESTINATION}
+case "$channel" in
+  stable) package=hyprism-shell ;;
+  git) package=hyprism-shell-git ;;
+  *) printf 'Unknown AUR channel: %s\n' "$channel" >&2; exit 2 ;;
+esac
+
+root_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
+release=$($root_dir/scripts/aur/release-info)
+tag=$(jq -r .tag <<<"$release")
+version=$(jq -r .version <<<"$release")
+
+if [[ ! -d $destination/.git ]]; then
+  git clone "ssh://aur@aur.archlinux.org/${package}.git" "$destination"
+fi
+
+if [[ $channel == stable ]]; then
+  archive=$(jq -r .archive <<<"$release")
+  checksum=$(curl -fL --retry 3 --connect-timeout 15 "$archive" | sha256sum | cut -d' ' -f1)
+  current_version=$(sed -n 's/^pkgver=//p' "$destination/PKGBUILD" 2>/dev/null | head -n1 || true)
+  current_release=$(sed -n 's/^pkgrel=//p' "$destination/PKGBUILD" 2>/dev/null | head -n1 || true)
+  [[ $current_release =~ ^[1-9][0-9]*$ ]] || current_release=1
+  if [[ $current_version != "$version" ]]; then
+    package_release=1
+  else
+    package_release=$current_release
+  fi
+  sed -e "s/@PKGVER@/$version/g" -e "s/@PKGREL@/$package_release/g" -e "s/@SHA256@/$checksum/g" \
+    "$root_dir/packaging/aur/hyprism-shell/PKGBUILD.in" >"$destination/PKGBUILD.candidate"
+  if [[ $current_version == "$version" && -f $destination/PKGBUILD ]] && ! cmp -s "$destination/PKGBUILD.candidate" "$destination/PKGBUILD"; then
+    package_release=$((current_release + 1))
+    sed -e "s/@PKGVER@/$version/g" -e "s/@PKGREL@/$package_release/g" -e "s/@SHA256@/$checksum/g" \
+      "$root_dir/packaging/aur/hyprism-shell/PKGBUILD.in" >"$destination/PKGBUILD.candidate"
+  fi
+  mv "$destination/PKGBUILD.candidate" "$destination/PKGBUILD"
+  commit_message="Update to ${version}-${package_release}"
+else
+  tag_commit=$(jq -r .tag_commit <<<"$release")
+  head=$(git -C "$root_dir" rev-parse HEAD)
+  git -C "$root_dir" merge-base --is-ancestor "$tag_commit" "$head" \
+    || { printf 'Stable baseline is not reachable from main\n' >&2; exit 1; }
+  distance=$(git -C "$root_dir" rev-list --count "${tag_commit}..${head}")
+  revision=$(git -C "$root_dir" rev-parse --short=7 "$head")
+  if ((distance == 0)); then
+    vcs_version=$version
+  else
+    vcs_version="${version}.r${distance}.g${revision}"
+  fi
+  sed -E "0,/^pkgver=.*/s//pkgver=${vcs_version}/" "$root_dir/packaging/aur/hyprism-shell-git/PKGBUILD" >"$destination/PKGBUILD"
+  commit_message="Update VCS package to ${vcs_version}"
+fi
+
+(
+  cd "$destination"
+  makepkg --printsrcinfo >.SRCINFO
+  if [[ -z $(git status --short -- PKGBUILD .SRCINFO) ]]; then
+    printf '%s is already synchronized\n' "$package"
+    exit 0
+  fi
+  git add PKGBUILD .SRCINFO
+  if git rev-parse --verify HEAD >/dev/null 2>&1; then
+    git -c user.name='Hyprism AUR Bot' -c user.email='actions@users.noreply.github.com' commit -m "$commit_message"
+  else
+    git -c user.name='Hyprism AUR Bot' -c user.email='actions@users.noreply.github.com' commit -m 'Initial import'
+  fi
+  if [[ ${AUR_PUSH:-0} == 1 ]]; then
+    git push origin HEAD:master
+  fi
+)

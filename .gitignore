@@ -3,3 +3,4 @@ generated/
 *.log
 __pycache__/
 *.pyc
+specs/

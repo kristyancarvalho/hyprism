@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+
+import json
+import os
+import pathlib
+import re
+import subprocess
+import sys
+import urllib.request
+
+
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+API = "https://api.github.com/repos/kristyancarvalho/hyprism/releases/latest"
+
+
+def git(*arguments):
+    return subprocess.run(["git", "-C", ROOT, *arguments], check=True, capture_output=True, text=True).stdout.strip()
+
+
+request = urllib.request.Request(API, headers={"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"})
+token = os.environ.get("GITHUB_TOKEN")
+if token:
+    request.add_header("Authorization", f"Bearer {token}")
+with urllib.request.urlopen(request, timeout=30) as response:
+    release = json.load(response)
+
+tag = release.get("tag_name", "")
+match = re.fullmatch(r"v(\d+\.\d+\.\d+)", tag)
+if release.get("draft") or release.get("prerelease") or not match:
+    raise SystemExit("Latest GitHub release is not a stable semantic release")
+
+try:
+    tag_commit = git("rev-parse", f"{tag}^{{commit}}")
+except subprocess.CalledProcessError as error:
+    raise SystemExit(f"Latest GitHub release tag is unavailable locally: {tag}") from error
+
+head = git("rev-parse", "HEAD")
+ancestor = subprocess.run(["git", "-C", ROOT, "merge-base", "--is-ancestor", tag_commit, head], check=False).returncode
+if ancestor != 0:
+    raise SystemExit(f"Latest stable release tag {tag} is not reachable from the checked-out main history")
+
+stable_tags = []
+for candidate in git("tag", "--merged", "HEAD", "--list", "v[0-9]*.[0-9]*.[0-9]*").splitlines():
+    parsed = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)", candidate)
+    if parsed:
+        stable_tags.append((tuple(map(int, parsed.groups())), candidate))
+if not stable_tags or max(stable_tags)[1] != tag:
+    raise SystemExit("Latest stable GitHub release and semantic Git tags do not agree")
+
+print(json.dumps({
+    "tag": tag,
+    "version": match.group(1),
+    "tag_commit": tag_commit,
+    "head": head,
+    "archive": f"https://github.com/kristyancarvalho/hyprism/archive/refs/tags/{tag}.tar.gz",
+}, separators=(",", ":")))

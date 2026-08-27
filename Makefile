@@ -34,8 +34,8 @@ test:
 	python3 -m unittest discover -s tests -v
 
 lint:
-	bash -n install.sh uninstall.sh scripts/wallpaper scripts/hyprism-shell scripts/system/action scripts/system/brightness-ddc scripts/system/install-colloid-theme scripts/system/install-google-sans-flex scripts/system/lock scripts/system/move-or-scroll scripts/system/publish-json scripts/system/recording-backend scripts/system/reload-shell scripts/system/shell-ipc scripts/system/start-shell scripts/system/validate-hyprlock
-	python3 -m py_compile scripts/hyprism-shell scripts/theme/generate-theme.py scripts/system/*.py
+	bash -n install.sh uninstall.sh scripts/wallpaper scripts/hyprism-shell scripts/aur/publish scripts/system/action scripts/system/brightness-ddc scripts/system/install-colloid-theme scripts/system/install-google-sans-flex scripts/system/lock scripts/system/move-or-scroll scripts/system/publish-json scripts/system/recording-backend scripts/system/reload-shell scripts/system/shell-ipc scripts/system/start-shell scripts/system/validate-hyprlock
+	python3 -m py_compile scripts/hyprism-shell scripts/aur/release-info scripts/theme/generate-theme.py scripts/system/*.py
 	python3 -m json.tool config/user.json >/dev/null
 	python3 -m json.tool config/quickshell/i18n/en.json >/dev/null
 	python3 -m json.tool config/quickshell/i18n/pt-BR.json >/dev/null
