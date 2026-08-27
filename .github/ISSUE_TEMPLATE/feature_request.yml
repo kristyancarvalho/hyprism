@@ -1,0 +1,47 @@
+name: Feature request
+description: Suggest an improvement grounded in a user need or workflow
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem first so the best solution can be evaluated within Hyprism's focused design.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What workflow, limitation, or user need would this improve?
+      placeholder: I would like to ... because ...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe how you expect the feature to work from a user's perspective.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What existing workflows or other approaches have you tried?
+  - type: textarea
+    id: references
+    attributes:
+      label: UI or UX references
+      description: Add screenshots, mockups, or links when the request affects interaction or appearance.
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add any constraints or related information that may help evaluate the request.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission check
+      options:
+        - label: I searched existing issues and did not find an equivalent request.
+          required: true
