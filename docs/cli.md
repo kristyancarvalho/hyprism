@@ -4,6 +4,15 @@
 
 ## Configuration
 
+Initialize a packaged installation once after installing either AUR package:
+
+```bash
+hyprism-shell init
+hyprism-shell init --lang pt-BR
+```
+
+The command merges system defaults into `~/.config/hyprism/user.json`, keeps explicit user values such as disabled widgets, copies bundled wallpapers only when missing, and leaves unrelated existing paths untouched. It is safe to run again after an update.
+
 ```bash
 hyprism-shell language
 hyprism-shell language set en
