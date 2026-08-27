@@ -225,14 +225,14 @@ FocusScope {
                     border.width: 0
                     clip: true
 
-                    Image {
+                    RoundedImage {
                         id: thumbnail
                         anchors.fill: parent
                         source: "file://" + Design.safeText(modelData, "")
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         cache: true
-                        sourceSize: Qt.size(Math.max(1, Math.ceil(width)), Math.max(1, Math.ceil(height)))
+                        radius: wallpaperCard.radius
                         opacity: status === Image.Ready ? 1 : 0
 
                         Behavior on opacity { NumberAnimation { duration: Design.animationInstant; easing.type: Design.easingMorph } }
