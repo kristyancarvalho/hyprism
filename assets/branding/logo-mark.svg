@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Hyprism logo mark</title>
+  <desc id="desc">A geometric prism-shaped letter H with blue, cream, and coral facets.</desc>
+  <defs>
+    <linearGradient id="left" x1="56" y1="48" x2="104" y2="208" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#BED0D9"/>
+      <stop offset="1" stop-color="#7899A8"/>
+    </linearGradient>
+    <linearGradient id="right" x1="152" y1="72" x2="202" y2="208" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E9E5DC"/>
+      <stop offset="1" stop-color="#C99C7B"/>
+    </linearGradient>
+    <linearGradient id="bridge" x1="90" y1="158" x2="170" y2="82" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D8C7B7"/>
+      <stop offset="1" stop-color="#C99C7B"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="224" height="224" rx="60" fill="#282420"/>
+  <rect x="17" y="17" width="222" height="222" rx="59" fill="none" stroke="#E9E5DC" stroke-opacity=".18" stroke-width="2"/>
+  <path d="M54 50 96 72v134l-42-22Z" fill="url(#left)"/>
+  <path d="m160 72 42-22v134l-42 22Z" fill="url(#right)"/>
+  <path d="m96 112 64-34v52l-64 34Z" fill="url(#bridge)"/>
+  <path d="m96 164 64-34v24l-64 34Z" fill="#644A37" fill-opacity=".72"/>
+</svg>
