@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-root_dir="${HYPRISM_ROOT:-$HOME/.local/share/hyprism}"
+root_dir="${HYPRISM_ROOT:-$(cd -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")/../.." && pwd)}"
 config_name="${QS_CONFIG_NAME:-default}"
 config_path="${HYPRISM_QS_PATH:-}"
 development=0

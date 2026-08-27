@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-root_dir="${HYPRISM_ROOT:-$HOME/.local/share/hyprism}"
+root_dir="${HYPRISM_ROOT:-$(cd -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")/../.." && pwd)}"
 notify() { command -v qs >/dev/null && "$root_dir/scripts/system/shell-ipc" osd "$1" "${2:-}" >/dev/null 2>&1 || true; }
 volume() {
   wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ "$1"

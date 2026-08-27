@@ -195,6 +195,51 @@ class HyprismShellTests(unittest.TestCase):
         self.assertEqual(self.read_config()["appearance"]["mode"], "dark")
         self.assertEqual(self.read_config()["appearance"]["whiteTemperature"], 0)
 
+    def test_init_creates_user_state_and_preserves_explicit_values(self):
+        home = Path(self.temporary.name) / "home"
+        config = home / ".config/hyprism/user.json"
+        self.environment.update({
+            "HOME": str(home),
+            "XDG_CACHE_HOME": str(home / ".cache"),
+            "XDG_CONFIG_HOME": str(home / ".config"),
+            "HYPRISM_CONFIG": str(config),
+            "HYPRISM_SKIP_SERVICE_ENABLE": "1",
+        })
+        initialized = self.run_cli("init", "--lang", "pt-BR")
+        self.assertEqual(initialized.returncode, 0, initialized.stderr)
+        value = json.loads(config.read_text(encoding="utf-8"))
+        self.assertEqual(value["language"], "pt-BR")
+        self.assertTrue((home / ".config/hypr").is_symlink())
+        self.assertTrue((home / ".config/quickshell/default").is_symlink())
+        self.assertTrue((home / "Imagens/Wallpapers/abyss.png").is_file())
+        value["shell"]["widgets"]["clock"]["enabled"] = False
+        value["custom"] = {"enabled": False}
+        config.write_text(json.dumps(value), encoding="utf-8")
+        repeated = self.run_cli("init", "--lang", "en")
+        self.assertEqual(repeated.returncode, 0, repeated.stderr)
+        persisted = json.loads(config.read_text(encoding="utf-8"))
+        self.assertEqual(persisted["language"], "pt-BR")
+        self.assertFalse(persisted["shell"]["widgets"]["clock"]["enabled"])
+        self.assertFalse(persisted["custom"]["enabled"])
+
+    def test_init_preserves_unmanaged_paths(self):
+        home = Path(self.temporary.name) / "home"
+        existing = home / ".config/hypr"
+        existing.mkdir(parents=True)
+        marker = existing / "custom.conf"
+        marker.write_text("preserved\n", encoding="utf-8")
+        self.environment.update({
+            "HOME": str(home),
+            "XDG_CACHE_HOME": str(home / ".cache"),
+            "XDG_CONFIG_HOME": str(home / ".config"),
+            "HYPRISM_CONFIG": str(home / ".config/hyprism/user.json"),
+            "HYPRISM_SKIP_SERVICE_ENABLE": "1",
+        })
+        initialized = self.run_cli("init")
+        self.assertEqual(initialized.returncode, 0, initialized.stderr)
+        self.assertFalse(existing.is_symlink())
+        self.assertEqual(marker.read_text(encoding="utf-8"), "preserved\n")
+
     def test_migration_converts_legacy_warm_white(self):
         existing = Path(self.temporary.name) / "existing.json"
         existing.write_text(json.dumps({"appearance": {"mode": "light", "warmWhite": True}}), encoding="utf-8")
