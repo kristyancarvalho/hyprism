@@ -4,7 +4,7 @@ set -Eeuo pipefail
 revision=6c2dc65865628bda9fdc8157a30cd5eda6fd41f9
 repository=https://github.com/vinceliuice/Colloid-gtk-theme.git
 theme_name=Colloid-Hyprism
-root_dir="${HYPRISM_ROOT:-$HOME/.local/share/hyprism}"
+root_dir="${HYPRISM_ROOT:-$(cd -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")/../.." && pwd)}"
 cache_dir="${HYPRISM_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/hyprism}"
 palette="${1:-$cache_dir/theme/colloid/_color-palette-matugen.scss}"
 mode="${2:-dark}"

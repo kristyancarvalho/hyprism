@@ -3,13 +3,24 @@ USER_NAME ?= $(shell id -un)
 LANG := en
 SUDO ?= sudo
 
-.PHONY: install install-ptbr update uninstall check test lint reload help
+PREFIX ?= /usr/local
+DESTDIR ?=
+PACKAGE_NAME ?= hyprism-shell
+
+.PHONY: install install-ptbr install-system update uninstall check test lint reload help
 
 install:
 	$(SUDO) ./install.sh --user "$(USER_NAME)" --lang "$(LANG)"
 
 install-ptbr:
 	$(MAKE) install LANG=pt-BR
+
+install-system:
+	install -d "$(DESTDIR)$(PREFIX)/bin" "$(DESTDIR)$(PREFIX)/share/hyprism" "$(DESTDIR)$(PREFIX)/share/licenses/$(PACKAGE_NAME)"
+	cp -a config scripts themes wallpapers "$(DESTDIR)$(PREFIX)/share/hyprism/"
+	find "$(DESTDIR)$(PREFIX)/share/hyprism" -type d -name __pycache__ -prune -exec rm -rf -- {} +
+	install -m 0755 scripts/hyprism-shell "$(DESTDIR)$(PREFIX)/bin/hyprism-shell"
+	install -m 0644 LICENSE "$(DESTDIR)$(PREFIX)/share/licenses/$(PACKAGE_NAME)/LICENSE"
 
 update:
 	$(SUDO) ./install.sh --user "$(USER_NAME)" --lang en --no-packages
@@ -36,6 +47,7 @@ help:
 	@printf '%s\n' \
 	  'install       Install Hyprism in English (LANG may override)' \
 	  'install-ptbr  Install Hyprism in Brazilian Portuguese' \
+	  'install-system Install immutable files under PREFIX with optional DESTDIR' \
 	  'update        Reapply Hyprism while preserving user configuration' \
 	  'uninstall     Remove and archive Hyprism-managed files' \
 	  'check         Run lint and tests' \

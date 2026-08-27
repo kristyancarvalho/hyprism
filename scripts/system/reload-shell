@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-root_dir="${HYPRISM_ROOT:-$HOME/.local/share/hyprism}"
+root_dir="${HYPRISM_ROOT:-$(cd -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")/../.." && pwd)}"
 if "$root_dir/scripts/system/shell-ipc" shell reload >/dev/null 2>&1; then
   exit 0
 fi

@@ -5,6 +5,7 @@ from datetime import datetime
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -35,7 +36,13 @@ def root_dir():
     installed = Path.home() / ".local/share/hyprism"
     if installed.is_dir():
         return installed
-    return Path(__file__).resolve().parent.parent
+    system = Path("/usr/share/hyprism")
+    if system.is_dir():
+        return system
+    source = Path(__file__).resolve().parent.parent
+    if (source / "config/user.json").is_file():
+        return source
+    raise SystemExit("Hyprism runtime resources were not found")
 
 
 def config_path():
@@ -346,6 +353,82 @@ def migrate_command(args):
     return 0
 
 
+def create_link(source, destination):
+    if destination.is_symlink():
+        try:
+            if destination.resolve() == source.resolve():
+                return "unchanged"
+        except OSError:
+            pass
+        return "preserved"
+    if destination.exists():
+        return "preserved"
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.symlink_to(source)
+    return "created"
+
+
+def init_command(args):
+    root = root_dir()
+    destination = config_path()
+    existing = read_json(destination, required=False)
+    config = merge_defaults(default_config(), existing or {})
+    if existing:
+        if existing.get("language") not in SUPPORTED_LANGUAGES:
+            config["language"] = "en"
+    else:
+        config["language"] = args.language
+    write_config(config, destination)
+
+    home = Path.home()
+    cache = Path(os.environ.get("XDG_CACHE_HOME", home / ".cache")) / "hyprism/theme"
+    xdg_config = Path(os.environ.get("XDG_CONFIG_HOME", home / ".config"))
+    links = (
+        (root / "config/hypr", xdg_config / "hypr"),
+        (root / "config/quickshell", xdg_config / "quickshell/default"),
+        (root / "config/quickshell", xdg_config / "quickshell/hyprism"),
+        (root / "config/foot/foot.ini", xdg_config / "foot/foot.ini"),
+        (root / "config/kitty/kitty.conf", xdg_config / "kitty/kitty.conf"),
+        (cache / "fastfetch/config.jsonc", xdg_config / "fastfetch/config.jsonc"),
+        (root / "config/fastfetch/images/archlinux.svg", xdg_config / "fastfetch/images/archlinux-source.svg"),
+        (cache / "gtk-3.0/settings.ini", xdg_config / "gtk-3.0/settings.ini"),
+        (cache / "gtk-4.0/settings.ini", xdg_config / "gtk-4.0/settings.ini"),
+        (cache / "gtk-2.0/gtkrc", home / ".gtkrc-2.0"),
+        (root / "config/qt5ct/qt5ct.conf", xdg_config / "qt5ct/qt5ct.conf"),
+        (root / "config/qt6ct/qt6ct.conf", xdg_config / "qt6ct/qt6ct.conf"),
+        (root / "config/Kvantum/kvantum.kvconfig", xdg_config / "Kvantum/kvantum.kvconfig"),
+        (root / "config/environment.d/90-hyprism.conf", xdg_config / "environment.d/90-hyprism.conf"),
+        (root / "config/systemd/user/hyprism-hyprsunset.service", xdg_config / "systemd/user/hyprism-hyprsunset.service"),
+        (cache / "starship.toml", xdg_config / "starship.toml"),
+        (cache / "tmux.conf", xdg_config / "tmux/theme.conf"),
+        (cache / "zathura/zathurarc", xdg_config / "zathura/zathurarc"),
+    )
+    created = 0
+    preserved = 0
+    for source, target in links:
+        result = create_link(source, target)
+        created += result == "created"
+        preserved += result == "preserved"
+
+    wallpaper_dir = Path(config.get("paths", {}).get("wallpapers", "~/Imagens/Wallpapers")).expanduser()
+    screenshot_dir = Path(config.get("paths", {}).get("screenshots", "~/Imagens/Screenshots")).expanduser()
+    wallpaper_dir.mkdir(parents=True, exist_ok=True)
+    screenshot_dir.mkdir(parents=True, exist_ok=True)
+    for source in sorted((root / "wallpapers").glob("*.png")):
+        target = wallpaper_dir / source.name
+        if not target.exists():
+            shutil.copyfile(source, target)
+
+    if os.environ.get("HYPRISM_SKIP_SERVICE_ENABLE") != "1" and shutil.which("systemctl"):
+        subprocess.run(["systemctl", "--user", "daemon-reload"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        subprocess.run(["systemctl", "--user", "enable", "hyprpolkitagent.service"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+
+    print(f"runtime\t{root}")
+    print(f"config\t{destination}")
+    print(f"links\t{created} created, {preserved} preserved")
+    return 0
+
+
 def add_widget_target(parser):
     target = parser.add_mutually_exclusive_group(required=True)
     target.add_argument("widget", nargs="?", choices=WIDGETS)
@@ -355,6 +438,9 @@ def add_widget_target(parser):
 def parser():
     result = argparse.ArgumentParser(prog="hyprism-shell", description="Configure and control Hyprism")
     commands = result.add_subparsers(dest="command", required=True)
+
+    initialize = commands.add_parser("init", help="initialize user configuration for a packaged installation")
+    initialize.add_argument("--lang", choices=SUPPORTED_LANGUAGES, default="en", dest="language")
 
     widgets = commands.add_parser("widgets", help="manage desktop widgets")
     widget_commands = widgets.add_subparsers(dest="widget_command", required=True)
@@ -430,6 +516,8 @@ def main():
         print(reconcile_theme(configuration(), now))
         return 0
     args = parser().parse_args()
+    if args.command == "init":
+        return init_command(args)
     if args.command == "widgets":
         return widgets_command(args)
     if args.command == "weather":
