@@ -92,7 +92,25 @@ Every comparison below shows the same interface in dark and light appearance wit
 
 ## Installation
 
-Clone the repository and install Hyprism in English:
+Install the latest stable release from the AUR, then initialize the user configuration in English:
+
+```bash
+paru -S hyprism-shell
+hyprism-shell init
+```
+
+Use `hyprism-shell init --lang pt-BR` for a new Brazilian Portuguese configuration. The initializer preserves existing user settings and unmanaged configuration paths.
+
+The development package follows every commit on `main` and is intended for users who explicitly want unreleased changes:
+
+```bash
+paru -S hyprism-shell-git
+hyprism-shell init
+```
+
+`paru` is only an example AUR helper. Both packages can also be cloned from the AUR and installed with the standard `makepkg -si` workflow.
+
+For a repository-managed installation instead, clone Hyprism and run the installer directly:
 
 ```bash
 git clone https://github.com/kristyancarvalho/hyprism.git
@@ -117,10 +135,12 @@ Useful maintenance targets are available through `make help`. Run `make check` t
 > [!WARNING]
 > Installation provisions packages and replaces user paths managed by Hyprism. Conflicting paths are moved to `~/.local/state/hyprism/backups/` before links are created. Uninstallation archives the runtime and `user.json` under `~/.local/state/hyprism/uninstalled/`.
 
+The AUR packages own immutable files under `/usr/share/hyprism` and `/usr/bin`. User preferences remain under `~/.config/hyprism` and are not removed with the package.
+
 ## Requirements and support
 
 - Arch Linux with internet access during initial package provisioning.
-- A regular user with `sudo`; installation needs elevated access for packages, fonts, and SDDM configuration.
+- A regular user with package-installation privileges. The repository installer additionally uses `sudo` for packages, fonts, and SDDM configuration.
 - Hardware and drivers suitable for a current Hyprland and Wayland session.
 - A standard user `PATH` containing `~/.local/bin` after installation.
 
@@ -240,7 +260,8 @@ Changing wallpaper preserves the selected appearance. Changing appearance preser
 assets/            Branding, screenshots, and demo media
 config/            Quickshell, Hyprland, toolkit, terminal, and application configuration
 docs/              Focused user documentation
-packages/          Arch and AUR package manifests
+packages/          Manual installer package manifests
+packaging/         Standalone AUR package recipes
 scripts/           CLI, theme generation, services, and session utilities
 tests/             Configuration and behavior validation
 themes/            Managed session themes with upstream attribution
