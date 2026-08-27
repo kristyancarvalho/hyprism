@@ -17,7 +17,9 @@ install-ptbr:
 
 install-system:
 	install -d "$(DESTDIR)$(PREFIX)/bin" "$(DESTDIR)$(PREFIX)/share/hyprism" "$(DESTDIR)$(PREFIX)/share/licenses/$(PACKAGE_NAME)"
-	cp -a config scripts themes wallpapers "$(DESTDIR)$(PREFIX)/share/hyprism/"
+	cp -a config themes wallpapers "$(DESTDIR)$(PREFIX)/share/hyprism/"
+	install -d "$(DESTDIR)$(PREFIX)/share/hyprism/scripts"
+	cp -a scripts/hyprism-shell scripts/wallpaper scripts/system scripts/theme "$(DESTDIR)$(PREFIX)/share/hyprism/scripts/"
 	find "$(DESTDIR)$(PREFIX)/share/hyprism" -type d -name __pycache__ -prune -exec rm -rf -- {} +
 	install -m 0755 scripts/hyprism-shell "$(DESTDIR)$(PREFIX)/bin/hyprism-shell"
 	install -m 0644 LICENSE "$(DESTDIR)$(PREFIX)/share/licenses/$(PACKAGE_NAME)/LICENSE"

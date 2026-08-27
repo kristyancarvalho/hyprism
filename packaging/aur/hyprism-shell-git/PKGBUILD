@@ -86,5 +86,5 @@ pkgver() {
 
 package() {
   cd hyprism
-  make install-system PREFIX=/usr DESTDIR="$pkgdir" PACKAGE_NAME=hyprism-shell
+  make install-system PREFIX=/usr DESTDIR="$pkgdir" PACKAGE_NAME="$pkgname"
 }
