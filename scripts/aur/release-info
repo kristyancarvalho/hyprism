@@ -6,23 +6,34 @@ import pathlib
 import re
 import subprocess
 import sys
+import urllib.error
 import urllib.request
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 API = "https://api.github.com/repos/kristyancarvalho/hyprism/releases/latest"
+UPSTREAM = re.compile(
+    r"^(?:https://github\.com/|git@github\.com:|ssh://git@github\.com/)kristyancarvalho/hyprism(?:\.git)?/?$"
+)
 
 
 def git(*arguments):
     return subprocess.run(["git", "-C", ROOT, *arguments], check=True, capture_output=True, text=True).stdout.strip()
 
 
+def run_git(*arguments):
+    return subprocess.run(["git", "-C", ROOT, *arguments], check=False, capture_output=True, text=True)
+
+
 request = urllib.request.Request(API, headers={"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"})
 token = os.environ.get("GITHUB_TOKEN")
 if token:
     request.add_header("Authorization", f"Bearer {token}")
-with urllib.request.urlopen(request, timeout=30) as response:
-    release = json.load(response)
+try:
+    with urllib.request.urlopen(request, timeout=30) as response:
+        release = json.load(response)
+except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as error:
+    raise SystemExit(f"GitHub release lookup failed: {error}") from error
 
 tag = release.get("tag_name", "")
 match = re.fullmatch(r"v(\d+\.\d+\.\d+)", tag)
@@ -30,9 +41,47 @@ if release.get("draft") or release.get("prerelease") or not match:
     raise SystemExit("Latest GitHub release is not a stable semantic release")
 
 try:
-    tag_commit = git("rev-parse", f"{tag}^{{commit}}")
+    inside_work_tree = git("rev-parse", "--is-inside-work-tree")
 except subprocess.CalledProcessError as error:
-    raise SystemExit(f"Latest GitHub release tag is unavailable locally: {tag}") from error
+    raise SystemExit("AUR release metadata requires a Git checkout; no repository metadata is available") from error
+if inside_work_tree != "true":
+    raise SystemExit("AUR release metadata requires a Git checkout; no repository metadata is available")
+
+try:
+    origin = git("remote", "get-url", "origin")
+except subprocess.CalledProcessError as error:
+    raise SystemExit("Expected upstream Git remote 'origin' is unavailable") from error
+if not UPSTREAM.fullmatch(origin):
+    raise SystemExit(f"Git remote 'origin' is not the expected Hyprism upstream: {origin}")
+
+remote_tag = run_git("ls-remote", "--exit-code", "--refs", "origin", f"refs/tags/{tag}")
+if remote_tag.returncode == 2 or not remote_tag.stdout.strip():
+    raise SystemExit(f"GitHub release/tag inconsistency: {tag} is missing from upstream origin")
+if remote_tag.returncode != 0:
+    detail = remote_tag.stderr.strip() or f"git ls-remote exited with status {remote_tag.returncode}"
+    raise SystemExit(f"Unable to query release tag {tag} from upstream origin: {detail}")
+remote_fields = remote_tag.stdout.split()
+if len(remote_fields) != 2 or remote_fields[1] != f"refs/tags/{tag}":
+    raise SystemExit(f"Unexpected upstream ref response while validating release tag {tag}")
+remote_tag_object = remote_fields[0]
+
+local_tag = run_git("show-ref", "--verify", "--hash", f"refs/tags/{tag}")
+if local_tag.returncode != 0:
+    print(f"Fetching release tag {tag} from upstream origin", file=sys.stderr)
+    fetched = run_git("fetch", "--no-tags", "origin", f"refs/tags/{tag}:refs/tags/{tag}")
+    if fetched.returncode != 0:
+        detail = fetched.stderr.strip() or f"git fetch exited with status {fetched.returncode}"
+        raise SystemExit(f"Failed to fetch release tag {tag} from upstream origin: {detail}")
+    local_tag = run_git("show-ref", "--verify", "--hash", f"refs/tags/{tag}")
+if local_tag.returncode != 0 or not local_tag.stdout.strip():
+    raise SystemExit(f"Release tag {tag} remains unavailable after fetching it from upstream origin")
+if local_tag.stdout.strip() != remote_tag_object:
+    raise SystemExit(f"Local release tag {tag} does not match upstream origin")
+
+try:
+    tag_commit = git("rev-parse", f"refs/tags/{tag}^{{commit}}")
+except subprocess.CalledProcessError as error:
+    raise SystemExit(f"Release tag {tag} does not resolve to a Git commit") from error
 
 head = git("rev-parse", "HEAD")
 ancestor = subprocess.run(["git", "-C", ROOT, "merge-base", "--is-ancestor", tag_commit, head], check=False).returncode

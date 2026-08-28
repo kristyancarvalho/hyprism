@@ -19,15 +19,17 @@ jobs:
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: main
-          fetch-depth: 0
       - name: Prepare Arch environment
         run: |
           pacman -Syu --noconfirm --needed git openssh curl jq
           useradd --create-home --uid 1000 aurbuilder
-          chown -R aurbuilder:aurbuilder "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Prepare publisher workspace
+        run: chown -R aurbuilder:aurbuilder "$GITHUB_WORKSPACE"
       - name: Configure AUR SSH
         env:
           AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}

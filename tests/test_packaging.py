@@ -66,6 +66,14 @@ class PackagingTests(unittest.TestCase):
         self.assertIn("provides=(\"hyprism-shell=${pkgver}\")", vcs)
         self.assertIn("conflicts=('hyprism-shell')", vcs)
 
+    def test_aur_workflows_prepare_git_before_checkout(self):
+        for workflow_name in ("aur-stable.yml", "aur-git.yml"):
+            workflow = (ROOT / ".github/workflows" / workflow_name).read_text(encoding="utf-8")
+            self.assertLess(workflow.index("pacman -Syu"), workflow.index("actions/checkout"))
+            self.assertIn("fetch-depth: 0", workflow)
+            self.assertIn("fetch-tags: true", workflow)
+            self.assertLess(workflow.index("actions/checkout"), workflow.index("chown -R aurbuilder"))
+
 
 if __name__ == "__main__":
     unittest.main()
