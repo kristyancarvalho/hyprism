@@ -27,6 +27,13 @@ hyprism-shell keyboard set built-in br-abnt2
 hyprism-shell keyboard set external us-intl
 hyprism-shell keyboard set default system
 
+hyprism-shell services list
+hyprism-shell services list --json
+hyprism-shell services add bluetooth
+hyprism-shell services add pipewire.service --user
+hyprism-shell services remove bluetooth.service
+hyprism-shell services remove pipewire.service --user
+
 hyprism-shell widgets list
 hyprism-shell widgets enable clock
 hyprism-shell widgets disable weather
@@ -54,6 +61,8 @@ hyprism-shell theme schedule disable
 ```
 
 `keyboard setup` is an arrow-key interface for selecting a detected physical keyboard, previewing a layout live, and saving it only after confirmation. `Esc` restores the previous layout. Composite HID interfaces are grouped, and pointer receivers that expose auxiliary keyboard endpoints are omitted from the setup; `devices --all` includes them for diagnostics. Hyprism preserves detected system behavior by default and does not infer a layout from whether a keyboard is built in or external. Overrides are stored per Hyprland device identifier. Common presets are `system`, `us`, `us-intl`, `br-abnt2`, `pt`, `es`, `de`, and `fr`; any installed layout is available as `xkb:LAYOUT`.
+
+`services list` reports the scope, unit, and current state of everything observed by the Services desktop widget. `add` and `remove` use the system manager by default; pass `--user` for a user unit. A name without a suffix is normalized to `.service`, while explicit unit types such as `.timer` and `.socket` are preserved. Adding validates that the unit exists but does not require it to be active. These commands only configure monitoring and never start, stop, enable, or disable units. Removing every entry leaves an explicit empty list and hides the Services card.
 
 Weather locations are resolved through Open-Meteo's geocoding service. Hyprism stores the resolved display name, coordinates, and timezone, then refreshes the running weather service.
 

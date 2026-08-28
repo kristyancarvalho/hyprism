@@ -173,6 +173,7 @@ User preferences are stored in `~/.config/hyprism/user.json`. The installer migr
 | Shell placement | `shell.primaryMonitor`, `shell.widgetLayout` |
 | Shell geometry | `shell.islandWidth`, `shell.compactHeight`, `shell.topMargin`, `shell.reserveGap` |
 | Desktop widgets | `shell.widgets.<name>.enabled` and widget-specific options |
+| Monitored units | `shell.widgets.services.items` |
 | Weather | `weather.location`, coordinates, timezone, and refresh interval |
 
 Most routine changes are safer and easier through `hyprism-shell`; edit `user.json` directly only when configuring options not exposed by the CLI.
@@ -190,6 +191,9 @@ hyprism-shell theme toggle
 hyprism-shell theme schedule set 07:00 18:30 --enable
 hyprism-shell keyboard setup
 hyprism-shell keyboard devices
+hyprism-shell services list
+hyprism-shell services add bluetooth.service
+hyprism-shell services remove bluetooth.service
 hyprism-shell weather location "São Paulo"
 hyprism-shell wallpaper random
 hyprism-shell screenshot region
@@ -219,6 +223,17 @@ hyprism-shell widgets enable --all
 ```
 
 State is persisted in `shell.widgets` and survives shell reloads, appearance changes, wallpaper changes, and new sessions.
+
+The Services widget can monitor system and user units without controlling them:
+
+```bash
+hyprism-shell services list
+hyprism-shell services add bluetooth
+hyprism-shell services add pipewire.service --user
+hyprism-shell services remove bluetooth.service
+```
+
+Names without a unit suffix are treated as `.service`; explicit types such as `.timer` and `.socket` are preserved. These commands only change the widget's monitored list—they never start, stop, enable, or disable a unit. An explicitly empty list hides the Services card.
 
 ## Theming
 

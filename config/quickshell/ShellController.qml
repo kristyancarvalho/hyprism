@@ -532,9 +532,9 @@ Item {
 
     function serviceStateText(state) {
         if (state === "running") return I18n.tr("status.active")
-        if (state === "stopped") return I18n.tr("status.stopped")
+        if (state === "inactive") return I18n.tr("status.inactive")
         if (state === "failed") return I18n.tr("status.failed")
-        if (state === "unavailable") return I18n.tr("common.unavailable").toLowerCase()
+        if (state === "not-found") return I18n.tr("services.state.not-found")
         return I18n.tr("status.unknown")
     }
 

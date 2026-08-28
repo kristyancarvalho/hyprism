@@ -254,6 +254,25 @@
       "french": "Francês"
     }
   },
+  "services": {
+    "none": "Nenhum serviço monitorado",
+    "added": "Unidade {scope} adicionada: {unit}",
+    "removed": "Unidade {scope} removida: {unit}",
+    "alreadyMonitored": "Já monitorado: {scope} {unit}",
+    "notMonitored": "Não monitorado: {scope} {unit}",
+    "notFound": "Unidade não encontrada: {scope} {unit}",
+    "scope": {
+      "system": "sistema",
+      "user": "usuário"
+    },
+    "state": {
+      "active": "ativo",
+      "inactive": "inativo",
+      "failed": "falhou",
+      "not-found": "não encontrado",
+      "unknown": "desconhecido"
+    }
+  },
   "development": {
     "testApplication": "Aplicativo de teste",
     "notification": "Notificação {count}",

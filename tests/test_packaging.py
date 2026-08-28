@@ -54,6 +54,13 @@ class PackagingTests(unittest.TestCase):
             self.assertEqual(initialized.returncode, 0, initialized.stderr)
             config = json.loads((home / ".config/hyprism/user.json").read_text(encoding="utf-8"))
             self.assertEqual(config["language"], "en")
+            keyboard_help = subprocess.run([cli, "keyboard", "--help"], env=environment, text=True, capture_output=True, check=False)
+            services_help = subprocess.run([cli, "services", "--help"], env=environment, text=True, capture_output=True, check=False)
+            self.assertEqual(keyboard_help.returncode, 0, keyboard_help.stderr)
+            self.assertEqual(services_help.returncode, 0, services_help.stderr)
+            self.assertIn("list", services_help.stdout)
+            self.assertIn("add", services_help.stdout)
+            self.assertIn("remove", services_help.stdout)
             self.assertTrue((home / ".config/hypr").is_symlink())
             self.assertTrue((home / ".local/share/applications/hyprism-keyboard-setup.desktop").is_symlink())
 

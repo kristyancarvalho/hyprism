@@ -7,6 +7,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import select
 import shutil
 import subprocess
@@ -32,6 +33,10 @@ PANELS = {
     "recording": "toggleRecording",
 }
 THEME_MODES = ("dark", "light")
+SYSTEMD_UNIT_SUFFIXES = (
+    ".service", ".socket", ".timer", ".path", ".target", ".mount",
+    ".automount", ".swap", ".device", ".slice", ".scope",
+)
 
 
 def keyboard_backend():
@@ -204,6 +209,132 @@ def widgets_command(args):
     write_config(config)
     for name in names:
         print(f"{name}\t{'enabled' if widget_enabled(config, name) else 'disabled'}")
+    return 0
+
+
+def normalize_unit(value):
+    unit = value.strip()
+    if not unit:
+        raise SystemExit("Service unit cannot be empty")
+    if not re.fullmatch(r"[A-Za-z0-9_.:@\\-]+", unit):
+        raise SystemExit(f"Invalid systemd unit: {value}")
+    if not unit.endswith(SYSTEMD_UNIT_SUFFIXES):
+        unit += ".service"
+    return unit
+
+
+def systemd_state(unit, scope):
+    if not shutil.which("systemctl"):
+        raise SystemExit("Required command not found: systemctl")
+    command = ["systemctl"]
+    if scope == "user":
+        command.append("--user")
+    command.extend(["show", unit, "--property=LoadState,ActiveState", "--no-pager"])
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, timeout=4, env={**os.environ, "LC_ALL": "C"}, check=False)
+    except subprocess.TimeoutExpired:
+        raise SystemExit(f"Timed out while inspecting {scope} unit: {unit}")
+    properties = {}
+    for line in result.stdout.splitlines():
+        key, separator, value = line.partition("=")
+        if separator:
+            properties[key] = value
+    if not properties and result.returncode != 0:
+        detail = result.stderr.strip().splitlines()
+        message = detail[-1] if detail else "systemd manager is unavailable"
+        raise SystemExit(f"Could not inspect {scope} unit {unit}: {message}")
+    load_state = properties.get("LoadState", "not-found")
+    active_state = properties.get("ActiveState", "unknown")
+    if load_state == "not-found":
+        return "not-found"
+    if active_state == "active":
+        return "active"
+    if active_state == "failed":
+        return "failed"
+    if active_state in ("inactive", "deactivating"):
+        return "inactive"
+    return "unknown"
+
+
+def normalized_service_item(item):
+    if isinstance(item, str):
+        unit = normalize_unit(item)
+        return {"name": unit.removesuffix(".service"), "unit": unit, "scope": "system"}
+    if not isinstance(item, dict):
+        return None
+    try:
+        unit = normalize_unit(str(item.get("unit", "")))
+    except SystemExit:
+        return None
+    scope = "user" if item.get("scope") == "user" else "system"
+    name = str(item.get("name", "")).strip() or unit.removesuffix(".service")
+    return {"name": name, "unit": unit, "scope": scope}
+
+
+def monitored_services(config):
+    widgets = config.get("shell", {}).get("widgets", {})
+    configured = widgets.get("services") if isinstance(widgets, dict) else None
+    if isinstance(configured, dict) and "items" in configured:
+        items = configured["items"]
+    else:
+        defaults = default_config().get("shell", {}).get("widgets", {}).get("services", {})
+        items = defaults.get("items", []) if isinstance(defaults, dict) else []
+    if not isinstance(items, list):
+        return []
+    result = []
+    keys = set()
+    for item in items:
+        normalized = normalized_service_item(item)
+        if not normalized:
+            continue
+        key = (normalized["scope"], normalized["unit"])
+        if key not in keys:
+            result.append(normalized)
+            keys.add(key)
+    return result
+
+
+def services_command(args):
+    config = configuration()
+    items = monitored_services(config)
+    catalog = translations()
+    if args.services_command == "list":
+        result = []
+        for item in items:
+            state = systemd_state(item["unit"], item["scope"])
+            result.append({**item, "state": state})
+        if args.json:
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+        elif not result:
+            print(tr(catalog, "services.none"))
+        else:
+            for item in result:
+                print(f"{tr(catalog, 'services.scope.' + item['scope'])}\t{item['unit']}\t{tr(catalog, 'services.state.' + item['state'])}")
+        return 0
+
+    unit = normalize_unit(args.unit)
+    scope = "user" if args.user else "system"
+    scope_label = tr(catalog, "services.scope." + scope)
+    key = (scope, unit)
+    existing = {(item["scope"], item["unit"]): item for item in items}
+    if args.services_command == "add":
+        state = systemd_state(unit, scope)
+        if state == "not-found":
+            raise SystemExit(tr(catalog, "services.notFound", unit=unit, scope=scope_label))
+        if key in existing:
+            print(tr(catalog, "services.alreadyMonitored", unit=unit, scope=scope_label))
+            return 0
+        items.append({"name": unit.removesuffix(".service"), "unit": unit, "scope": scope})
+        message = tr(catalog, "services.added", unit=unit, scope=scope_label)
+    else:
+        if key not in existing:
+            print(tr(catalog, "services.notMonitored", unit=unit, scope=scope_label))
+            return 0
+        items = [item for item in items if (item["scope"], item["unit"]) != key]
+        message = tr(catalog, "services.removed", unit=unit, scope=scope_label)
+    widget_config(config, "services")["items"] = items
+    write_config(config)
+    print(message)
     return 0
 
 
@@ -909,6 +1040,15 @@ def parser():
     keyboard_set_parser.add_argument("preset", help="system, common preset, or xkb:LAYOUT")
     keyboard_set_parser.add_argument("--variant", default=None, help="XKB variant for xkb:LAYOUT")
 
+    services = commands.add_parser("services", help="manage units monitored by the Services widget")
+    services_commands = services.add_subparsers(dest="services_command", required=True)
+    services_list_parser = services_commands.add_parser("list", help="list monitored units and their state")
+    services_list_parser.add_argument("--json", action="store_true", help="print structured JSON")
+    for action in ("add", "remove"):
+        service_parser = services_commands.add_parser(action, help=f"{action} a monitored unit")
+        service_parser.add_argument("unit", help="systemd unit; names without a suffix use .service")
+        service_parser.add_argument("--user", action="store_true", help="use the user service manager")
+
     wallpaper = commands.add_parser("wallpaper", help="manage wallpapers")
     wallpaper_commands = wallpaper.add_subparsers(dest="wallpaper_command", required=True)
     for action in ("random", "current", "list"):
@@ -956,6 +1096,8 @@ def main():
         return theme_command(args)
     if args.command == "keyboard":
         return keyboard_command(args)
+    if args.command == "services":
+        return services_command(args)
     if args.command == "wallpaper":
         arguments = [args.wallpaper_command]
         if args.wallpaper_command == "set":

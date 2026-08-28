@@ -1,6 +1,8 @@
 import importlib.util
 from pathlib import Path
+from types import SimpleNamespace
 import unittest
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,3 +31,28 @@ class MonitoringTests(unittest.TestCase):
         self.assertEqual(MONITORING.sensor_thresholds("nvme"), (58, 72, 85))
         self.assertEqual(MONITORING.sensor_thresholds("wifi"), (55, 70, 85))
         self.assertEqual(MONITORING.sensor_thresholds("generic"), (60, 75, 90))
+
+    def test_service_scope_preserves_explicit_unit_type(self):
+        item = MONITORING.service_scope({"unit": "backup.timer", "scope": "user"})
+        self.assertEqual(item["unit"], "backup.timer")
+        self.assertEqual(item["scope"], "user")
+
+    def test_explicit_empty_services_remain_unavailable(self):
+        self.assertEqual(MONITORING.services({"services": {"items": []}}), {
+            "available": False,
+            "healthy": False,
+            "items": [],
+        })
+
+    def test_service_states_distinguish_active_inactive_failed_and_missing(self):
+        item = {"name": "Demo", "unit": "demo.service", "scope": "system"}
+        cases = {
+            "loaded\nactive\n": "running",
+            "loaded\ninactive\n": "inactive",
+            "loaded\nfailed\n": "failed",
+            "not-found\ninactive\n": "not-found",
+        }
+        for output, expected in cases.items():
+            completed = SimpleNamespace(stdout=output)
+            with mock.patch.object(MONITORING.subprocess, "run", return_value=completed):
+                self.assertEqual(MONITORING.service_state(item)["state"], expected)
