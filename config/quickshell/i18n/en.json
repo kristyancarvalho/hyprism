@@ -226,6 +226,53 @@
     "screenshot": "Screenshot",
     "color": "Color"
   },
+  "keyboard": {
+    "setupTitle": "Hyprism Keyboard Setup",
+    "detectedCount": "{count} keyboards detected",
+    "builtIn": "Built-in",
+    "external": "External",
+    "device": "Keyboard",
+    "current": "Current: {value}",
+    "configure": "Configure {name}",
+    "navigation": "↑/↓ Navigate    Enter Select    Esc Back",
+    "enterBack": "Enter or Esc to go back",
+    "noDevices": "No typing keyboards were detected by Hyprland.",
+    "noLayouts": "No installed XKB layouts were found.",
+    "moreLayouts": "More layouts…",
+    "applyFailed": "The layout could not be applied",
+    "previewApplied": "{preset} applied temporarily",
+    "testPrompt": "Test your keyboard now. Input is not stored.",
+    "previewActions": "Enter Save    Esc Restore previous layout",
+    "preset": {
+      "system": "System default",
+      "us": "US",
+      "usIntl": "US International",
+      "brAbnt2": "Brazilian (ABNT2)",
+      "portuguese": "Portuguese",
+      "spanish": "Spanish",
+      "german": "German",
+      "french": "French"
+    }
+  },
+  "services": {
+    "none": "No monitored services",
+    "added": "Added {scope} unit: {unit}",
+    "removed": "Removed {scope} unit: {unit}",
+    "alreadyMonitored": "Already monitored: {scope} {unit}",
+    "notMonitored": "Not monitored: {scope} {unit}",
+    "notFound": "Unit not found: {scope} {unit}",
+    "scope": {
+      "system": "system",
+      "user": "user"
+    },
+    "state": {
+      "active": "active",
+      "inactive": "inactive",
+      "failed": "failed",
+      "not-found": "not found",
+      "unknown": "unknown"
+    }
+  },
   "development": {
     "testApplication": "Test application",
     "notification": "Notification {count}",

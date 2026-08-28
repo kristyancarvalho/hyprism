@@ -233,6 +233,7 @@ link_path "$runtime_root/scripts/system/start-shell" "$target_home/.local/bin/hy
 link_path "$runtime_root/scripts/system/shell-ipc" "$target_home/.local/bin/hyprism-shell-ipc"
 link_path "$runtime_root/scripts/system/lock" "$target_home/.local/bin/hyprism-lock"
 link_path "$runtime_root/scripts/hyprism-shell" "$target_home/.local/bin/hyprism-shell"
+link_path "$runtime_root/config/applications/hyprism-keyboard-setup.desktop" "$target_home/.local/share/applications/hyprism-keyboard-setup.desktop"
 
 run install -d -o "$target_user" -g "$target_group" "$theme_dir" "$state_dir"
 if [[ ! -s $theme_dir/fastfetch/logo-palette.json ]]; then
@@ -339,6 +340,7 @@ if ((dry_run == 0)); then
   verify_link "$theme_dir/gtk-3.0/settings.ini" "$target_home/.config/gtk-3.0/settings.ini"
   verify_link "$theme_dir/gtk-4.0/settings.ini" "$target_home/.config/gtk-4.0/settings.ini"
   verify_link "$theme_dir/gtk-2.0/gtkrc" "$target_home/.gtkrc-2.0"
+  verify_link "$runtime_root/config/applications/hyprism-keyboard-setup.desktop" "$target_home/.local/share/applications/hyprism-keyboard-setup.desktop"
   verify_link "$runtime_root/config/fastfetch/images/archlinux.svg" "$target_home/.config/fastfetch/images/archlinux-source.svg"
   verify_link "$runtime_root/config/tmux/tmux.conf" "$target_home/.tmux.conf"
   verify_link "$runtime_root/config/systemd/user/hyprism-hyprsunset.service" "$target_home/.config/systemd/user/hyprism-hyprsunset.service"
@@ -413,5 +415,6 @@ printf 'Wallpapers: %s/Imagens/Wallpapers\nScreenshots: %s/Imagens/Screenshots\n
 printf 'Recordings: %s/Vídeos/gravacoes\nLogin theme: %s\nSDDM wallpaper: %s/current-wallpaper.jpg\n' "$target_home" "$sddm_theme_dir" "$sddm_state_dir"
 printf 'Starship: %s/.config/starship.toml\ntmux: %s/.tmux.conf (TPM at %s/.tmux/plugins)\nNvChad: %s/.config/nvim\n' "$target_home" "$target_home" "$target_home" "$target_home"
 printf 'Fastfetch: %s/.config/fastfetch/config.jsonc\nFastfetch logo: %s/.config/fastfetch/images/archlinux.png\n' "$target_home" "$target_home"
+printf 'Keyboard setup: hyprism-shell keyboard setup\n'
 if ((${#missing[@]})); then printf 'Missing executables: %s\n' "${missing[*]}" >&2; exit 1; else printf 'All essential executables were validated.\n'; fi
 printf 'Log out and select Hyprland to start.\n'

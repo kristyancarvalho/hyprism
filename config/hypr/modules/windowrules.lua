@@ -18,3 +18,11 @@ hl.window_rule({
     size = { "monitor_w * 0.28", "monitor_h * 0.52" },
     center = true,
 })
+
+hl.window_rule({
+    name = "hyprism-keyboard-setup",
+    match = { class = "^hyprism-keyboard-setup$" },
+    float = true,
+    size = { "monitor_w * 0.42", "monitor_h * 0.58" },
+    center = true,
+})

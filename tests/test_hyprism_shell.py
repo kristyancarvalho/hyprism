@@ -40,6 +40,29 @@ class HyprismShellTests(unittest.TestCase):
         script.chmod(0o755)
         self.environment["HYPRISM_ROOT"] = str(runtime)
 
+    def use_fake_systemctl(self):
+        directory = Path(self.temporary.name) / "bin"
+        directory.mkdir(exist_ok=True)
+        command = directory / "systemctl"
+        command.write_text("""#!/usr/bin/env python3
+import sys
+unit = next((value for value in sys.argv if value.endswith(('.service', '.socket', '.timer'))), '')
+if unit == 'manager-down.service':
+    print('Failed to connect to bus', file=sys.stderr)
+    raise SystemExit(1)
+elif unit == 'missing.service':
+    print('LoadState=not-found')
+    print('ActiveState=inactive')
+elif unit == 'inactive.timer':
+    print('LoadState=loaded')
+    print('ActiveState=inactive')
+else:
+    print('LoadState=loaded')
+    print('ActiveState=active')
+""", encoding="utf-8")
+        command.chmod(0o755)
+        self.environment["PATH"] = str(directory) + os.pathsep + self.environment["PATH"]
+
     def test_language_get_set_and_validation(self):
         self.assertEqual(self.run_cli("language").stdout, "en\n")
         changed = self.run_cli("language", "set", "pt-BR")
@@ -91,6 +114,77 @@ class HyprismShellTests(unittest.TestCase):
         invalid = self.run_cli("widgets", "disable", "does-not-exist")
         self.assertNotEqual(invalid.returncode, 0)
         self.assertEqual(self.config.read_bytes(), before)
+
+    def test_services_list_reports_system_and_user_state(self):
+        self.use_fake_systemctl()
+        listed = self.run_cli("services", "list", "--json")
+        self.assertEqual(listed.returncode, 0, listed.stderr)
+        items = json.loads(listed.stdout)
+        self.assertEqual([item["scope"] for item in items], ["system", "system", "user"])
+        self.assertTrue(all(item["state"] == "active" for item in items))
+
+    def test_services_add_normalizes_deduplicates_and_removes(self):
+        self.use_fake_systemctl()
+        added = self.run_cli("services", "add", "cups")
+        self.assertEqual(added.returncode, 0, added.stderr)
+        items = self.read_config()["shell"]["widgets"]["services"]["items"]
+        self.assertEqual(sum(item["unit"] == "cups.service" for item in items), 1)
+        duplicate = self.run_cli("services", "add", "cups.service")
+        self.assertEqual(duplicate.returncode, 0, duplicate.stderr)
+        items = self.read_config()["shell"]["widgets"]["services"]["items"]
+        self.assertEqual(sum(item["unit"] == "cups.service" for item in items), 1)
+        removed = self.run_cli("services", "remove", "cups")
+        self.assertEqual(removed.returncode, 0, removed.stderr)
+        self.assertFalse(any(item["unit"] == "cups.service" for item in self.read_config()["shell"]["widgets"]["services"]["items"]))
+
+    def test_services_preserve_explicit_unit_type_and_user_scope(self):
+        self.use_fake_systemctl()
+        added = self.run_cli("services", "add", "inactive.timer", "--user")
+        self.assertEqual(added.returncode, 0, added.stderr)
+        listed = json.loads(self.run_cli("services", "list", "--json").stdout)
+        item = next(item for item in listed if item["unit"] == "inactive.timer")
+        self.assertEqual(item["scope"], "user")
+        self.assertEqual(item["state"], "inactive")
+
+    def test_services_reject_missing_unit_without_changing_config(self):
+        self.use_fake_systemctl()
+        before = self.config.read_bytes()
+        missing = self.run_cli("services", "add", "missing")
+        self.assertNotEqual(missing.returncode, 0)
+        self.assertEqual(self.config.read_bytes(), before)
+
+    def test_services_report_configured_unit_that_disappears(self):
+        self.use_fake_systemctl()
+        config = self.read_config()
+        config["shell"]["widgets"]["services"]["items"] = [
+            {"name": "Missing", "unit": "missing.service", "scope": "system"}
+        ]
+        self.config.write_text(json.dumps(config), encoding="utf-8")
+        listed = self.run_cli("services", "list", "--json")
+        self.assertEqual(listed.returncode, 0, listed.stderr)
+        self.assertEqual(json.loads(listed.stdout)[0]["state"], "not-found")
+
+    def test_services_fail_clearly_when_systemd_manager_is_unavailable(self):
+        self.use_fake_systemctl()
+        config = self.read_config()
+        config["shell"]["widgets"]["services"]["items"] = [
+            {"name": "Unavailable", "unit": "manager-down.service", "scope": "user"}
+        ]
+        self.config.write_text(json.dumps(config), encoding="utf-8")
+        listed = self.run_cli("services", "list")
+        self.assertNotEqual(listed.returncode, 0)
+        self.assertIn("Failed to connect to bus", listed.stderr)
+
+    def test_services_explicit_empty_list_does_not_restore_defaults(self):
+        self.use_fake_systemctl()
+        config = self.read_config()
+        config["shell"]["widgets"]["services"]["items"] = []
+        self.config.write_text(json.dumps(config), encoding="utf-8")
+        listed = self.run_cli("services", "list", "--json")
+        self.assertEqual(json.loads(listed.stdout), [])
+        absent = self.run_cli("services", "remove", "NetworkManager")
+        self.assertEqual(absent.returncode, 0)
+        self.assertEqual(self.read_config()["shell"]["widgets"]["services"]["items"], [])
 
     def test_all_widgets_only_changes_desktop_widgets(self):
         config = self.read_config()

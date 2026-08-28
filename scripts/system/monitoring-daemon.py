@@ -254,7 +254,7 @@ def pending_updates():
 
 def service_scope(item):
     if isinstance(item, str):
-        unit = item if item.endswith(".service") else item + ".service"
+        unit = item if "." in item.rsplit("/", 1)[-1] else item + ".service"
         return {"name": item.removesuffix(".service"), "unit": unit, "scope": "user" if item.casefold() in ("pipewire", "wireplumber") else "system"}
     if not isinstance(item, dict):
         return None
@@ -263,7 +263,7 @@ def service_scope(item):
         return None
     return {
         "name": str(item.get("name", unit.removesuffix(".service"))).strip(),
-        "unit": unit if unit.endswith(".service") else unit + ".service",
+        "unit": unit if "." in unit.rsplit("/", 1)[-1] else unit + ".service",
         "scope": "user" if item.get("scope") == "user" else "system"
     }
 
@@ -282,13 +282,13 @@ def service_state(item):
         load_state = "not-found"
         active_state = "unknown"
     if load_state == "not-found":
-        state = "unavailable"
+        state = "not-found"
     elif active_state == "active":
         state = "running"
     elif active_state == "failed":
         state = "failed"
     elif active_state in ("inactive", "deactivating"):
-        state = "stopped"
+        state = "inactive"
     else:
         state = "unknown"
     return {"name": item["name"], "unit": item["unit"], "scope": item["scope"], "state": state}
