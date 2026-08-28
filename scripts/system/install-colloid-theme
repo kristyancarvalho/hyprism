@@ -104,6 +104,7 @@ palette_hash=$(sha256sum "$palette" | awk '{print $1}')
 active_theme="$theme_root/$installed_name"
 if [[ -s $active_theme/.hyprism-palette.sha256 ]] \
   && [[ $(cat "$active_theme/.hyprism-palette.sha256") == "$palette_hash" ]] \
+  && [[ $(cat "$active_theme/.hyprism-patch.sha256" 2>/dev/null || true) == "$patch_hash" ]] \
   && [[ $(cat "$active_theme/.hyprism-revision" 2>/dev/null || true) == "$revision" ]] \
   && [[ -s $active_theme/gtk-2.0/gtkrc ]] \
   && [[ -s $active_theme/gtk-3.0/gtk.css ]] \
@@ -143,6 +144,7 @@ stage='validação dos artefatos GTK'
 [[ -s $staged_theme/gtk-4.0/gtk.css ]] || { printf 'A compilação do Colloid não gerou GTK 4.\n' >&2; exit 1; }
 [[ -s $staged_libadwaita/gtk.css && -d $staged_libadwaita/assets ]] || { printf 'A compilação do Colloid não gerou o tema fixo do libadwaita.\n' >&2; exit 1; }
 printf '%s\n' "$palette_hash" >"$staged_theme/.hyprism-palette.sha256"
+printf '%s\n' "$patch_hash" >"$staged_theme/.hyprism-patch.sha256"
 printf '%s\n' "$revision" >"$staged_theme/.hyprism-revision"
 
 backup_root=$(mktemp -d "$theme_root/.hyprism-colloid-anterior.XXXXXX")
