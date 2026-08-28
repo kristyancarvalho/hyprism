@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 
 import argparse
+import copy
 from datetime import datetime
+import importlib.util
 import json
 import os
 from pathlib import Path
+import select
 import shutil
 import subprocess
 import sys
 import tempfile
+import termios
+import tty
 import urllib.parse
 import urllib.request
 
@@ -27,6 +32,45 @@ PANELS = {
     "recording": "toggleRecording",
 }
 THEME_MODES = ("dark", "light")
+
+
+def keyboard_backend():
+    path = root_dir() / "scripts/system/keyboard_backend.py"
+    specification = importlib.util.spec_from_file_location("hyprism_keyboard_backend", path)
+    if not specification or not specification.loader:
+        raise SystemExit(f"Keyboard backend could not be loaded: {path}")
+    module = importlib.util.module_from_spec(specification)
+    specification.loader.exec_module(module)
+    return module
+
+
+def translations():
+    locale = "en"
+    try:
+        locale = configuration().get("language", "en")
+    except SystemExit:
+        pass
+    directory = root_dir() / "config/quickshell/i18n"
+    with (directory / "en.json").open(encoding="utf-8") as source:
+        english = json.load(source)
+    if locale == "en":
+        return english
+    try:
+        with (directory / f"{locale}.json").open(encoding="utf-8") as source:
+            selected = json.load(source)
+    except (OSError, json.JSONDecodeError):
+        return english
+    return {**english, **selected}
+
+
+def tr(catalog, key, **values):
+    value = catalog
+    for part in key.split("."):
+        value = value.get(part) if isinstance(value, dict) else None
+        if value is None:
+            value = key
+            break
+    return value.format(**values)
 
 
 def root_dir():
@@ -339,6 +383,11 @@ def migrate_command(args):
     defaults = default_config()
     existing = read_json(Path(args.existing), required=False) if args.existing else None
     config = merge_defaults(defaults, existing or {})
+    if not existing or "keyboard" not in existing:
+        try:
+            config["keyboard"] = keyboard_backend().capture_initial_config()
+        except keyboard_backend().KeyboardError:
+            config["keyboard"] = {"default": None, "devices": {}}
     if existing and "language" not in existing:
         config["language"] = "pt-BR"
     elif not existing:
@@ -350,6 +399,7 @@ def migrate_command(args):
         config.setdefault("appearance", {})["whiteTemperature"] = 2
     config.setdefault("appearance", {}).pop("warmWhite", None)
     write_config(config)
+    keyboard_backend().render_config(config)
     return 0
 
 
@@ -373,12 +423,18 @@ def init_command(args):
     destination = config_path()
     existing = read_json(destination, required=False)
     config = merge_defaults(default_config(), existing or {})
+    if not existing or "keyboard" not in existing:
+        try:
+            config["keyboard"] = keyboard_backend().capture_initial_config()
+        except keyboard_backend().KeyboardError:
+            config["keyboard"] = {"default": None, "devices": {}}
     if existing:
         if existing.get("language") not in SUPPORTED_LANGUAGES:
             config["language"] = "en"
     else:
         config["language"] = args.language
     write_config(config, destination)
+    keyboard_backend().render_config(config)
 
     home = Path.home()
     cache = Path(os.environ.get("XDG_CACHE_HOME", home / ".cache")) / "hyprism/theme"
@@ -402,6 +458,7 @@ def init_command(args):
         (cache / "starship.toml", xdg_config / "starship.toml"),
         (cache / "tmux.conf", xdg_config / "tmux/theme.conf"),
         (cache / "zathura/zathurarc", xdg_config / "zathura/zathurarc"),
+        (root / "config/applications/hyprism-keyboard-setup.desktop", home / ".local/share/applications/hyprism-keyboard-setup.desktop"),
     )
     created = 0
     preserved = 0
@@ -427,6 +484,365 @@ def init_command(args):
     print(f"config\t{destination}")
     print(f"links\t{created} created, {preserved} preserved")
     return 0
+
+
+class TerminalUI:
+    def __init__(self):
+        self.input = sys.stdin.fileno()
+        self.output = sys.stdout.fileno()
+        self.previous = None
+
+    def __enter__(self):
+        if not os.isatty(self.input) or not os.isatty(self.output):
+            raise SystemExit("Keyboard setup requires an interactive terminal")
+        self.previous = termios.tcgetattr(self.input)
+        tty.setcbreak(self.input)
+        os.write(self.output, b"\033[?25l")
+        return self
+
+    def __exit__(self, kind, value, traceback):
+        if self.previous is not None:
+            termios.tcsetattr(self.input, termios.TCSADRAIN, self.previous)
+        os.write(self.output, b"\033[?25h\033[0m\n")
+
+    def draw(self, lines):
+        content = "\033[2J\033[H" + "\n".join(lines)
+        os.write(self.output, content.encode("utf-8", errors="replace"))
+
+    def key(self):
+        value = os.read(self.input, 1)
+        if value == b"\x1b":
+            ready, _, _ = select.select([self.input], [], [], 0.035)
+            if not ready:
+                return "escape"
+            sequence = os.read(self.input, 2)
+            return {b"[A": "up", b"[B": "down", b"[C": "right", b"[D": "left"}.get(sequence, "escape")
+        if value in (b"\r", b"\n"):
+            return "enter"
+        if value == b"\x03":
+            raise KeyboardInterrupt
+        if value and value[0] >= 0xC0:
+            length = 1
+            if value[0] & 0xF0 == 0xE0:
+                length = 2
+            elif value[0] & 0xF8 == 0xF0:
+                length = 3
+            value += os.read(self.input, length)
+        return value.decode("utf-8", errors="ignore")
+
+    def choose(self, title, entries, footer, selected=0):
+        while True:
+            lines = [title, ""]
+            height = shutil.get_terminal_size((80, 24)).lines
+            available = max(4, height - len(title.splitlines()) - 4)
+            start = selected
+            used = len(entries[selected]) + 1
+            while start > 0 and used + len(entries[start - 1]) + 1 <= available:
+                start -= 1
+                used += len(entries[start]) + 1
+            end = selected + 1
+            while end < len(entries) and used + len(entries[end]) + 1 <= available:
+                used += len(entries[end]) + 1
+                end += 1
+            if start > 0:
+                lines.append("  ↑ …")
+            for index in range(start, end):
+                entry = entries[index]
+                prefix = "›" if index == selected else " "
+                lines.append(f"{prefix} {entry[0]}")
+                lines.extend(f"  {line}" for line in entry[1:])
+                lines.append("")
+            if end < len(entries):
+                lines.append("  ↓ …")
+            lines.append(footer)
+            self.draw(lines)
+            key = self.key()
+            if key in ("up", "left"):
+                selected = max(0, selected - 1)
+            elif key in ("down", "right"):
+                selected = min(len(entries) - 1, selected + 1)
+            elif key == "enter":
+                return selected
+            elif key == "escape":
+                return None
+
+    def preview(self, lines):
+        self.draw(lines)
+        os.write(self.output, b"\033[?25h")
+        try:
+            while True:
+                key = self.key()
+                if key in ("enter", "escape"):
+                    return key
+                if key in ("up", "down", "left", "right"):
+                    continue
+                if key in ("\x7f", "\b"):
+                    os.write(self.output, b"\b \b")
+                elif key and key.isprintable():
+                    os.write(self.output, key.encode("utf-8"))
+        finally:
+            os.write(self.output, b"\033[?25l")
+
+
+def keyboard_label(catalog, item):
+    classification = {
+        "internal": tr(catalog, "keyboard.builtIn"),
+        "external": tr(catalog, "keyboard.external"),
+        "keyboard": tr(catalog, "keyboard.device"),
+    }[item["classification"]]
+    current = item.get("keymap") or format_layout(item)
+    return (classification, item["name"], tr(catalog, "keyboard.current", value=current))
+
+
+def format_layout(value):
+    if not value:
+        return "—"
+    layout = value.get("layout", "")
+    variant = value.get("variant", "")
+    return f"{layout} / {variant}" if variant else layout
+
+
+def preset_entries(catalog, backend, include_more=True):
+    names = {
+        "system": "keyboard.preset.system",
+        "us": "keyboard.preset.us",
+        "us-intl": "keyboard.preset.usIntl",
+        "br-abnt2": "keyboard.preset.brAbnt2",
+        "pt": "keyboard.preset.portuguese",
+        "es": "keyboard.preset.spanish",
+        "de": "keyboard.preset.german",
+        "fr": "keyboard.preset.french",
+    }
+    entries = [(name, tr(catalog, key)) for name, key in names.items()]
+    if include_more:
+        entries.append(("more", tr(catalog, "keyboard.moreLayouts")))
+    return entries
+
+
+def persist_keyboard(config, backend, targets, value, system_selection=False):
+    original = copy.deepcopy(config)
+    keyboard = config.setdefault("keyboard", {"default": None, "devices": {}})
+    devices = keyboard.setdefault("devices", {})
+    for target in targets:
+        if system_selection:
+            devices.pop(target, None)
+        else:
+            devices[target] = {"layout": value["layout"], "variant": value.get("variant", "")}
+    try:
+        write_config(config)
+        backend.render_config(config)
+    except Exception:
+        config.clear()
+        config.update(original)
+        write_config(original)
+        backend.render_config(original)
+        raise
+
+
+def persist_keyboard_default(config, backend, value, system_selection=False):
+    original = copy.deepcopy(config)
+    keyboard = config.setdefault("keyboard", {"default": None, "devices": {}})
+    keyboard["default"] = None if system_selection else value
+    try:
+        write_config(config)
+        backend.render_config(config)
+    except Exception:
+        config.clear()
+        config.update(original)
+        write_config(original)
+        backend.render_config(original)
+        raise
+
+
+def keyboard_setup(args):
+    backend = keyboard_backend()
+    catalog = translations()
+    try:
+        devices = backend.discover_devices()
+    except backend.KeyboardError as error:
+        raise SystemExit(str(error))
+    if not devices:
+        raise SystemExit(tr(catalog, "keyboard.noDevices"))
+    config = configuration()
+    footer = tr(catalog, "keyboard.navigation")
+    with TerminalUI() as terminal:
+        while True:
+            entries = [keyboard_label(catalog, item) for item in devices]
+            selected = terminal.choose(
+                tr(catalog, "keyboard.setupTitle") + "\n" + tr(catalog, "keyboard.detectedCount", count=len(devices)),
+                entries,
+                footer,
+            )
+            if selected is None:
+                return 0
+            device = devices[selected]
+            presets = preset_entries(catalog, backend)
+            preset_index = terminal.choose(
+                tr(catalog, "keyboard.configure", name=device["name"]),
+                [(label,) for _, label in presets],
+                footer,
+            )
+            if preset_index is None:
+                continue
+            preset, label = presets[preset_index]
+            if preset == "more":
+                layouts = backend.installed_layouts()
+                if not layouts:
+                    terminal.draw([tr(catalog, "keyboard.noLayouts"), "", tr(catalog, "keyboard.enterBack")])
+                    while terminal.key() not in ("enter", "escape"):
+                        pass
+                    continue
+                layout_index = terminal.choose(
+                    tr(catalog, "keyboard.moreLayouts"),
+                    [(item["name"], item["layout"]) for item in layouts],
+                    footer,
+                )
+                if layout_index is None:
+                    continue
+                selected_layout = layouts[layout_index]
+                preset = selected_layout["preset"]
+                label = selected_layout["name"]
+            applied = []
+            previous = {}
+            try:
+                candidate = backend.preset_value(preset)
+                previous = {item["id"]: {"layout": item["layout"], "variant": item["variant"]} for item in device["interfaces"]}
+                for identifier in device["ids"]:
+                    backend.apply_device(identifier, candidate)
+                    applied.append(identifier)
+            except backend.KeyboardError as error:
+                for identifier in applied:
+                    try:
+                        backend.apply_device(identifier, previous[identifier])
+                    except backend.KeyboardError:
+                        pass
+                terminal.draw([tr(catalog, "keyboard.applyFailed"), "", str(error), "", tr(catalog, "keyboard.enterBack")])
+                while terminal.key() not in ("enter", "escape"):
+                    pass
+                continue
+            confirmed = False
+            try:
+                key = terminal.preview([
+                    tr(catalog, "keyboard.previewApplied", preset=label),
+                    "",
+                    tr(catalog, "keyboard.testPrompt"),
+                    "",
+                    tr(catalog, "keyboard.previewActions"),
+                    "",
+                    "> ",
+                ])
+                if key == "enter":
+                    persist_keyboard(config, backend, device["ids"], candidate, preset == "system")
+                    confirmed = True
+                    device["layout"] = candidate["layout"]
+                    device["variant"] = candidate.get("variant", "")
+                    device["keymap"] = label
+            finally:
+                if not confirmed:
+                    for identifier in device["ids"]:
+                        try:
+                            backend.apply_device(identifier, previous[identifier])
+                        except backend.KeyboardError:
+                            pass
+
+
+def keyboard_devices(args):
+    backend = keyboard_backend()
+    try:
+        devices = backend.discover_devices(include_auxiliary=args.all)
+    except backend.KeyboardError as error:
+        raise SystemExit(str(error))
+    config = configuration()
+    values = []
+    for device in devices:
+        effective, source = backend.effective_value(config, device)
+        values.append({**device, "effective": effective, "source": source})
+    if args.json:
+        print(json.dumps(values, ensure_ascii=False, indent=2))
+        return 0
+    for item in values:
+        print(f"{item['classification']}\t{item['id']}")
+        print(f"  name\t{item['name']}")
+        print(f"  runtime\t{format_layout(item)}")
+        print(f"  effective\t{format_layout(item['effective'])}")
+        print(f"  source\t{item['source']}")
+    return 0
+
+
+def keyboard_get(args):
+    backend = keyboard_backend()
+    config = configuration()
+    keyboard = config.get("keyboard", {})
+    default = keyboard.get("default")
+    system = backend.system_layout()
+    print(f"system\t{format_layout(system)}")
+    print(f"default\t{format_layout(default) if default else 'system'}")
+    for name, value in sorted(keyboard.get("devices", {}).items()):
+        print(f"device\t{name}\t{format_layout(value)}")
+    return 0
+
+
+def keyboard_set(args):
+    backend = keyboard_backend()
+    config = configuration()
+    try:
+        value = backend.preset_value(args.preset, args.variant)
+        devices = backend.discover_devices(include_auxiliary=True) if args.target != "default" else []
+        try:
+            targets = backend.targets_for(devices, args.target)
+        except backend.KeyboardError:
+            configured = config.get("keyboard", {}).get("devices", {})
+            if args.preset == "system" and args.target in configured:
+                targets = [args.target]
+            else:
+                raise
+        if args.target == "default":
+            current_default = config.get("keyboard", {}).get("default") or backend.system_layout()
+            backend.apply_default(value)
+            try:
+                persist_keyboard_default(config, backend, value, args.preset == "system")
+            except Exception:
+                if current_default:
+                    try:
+                        backend.apply_default(current_default)
+                    except backend.KeyboardError:
+                        pass
+                raise
+        else:
+            if not targets:
+                raise backend.KeyboardError(f"No keyboards matched target: {args.target}")
+            previous = {
+                interface["id"]: {"layout": interface["layout"], "variant": interface["variant"]}
+                for item in devices for interface in item["interfaces"] if interface["id"] in targets
+            }
+            applied = []
+            try:
+                for target in targets:
+                    if target in previous:
+                        backend.apply_device(target, value)
+                        applied.append(target)
+                persist_keyboard(config, backend, targets, value, args.preset == "system")
+            except Exception:
+                for target in applied:
+                    try:
+                        backend.apply_device(target, previous[target])
+                    except backend.KeyboardError:
+                        pass
+                raise
+    except backend.KeyboardError as error:
+        raise SystemExit(str(error))
+    print(format_layout(value))
+    return 0
+
+
+def keyboard_command(args):
+    if args.keyboard_command == "setup":
+        return keyboard_setup(args)
+    if args.keyboard_command == "devices":
+        return keyboard_devices(args)
+    if args.keyboard_command == "get":
+        return keyboard_get(args)
+    return keyboard_set(args)
 
 
 def add_widget_target(parser):
@@ -481,6 +897,18 @@ def parser():
     schedule_commands.add_parser("enable", help="enable and apply the schedule")
     schedule_commands.add_parser("disable", help="disable the schedule")
 
+    keyboard = commands.add_parser("keyboard", help="inspect and configure keyboards")
+    keyboard_commands = keyboard.add_subparsers(dest="keyboard_command", required=True)
+    keyboard_commands.add_parser("setup", help="open the arrow-key keyboard setup")
+    keyboard_devices_parser = keyboard_commands.add_parser("devices", help="list detected keyboards")
+    keyboard_devices_parser.add_argument("--json", action="store_true", help="print structured JSON")
+    keyboard_devices_parser.add_argument("--all", action="store_true", help="include auxiliary HID keyboard interfaces")
+    keyboard_commands.add_parser("get", help="print system defaults and Hyprism overrides")
+    keyboard_set_parser = keyboard_commands.add_parser("set", help="set a keyboard preset")
+    keyboard_set_parser.add_argument("target", help="device ID, default, built-in, external, or all")
+    keyboard_set_parser.add_argument("preset", help="system, common preset, or xkb:LAYOUT")
+    keyboard_set_parser.add_argument("--variant", default=None, help="XKB variant for xkb:LAYOUT")
+
     wallpaper = commands.add_parser("wallpaper", help="manage wallpapers")
     wallpaper_commands = wallpaper.add_subparsers(dest="wallpaper_command", required=True)
     for action in ("random", "current", "list"):
@@ -526,6 +954,8 @@ def main():
         return language_command(args)
     if args.command == "theme":
         return theme_command(args)
+    if args.command == "keyboard":
+        return keyboard_command(args)
     if args.command == "wallpaper":
         arguments = [args.wallpaper_command]
         if args.wallpaper_command == "set":
@@ -553,3 +983,5 @@ if __name__ == "__main__":
         raise SystemExit(main())
     except KeyboardInterrupt:
         raise SystemExit(130)
+    except OSError as error:
+        raise SystemExit(str(error))

@@ -24,6 +24,8 @@ class PackagingTests(unittest.TestCase):
             self.assertTrue((stage / "usr/bin/hyprism-shell").is_file())
             self.assertTrue(os.access(stage / "usr/bin/hyprism-shell", os.X_OK))
             self.assertTrue((stage / "usr/share/hyprism/config/quickshell/shell.qml").is_file())
+            self.assertTrue((stage / "usr/share/hyprism/scripts/system/keyboard_backend.py").is_file())
+            self.assertTrue((stage / "usr/share/applications/hyprism-keyboard-setup.desktop").is_file())
             self.assertTrue((stage / "usr/share/licenses/hyprism-shell/LICENSE").is_file())
             self.assertFalse(any(stage.rglob("__pycache__")))
             self.assertFalse((stage / "home").exists())
@@ -53,6 +55,7 @@ class PackagingTests(unittest.TestCase):
             config = json.loads((home / ".config/hyprism/user.json").read_text(encoding="utf-8"))
             self.assertEqual(config["language"], "en")
             self.assertTrue((home / ".config/hypr").is_symlink())
+            self.assertTrue((home / ".local/share/applications/hyprism-keyboard-setup.desktop").is_symlink())
 
     def test_aur_channels_share_runtime_dependencies(self):
         stable = (ROOT / "packaging/aur/hyprism-shell/PKGBUILD.in").read_text(encoding="utf-8")

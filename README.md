@@ -168,6 +168,7 @@ User preferences are stored in `~/.config/hyprism/user.json`. The installer migr
 | --- | --- |
 | Language | `language` |
 | Appearance | `appearance.mode`, `appearance.whiteTemperature`, `appearance.schedule` |
+| Keyboard | `keyboard.default`, `keyboard.devices.<identifier>` |
 | User paths | `paths.wallpapers`, `paths.screenshots` |
 | Shell placement | `shell.primaryMonitor`, `shell.widgetLayout` |
 | Shell geometry | `shell.islandWidth`, `shell.compactHeight`, `shell.topMargin`, `shell.reserveGap` |
@@ -187,11 +188,15 @@ hyprism-shell widgets toggle weather
 hyprism-shell theme get
 hyprism-shell theme toggle
 hyprism-shell theme schedule set 07:00 18:30 --enable
+hyprism-shell keyboard setup
+hyprism-shell keyboard devices
 hyprism-shell weather location "São Paulo"
 hyprism-shell wallpaper random
 hyprism-shell screenshot region
 hyprism-shell open network
 ```
+
+Hyprism does not assume a keyboard layout based on the device or connection type. It preserves detected system behavior unless an explicit override is saved. `hyprism-shell keyboard setup` provides an arrow-key setup and live preview that can be used even when typing commands with the current layout is inconvenient.
 
 Manual theme selection disables automatic scheduling so the result is predictable. See the [complete CLI guide](docs/cli.md) for every command, valid widget identifier, schedule behavior, and shell action.
 

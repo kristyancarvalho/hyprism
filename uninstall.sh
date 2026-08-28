@@ -56,6 +56,7 @@ managed_links=(
   "$target_home/.config/gtk-4.0/assets"
   "$target_home/.config/Kvantum/Hyprism"
   "$target_home/.local/share/icons/Hyprism-Papirus"
+  "$target_home/.local/share/applications/hyprism-keyboard-setup.desktop"
   "$target_home/.local/bin/hyprism-action"
   "$target_home/.local/bin/hyprism-lock"
   "$target_home/.local/bin/hyprism-reload-shell"

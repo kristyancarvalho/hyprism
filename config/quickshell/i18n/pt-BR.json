@@ -226,6 +226,34 @@
     "screenshot": "Captura",
     "color": "Cor"
   },
+  "keyboard": {
+    "setupTitle": "Configuração de teclado do Hyprism",
+    "detectedCount": "{count} teclados detectados",
+    "builtIn": "Integrado",
+    "external": "Externo",
+    "device": "Teclado",
+    "current": "Atual: {value}",
+    "configure": "Configurar {name}",
+    "navigation": "↑/↓ Navegar    Enter Selecionar    Esc Voltar",
+    "enterBack": "Enter ou Esc para voltar",
+    "noDevices": "Nenhum teclado de digitação foi detectado pelo Hyprland.",
+    "noLayouts": "Nenhum layout XKB instalado foi encontrado.",
+    "moreLayouts": "Mais layouts…",
+    "applyFailed": "Não foi possível aplicar o layout",
+    "previewApplied": "{preset} aplicado temporariamente",
+    "testPrompt": "Teste o teclado agora. A entrada não é armazenada.",
+    "previewActions": "Enter Salvar    Esc Restaurar layout anterior",
+    "preset": {
+      "system": "Padrão do sistema",
+      "us": "EUA",
+      "usIntl": "EUA Internacional",
+      "brAbnt2": "Brasileiro (ABNT2)",
+      "portuguese": "Português",
+      "spanish": "Espanhol",
+      "german": "Alemão",
+      "french": "Francês"
+    }
+  },
   "development": {
     "testApplication": "Aplicativo de teste",
     "notification": "Notificação {count}",

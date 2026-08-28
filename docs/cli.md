@@ -18,6 +18,15 @@ hyprism-shell language
 hyprism-shell language set en
 hyprism-shell language set pt-BR
 
+hyprism-shell keyboard setup
+hyprism-shell keyboard devices
+hyprism-shell keyboard devices --json
+hyprism-shell keyboard devices --all
+hyprism-shell keyboard get
+hyprism-shell keyboard set built-in br-abnt2
+hyprism-shell keyboard set external us-intl
+hyprism-shell keyboard set default system
+
 hyprism-shell widgets list
 hyprism-shell widgets enable clock
 hyprism-shell widgets disable weather
@@ -43,6 +52,8 @@ hyprism-shell theme schedule get
 hyprism-shell theme schedule enable
 hyprism-shell theme schedule disable
 ```
+
+`keyboard setup` is an arrow-key interface for selecting a detected physical keyboard, previewing a layout live, and saving it only after confirmation. `Esc` restores the previous layout. Composite HID interfaces are grouped, and pointer receivers that expose auxiliary keyboard endpoints are omitted from the setup; `devices --all` includes them for diagnostics. Hyprism preserves detected system behavior by default and does not infer a layout from whether a keyboard is built in or external. Overrides are stored per Hyprland device identifier. Common presets are `system`, `us`, `us-intl`, `br-abnt2`, `pt`, `es`, `de`, and `fr`; any installed layout is available as `xkb:LAYOUT`.
 
 Weather locations are resolved through Open-Meteo's geocoding service. Hyprism stores the resolved display name, coordinates, and timezone, then refreshes the running weather service.
 

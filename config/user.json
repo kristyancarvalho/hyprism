@@ -13,6 +13,10 @@
     "wallpapers": "~/Imagens/Wallpapers",
     "screenshots": "~/Imagens/Screenshots"
   },
+  "keyboard": {
+    "default": null,
+    "devices": {}
+  },
   "shell": {
     "primaryMonitor": "",
     "islandWidth": 620,

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Hyprism Keyboard Setup
+Name[pt_BR]=Configuração de teclado do Hyprism
+Comment=Configure keyboard layouts without typing commands
+Comment[pt_BR]=Configure layouts de teclado sem digitar comandos
+Exec=kitty --class hyprism-keyboard-setup -e hyprism-shell keyboard setup
+TryExec=hyprism-shell
+Icon=input-keyboard
+Terminal=false
+Categories=Settings;HardwareSettings;
+Keywords=keyboard;layout;xkb;hyprland;
+Keywords[pt_BR]=teclado;layout;xkb;hyprland;
