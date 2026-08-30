@@ -23,6 +23,7 @@ Item {
     property int emojiColumnCount: Design.emojiColumnCount
     property int networkResultCount: 0
     property int networkPromptHeight: 0
+    property int configurationRevision: 0
     property bool pendingNightMode: false
     property bool pendingPowerSaver: false
     property bool pendingWifi: false

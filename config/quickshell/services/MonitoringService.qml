@@ -8,6 +8,7 @@ Item {
     readonly property string rootDir: controller.rootDir
     readonly property var widgetConfig: controller.config.shell.widgets
     readonly property string configuration: JSON.stringify(widgetConfig)
+    readonly property int configurationRevision: controller.configurationRevision
     readonly property bool needed: controller.widgetEnabled("storage") || controller.widgetEnabled("sensors") || controller.widgetEnabled("uptime") || controller.widgetEnabled("services") || controller.widgetEnabled("processes")
 
     function synchronize() {
@@ -17,7 +18,7 @@ Item {
         else controller.resetMonitoring()
     }
 
-    onConfigurationChanged: synchronize()
+    onConfigurationRevisionChanged: synchronize()
     onNeededChanged: synchronize()
 
     Process {

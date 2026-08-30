@@ -268,6 +268,7 @@ ShellRoot {
                 widgets: shellController.mergedWidgetConfig(incomingShell.widgets || {})
             })
         }
+        shellController.configurationRevision += 1
         updateThemeSchedule()
         configError = ""
     }
