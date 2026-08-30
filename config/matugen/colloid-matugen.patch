@@ -204,3 +204,51 @@ index bca1780..a5801ca 100644
    esac
  
    sed -i "s/#fd5f51/${button_close}/g"                                          "${THEME_DIR}/xfwm4/close-active.svg"
+diff --git a/src/sass/gtk/_common-3.0.scss b/src/sass/gtk/_common-3.0.scss
+--- a/src/sass/gtk/_common-3.0.scss
++++ b/src/sass/gtk/_common-3.0.scss
+@@ -181,7 +181,11 @@ iconview {
+ %rubberband,
+ .rubberband,
+ rubberband {
+-  // border-radius: 3px;
+-  border: 1px solid $primary;
+-  background-color: rgba($primary, 0.3);
++  border: 1px solid rgba($primary, 0.85);
++  border-image: none;
++  background-color: rgba($primary, 0.18);
++  background-image: none;
++  box-shadow: none;
++  transition: none;
++  animation: none;
+ }
+diff --git a/src/sass/gtk/_common-4.0.scss b/src/sass/gtk/_common-4.0.scss
+--- a/src/sass/gtk/_common-4.0.scss
++++ b/src/sass/gtk/_common-4.0.scss
+@@ -70,4 +70,9 @@ iconview {
+ rubberband {
+-  border: 1px solid $primary;
+-  background-color: rgba($primary, 0.3);
++  border: 1px solid rgba($primary, 0.85);
++  border-image: none;
++  background-color: rgba($primary, 0.18);
++  background-image: none;
++  box-shadow: none;
++  transition: none;
++  animation: none;
+ }
+diff --git a/src/sass/libadwaita/widgets/_views.scss b/src/sass/libadwaita/widgets/_views.scss
+--- a/src/sass/libadwaita/widgets/_views.scss
++++ b/src/sass/libadwaita/widgets/_views.scss
+@@ -43,4 +43,9 @@ textview {
+ rubberband {
+-  border: 1px solid $accent_color;
+-  background-color: gtkalpha($accent_color, 0.2);
++  border: 1px solid gtkalpha($accent_color, 0.85);
++  border-image: none;
++  background-color: gtkalpha($accent_color, 0.18);
++  background-image: none;
++  box-shadow: none;
++  transition: none;
++  animation: none;
+ }
