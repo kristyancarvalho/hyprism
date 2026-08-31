@@ -19,7 +19,10 @@ Item {
     property int elapsed: 0
     property string outputPath: ""
     property string lastError: ""
-    readonly property string recordingsDir: Quickshell.env("HOME") + "/Vídeos/gravacoes"
+    readonly property string recordingsDir: {
+        const configured = Design.safeText(controller.config.paths ? controller.config.paths.recordings : "", "~/Videos/Recordings")
+        return configured.indexOf("~/") === 0 ? Quickshell.env("HOME") + configured.slice(1) : configured
+    }
     readonly property var ownedProcessId: recorder.processId
 
     function timestamp() {

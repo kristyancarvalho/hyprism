@@ -283,11 +283,20 @@ else:
         self.assertEqual(migrated["weather"]["location"], "Recife")
 
     def test_fresh_migration_uses_requested_language(self):
+        home = Path(self.temporary.name) / "home"
+        self.environment["HOME"] = str(home)
+        self.environment["HYPRISM_PICTURES_DIR"] = str(home / "Imagens")
+        self.environment["HYPRISM_VIDEOS_DIR"] = str(home / "Vídeos")
         result = self.run_cli("_migrate", "--language", "pt-BR")
         self.assertEqual(result.returncode, 0)
         self.assertEqual(self.read_config()["language"], "pt-BR")
         self.assertEqual(self.read_config()["appearance"]["mode"], "dark")
         self.assertEqual(self.read_config()["appearance"]["whiteTemperature"], 0)
+        self.assertEqual(self.read_config()["paths"], {
+            "wallpapers": "~/Imagens/Wallpapers",
+            "screenshots": "~/Imagens/Screenshots",
+            "recordings": "~/Vídeos/gravacoes",
+        })
 
     def test_init_creates_user_state_and_preserves_explicit_values(self):
         home = Path(self.temporary.name) / "home"
@@ -306,6 +315,9 @@ else:
         self.assertTrue((home / ".config/hypr").is_symlink())
         self.assertTrue((home / ".config/quickshell/default").is_symlink())
         self.assertTrue((home / "Imagens/Wallpapers/abyss.png").is_file())
+        self.assertTrue((home / "Imagens/Screenshots").is_dir())
+        self.assertTrue((home / "Vídeos/gravacoes").is_dir())
+        self.assertEqual(value["paths"]["recordings"], "~/Vídeos/gravacoes")
         value["shell"]["widgets"]["clock"]["enabled"] = False
         value["custom"] = {"enabled": False}
         config.write_text(json.dumps(value), encoding="utf-8")

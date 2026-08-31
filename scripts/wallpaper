@@ -4,7 +4,10 @@ set -Eeuo pipefail
 root_dir="$(cd -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")/.." && pwd)"
 cache_dir="${HYPRISM_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/hyprism}"
 state_dir="$cache_dir/state"
-wallpaper_dir="${HYPRISM_WALLPAPER_DIR:-$HOME/Imagens/Wallpapers}"
+config_file="${HYPRISM_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/hyprism/user.json}"
+configured_wallpaper_dir=$(jq -r '.paths.wallpapers // empty' "$config_file" 2>/dev/null || true)
+configured_wallpaper_dir=${configured_wallpaper_dir/#\~/$HOME}
+wallpaper_dir="${HYPRISM_WALLPAPER_DIR:-${configured_wallpaper_dir:-$HOME/Pictures/Wallpapers}}"
 current_file="$state_dir/current-wallpaper"
 lock_wallpaper="$state_dir/lock-wallpaper"
 mkdir -p "$state_dir" "$wallpaper_dir"

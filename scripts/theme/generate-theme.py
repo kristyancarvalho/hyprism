@@ -433,14 +433,25 @@ def render_hyprlock(theme):
     return "".join(f"$hyprism_{name} = rgb({color[1:]})\n" for name, color in values.items())
 
 
-def render_hyprlock_config(theme):
+def render_hyprlock_config(theme, language="en"):
     colors = render_hyprlock(theme)
+    messages = {
+        "en": {"locked": "Locked", "date": "%m/%d/%Y", "check_text": "Authenticating…", "fail_text": "Incorrect password"},
+        "pt-BR": {"locked": "Bloqueado", "date": "%d/%m/%Y", "check_text": "Autenticando…", "fail_text": "Senha incorreta"},
+    }.get(language, {})
     lines = []
     for line in HYPRLOCK_BASE.read_text(encoding="utf-8").splitlines():
         if line.startswith("$hyprism_"):
             continue
         if re.match(r"^    path\s*=", line):
             lines.append(f"    path = {CACHE / 'state/lock-wallpaper'}")
+        elif line.strip().startswith("text = cmd[update:60000] date"):
+            lines.append(f"    text = cmd[update:60000] date +'{messages.get('date', '%m/%d/%Y')}'")
+        elif line.strip() == "text = Locked":
+            lines.append(f"    text = {messages.get('locked', 'Locked')}")
+        elif re.match(r"^    (check_text|fail_text)\s*=", line):
+            name = line.strip().split("=", 1)[0].strip()
+            lines.append(f"    {name} = {messages.get(name, '')}")
         else:
             lines.append(line)
     return colors + "\n" + "\n".join(lines) + "\n"
@@ -969,6 +980,15 @@ def appearance_settings():
     return (mode if mode in ("dark", "light") else "dark"), white_temperature
 
 
+def interface_language():
+    config = pathlib.Path(os.environ.get("HYPRISM_CONFIG", HOME / ".config/hyprism/user.json"))
+    try:
+        language = json.loads(config.read_text(encoding="utf-8")).get("language", "en")
+    except (OSError, AttributeError, json.JSONDecodeError):
+        language = "en"
+    return language if language in ("en", "pt-BR") else "en"
+
+
 def fallback_palette(mode):
     if mode == "dark":
         return dict(FALLBACK, primary=FALLBACK["accent"], on_primary=FALLBACK["background"], primary_container="#28495a", on_secondary=FALLBACK["background"], on_tertiary=FALLBACK["background"], surface_low="#131b21", surface_container="#202b33", surface_high="#26333c", surface_highest="#2e3d47", on_surface_variant="#9aa8b2", outline="#426172", on_error=FALLBACK["background"], error_container="#592c32", tertiary=FALLBACK["secondary"])
@@ -1006,6 +1026,7 @@ def render_gtk2_settings(theme):
 def main():
     image = sys.argv[1] if len(sys.argv) > 1 else ""
     mode, white_temperature = appearance_settings()
+    language = interface_language()
     try:
         raw, matugen = matugen_palette(image, mode) if image else (fallback_palette(mode), {"fallback": True})
     except (OSError, KeyError, ValueError, json.JSONDecodeError, subprocess.SubprocessError) as error:
@@ -1021,7 +1042,7 @@ def main():
     publish(OUT / "hyprland.lua", render_hyprland(theme), validate_colors)
     publish(OUT / "hyprtoolkit-colors.conf", render_hyprtoolkit(theme), validate_hyprtoolkit)
     publish(OUT / "hyprlock-colors.conf", render_hyprlock(theme), validate_colors)
-    publish(OUT / "hyprlock.conf", render_hyprlock_config(theme), validate_colors)
+    publish(OUT / "hyprlock.conf", render_hyprlock_config(theme, language), validate_colors)
     publish(OUT / "gtk-3.0/settings.ini", render_gtk_settings(theme), validate_colors)
     publish(OUT / "gtk-4.0/settings.ini", render_gtk_settings(theme), validate_colors)
     publish(OUT / "gtk-2.0/gtkrc", render_gtk2_settings(theme), validate_colors)

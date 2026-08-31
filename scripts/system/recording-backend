@@ -4,7 +4,10 @@ set -Eeuo pipefail
 mode=${1:-}
 output=${2:-}
 target=${3:-}
-recordings_dir="$HOME/Vídeos/gravacoes"
+config_file="${HYPRISM_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/hyprism/user.json}"
+configured_recordings_dir=$(jq -r '.paths.recordings // empty' "$config_file" 2>/dev/null || true)
+configured_recordings_dir=${configured_recordings_dir/#\~/$HOME}
+recordings_dir="${HYPRISM_RECORDINGS_DIR:-${configured_recordings_dir:-$HOME/Videos/Recordings}}"
 runtime_dir="${HYPRISM_RECORDING_RUNTIME_DIR:-${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}/hyprism-runtime-$UID}/hyprism}"
 lock_file="$runtime_dir/recording.lock"
 log_dir="${XDG_CACHE_HOME:-$HOME/.cache}/hyprism"

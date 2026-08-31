@@ -52,7 +52,7 @@
     "current": "Atual",
     "fallbackName": "Papel de parede",
     "emptySearch": "Nenhum papel de parede encontrado",
-    "emptyDirectory": "Nenhum papel de parede em ~/Imagens/Wallpapers"
+    "emptyDirectory": "Nenhum papel de parede no diretório configurado"
   },
   "network": {
     "title": "Rede",

@@ -67,8 +67,23 @@ verify_link() {
 }
 package_lines() { sed -E '/^[[:space:]]*(#|$)/d' "$1"; }
 hyprlock_animations_current() {
-  local candidate=$1 animation
+  local candidate=$1 language=$2 animation check_text fail_text locked date_format
   [[ -s $candidate ]] || return 1
+  if [[ $language == pt-BR ]]; then
+    check_text='Autenticando…'
+    fail_text='Senha incorreta'
+    locked=Bloqueado
+    date_format='%d/%m/%Y'
+  else
+    check_text='Authenticating…'
+    fail_text='Incorrect password'
+    locked=Locked
+    date_format='%m/%d/%Y'
+  fi
+  grep -Fqx "    text = $locked" "$candidate" || return 1
+  grep -Fqx "    text = cmd[update:60000] date +'$date_format'" "$candidate" || return 1
+  grep -Fqx "    check_text = $check_text" "$candidate" || return 1
+  grep -Fqx "    fail_text = $fail_text" "$candidate" || return 1
   grep -A7 '^animations {' "$candidate" | grep -Eq '^    enabled = true$' || return 1
   for animation in fadeIn fadeOut inputFieldFade inputFieldDots inputFieldColors; do
     grep -A7 '^animations {' "$candidate" | grep -Eq "^    animation = $animation, 1," || return 1
@@ -88,6 +103,31 @@ if ((dry_run == 0)) && [[ $(id -u) -ne 0 ]]; then
   printf 'Run the installer with sudo to configure SDDM safely.\n' >&2
   exit 1
 fi
+
+resolve_user_directory() {
+  local kind=$1 fallback=$2 resolved=
+  if ((dry_run == 0)) && command -v xdg-user-dir >/dev/null; then
+    if [[ $(id -un) == "$target_user" ]]; then
+      resolved=$(env HOME="$target_home" xdg-user-dir "$kind" 2>/dev/null || true)
+    else
+      resolved=$(runuser -u "$target_user" -- env HOME="$target_home" xdg-user-dir "$kind" 2>/dev/null || true)
+    fi
+  fi
+  [[ $resolved == /* ]] || resolved=$fallback
+  printf '%s\n' "$resolved"
+}
+
+if [[ $install_language == pt-BR ]]; then
+  pictures_fallback="$target_home/Imagens"
+  videos_fallback="$target_home/Vídeos"
+  recordings_name=gravacoes
+else
+  pictures_fallback="$target_home/Pictures"
+  videos_fallback="$target_home/Videos"
+  recordings_name=Recordings
+fi
+pictures_dir=$(resolve_user_directory PICTURES "$pictures_fallback")
+videos_dir=$(resolve_user_directory VIDEOS "$videos_fallback")
 
 if ((install_packages)); then
   [[ $(id -u) -eq 0 ]] || { printf 'Run with sudo to install packages or use --no-packages.\n' >&2; exit 1; }
@@ -115,7 +155,7 @@ if ((dry_run == 0)) && [[ -s $installed_user_config ]]; then
   install -m 0600 -o "$target_user" -g "$target_group" "$installed_user_config" "$existing_user_config"
 fi
 
-run install -d -o "$target_user" -g "$target_group" "$target_home/.config" "$target_home/.cache" "$target_home/.cache/hyprism" "$target_home/.local/bin" "$target_home/.local/share" "$target_home/Imagens/Wallpapers" "$target_home/Imagens/Screenshots" "$target_home/Vídeos/gravacoes"
+run install -d -o "$target_user" -g "$target_group" "$target_home/.config" "$target_home/.cache" "$target_home/.cache/hyprism" "$target_home/.local/bin" "$target_home/.local/share"
 backup_path "$runtime_root"
 run install -d -o "$target_user" -g "$target_group" "$runtime_root/config" "$runtime_root/scripts"
 run cp -a "$repo_dir/config/." "$runtime_root/config/"
@@ -127,9 +167,21 @@ fi
 if ((dry_run == 0)); then
   migrate_arguments=(_migrate --language "$install_language")
   [[ -n $existing_user_config ]] && migrate_arguments+=(--existing "$existing_user_config")
-  as_user env HYPRISM_ROOT="$runtime_root" HYPRISM_CONFIG="$runtime_root/config/user.json" "$runtime_root/scripts/hyprism-shell" "${migrate_arguments[@]}"
+  as_user env HYPRISM_ROOT="$runtime_root" HYPRISM_CONFIG="$runtime_root/config/user.json" HYPRISM_PICTURES_DIR="$pictures_dir" HYPRISM_VIDEOS_DIR="$videos_dir" "$runtime_root/scripts/hyprism-shell" "${migrate_arguments[@]}"
   [[ -z $existing_user_config ]] || run rm -f "$existing_user_config"
 fi
+wallpaper_dir="$pictures_dir/Wallpapers"
+screenshot_dir="$pictures_dir/Screenshots"
+recordings_dir="$videos_dir/$recordings_name"
+if ((dry_run == 0)); then
+  configured_wallpaper_dir=$(as_user jq -r '.paths.wallpapers // empty' "$runtime_root/config/user.json")
+  configured_screenshot_dir=$(as_user jq -r '.paths.screenshots // empty' "$runtime_root/config/user.json")
+  configured_recordings_dir=$(as_user jq -r '.paths.recordings // empty' "$runtime_root/config/user.json")
+  [[ -z $configured_wallpaper_dir ]] || wallpaper_dir=${configured_wallpaper_dir/#\~/$target_home}
+  [[ -z $configured_screenshot_dir ]] || screenshot_dir=${configured_screenshot_dir/#\~/$target_home}
+  [[ -z $configured_recordings_dir ]] || recordings_dir=${configured_recordings_dir/#\~/$target_home}
+fi
+run install -d -o "$target_user" -g "$target_group" "$wallpaper_dir" "$screenshot_dir" "$recordings_dir"
 
 sddm_theme_dir="/usr/share/sddm/themes/hyprism-ksddm"
 sddm_state_dir="/var/lib/hyprism/sddm"
@@ -160,12 +212,12 @@ if ((dry_run == 0)); then run fc-cache -f /usr/local/share/fonts/hyprism; fi
 
 for image in "$repo_dir"/wallpapers/*.{png,jpg,jpeg,webp}; do
   [[ -f $image ]] || continue
-  destination="$target_home/Imagens/Wallpapers/$(basename "$image")"
+  destination="$wallpaper_dir/$(basename "$image")"
   if [[ ! -e $destination ]]; then run install -m 0644 -o "$target_user" -g "$target_group" "$image" "$destination"; fi
 done
-if ! find -P "$target_home/Imagens/Wallpapers" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print -quit | grep -q .; then
+if ! find -P "$wallpaper_dir" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print -quit | grep -q .; then
   command -v magick >/dev/null || { printf 'ImageMagick is required to create the initial wallpaper.\n' >&2; exit 1; }
-  as_user magick -background none "$repo_dir/wallpapers/abyss.svg" "$target_home/Imagens/Wallpapers/hyprism-abyss.png"
+  as_user magick -background none "$repo_dir/wallpapers/abyss.svg" "$wallpaper_dir/hyprism-abyss.png"
 fi
 
 colloid_revision=6c2dc65865628bda9fdc8157a30cd5eda6fd41f9
@@ -240,8 +292,10 @@ run install -d -o "$target_user" -g "$target_group" "$theme_dir" "$state_dir"
 if [[ ! -s $theme_dir/fastfetch/logo-palette.json ]]; then
   backup_path "$target_home/.config/fastfetch/images/archlinux.png"
 fi
-first_wallpaper=$(find -P "$target_home/Imagens/Wallpapers" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print -quit)
-if hyprlock_animations_current "$theme_dir/hyprlock.conf"; then hyprlock_animations_stale=0; else hyprlock_animations_stale=1; fi
+first_wallpaper=$(find -P "$wallpaper_dir" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print -quit)
+hyprlock_language=$install_language
+if ((dry_run == 0)); then hyprlock_language=$(as_user jq -r '.language // "en"' "$runtime_root/config/user.json"); fi
+if hyprlock_animations_current "$theme_dir/hyprlock.conf" "$hyprlock_language"; then hyprlock_animations_stale=0; else hyprlock_animations_stale=1; fi
 if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprtoolkit-colors.conf || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/hyprlock.conf || ! -s $theme_dir/gtk-3.0/settings.ini || ! -s $theme_dir/gtk-4.0/settings.ini || ! -s $theme_dir/gtk-2.0/gtkrc || $hyprlock_animations_stale -eq 1 || ! -s $theme_dir/colloid/_color-palette-matugen.scss || ! -s $theme_dir/colloid-gtk-4.0/gtk.css || ! -s $colloid_theme/gtk-3.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" || $(cat "$colloid_theme/.hyprism-patch.sha256" 2>/dev/null || true) != "$colloid_patch_hash" || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig || ! -s $theme_dir/icons/Hyprism-Papirus/index.theme || ! -s $theme_dir/starship.toml || ! -s $theme_dir/tmux.conf || ! -s $theme_dir/zathura/zathurarc || ! -s $theme_dir/nvim/matugen.lua || ! -s $target_home/.config/nvim/lua/themes/matugen.lua || ! -s $theme_dir/fastfetch/config.jsonc || ! -s $target_home/.config/fastfetch/images/archlinux.png || ! -e $state_dir/lock-wallpaper || ! -s $sddm_state_dir/current-wallpaper.jpg || ! -s $sddm_state_dir/theme.conf ]]; then
   if [[ -n ${first_wallpaper:-} ]]; then
     as_user env HYPRISM_ROOT="$runtime_root" HYPRISM_SDDM_STATE_DIR="$sddm_state_dir" "$runtime_root/scripts/wallpaper" set "$first_wallpaper"
@@ -412,8 +466,8 @@ fi
 printf '\nHyprism installed for %s.\n' "$target_user"
 printf 'Language: %s\n' "$effective_language"
 printf 'Configuration: %s/.config/{hypr,quickshell/default,quickshell/hyprism,foot,kitty,gtk-3.0,gtk-4.0,Kvantum,qt5ct,qt6ct}\n' "$target_home"
-printf 'Wallpapers: %s/Imagens/Wallpapers\nScreenshots: %s/Imagens/Screenshots\n' "$target_home" "$target_home"
-printf 'Recordings: %s/Vídeos/gravacoes\nLogin theme: %s\nSDDM wallpaper: %s/current-wallpaper.jpg\n' "$target_home" "$sddm_theme_dir" "$sddm_state_dir"
+printf 'Wallpapers: %s\nScreenshots: %s\n' "$wallpaper_dir" "$screenshot_dir"
+printf 'Recordings: %s\nLogin theme: %s\nSDDM wallpaper: %s/current-wallpaper.jpg\n' "$recordings_dir" "$sddm_theme_dir" "$sddm_state_dir"
 printf 'Starship: %s/.config/starship.toml\ntmux: %s/.tmux.conf (TPM at %s/.tmux/plugins)\nNvChad: %s/.config/nvim\n' "$target_home" "$target_home" "$target_home" "$target_home"
 printf 'Fastfetch: %s/.config/fastfetch/config.jsonc\nFastfetch logo: %s/.config/fastfetch/images/archlinux.png\n' "$target_home" "$target_home"
 printf 'Keyboard setup: hyprism-shell keyboard setup\n'

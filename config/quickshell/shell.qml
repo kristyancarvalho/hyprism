@@ -254,6 +254,7 @@ ShellRoot {
         const incomingTemperature = incomingAppearance.whiteTemperature
         const defaultShell = shellController.defaultShellConfig()
         shellController.config = {
+            paths: parsed.paths || {},
             appearance: {
                 mode: incomingAppearance.mode === "light" ? "light" : "dark",
                 whiteTemperature: Number.isInteger(incomingTemperature) && incomingTemperature >= 0 && incomingTemperature <= 3 ? incomingTemperature : incomingAppearance.warmWhite === true ? 2 : 0,

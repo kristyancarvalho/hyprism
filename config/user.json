@@ -10,8 +10,9 @@
     }
   },
   "paths": {
-    "wallpapers": "~/Imagens/Wallpapers",
-    "screenshots": "~/Imagens/Screenshots"
+    "wallpapers": "~/Pictures/Wallpapers",
+    "screenshots": "~/Pictures/Screenshots",
+    "recordings": "~/Videos/Recordings"
   },
   "keyboard": {
     "default": null,

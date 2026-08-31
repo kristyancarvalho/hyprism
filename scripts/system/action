@@ -2,6 +2,10 @@
 set -Eeuo pipefail
 
 root_dir="${HYPRISM_ROOT:-$(cd -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")/../.." && pwd)}"
+config_file="${HYPRISM_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/hyprism/user.json}"
+configured_screenshot_dir=$(jq -r '.paths.screenshots // empty' "$config_file" 2>/dev/null || true)
+configured_screenshot_dir=${configured_screenshot_dir/#\~/$HOME}
+screenshot_dir="${HYPRISM_SCREENSHOT_DIR:-${configured_screenshot_dir:-$HOME/Pictures/Screenshots}}"
 notify() { command -v qs >/dev/null && "$root_dir/scripts/system/shell-ipc" osd "$1" "${2:-}" >/dev/null 2>&1 || true; }
 volume() {
   wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ "$1"
@@ -25,12 +29,12 @@ brightness() {
   notify brightness "${value:-0}"
 }
 screenshot_area() {
-  local dir="$HOME/Imagens/Screenshots" file
+  local dir="$screenshot_dir" file
   mkdir -p "$dir"; file="$dir/$(date +%Y%m%d_%H%M%S)_area.png"
   grim -g "$(slurp)" "$file" && wl-copy <"$file" && notify screenshot "$file"
 }
 screenshot_monitor() {
-  local dir="$HOME/Imagens/Screenshots" file monitor
+  local dir="$screenshot_dir" file monitor
   mkdir -p "$dir"; file="$dir/$(date +%Y%m%d_%H%M%S)_monitor.png"
   monitor=$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name' | head -n1)
   grim -o "$monitor" "$file" && wl-copy <"$file" && notify screenshot "$file"
