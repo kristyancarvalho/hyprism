@@ -763,6 +763,13 @@ def update_colloid(palette_path, mode):
         print(f"  {line}", file=sys.stderr)
 
 
+def publish_colloid_palette(content, mode):
+    validate_colors(content)
+    palette = OUT / "colloid/_color-palette-matugen.scss"
+    write(palette, content)
+    update_colloid(palette, mode)
+
+
 def papirus_output_name(name):
     if name == "folder-blue.svg":
         return "folder.svg"
@@ -1050,9 +1057,7 @@ def main():
         print(f"Tema do Hyprism: Zathura preservado após falha ({error})", file=sys.stderr)
     publish_fastfetch_logo(theme)
     try:
-        colloid_palette = OUT / "colloid/_color-palette-matugen.scss"
-        if publish(colloid_palette, render_colloid(matugen, theme), validate_colors):
-            update_colloid(colloid_palette, mode)
+        publish_colloid_palette(render_colloid(matugen, theme), mode)
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         print(f"Tema do Hyprism: Colloid preservado após falha ({error})", file=sys.stderr)
     publish_papirus(theme)

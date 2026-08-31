@@ -237,6 +237,18 @@ diff --git a/src/sass/gtk/_common-4.0.scss b/src/sass/gtk/_common-4.0.scss
 +  transition: none;
 +  animation: none;
  }
+diff --git a/src/sass/gtk/apps/_xfce.scss b/src/sass/gtk/apps/_xfce.scss
+--- a/src/sass/gtk/apps/_xfce.scss
++++ b/src/sass/gtk/apps/_xfce.scss
+@@ -198,4 +198,8 @@
+     widget.view {
+       // padding: $space-size; // Not work ?
+       border-radius: $corner-radius;
++
++      &.rubberband {
++        border-radius: 0;
++      }
+     }
 diff --git a/src/sass/libadwaita/widgets/_views.scss b/src/sass/libadwaita/widgets/_views.scss
 --- a/src/sass/libadwaita/widgets/_views.scss
 +++ b/src/sass/libadwaita/widgets/_views.scss

@@ -10,6 +10,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class PackagingTests(unittest.TestCase):
+    def test_installer_invalidates_colloid_when_source_patch_changes(self):
+        installer = (ROOT / "install.sh").read_text(encoding="utf-8")
+        self.assertIn('colloid_patch_hash=$(sha256sum "$runtime_root/config/matugen/colloid-matugen.patch"', installer)
+        self.assertIn('$(cat "$colloid_theme/.hyprism-patch.sha256" 2>/dev/null || true) != "$colloid_patch_hash"', installer)
+
     def test_system_install_is_home_independent(self):
         with tempfile.TemporaryDirectory() as temporary:
             stage = Path(temporary)
