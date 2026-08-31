@@ -70,6 +70,19 @@ class ThemeTests(unittest.TestCase):
         self.assertIn(f'$hyprism_surface = rgb({palette["surface"][1:]})', rendered)
         self.assertIn(f'$hyprism_foreground = rgb({palette["foreground"][1:]})', rendered)
 
+    def test_hyprlock_messages_follow_interface_language(self):
+        theme = THEME.theme_from(THEME.fallback_palette("dark"), "/tmp/wallpaper.png", "dark")
+        english = THEME.render_hyprlock_config(theme, "en")
+        portuguese = THEME.render_hyprlock_config(theme, "pt-BR")
+        self.assertIn("    check_text = Authenticating…", english)
+        self.assertIn("    fail_text = Incorrect password", english)
+        self.assertIn("    text = Locked", english)
+        self.assertIn("date +'%m/%d/%Y'", english)
+        self.assertIn("    check_text = Autenticando…", portuguese)
+        self.assertIn("    fail_text = Senha incorreta", portuguese)
+        self.assertIn("    text = Bloqueado", portuguese)
+        self.assertIn("date +'%d/%m/%Y'", portuguese)
+
     def test_papirus_inheritance_follows_mode(self):
         self.assertIn("Inherits=Papirus,hicolor", THEME.papirus_index(["16x16"], "light"))
         self.assertIn("Inherits=Papirus-Dark,Papirus,hicolor", THEME.papirus_index(["16x16"], "dark"))

@@ -30,7 +30,7 @@ Item {
                 try {
                     service.controller.updateMonitoring(JSON.parse(data))
                 } catch (error) {
-                    console.warn("monitoramento do sistema inválido", error)
+                    console.warn("invalid system monitoring data", error)
                 }
             }
         }

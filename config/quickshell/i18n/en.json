@@ -52,7 +52,7 @@
     "current": "Current",
     "fallbackName": "Wallpaper",
     "emptySearch": "No wallpapers found",
-    "emptyDirectory": "No wallpapers in ~/Imagens/Wallpapers"
+    "emptyDirectory": "No wallpapers in the configured directory"
   },
   "network": {
     "title": "Network",

@@ -1,29 +1,29 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-fallback=${1:?configuração do Hyprlock obrigatória}
+fallback=${1:?Hyprlock configuration is required}
 cache_dir=${HYPRISM_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/hyprism}
 colors="$cache_dir/theme/hyprlock-colors.conf"
 generated="$cache_dir/theme/hyprlock.conf"
 wallpaper="$cache_dir/state/lock-wallpaper"
-[[ -s $fallback ]] || { printf 'Configuração de fallback do Hyprlock ausente: %s\n' "$fallback" >&2; exit 1; }
-[[ -s $colors ]] || { printf 'Paleta do Hyprlock ausente: %s\n' "$colors" >&2; exit 1; }
-[[ -s $generated ]] || { printf 'Configuração dinâmica do Hyprlock ausente: %s\n' "$generated" >&2; exit 1; }
-[[ -e $wallpaper && -r $wallpaper ]] || { printf 'Papel de parede do Hyprlock ausente: %s\n' "$wallpaper" >&2; exit 1; }
-[[ $(grep -Ec '^\$hyprism_(background|surface|surface_active|foreground|muted|accent|secondary|error) = rgb\([0-9a-fA-F]{6}\)$' "$colors") -eq 8 ]] || { printf 'Paleta do Hyprlock inválida.\n' >&2; exit 1; }
-[[ $(grep -Ec '^\$hyprism_(background|surface|surface_active|foreground|muted|accent|secondary|error) = rgb\([0-9a-fA-F]{6}\)$' "$generated") -eq 8 ]] || { printf 'Cores da configuração dinâmica do Hyprlock inválidas.\n' >&2; exit 1; }
-grep -Eiq 'undefined|null|nan|\{\{' "$fallback" "$colors" "$generated" && { printf 'Valor não resolvido na configuração do Hyprlock.\n' >&2; exit 1; }
-grep -Fqx "    path = $wallpaper" "$generated" || { printf 'Wallpaper dinâmico do Hyprlock não corresponde ao estado instalado.\n' >&2; exit 1; }
-grep -Eq '^    path =$' "$fallback" || { printf 'O fallback do Hyprlock depende de uma imagem dinâmica.\n' >&2; exit 1; }
+[[ -s $fallback ]] || { printf 'Hyprlock fallback configuration is missing: %s\n' "$fallback" >&2; exit 1; }
+[[ -s $colors ]] || { printf 'Hyprlock palette is missing: %s\n' "$colors" >&2; exit 1; }
+[[ -s $generated ]] || { printf 'Dynamic Hyprlock configuration is missing: %s\n' "$generated" >&2; exit 1; }
+[[ -e $wallpaper && -r $wallpaper ]] || { printf 'Hyprlock wallpaper is missing: %s\n' "$wallpaper" >&2; exit 1; }
+[[ $(grep -Ec '^\$hyprism_(background|surface|surface_active|foreground|muted|accent|secondary|error) = rgb\([0-9a-fA-F]{6}\)$' "$colors") -eq 8 ]] || { printf 'Invalid Hyprlock palette.\n' >&2; exit 1; }
+[[ $(grep -Ec '^\$hyprism_(background|surface|surface_active|foreground|muted|accent|secondary|error) = rgb\([0-9a-fA-F]{6}\)$' "$generated") -eq 8 ]] || { printf 'Invalid colors in the dynamic Hyprlock configuration.\n' >&2; exit 1; }
+grep -Eiq 'undefined|null|nan|\{\{' "$fallback" "$colors" "$generated" && { printf 'Unresolved value in the Hyprlock configuration.\n' >&2; exit 1; }
+grep -Fqx "    path = $wallpaper" "$generated" || { printf 'The dynamic Hyprlock wallpaper does not match the installed state.\n' >&2; exit 1; }
+grep -Eq '^    path =$' "$fallback" || { printf 'The Hyprlock fallback depends on a dynamic image.\n' >&2; exit 1; }
 for candidate in "$fallback" "$generated"; do
-  grep -Eq '^    screencopy_mode = 1$' "$candidate" || { printf 'Modo de captura compatível com máquina virtual ausente.\n' >&2; exit 1; }
-  grep -A7 '^animations {' "$candidate" | grep -Eq '^    enabled = true$' || { printf 'Animações do Hyprlock não estão habilitadas.\n' >&2; exit 1; }
+  grep -Eq '^    screencopy_mode = 1$' "$candidate" || { printf 'Virtual-machine-compatible capture mode is missing.\n' >&2; exit 1; }
+  grep -A7 '^animations {' "$candidate" | grep -Eq '^    enabled = true$' || { printf 'Hyprlock animations are not enabled.\n' >&2; exit 1; }
   for animation in fadeIn fadeOut inputFieldFade inputFieldDots inputFieldColors; do
-    grep -A7 '^animations {' "$candidate" | grep -Eq "^    animation = $animation, 1," || { printf 'Animação %s ausente no Hyprlock.\n' "$animation" >&2; exit 1; }
+    grep -A7 '^animations {' "$candidate" | grep -Eq "^    animation = $animation, 1," || { printf 'Hyprlock animation %s is missing.\n' "$animation" >&2; exit 1; }
   done
-  awk 'BEGIN { depth = 0 } /\{/ { depth++ } /\}/ { depth-- } depth < 0 { exit 1 } END { exit depth != 0 }' "$candidate" || { printf 'Blocos desbalanceados na configuração do Hyprlock.\n' >&2; exit 1; }
+  awk 'BEGIN { depth = 0 } /\{/ { depth++ } /\}/ { depth-- } depth < 0 { exit 1 } END { exit depth != 0 }' "$candidate" || { printf 'Unbalanced blocks in the Hyprlock configuration.\n' >&2; exit 1; }
   output=$(hyprlock --verbose --display "hyprism-validacao-inexistente-$$" --config "$candidate" 2>&1 || true)
-  grep -Eq 'Config has errors|Config threw|Config path error|Invalid argument' <<<"$output" && { printf 'O parser do Hyprlock rejeitou a configuração:\n%s\n' "$output" >&2; exit 1; }
-  grep -Eq "Couldn't connect to a wayland compositor" <<<"$output" || { printf 'A validação segura do Hyprlock terminou de forma inesperada.\n%s\n' "$output" >&2; exit 1; }
+  grep -Eq 'Config has errors|Config threw|Config path error|Invalid argument' <<<"$output" && { printf 'The Hyprlock parser rejected the configuration:\n%s\n' "$output" >&2; exit 1; }
+  grep -Eq "Couldn't connect to a wayland compositor" <<<"$output" || { printf 'Safe Hyprlock validation ended unexpectedly.\n%s\n' "$output" >&2; exit 1; }
 done
-printf 'Configuração dinâmica e fallback do Hyprlock validados sem iniciar o bloqueio.\n'
+printf 'Dynamic and fallback Hyprlock configurations validated without starting the lock.\n'

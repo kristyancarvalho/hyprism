@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-direction=${1:?direção obrigatória}
+direction=${1:?direction is required}
 case "$direction" in
   l) long_direction=left ;;
   r) long_direction=right ;;
-  *) printf 'A direção deve ser l ou r.\n' >&2; exit 2 ;;
+  *) printf 'Direction must be l or r.\n' >&2; exit 2 ;;
 esac
 layout=$(hyprctl -j getoption general.layout 2>/dev/null | jq -r '.str // empty')
 if [[ $layout == scrolling ]] && [[ $direction == l || $direction == r ]]; then

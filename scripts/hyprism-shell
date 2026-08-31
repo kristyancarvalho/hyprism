@@ -158,6 +158,51 @@ def configuration():
     return read_json(config_path())
 
 
+def portable_home_path(path):
+    home = Path.home()
+    try:
+        relative = path.relative_to(home)
+    except ValueError:
+        return str(path)
+    return "~" if not relative.parts else "~/" + str(relative)
+
+
+def user_directory(kind, language):
+    override = os.environ.get(f"HYPRISM_{kind}_DIR")
+    if override:
+        return Path(override).expanduser()
+    executable = shutil.which("xdg-user-dir")
+    user_dirs = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "user-dirs.dirs"
+    if executable and user_dirs.is_file():
+        try:
+            result = subprocess.run([executable, kind], capture_output=True, text=True, timeout=3, check=False)
+            value = result.stdout.strip()
+            if result.returncode == 0 and value and Path(value).is_absolute():
+                return Path(value)
+        except (OSError, subprocess.SubprocessError):
+            pass
+    names = {"pt-BR": {"PICTURES": "Imagens", "VIDEOS": "Vídeos"}}
+    return Path.home() / names.get(language, {}).get(kind, {"PICTURES": "Pictures", "VIDEOS": "Videos"}[kind])
+
+
+def configure_default_paths(config, language, existing):
+    raw_existing_paths = existing.get("paths", {}) if isinstance(existing, dict) else {}
+    existing_paths = raw_existing_paths if isinstance(raw_existing_paths, dict) else {}
+    if not isinstance(config.get("paths"), dict):
+        config["paths"] = {}
+    paths = config["paths"]
+    pictures = user_directory("PICTURES", language)
+    videos = user_directory("VIDEOS", language)
+    defaults = {
+        "wallpapers": pictures / "Wallpapers",
+        "screenshots": pictures / "Screenshots",
+        "recordings": videos / ("gravacoes" if language == "pt-BR" else "Recordings"),
+    }
+    for name, path in defaults.items():
+        if name not in existing_paths:
+            paths[name] = portable_home_path(path)
+
+
 def invoke(arguments, replace=False):
     try:
         if replace:
@@ -525,6 +570,7 @@ def migrate_command(args):
         config["language"] = args.language
     elif existing.get("language") not in SUPPORTED_LANGUAGES:
         config["language"] = "en"
+    configure_default_paths(config, config["language"], existing)
     existing_appearance = existing.get("appearance", {}) if existing else {}
     if "whiteTemperature" not in existing_appearance and existing_appearance.get("warmWhite") is True:
         config.setdefault("appearance", {})["whiteTemperature"] = 2
@@ -564,6 +610,7 @@ def init_command(args):
             config["language"] = "en"
     else:
         config["language"] = args.language
+    configure_default_paths(config, config["language"], existing)
     write_config(config, destination)
     keyboard_backend().render_config(config)
 
@@ -598,10 +645,12 @@ def init_command(args):
         created += result == "created"
         preserved += result == "preserved"
 
-    wallpaper_dir = Path(config.get("paths", {}).get("wallpapers", "~/Imagens/Wallpapers")).expanduser()
-    screenshot_dir = Path(config.get("paths", {}).get("screenshots", "~/Imagens/Screenshots")).expanduser()
+    wallpaper_dir = Path(config.get("paths", {}).get("wallpapers", "~/Pictures/Wallpapers")).expanduser()
+    screenshot_dir = Path(config.get("paths", {}).get("screenshots", "~/Pictures/Screenshots")).expanduser()
+    recording_dir = Path(config.get("paths", {}).get("recordings", "~/Videos/Recordings")).expanduser()
     wallpaper_dir.mkdir(parents=True, exist_ok=True)
     screenshot_dir.mkdir(parents=True, exist_ok=True)
+    recording_dir.mkdir(parents=True, exist_ok=True)
     for source in sorted((root / "wallpapers").glob("*.png")):
         target = wallpaper_dir / source.name
         if not target.exists():

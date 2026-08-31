@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-source_file=${1:?arquivo JSON de origem obrigatório}
-destination=${2:?destino obrigatório}
+source_file=${1:?source JSON file is required}
+destination=${2:?destination is required}
 destination_dir=$(dirname -- "$destination")
 mkdir -p "$destination_dir"
 temporary=$(mktemp --tmpdir="$destination_dir" .hyprism-json.XXXXXX)

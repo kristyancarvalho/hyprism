@@ -8,7 +8,7 @@ root_dir="${HYPRISM_ROOT:-$(cd -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE
 cache_dir="${HYPRISM_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/hyprism}"
 palette="${1:-$cache_dir/theme/colloid/_color-palette-matugen.scss}"
 mode="${2:-dark}"
-[[ $mode == dark || $mode == light ]] || { printf 'Modo GTK inválido: %s\n' "$mode" >&2; exit 2; }
+[[ $mode == dark || $mode == light ]] || { printf 'Invalid GTK mode: %s\n' "$mode" >&2; exit 2; }
 color_name="${mode^}"
 installed_name="$theme_name-$color_name-Matugen"
 theme_root="${HYPRISM_COLLOID_DEST:-${XDG_DATA_HOME:-$HOME/.local/share}/themes}"
@@ -22,7 +22,7 @@ previous_source=
 build_root=
 backup_root=
 publishing=0
-stage=inicialização
+stage=initialization
 cleanup() {
   [[ -z $source_candidate || ! -d $source_candidate ]] || rm -rf -- "$source_candidate"
   [[ -z $previous_source || ! -d $previous_source ]] || rm -rf -- "$previous_source"
@@ -40,13 +40,13 @@ rollback() {
   done
   [[ ! -e $libadwaita_target ]] || rm -rf -- "$libadwaita_target"
   [[ ! -e $backup_root/colloid-gtk-4.0 ]] || mv "$backup_root/colloid-gtk-4.0" "$libadwaita_target"
-  printf 'A publicação do Colloid falhou; o tema anterior foi restaurado.\n' >&2
+  printf 'Colloid publication failed; the previous theme was restored.\n' >&2
 }
 report_error() {
   local code=$1 command=$2 line=$3
   set +e
   rollback
-  printf 'Falha no Colloid durante %s, linha %s: %s\n' "$stage" "$line" "$command" >&2
+  printf 'Colloid failed during %s, line %s: %s\n' "$stage" "$line" "$command" >&2
   exit "$code"
 }
 trap cleanup EXIT
@@ -63,32 +63,32 @@ activate() {
     gsettings set org.gnome.desktop.interface color-scheme "prefer-$mode" >/dev/null 2>&1 || true
   fi
 }
-stage='preparação dos diretórios'
+stage='directory preparation'
 mkdir -p "$cache_dir/colloid" "$theme_root" "$(dirname "$libadwaita_target")"
 exec 9>"$lock_file"
 flock 9
 
-[[ -s $palette ]] || { printf 'Paleta Matugen do Colloid ausente: %s\n' "$palette" >&2; exit 1; }
-grep -Eiq 'undefined|null|nan|\{\{' "$palette" && { printf 'Paleta Matugen do Colloid contém valores não resolvidos.\n' >&2; exit 1; }
+[[ -s $palette ]] || { printf 'Colloid Matugen palette is missing: %s\n' "$palette" >&2; exit 1; }
+grep -Eiq 'undefined|null|nan|\{\{' "$palette" && { printf 'The Colloid Matugen palette contains unresolved values.\n' >&2; exit 1; }
 for variable in accent-dark bg-dark surface-container-dark grey-050 grey-950 default-dark; do
-  grep -Eq "^\\\$$variable:" "$palette" || { printf 'Variável obrigatória ausente na paleta do Colloid: %s\n' "$variable" >&2; exit 1; }
+  grep -Eq "^\\\$$variable:" "$palette" || { printf 'Required variable is missing from the Colloid palette: %s\n' "$variable" >&2; exit 1; }
 done
 
 patch_hash=$(sha256sum "$source_patch" | awk '{print $1}')
 if [[ ! -x $source_root/install.sh ]] || [[ $(git -C "$source_root" rev-parse HEAD 2>/dev/null || true) != "$revision" ]] || [[ $(cat "$source_root/.hyprism-matugen-patch" 2>/dev/null || true) != "$patch_hash" ]]; then
-  stage='download da revisão Colloid'
+  stage='Colloid revision download'
   source_candidate=$(mktemp -d "$cache_dir/colloid/.source.XXXXXX")
   git -C "$source_candidate" init --quiet
   git -C "$source_candidate" remote add origin "$repository"
   git -C "$source_candidate" fetch --quiet --depth 1 origin "$revision"
-  [[ $(git -C "$source_candidate" rev-parse FETCH_HEAD) == "$revision" ]] || { printf 'A revisão baixada do Colloid não corresponde à revisão fixada.\n' >&2; exit 1; }
+  [[ $(git -C "$source_candidate" rev-parse FETCH_HEAD) == "$revision" ]] || { printf 'The downloaded Colloid revision does not match the pinned revision.\n' >&2; exit 1; }
   git -C "$source_candidate" checkout --quiet --detach FETCH_HEAD
-  [[ -x $source_candidate/install.sh ]] || { printf 'A fonte do Colloid está incompleta.\n' >&2; exit 1; }
-  stage='aplicação do patch Matugen'
+  [[ -x $source_candidate/install.sh ]] || { printf 'The Colloid source is incomplete.\n' >&2; exit 1; }
+  stage='Matugen patch application'
   git -C "$source_candidate" apply --check "$source_patch"
   git -C "$source_candidate" apply "$source_patch"
   printf '%s\n' "$patch_hash" >"$source_candidate/.hyprism-matugen-patch"
-  grep -q "matugen)" "$source_candidate/install.sh" || { printf 'A fonte do Colloid não contém a integração Matugen esperada.\n' >&2; exit 1; }
+  grep -q "matugen)" "$source_candidate/install.sh" || { printf 'The Colloid source does not contain the expected Matugen integration.\n' >&2; exit 1; }
   if [[ -e $source_root ]]; then
     previous_source=$(mktemp -d "$cache_dir/colloid/.source-anterior.XXXXXX")
     rmdir "$previous_source"
@@ -111,18 +111,18 @@ if [[ -s $active_theme/.hyprism-palette.sha256 ]] \
   && [[ -s $active_theme/gtk-4.0/gtk.css ]] \
   && [[ -s $libadwaita_target/gtk.css ]]; then
   activate
-  printf 'GTK: cores inalteradas; compilação do Colloid dispensada.\n'
+  printf 'GTK: colors unchanged; Colloid compilation skipped.\n'
   exit 0
 fi
 
 install -m 0644 "$palette" "$source_root/src/sass/_color-palette-matugen.scss"
-stage='preparação da compilação GTK'
+stage='GTK compilation preparation'
 build_root=$(mktemp -d "$theme_root/.hyprism-colloid.XXXXXX")
 build_dest="$build_root/themes"
 build_home="$build_root/home"
 mkdir -p "$build_dest" "$build_home/.config"
 build_log="$build_root/build.log"
-stage='compilação GTK'
+stage='GTK compilation'
 if ! HOME="$build_home" XDG_DATA_HOME="$build_home/.local/share" "$source_root/install.sh" \
   --dest "$build_dest" \
   --name "$theme_name" \
@@ -130,25 +130,25 @@ if ! HOME="$build_home" XDG_DATA_HOME="$build_home/.local/share" "$source_root/i
   --libadwaita fixed \
   --tweaks matugen rimless \
   >"$build_log" 2>&1; then
-  printf 'Falha ao compilar o tema GTK com Colloid; o tema anterior foi preservado.\n' >&2
-  printf 'Etapa: %s\nComando: %s/install.sh --dest %s --name %s --color %s --libadwaita fixed --tweaks matugen rimless\n' "$stage" "$source_root" "$build_dest" "$theme_name" "$mode" >&2
+  printf 'Failed to compile the GTK theme with Colloid; the previous theme was preserved.\n' >&2
+  printf 'Stage: %s\nCommand: %s/install.sh --dest %s --name %s --color %s --libadwaita fixed --tweaks matugen rimless\n' "$stage" "$source_root" "$build_dest" "$theme_name" "$mode" >&2
   tail -n 12 "$build_log" | sed 's/^/  /' >&2
   exit 1
 fi
 
 staged_theme="$build_dest/$installed_name"
 staged_libadwaita="$build_home/.config/gtk-4.0"
-stage='validação dos artefatos GTK'
-[[ -s $staged_theme/gtk-2.0/gtkrc ]] || { printf 'A compilação do Colloid não gerou GTK 2.\n' >&2; exit 1; }
-[[ -s $staged_theme/gtk-3.0/gtk.css ]] || { printf 'A compilação do Colloid não gerou GTK 3.\n' >&2; exit 1; }
-[[ -s $staged_theme/gtk-4.0/gtk.css ]] || { printf 'A compilação do Colloid não gerou GTK 4.\n' >&2; exit 1; }
-[[ -s $staged_libadwaita/gtk.css && -d $staged_libadwaita/assets ]] || { printf 'A compilação do Colloid não gerou o tema fixo do libadwaita.\n' >&2; exit 1; }
+stage='GTK artifact validation'
+[[ -s $staged_theme/gtk-2.0/gtkrc ]] || { printf 'The Colloid build did not generate GTK 2.\n' >&2; exit 1; }
+[[ -s $staged_theme/gtk-3.0/gtk.css ]] || { printf 'The Colloid build did not generate GTK 3.\n' >&2; exit 1; }
+[[ -s $staged_theme/gtk-4.0/gtk.css ]] || { printf 'The Colloid build did not generate GTK 4.\n' >&2; exit 1; }
+[[ -s $staged_libadwaita/gtk.css && -d $staged_libadwaita/assets ]] || { printf 'The Colloid build did not generate the fixed libadwaita theme.\n' >&2; exit 1; }
 printf '%s\n' "$palette_hash" >"$staged_theme/.hyprism-palette.sha256"
 printf '%s\n' "$patch_hash" >"$staged_theme/.hyprism-patch.sha256"
 printf '%s\n' "$revision" >"$staged_theme/.hyprism-revision"
 
 backup_root=$(mktemp -d "$theme_root/.hyprism-colloid-anterior.XXXXXX")
-stage='publicação do tema GTK'
+stage='GTK theme publication'
 publishing=1
 for suffix in '' -hdpi -xhdpi; do
   target="$theme_root/$installed_name$suffix"
@@ -164,4 +164,4 @@ publishing=0
 
 activate
 
-printf 'GTK: Colloid recompilado com Matugen e publicado como %s.\n' "$installed_name"
+printf 'GTK: Colloid recompiled with Matugen and published as %s.\n' "$installed_name"
