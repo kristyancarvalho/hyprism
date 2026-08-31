@@ -11,6 +11,10 @@ mkdir -p "$state_dir" "$wallpaper_dir"
 
 supported() { [[ $1 =~ \.(png|jpe?g|webp)$ ]]; }
 current() { [[ -s $current_file ]] && cat "$current_file"; }
+lock_operations() {
+  exec 9>"$state_dir/wallpaper.lock"
+  flock 9
+}
 list() {
   find -P "$wallpaper_dir" -maxdepth 1 -type f -print0 2>/dev/null | while IFS= read -r -d '' file; do
     supported "$file" && printf '%s\n' "$file"
@@ -79,11 +83,11 @@ random() {
   apply "$chosen"
 }
 case "${1:-}" in
-  set) apply "${2:?uso: wallpaper set IMAGEM}" ;;
-  random) random ;;
+  set) lock_operations; apply "${2:?uso: wallpaper set IMAGEM}" ;;
+  random) lock_operations; random ;;
   current) current ;;
   list) list ;;
-  restore) [[ -s $current_file ]] && apply "$(current)" || random ;;
-  theme) [[ -s $current_file ]] && propagate "$(current)" || { printf 'Nenhum papel de parede ativo.\n' >&2; exit 1; } ;;
+  restore) lock_operations; [[ -s $current_file ]] && apply "$(current)" || random ;;
+  theme) lock_operations; [[ -s $current_file ]] && propagate "$(current)" || { printf 'Nenhum papel de parede ativo.\n' >&2; exit 1; } ;;
   *) printf 'Uso: %s {set IMAGEM|random|current|list|restore|theme}\n' "$0" >&2; exit 2 ;;
 esac
