@@ -175,16 +175,16 @@ Item {
         stdout: SplitParser {
             splitMarker: "\n"
             onRead: data => {
-                if (data === "INICIADA") {
+                if (data === "STARTED") {
                     service.selecting = false
                     service.pending = false
                     service.recording = true
                     service.startedAt = Date.now()
                     service.elapsed = 0
-                } else if (data === "CANCELADA") {
+                } else if (data === "CANCELED") {
                     service.selecting = false
                     service.pending = false
-                } else if (data.indexOf("SALVA:") === 0) {
+                } else if (data.indexOf("SAVED:") === 0) {
                     service.saved = true
                     service.outputPath = Design.safeText(data.slice(6), service.outputPath)
                 }

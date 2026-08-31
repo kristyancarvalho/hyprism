@@ -31,13 +31,13 @@ FocusScope {
     function loadData() {
         try {
             const parsed = JSON.parse(emojiFile.text())
-            if (!parsed || !Array.isArray(parsed.emoji) || parsed.emoji.length < 3000) throw new Error("índice incompleto")
+            if (!parsed || !Array.isArray(parsed.emoji) || parsed.emoji.length < 3000) throw new Error("incomplete index")
             emojis = parsed.emoji
             dataError = ""
         } catch (error) {
             emojis = []
             dataError = String(error)
-            console.warn("índice de emoji inválido:", dataError)
+            console.warn("invalid emoji index:", dataError)
         }
     }
 

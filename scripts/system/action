@@ -36,8 +36,8 @@ screenshot_monitor() {
   grim -o "$monitor" "$file" && wl-copy <"$file" && notify screenshot "$file"
 }
 clipboard_watch() {
-  command -v wl-paste >/dev/null || { printf 'wl-paste não está instalado.\n' >&2; return 1; }
-  command -v cliphist >/dev/null || { printf 'cliphist não está instalado.\n' >&2; return 1; }
+  command -v wl-paste >/dev/null || { printf 'wl-paste is not installed.\n' >&2; return 1; }
+  command -v cliphist >/dev/null || { printf 'cliphist is not installed.\n' >&2; return 1; }
   local runtime_dir lock_file event_file action_path text_pid image_pid
   runtime_dir="${HYPRISM_CLIPBOARD_RUNTIME_DIR:-${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}/hyprism-runtime-$UID}/hyprism}"
   lock_file="$runtime_dir/clipboard-watch.lock"
@@ -47,14 +47,14 @@ clipboard_watch() {
   mkdir -p -m 0700 "$runtime_dir" "$(dirname "$event_file")"
   exec 8>"$lock_file"
   flock -n 8 || return 0
-  printf 'início\n' >"$event_file"
+  printf 'start\n' >"$event_file"
   wl-paste --type text --watch "$action_path" clipboard-store &
   text_pid=$!
   wl-paste --type image --watch "$action_path" clipboard-store &
   image_pid=$!
   trap 'kill "$text_pid" "$image_pid" 2>/dev/null || true; wait "$text_pid" "$image_pid" 2>/dev/null || true' EXIT INT TERM
   wait -n "$text_pid" "$image_pid"
-  printf 'Um watcher da área de transferência foi encerrado inesperadamente.\n' >&2
+  printf 'A clipboard watcher exited unexpectedly.\n' >&2
   return 1
 }
 clipboard_publish_event() {
@@ -72,13 +72,13 @@ clipboard_store() {
 }
 clipboard_restore() {
   local identifier=${1:-} mime=${2:-}
-  [[ $identifier =~ ^[0-9]+$ ]] || { printf 'Identificador inválido da área de transferência.\n' >&2; return 2; }
-  [[ $mime =~ ^(text|image)/[A-Za-z0-9.+_-]+(;charset=[A-Za-z0-9._-]+)?$ ]] || { printf 'Tipo MIME inválido da área de transferência.\n' >&2; return 2; }
+  [[ $identifier =~ ^[0-9]+$ ]] || { printf 'Invalid clipboard identifier.\n' >&2; return 2; }
+  [[ $mime =~ ^(text|image)/[A-Za-z0-9.+_-]+(;charset=[A-Za-z0-9._-]+)?$ ]] || { printf 'Invalid clipboard MIME type.\n' >&2; return 2; }
   cliphist decode "$identifier" | wl-copy --type "$mime"
 }
 clipboard_delete() {
   local identifier=${1:-}
-  [[ $identifier =~ ^[0-9]+$ ]] || { printf 'Identificador inválido da área de transferência.\n' >&2; return 2; }
+  [[ $identifier =~ ^[0-9]+$ ]] || { printf 'Invalid clipboard identifier.\n' >&2; return 2; }
   printf '%s\n' "$identifier" | cliphist delete
   clipboard_publish_event
 }
@@ -117,5 +117,5 @@ case "${1:-}" in
     powerprofilesctl set "$profile" >/dev/null 2>&1
     notify power "$profile"
     ;;
-  *) printf 'Uso: %s {volume-up|volume-down|volume-mute|mic-mute|brightness-up|brightness-down|brightness-set|screenshot-area|screenshot-monitor|color-picker|clipboard-watch|clipboard-store|clipboard-restore|clipboard-delete|clipboard-clear|night-mode|power-save}\n' "$0" >&2; exit 2 ;;
+  *) printf 'Usage: %s {volume-up|volume-down|volume-mute|mic-mute|brightness-up|brightness-down|brightness-set|screenshot-area|screenshot-monitor|color-picker|clipboard-watch|clipboard-store|clipboard-restore|clipboard-delete|clipboard-clear|night-mode|power-save}\n' "$0" >&2; exit 2 ;;
 esac

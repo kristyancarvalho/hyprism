@@ -25,9 +25,9 @@ FocusScope {
     readonly property int userCount: userModel ? userModel.rowCount() : 0
     readonly property int sessionCount: sessionModel ? sessionModel.rowCount() : 0
     readonly property string username: userValue(257, "")
-    readonly property string realName: userValue(258, username || "Usuário")
+    readonly property string realName: userValue(258, username || "User")
     readonly property string userIcon: userValue(260, "")
-    readonly property string sessionName: sessionValue(sessionIndex, 260, "Sessão")
+    readonly property string sessionName: sessionValue(sessionIndex, 260, "Session")
     readonly property color backgroundColor: config.stringValue("background-color") || "#091015"
     readonly property color surfaceColor: config.stringValue("surface-color") || "#131b21"
     readonly property color surfaceContainerColor: config.stringValue("surface-container-color") || "#202b33"
@@ -111,7 +111,7 @@ FocusScope {
         keyboardVisible = false
         powerVisible = false
         sessionsVisible = false
-        feedback = "Entrando"
+        feedback = "Logging in"
         Qt.inputMethod.hide()
         sddm.login(username, password.text, sessionIndex)
     }
@@ -370,7 +370,7 @@ FocusScope {
                     anchors.verticalCenter: parent.verticalCenter
                     height: parent.height
                     enabled: !root.authenticating
-                    placeholderText: "Senha"
+                    placeholderText: "Password"
                     echoMode: root.passwordVisible ? TextInput.Normal : TextInput.Password
                     passwordCharacter: "●"
                     color: root.foregroundColor
@@ -402,7 +402,7 @@ FocusScope {
                     background: Rectangle { radius: 11; color: parent.hovered || parent.activeFocus ? root.surfaceHoverColor : "transparent" }
                     contentItem: Text { text: parent.text; color: root.mutedColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font: parent.font }
                     Controls.ToolTip.visible: hovered
-                    Controls.ToolTip.text: root.passwordVisible ? "Ocultar senha" : "Mostrar senha"
+                    Controls.ToolTip.text: root.passwordVisible ? "Hide password" : "Show password"
                     Controls.ToolTip.delay: 450
                 }
             }
@@ -427,7 +427,7 @@ FocusScope {
                 contentItem: Text { text: parent.text; color: root.onPrimaryColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font: parent.font }
                 Behavior on scale { NumberAnimation { duration: 80; easing.type: Easing.OutCubic } }
                 Controls.ToolTip.visible: hovered
-                Controls.ToolTip.text: root.authenticating ? "Autenticando" : "Entrar"
+                Controls.ToolTip.text: root.authenticating ? "Authenticating" : "Log in"
                 Controls.ToolTip.delay: 450
             }
         }
@@ -436,7 +436,7 @@ FocusScope {
             width: parent.width
             height: 15
             text: root.feedback
-            color: root.feedback === "Falha ao entrar" ? root.errorColor : root.mutedColor
+            color: root.feedback === "Login failed" ? root.errorColor : root.mutedColor
             horizontalAlignment: Text.AlignHCenter
             opacity: text.length ? 1 : 0
             elide: Text.ElideRight
@@ -516,7 +516,7 @@ FocusScope {
 
             delegate: Controls.Button {
                 id: sessionItem
-                readonly property string name: root.sessionValue(index, 260, "Sessão")
+                readonly property string name: root.sessionValue(index, 260, "Session")
                 readonly property var profile: root.sessionProfile(index)
                 readonly property bool selected: root.sessionIndex === index
                 width: sessionList.width
@@ -589,7 +589,7 @@ FocusScope {
             }
             contentItem: Text { text: parent.text; color: root.keyboardVisible ? root.primaryColor : root.foregroundColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font: parent.font }
             Controls.ToolTip.visible: hovered
-            Controls.ToolTip.text: "Teclado virtual"
+            Controls.ToolTip.text: "Virtual keyboard"
             Controls.ToolTip.delay: 450
         }
 
@@ -612,7 +612,7 @@ FocusScope {
             }
             contentItem: Text { text: parent.text; color: root.foregroundColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font: parent.font }
             Controls.ToolTip.visible: hovered
-            Controls.ToolTip.text: "Energia"
+            Controls.ToolTip.text: "Power"
             Controls.ToolTip.delay: 450
         }
 
@@ -649,7 +649,7 @@ FocusScope {
                 background: Rectangle { radius: 11; color: parent.hovered || parent.activeFocus ? root.surfaceHoverColor : "transparent" }
                 contentItem: Text { text: parent.text; color: root.foregroundColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font: parent.font }
                 Controls.ToolTip.visible: hovered
-                Controls.ToolTip.text: "Suspender"
+                Controls.ToolTip.text: "Suspend"
                 Controls.ToolTip.delay: 450
             }
 
@@ -664,7 +664,7 @@ FocusScope {
                 background: Rectangle { radius: 11; color: parent.hovered || parent.activeFocus ? root.surfaceHoverColor : "transparent" }
                 contentItem: Text { text: parent.text; color: root.foregroundColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font: parent.font }
                 Controls.ToolTip.visible: hovered
-                Controls.ToolTip.text: "Reiniciar"
+                Controls.ToolTip.text: "Restart"
                 Controls.ToolTip.delay: 450
             }
 
@@ -679,7 +679,7 @@ FocusScope {
                 background: Rectangle { radius: 11; color: parent.hovered || parent.activeFocus ? Qt.rgba(root.errorColor.r, root.errorColor.g, root.errorColor.b, .76) : "transparent" }
                 contentItem: Text { text: parent.text; color: root.foregroundColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font: parent.font }
                 Controls.ToolTip.visible: hovered
-                Controls.ToolTip.text: "Desligar"
+                Controls.ToolTip.text: "Shut down"
                 Controls.ToolTip.delay: 450
             }
         }
@@ -717,11 +717,11 @@ FocusScope {
     Connections {
         target: sddm
         function onLoginSucceeded() {
-            root.feedback = "Sessão iniciada"
+            root.feedback = "Session started"
         }
         function onLoginFailed() {
             root.authenticating = false
-            root.feedback = "Falha ao entrar"
+            root.feedback = "Login failed"
             root.password.text = ""
             root.revealed = true
             errorShake.restart()

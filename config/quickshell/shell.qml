@@ -246,7 +246,7 @@ ShellRoot {
         const source = Design.safeText(raw, "")
         if (!source) return
         const parsed = JSON.parse(source)
-        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("a raiz deve ser um objeto JSON")
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("the root must be a JSON object")
         I18n.locale = I18n.supportedLocales.indexOf(parsed.language) >= 0 ? parsed.language : "en"
         const incomingShell = parsed.shell || {}
         const incomingAppearance = parsed.appearance || {}
@@ -276,7 +276,7 @@ ShellRoot {
         const source = Design.safeText(raw, "")
         if (!source) return
         const parsed = JSON.parse(source)
-        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("a raiz deve ser um objeto JSON")
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("the root must be a JSON object")
         shellTheme.applyPalette(parsed)
         themeError = ""
     }
@@ -284,7 +284,7 @@ ShellRoot {
         try { applyConfig(configFile.text()) }
         catch (error) {
             const message = String(error)
-            if (message !== configError) console.warn("hyprism config inválida; mantendo o último estado válido:", message)
+            if (message !== configError) console.warn("invalid Hyprism configuration; retaining the last valid state:", message)
             configError = message
         }
     }
@@ -292,7 +292,7 @@ ShellRoot {
         try { applyTheme(themeFile.text()) }
         catch (error) {
             const message = String(error)
-            if (message !== themeError) console.warn("hyprism theme inválido; mantendo o último estado válido:", message)
+            if (message !== themeError) console.warn("invalid Hyprism theme; retaining the last valid state:", message)
             themeError = message
         }
     }

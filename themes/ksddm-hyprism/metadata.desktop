@@ -1,7 +1,7 @@
 [SddmGreeterTheme]
 Name=Hyprism KSDDM
 Type=sddm-theme
-Description=Tema KSDDM integrado ao Hyprism
+Description=KSDDM theme integrated with Hyprism
 License=GPL-3.0-or-later
 Version=1.1.0
 Theme-Id=hyprism-ksddm

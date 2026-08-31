@@ -20,22 +20,22 @@ forward_signal() {
 
 trap forward_signal INT TERM HUP
 
-command -v wf-recorder >/dev/null || { printf 'wf-recorder não está instalado.\n' >&2; exit 127; }
-command -v flock >/dev/null || { printf 'flock não está disponível.\n' >&2; exit 127; }
+command -v wf-recorder >/dev/null || { printf 'wf-recorder is not installed.\n' >&2; exit 127; }
+command -v flock >/dev/null || { printf 'flock is not available.\n' >&2; exit 127; }
 mkdir -p -m 0700 "$runtime_dir"
-mkdir -p "$recordings_dir" || { printf 'Não foi possível criar a pasta de gravações.\n' >&2; exit 1; }
-[[ -w $recordings_dir ]] || { printf 'A pasta de gravações não permite escrita.\n' >&2; exit 1; }
+mkdir -p "$recordings_dir" || { printf 'Could not create the recordings directory.\n' >&2; exit 1; }
+[[ -w $recordings_dir ]] || { printf 'The recordings directory is not writable.\n' >&2; exit 1; }
 [[ $(dirname -- "$output") == "$recordings_dir" && $(basename -- "$output") =~ ^[0-9]{8}_[0-9]{6}_[0-9]{3}_(tela|regiao)\.mp4$ ]] \
-  || { printf 'O caminho de saída da gravação é inválido.\n' >&2; exit 2; }
+  || { printf 'The recording output path is invalid.\n' >&2; exit 2; }
 
 exec 9>"$lock_file"
-flock -n 9 || { printf 'Já existe uma gravação do Hyprism em andamento.\n' >&2; exit 24; }
+flock -n 9 || { printf 'A Hyprism recording is already in progress.\n' >&2; exit 24; }
 
 arguments=(-f "$output" -c libx264)
 case "$mode" in
   regiao)
     if [[ -z $target ]]; then
-      command -v slurp >/dev/null || { printf 'slurp não está instalado.\n' >&2; exit 127; }
+      command -v slurp >/dev/null || { printf 'slurp is not installed.\n' >&2; exit 127; }
       selector_output=$(mktemp "$runtime_dir/.slurp-output.XXXXXX")
       selector_error=$(mktemp "$runtime_dir/.slurp-error.XXXXXX")
       slurp -f '%x,%y %wx%h' >"$selector_output" 2>"$selector_error" &
@@ -47,7 +47,7 @@ case "$mode" in
       selector_pid=
       if ((forwarded || selector_status == 1 || selector_status == 130 || selector_status == 143)); then
         rm -f "$selector_output" "$selector_error"
-        printf 'CANCELADA\n'
+        printf 'CANCELED\n'
         exit 0
       fi
       if ((selector_status != 0)); then
@@ -59,18 +59,18 @@ case "$mode" in
       rm -f "$selector_output" "$selector_error"
     fi
     [[ $target =~ ^-?[0-9]+,-?[0-9]+[[:space:]][0-9]+x[0-9]+$ ]] \
-      || { printf 'A geometria selecionada é inválida.\n' >&2; exit 2; }
+      || { printf 'The selected geometry is invalid.\n' >&2; exit 2; }
     arguments+=(-g "$target")
     ;;
   tela)
-    command -v hyprctl >/dev/null || { printf 'hyprctl não está disponível.\n' >&2; exit 127; }
-    command -v jq >/dev/null || { printf 'jq não está disponível.\n' >&2; exit 127; }
+    command -v hyprctl >/dev/null || { printf 'hyprctl is not available.\n' >&2; exit 127; }
+    command -v jq >/dev/null || { printf 'jq is not available.\n' >&2; exit 127; }
     hyprctl -j monitors | jq -e --arg monitor "$target" '.[] | select(.name == $monitor)' >/dev/null 2>&1 \
-      || { printf 'O monitor selecionado não é válido.\n' >&2; exit 2; }
+      || { printf 'The selected monitor is invalid.\n' >&2; exit 2; }
     arguments+=(-o "$target")
     ;;
   *)
-    printf 'O modo de gravação é inválido.\n' >&2
+    printf 'The recording mode is invalid.\n' >&2
     exit 2
     ;;
 esac
@@ -78,7 +78,7 @@ esac
 recorder_error=$(mktemp "$runtime_dir/.wf-recorder.XXXXXX")
 wf-recorder "${arguments[@]}" 2>"$recorder_error" &
 recorder_pid=$!
-printf 'INICIADA\n'
+printf 'STARTED\n'
 set +e
 while true; do
   wait "$recorder_pid"
@@ -88,13 +88,13 @@ done
 set -e
 if ((status == 0)) && [[ -s $output ]]; then
   rm -f "$recorder_error"
-  printf 'SALVA:%s\n' "$output"
+  printf 'SAVED:%s\n' "$output"
   exit 0
 fi
 ((status == 0)) && status=1
 mkdir -p -m 0700 "$log_dir"
 chmod 0600 "$recorder_error"
 mv -f "$recorder_error" "$log_dir/recording-error.log"
-((forwarded)) && printf 'O gravador não confirmou a finalização do arquivo.\n' >&2
-printf 'wf-recorder falhou; consulte %s/recording-error.log.\n' "$log_dir" >&2
+((forwarded)) && printf 'The recorder did not confirm that the file was finalized.\n' >&2
+printf 'wf-recorder failed; see %s/recording-error.log.\n' "$log_dir" >&2
 exit "$status"

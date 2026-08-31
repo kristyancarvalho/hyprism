@@ -68,12 +68,12 @@ def write(path, value, mode=None):
 def publish(path, value, validator=None):
     try:
         if not value.strip():
-            raise ValueError("conteúdo vazio")
+            raise ValueError("empty content")
         if validator:
             validator(value)
         return write(path, value)
     except (OSError, ValueError, TypeError) as error:
-        print(f"Tema do Hyprism: {path.name} preservado após falha ({error})", file=sys.stderr)
+        print(f"Hyprism theme: {path.name} preserved after failure ({error})", file=sys.stderr)
         return False
 
 
@@ -86,7 +86,7 @@ def json_text(value):
 def rgb(value):
     source = value.lstrip("#")
     if not re.fullmatch(r"[0-9a-fA-F]{6}", source):
-        raise ValueError(f"cor inválida: {value}")
+        raise ValueError(f"invalid color: {value}")
     return tuple(int(source[index:index + 2], 16) for index in (0, 2, 4))
 
 
@@ -151,7 +151,7 @@ def wallpaper_source_color(image):
         palette = preview.quantize(colors=24, method=Image.Quantize.MEDIANCUT).convert("RGB")
         candidates = palette.getcolors(palette.width * palette.height) or []
     if not candidates:
-        raise ValueError("imagem sem cores utilizáveis")
+        raise ValueError("image has no usable colors")
     def score(candidate):
         count, color = candidate
         _, saturation, value = colorsys.rgb_to_hsv(*(channel / 255 for channel in color))
@@ -473,7 +473,7 @@ def publish_sddm(theme, image):
             return False
         SDDM_STATE.mkdir(parents=True, exist_ok=True)
     if not SDDM_STATE.is_dir() or not os.access(SDDM_STATE, os.W_OK):
-        print(f"Tema do Hyprism: estado do SDDM sem permissão de escrita em {SDDM_STATE}", file=sys.stderr)
+        print(f"Hyprism theme: SDDM state is not writable at {SDDM_STATE}", file=sys.stderr)
         return False
     wallpaper = SDDM_STATE / "current-wallpaper.jpg"
     temporary_wallpaper = None
@@ -493,13 +493,13 @@ def publish_sddm(theme, image):
             os.replace(temporary_wallpaper, wallpaper)
             temporary_wallpaper = None
         if not wallpaper.is_file() or not os.access(wallpaper, os.R_OK):
-            raise ValueError("wallpaper legível ausente")
+            raise ValueError("readable wallpaper is missing")
         write(SDDM_STATE / "theme.conf", render_sddm(theme), 0o644)
         return True
     except (OSError, ValueError) as error:
         if temporary_wallpaper:
             pathlib.Path(temporary_wallpaper).unlink(missing_ok=True)
-        print(f"Tema do Hyprism: estado anterior do SDDM preservado após falha ({error})", file=sys.stderr)
+        print(f"Hyprism theme: previous SDDM state preserved after failure ({error})", file=sys.stderr)
         return False
 
 
@@ -550,7 +550,7 @@ def render_colloid(matugen, theme):
         try:
             value = matugen["colors"][name][theme["mode"]]["color"]
         except (KeyError, TypeError) as error:
-            raise ValueError(f"cor Matugen ausente: {name}.{theme['mode']}") from error
+            raise ValueError(f"missing Matugen color: {name}.{theme['mode']}") from error
         rgb(value)
         return value
 
@@ -561,7 +561,7 @@ def render_colloid(matugen, theme):
         "$grey-050:", "$grey-950:", "$default-dark:",
     )
     if any(name not in rendered for name in required):
-        raise ValueError("variáveis obrigatórias do Colloid ausentes")
+        raise ValueError("required Colloid variables are missing")
     return rendered
 
 
@@ -608,7 +608,7 @@ def render_matugen_template(name, matugen, theme):
             value = variants.get(theme["mode"], variants.get(mode, variants.get("default")))["color"]
         except (KeyError, TypeError, AttributeError):
             if role not in fallback_roles:
-                raise ValueError(f"cor Matugen ausente: {role}.{mode}")
+                raise ValueError(f"missing Matugen color: {role}.{mode}")
             value = fallback_roles[role]
         rgb(value)
         return value
@@ -624,7 +624,7 @@ def render_hyprism_values(template, theme):
     def color(match):
         role = match.group(1)
         if role not in theme:
-            raise ValueError(f"cor do Hyprism ausente: {role}")
+            raise ValueError(f"missing Hyprism color: {role}")
         rgb(theme[role])
         return theme[role]
 
@@ -643,11 +643,11 @@ def validate_fastfetch(content):
     config = json.loads(content)
     logo = config.get("logo", {})
     if logo.get("type") != "kitty-icat" or logo.get("source") != "~/.config/fastfetch/images/archlinux.png":
-        raise ValueError("logo de imagem do Fastfetch ausente")
+        raise ValueError("Fastfetch image logo is missing")
     modules = {module if isinstance(module, str) else module.get("type") for module in config.get("modules", [])}
     required = {"title", "os", "kernel", "uptime", "packages", "shell", "wm", "terminal", "memory", "disk", "theme", "command", "custom"}
     if not required.issubset(modules):
-        raise ValueError("módulos obrigatórios do Fastfetch ausentes")
+        raise ValueError("required Fastfetch modules are missing")
 
 
 def validate_png(path):
@@ -655,18 +655,18 @@ def validate_png(path):
         image.verify()
     with Image.open(path) as image:
         if image.format != "PNG" or image.width < 256 or image.height < 256:
-            raise ValueError("imagem PNG do Fastfetch inválida")
+            raise ValueError("invalid Fastfetch PNG image")
         rgba = image.convert("RGBA")
         alpha_minimum, alpha_maximum = rgba.getchannel("A").getextrema()
         if alpha_minimum != 0 or alpha_maximum == 0 or rgba.getbbox() is None:
-            raise ValueError("transparência do logo do Fastfetch inválida")
+            raise ValueError("invalid Fastfetch logo transparency")
 
 
 def render_fastfetch_logo(theme):
     content = FASTFETCH_LOGO_SOURCE.read_text(encoding="utf-8")
     source = "#1793d1"
     if content.lower().count(source) != 1:
-        raise ValueError("preenchimento monocromático do logo ausente")
+        raise ValueError("monochrome logo fill is missing")
     content = re.sub(re.escape(source), theme["accent"], content, flags=re.IGNORECASE)
     ElementTree.fromstring(content)
     return content, {"fill": theme["accent"]}
@@ -688,7 +688,7 @@ def publish_fastfetch_logo(theme):
                 return False
         executable = shutil.which("magick")
         if not executable:
-            raise ValueError("ImageMagick ausente")
+            raise ValueError("ImageMagick is missing")
         target.parent.mkdir(parents=True, exist_ok=True)
         descriptor, temporary = tempfile.mkstemp(prefix=".archlinux-", suffix=".png", dir=target.parent)
         os.close(descriptor)
@@ -701,7 +701,7 @@ def publish_fastfetch_logo(theme):
             timeout=30,
         )
         if result.returncode != 0:
-            raise ValueError((result.stderr or result.stdout).strip() or "falha no ImageMagick")
+            raise ValueError((result.stderr or result.stdout).strip() or "ImageMagick failed")
         validate_png(temporary)
         with open(temporary, "rb") as handle:
             os.fsync(handle.fileno())
@@ -711,12 +711,12 @@ def publish_fastfetch_logo(theme):
         try:
             write(stamp, signature)
         except OSError as error:
-            print(f"Tema do Hyprism: estado de cores do Fastfetch não foi salvo ({error})", file=sys.stderr)
+            print(f"Hyprism theme: Fastfetch color state was not saved ({error})", file=sys.stderr)
         return True
     except (OSError, ValueError, subprocess.SubprocessError, ElementTree.ParseError) as error:
         if temporary:
             pathlib.Path(temporary).unlink(missing_ok=True)
-        print(f"Tema do Hyprism: logo anterior do Fastfetch preservado após falha ({error})", file=sys.stderr)
+        print(f"Hyprism theme: previous Fastfetch logo preserved after failure ({error})", file=sys.stderr)
         return False
 
 
@@ -728,7 +728,7 @@ def validate_starship(content):
 def validate_nvchad(content):
     validate_colors(content)
     if "M.base_30" not in content or "M.base_16" not in content or not content.rstrip().endswith("return M"):
-        raise ValueError("tema NvChad incompleto")
+        raise ValueError("incomplete NvChad theme")
 
 
 def reload_tmux(path):
@@ -742,14 +742,14 @@ def reload_tmux(path):
         result = subprocess.run([executable, "source-file", str(path)], capture_output=True, text=True, timeout=5, check=False)
         if result.returncode != 0:
             detail = (result.stderr or result.stdout).strip()
-            raise ValueError(detail or "tmux rejeitou o tema")
+            raise ValueError(detail or "tmux rejected the theme")
     except (OSError, subprocess.SubprocessError, ValueError) as error:
-        print(f"Tema do Hyprism: tmux ativo preservado após falha ({error})", file=sys.stderr)
+        print(f"Hyprism theme: active tmux theme preserved after failure ({error})", file=sys.stderr)
 
 
 def update_colloid(palette_path, mode):
     if os.environ.get("HYPRISM_SKIP_COLLOID") == "1":
-        print("Tema do Hyprism: compilação do Colloid ignorada neste ambiente")
+        print("Hyprism theme: Colloid compilation skipped in this environment")
         return
     command = [str(ROOT / "scripts/system/install-colloid-theme"), str(palette_path), mode]
     result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=300)
@@ -757,7 +757,7 @@ def update_colloid(palette_path, mode):
         if result.stdout.strip():
             print(result.stdout.strip())
         return
-    print("Tema do Hyprism: falha ao atualizar o GTK; tema anterior preservado", file=sys.stderr)
+    print("Hyprism theme: failed to update GTK; previous theme preserved", file=sys.stderr)
     details = (result.stderr or result.stdout).strip().splitlines()[-12:]
     for line in details:
         print(f"  {line}", file=sys.stderr)
@@ -784,14 +784,14 @@ def papirus_output_name(name):
 
 def papirus_sources():
     if not PAPIRUS_BASE.is_dir():
-        raise ValueError(f"Papirus ausente em {PAPIRUS_BASE}")
+        raise ValueError(f"Papirus is missing at {PAPIRUS_BASE}")
     sources = []
     for path in PAPIRUS_BASE.rglob("*.svg"):
         output_name = papirus_output_name(path.name)
         if output_name and path.parent.name == "places":
             sources.append((path, path.parent.parent.name, output_name))
     if not sources:
-        raise ValueError("assets de pasta do Papirus não encontrados")
+        raise ValueError("Papirus folder assets were not found")
     return sources
 
 
@@ -811,7 +811,7 @@ def papirus_index(directories, mode):
     lines = [
         "[Icon Theme]",
         "Name=Hyprism-Papirus",
-        "Comment=Pastas Papirus com o acento dinâmico do Hyprism",
+        "Comment=Papirus folders with Hyprism's dynamic accent",
         "Inherits=" + ("Papirus-Dark,Papirus,hicolor" if mode == "dark" else "Papirus,hicolor"),
         "Example=folder",
         "Directories=" + ",".join(f"{directory}/places" for directory in directories),
@@ -847,7 +847,7 @@ def publish_papirus(theme):
             destination.write_text(rendered, encoding="utf-8")
             directories.add(directory)
         if exact_hits == 0:
-            raise ValueError("o acento exato não foi aplicado aos ícones")
+            raise ValueError("the exact accent was not applied to the icons")
         (temporary / "index.theme").write_text(papirus_index(sorted(directories), theme["mode"]), encoding="utf-8")
         cache_tool = shutil.which("gtk-update-icon-cache")
         if cache_tool:
@@ -861,7 +861,7 @@ def publish_papirus(theme):
         return True
     except (OSError, ValueError, subprocess.SubprocessError, ElementTree.ParseError) as error:
         shutil.rmtree(temporary, ignore_errors=True)
-        print(f"Tema do Hyprism: Papirus preservado após falha ({error})", file=sys.stderr)
+        print(f"Hyprism theme: Papirus preserved after failure ({error})", file=sys.stderr)
         return False
 
 
@@ -902,7 +902,7 @@ def render_kvantum(theme):
         svg = re.sub(re.escape(source), destination, svg, flags=re.IGNORECASE)
     replacements = {
         "author": "Hyprism",
-        "comment": "Tema dinâmico Hyprism baseado no motor KvArcDark",
+        "comment": "Dynamic Hyprism theme based on the KvArcDark engine",
         "layout_spacing": "6",
         "layout_margin": "8",
         "animate_states": "true",
@@ -946,14 +946,14 @@ def render_kvantum(theme):
 
 def validate_colors(content):
     if re.search(r"undefined|null|NaN|\{\{", content, re.IGNORECASE):
-        raise ValueError("valor não resolvido")
+        raise ValueError("unresolved value")
 
 
 def validate_hyprtoolkit(content):
     validate_colors(content)
     names = "background|base|alternate_base|text|bright_text|link_text|accent|accent_secondary"
     if len(re.findall(rf"^({names}) = rgba\([0-9a-f]{{8}}\)$", content, re.MULTILINE)) != 8:
-        raise ValueError("paleta do hyprtoolkit inválida")
+        raise ValueError("invalid hyprtoolkit palette")
 
 
 def appearance_settings():
@@ -1009,7 +1009,7 @@ def main():
     try:
         raw, matugen = matugen_palette(image, mode) if image else (fallback_palette(mode), {"fallback": True})
     except (OSError, KeyError, ValueError, json.JSONDecodeError, subprocess.SubprocessError) as error:
-        print(f"Tema do Hyprism: o Matugen falhou ({error}); mantendo os artefatos atuais", file=sys.stderr)
+        print(f"Hyprism theme: Matugen failed ({error}); retaining current artifacts", file=sys.stderr)
         raise SystemExit(1)
 
     theme = theme_from(warm_light_palette(raw, white_temperature if mode == "light" else 0), image, mode)
@@ -1031,35 +1031,35 @@ def main():
         starship = render_matugen_template("starship.toml", matugen, theme)
         publish(OUT / "starship.toml", starship, validate_starship)
     except (OSError, ValueError, TypeError, tomllib.TOMLDecodeError) as error:
-        print(f"Tema do Hyprism: Starship preservado após falha ({error})", file=sys.stderr)
+        print(f"Hyprism theme: Starship preserved after failure ({error})", file=sys.stderr)
     try:
         tmux = render_matugen_template("tmux.conf", matugen, theme)
         tmux_path = OUT / "tmux.conf"
         if publish(tmux_path, tmux, validate_colors):
             reload_tmux(tmux_path)
     except (OSError, ValueError, TypeError) as error:
-        print(f"Tema do Hyprism: tmux preservado após falha ({error})", file=sys.stderr)
+        print(f"Hyprism theme: tmux preserved after failure ({error})", file=sys.stderr)
     try:
         nvchad = render_matugen_template("nvchad.lua", matugen, theme)
         publish(OUT / "nvim/matugen.lua", nvchad, validate_nvchad)
         publish(NVIM_THEME, nvchad, validate_nvchad)
     except (OSError, ValueError, TypeError) as error:
-        print(f"Tema do Hyprism: NvChad preservado após falha ({error})", file=sys.stderr)
+        print(f"Hyprism theme: NvChad preserved after failure ({error})", file=sys.stderr)
     try:
         fastfetch = render_hyprism_template("fastfetch.jsonc", theme)
         publish(OUT / "fastfetch/config.jsonc", fastfetch, validate_fastfetch)
     except (OSError, ValueError, TypeError, json.JSONDecodeError) as error:
-        print(f"Tema do Hyprism: configuração anterior do Fastfetch preservada após falha ({error})", file=sys.stderr)
+        print(f"Hyprism theme: previous Fastfetch configuration preserved after failure ({error})", file=sys.stderr)
     try:
         zathura = render_hyprism_template("zathurarc", theme)
         publish(OUT / "zathura/zathurarc", zathura, validate_colors)
     except (OSError, ValueError, TypeError) as error:
-        print(f"Tema do Hyprism: Zathura preservado após falha ({error})", file=sys.stderr)
+        print(f"Hyprism theme: Zathura preserved after failure ({error})", file=sys.stderr)
     publish_fastfetch_logo(theme)
     try:
         publish_colloid_palette(render_colloid(matugen, theme), mode)
     except (OSError, ValueError, subprocess.SubprocessError) as error:
-        print(f"Tema do Hyprism: Colloid preservado após falha ({error})", file=sys.stderr)
+        print(f"Hyprism theme: Colloid preserved after failure ({error})", file=sys.stderr)
     publish_papirus(theme)
     try:
         kvantum_svg, kvantum_config, kvantum_colors = render_kvantum(theme)
@@ -1067,7 +1067,7 @@ def main():
         publish(OUT / "kvantum/Hyprism/Hyprism.kvconfig", kvantum_config, validate_colors)
         publish(OUT / "kvantum/Hyprism/Hyprism.colors", kvantum_colors, validate_colors)
     except (OSError, ValueError) as error:
-        print(f"Tema do Hyprism: Kvantum preservado após falha ({error})", file=sys.stderr)
+        print(f"Hyprism theme: Kvantum preserved after failure ({error})", file=sys.stderr)
 
 
 if __name__ == "__main__":

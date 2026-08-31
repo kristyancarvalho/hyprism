@@ -332,7 +332,7 @@ fi
 
 if ((dry_run == 0)); then
   [[ -d $runtime_root && ! -L $runtime_root ]] \
-    || { printf 'A cópia runtime está ausente ou ainda depende do clone.\n' >&2; exit 1; }
+    || { printf 'The runtime copy is missing or still depends on the clone.\n' >&2; exit 1; }
   verify_link "$runtime_root/config/hypr" "$target_home/.config/hypr"
   verify_link "$runtime_root/config/quickshell" "$quickshell_default"
   verify_link "$runtime_root/config/quickshell" "$quickshell_config"
@@ -346,47 +346,47 @@ if ((dry_run == 0)); then
   verify_link "$runtime_root/config/tmux/tmux.conf" "$target_home/.tmux.conf"
   verify_link "$runtime_root/config/systemd/user/hyprism-hyprsunset.service" "$target_home/.config/systemd/user/hyprism-hyprsunset.service"
   [[ -f $target_home/.config/hypr/hyprland.lua ]] \
-    || { printf 'O ponto de entrada Lua do Hyprland não foi instalado.\n' >&2; exit 1; }
+    || { printf 'The Hyprland Lua entry point was not installed.\n' >&2; exit 1; }
   [[ ! -e $target_home/.config/hypr/hyprland.conf ]] \
-    || { printf 'Um ponto de entrada obsoleto do Hyprland ainda está instalado.\n' >&2; exit 1; }
+    || { printf 'An obsolete Hyprland entry point is still installed.\n' >&2; exit 1; }
   [[ -f $quickshell_default/shell.qml && -f $quickshell_config/shell.qml ]] \
-    || { printf 'O ponto de entrada do Quickshell não foi instalado.\n' >&2; exit 1; }
+    || { printf 'The Quickshell entry point was not installed.\n' >&2; exit 1; }
   [[ -f $target_home/.config/foot/foot.ini && -s $theme_dir/foot.ini && -f $theme_dir/kitty.conf && -s $target_home/.config/hypr/hyprtoolkit.conf && -s $theme_dir/hyprtoolkit-colors.conf && -s $theme_dir/hyprlock-colors.conf && -s $theme_dir/hyprlock.conf ]] \
-    || { printf 'A configuração ou um tema de fallback está ausente.\n' >&2; exit 1; }
+    || { printf 'The configuration or a fallback theme is missing.\n' >&2; exit 1; }
   [[ -s $target_home/.config/starship.toml && -s $target_home/.config/tmux/theme.conf && -s $target_home/.config/zathura/zathurarc && -s $target_home/.config/nvim/init.lua && -s $target_home/.config/nvim/lua/themes/matugen.lua ]] \
-    || { printf 'O ambiente de desenvolvimento temático não foi instalado.\n' >&2; exit 1; }
+    || { printf 'The theme development environment was not installed.\n' >&2; exit 1; }
   [[ -x $tpm_dir/tpm && -d $target_home/.tmux/plugins/tmux-sensible && -d $target_home/.tmux/plugins/tmux-yank && -d $target_home/.tmux/plugins/tmux-resurrect && -d $target_home/.tmux/plugins/tmux-continuum ]] \
-    || { printf 'O TPM ou seus plugins declarados não foram instalados.\n' >&2; exit 1; }
+    || { printf 'TPM or its declared plugins were not installed.\n' >&2; exit 1; }
   [[ -s $target_home/.config/fastfetch/config.jsonc && -s $target_home/.config/fastfetch/images/archlinux.png && -s $target_home/.config/fastfetch/images/archlinux-source.svg ]] \
-    || { printf 'O preset temático do Fastfetch não foi instalado.\n' >&2; exit 1; }
+    || { printf 'The Fastfetch theme preset was not installed.\n' >&2; exit 1; }
   ! grep -ERqs '{{colors\.|{{hyprism\.' "$target_home/.config/starship.toml" "$target_home/.config/tmux/theme.conf" "$target_home/.config/zathura/zathurarc" "$target_home/.config/nvim/lua/themes/matugen.lua" "$target_home/.config/fastfetch/config.jsonc" \
-    || { printf 'Há valores Matugen não resolvidos no ambiente de desenvolvimento.\n' >&2; exit 1; }
+    || { printf 'The development environment contains unresolved Matugen values.\n' >&2; exit 1; }
   [[ -s $colloid_theme/gtk-3.0/gtk.css && -s $colloid_theme/gtk-4.0/gtk.css ]] \
-    || { printf 'O tema Colloid-Hyprism não foi instalado.\n' >&2; exit 1; }
+    || { printf 'The Colloid-Hyprism theme was not installed.\n' >&2; exit 1; }
   [[ -s $target_home/.config/gtk-4.0/gtk.css && -d $target_home/.config/gtk-4.0/assets && -s $target_home/.config/Kvantum/Hyprism/Hyprism.kvconfig && -s $target_home/.local/share/icons/Hyprism-Papirus/index.theme ]] \
-    || { printf 'Os temas dinâmicos libadwaita ou Kvantum não foram publicados.\n' >&2; exit 1; }
+    || { printf 'The dynamic libadwaita or Kvantum themes were not published.\n' >&2; exit 1; }
   [[ -s $font_regular && -s $font_medium && -s $font_semibold ]] \
-    || { printf 'A fonte Google Sans Flex não foi instalada.\n' >&2; exit 1; }
+    || { printf 'The Google Sans Flex font was not installed.\n' >&2; exit 1; }
   [[ -d /usr/share/icons/Papirus-Dark && -d /usr/share/icons/Papirus ]] \
-    || { printf 'O tema de ícones Papirus não foi instalado.\n' >&2; exit 1; }
+    || { printf 'The Papirus icon theme was not installed.\n' >&2; exit 1; }
   [[ -s $theme_dir/hyprlock-colors.conf && -e $state_dir/lock-wallpaper ]] \
-    || { printf 'Os recursos iniciais do Hyprlock não foram gerados.\n' >&2; exit 1; }
+    || { printf 'The initial Hyprlock resources were not generated.\n' >&2; exit 1; }
   [[ -s $sddm_theme_dir/Main.qml && -s $sddm_theme_dir/SessionIdentity.qml && -s $sddm_theme_dir/metadata.desktop && -L $sddm_theme_dir/theme.conf && -s $sddm_state_dir/theme.conf && -s $sddm_state_dir/current-wallpaper.jpg && -s $sddm_dropin ]] \
-    || { printf 'O tema dinâmico do SDDM não foi instalado corretamente.\n' >&2; exit 1; }
+    || { printf 'The dynamic SDDM theme was not installed correctly.\n' >&2; exit 1; }
   [[ -d /usr/lib/qt6/qml/QtQuick/VirtualKeyboard ]] \
-    || { printf 'O teclado virtual do SDDM não foi instalado.\n' >&2; exit 1; }
+    || { printf 'The SDDM virtual keyboard was not installed.\n' >&2; exit 1; }
   [[ -x /usr/lib/hyprpolkitagent/hyprpolkitagent ]] \
-    || { printf 'O agente de autenticação do PolicyKit não foi instalado.\n' >&2; exit 1; }
+    || { printf 'The PolicyKit authentication agent was not installed.\n' >&2; exit 1; }
   as_user systemctl --user is-enabled --quiet hyprpolkitagent.service \
-    || { printf 'O agente de autenticação do PolicyKit não foi habilitado.\n' >&2; exit 1; }
+    || { printf 'The PolicyKit authentication agent was not enabled.\n' >&2; exit 1; }
   grep -qx 'InputMethod=qtvirtualkeyboard' "$sddm_dropin" \
-    || { printf 'O método de entrada virtual do SDDM não foi configurado.\n' >&2; exit 1; }
+    || { printf 'The SDDM virtual input method was not configured.\n' >&2; exit 1; }
   [[ $(stat -c '%U:%G:%a' "$sddm_state_dir") == "$target_user:$target_group:755" ]] \
-    || { printf 'As permissões do estado dinâmico do SDDM são inválidas.\n' >&2; exit 1; }
+    || { printf 'The dynamic SDDM state permissions are invalid.\n' >&2; exit 1; }
   [[ $(as_user fc-match --format '%{family}\n' 'Google Sans Flex') == *"Google Sans Flex"* ]] \
-    || { printf 'A fonte Google Sans Flex não foi indexada pelo Fontconfig.\n' >&2; exit 1; }
+    || { printf 'The Google Sans Flex font was not indexed by Fontconfig.\n' >&2; exit 1; }
   [[ $(as_user fc-match --format '%{family}\n' 'Symbols Nerd Font Mono') == *"Symbols Nerd Font Mono"* ]] \
-    || { printf 'A fonte de ícones Nerd Font não foi indexada pelo Fontconfig.\n' >&2; exit 1; }
+    || { printf 'The Nerd Font icon font was not indexed by Fontconfig.\n' >&2; exit 1; }
 fi
 
 legacy_hypr_theme="$target_home/.cache/hyprism/theme/hyprland.conf"

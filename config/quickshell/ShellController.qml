@@ -388,9 +388,9 @@ Item {
 
     function taskFromPayload(payload) {
         const value = typeof payload === "string" ? JSON.parse(payload) : payload
-        if (!value || typeof value !== "object") throw new Error("tarefa inválida")
+        if (!value || typeof value !== "object") throw new Error("invalid task")
         const id = Design.safeText(value.id, "")
-        if (!id) throw new Error("identificador de tarefa ausente")
+        if (!id) throw new Error("task identifier is missing")
         return {
             id: id,
             title: Design.safeText(value.title, I18n.tr("widgets.task")),

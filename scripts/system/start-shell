@@ -19,11 +19,11 @@ log_dir="${XDG_CACHE_HOME:-$HOME/.cache}/hyprism"
 log_file="$log_dir/quickshell-startup.log"
 
 command -v qs >/dev/null 2>&1 || {
-  printf 'Quickshell não está instalado: comando qs não encontrado.\n' >&2
+  printf 'Quickshell is not installed: qs command not found.\n' >&2
   exit 127
 }
 [[ -r $entrypoint ]] || {
-  printf 'Configuração do Quickshell não encontrada: %s\n' "$entrypoint" >&2
+  printf 'Quickshell configuration not found: %s\n' "$entrypoint" >&2
   exit 1
 }
 
@@ -32,7 +32,7 @@ export HYPRISM_ROOT="$root_dir"
 if [[ $(locale charmap 2>/dev/null || true) != UTF-8 ]]; then
   utf8_locale="$(locale -a 2>/dev/null | awk 'BEGIN { IGNORECASE=1 } /^C\.UTF-?8$|^C\.utf8$|^en_US\.UTF-?8$/ { print; exit }')"
   [[ -n $utf8_locale ]] || {
-    printf 'Nenhum locale UTF-8 está disponível para iniciar o Quickshell.\n' >&2
+    printf 'No UTF-8 locale is available to start Quickshell.\n' >&2
     exit 1
   }
   export LC_ALL="$utf8_locale"
