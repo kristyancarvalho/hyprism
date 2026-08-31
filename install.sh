@@ -169,6 +169,7 @@ if ! find -P "$target_home/Imagens/Wallpapers" -maxdepth 1 -type f \( -iname '*.
 fi
 
 colloid_revision=6c2dc65865628bda9fdc8157a30cd5eda6fd41f9
+colloid_patch_hash=$(sha256sum "$runtime_root/config/matugen/colloid-matugen.patch" | cut -d' ' -f1)
 appearance_mode=dark
 if ((dry_run == 0)); then
   appearance_mode=$(as_user jq -r '.appearance.mode // "dark"' "$runtime_root/config/user.json")
@@ -241,7 +242,7 @@ if [[ ! -s $theme_dir/fastfetch/logo-palette.json ]]; then
 fi
 first_wallpaper=$(find -P "$target_home/Imagens/Wallpapers" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print -quit)
 if hyprlock_animations_current "$theme_dir/hyprlock.conf"; then hyprlock_animations_stale=0; else hyprlock_animations_stale=1; fi
-if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprtoolkit-colors.conf || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/hyprlock.conf || ! -s $theme_dir/gtk-3.0/settings.ini || ! -s $theme_dir/gtk-4.0/settings.ini || ! -s $theme_dir/gtk-2.0/gtkrc || $hyprlock_animations_stale -eq 1 || ! -s $theme_dir/colloid/_color-palette-matugen.scss || ! -s $theme_dir/colloid-gtk-4.0/gtk.css || ! -s $colloid_theme/gtk-3.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig || ! -s $theme_dir/icons/Hyprism-Papirus/index.theme || ! -s $theme_dir/starship.toml || ! -s $theme_dir/tmux.conf || ! -s $theme_dir/zathura/zathurarc || ! -s $theme_dir/nvim/matugen.lua || ! -s $target_home/.config/nvim/lua/themes/matugen.lua || ! -s $theme_dir/fastfetch/config.jsonc || ! -s $target_home/.config/fastfetch/images/archlinux.png || ! -e $state_dir/lock-wallpaper || ! -s $sddm_state_dir/current-wallpaper.jpg || ! -s $sddm_state_dir/theme.conf ]]; then
+if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprtoolkit-colors.conf || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/hyprlock.conf || ! -s $theme_dir/gtk-3.0/settings.ini || ! -s $theme_dir/gtk-4.0/settings.ini || ! -s $theme_dir/gtk-2.0/gtkrc || $hyprlock_animations_stale -eq 1 || ! -s $theme_dir/colloid/_color-palette-matugen.scss || ! -s $theme_dir/colloid-gtk-4.0/gtk.css || ! -s $colloid_theme/gtk-3.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" || $(cat "$colloid_theme/.hyprism-patch.sha256" 2>/dev/null || true) != "$colloid_patch_hash" || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig || ! -s $theme_dir/icons/Hyprism-Papirus/index.theme || ! -s $theme_dir/starship.toml || ! -s $theme_dir/tmux.conf || ! -s $theme_dir/zathura/zathurarc || ! -s $theme_dir/nvim/matugen.lua || ! -s $target_home/.config/nvim/lua/themes/matugen.lua || ! -s $theme_dir/fastfetch/config.jsonc || ! -s $target_home/.config/fastfetch/images/archlinux.png || ! -e $state_dir/lock-wallpaper || ! -s $sddm_state_dir/current-wallpaper.jpg || ! -s $sddm_state_dir/theme.conf ]]; then
   if [[ -n ${first_wallpaper:-} ]]; then
     as_user env HYPRISM_ROOT="$runtime_root" HYPRISM_SDDM_STATE_DIR="$sddm_state_dir" "$runtime_root/scripts/wallpaper" set "$first_wallpaper"
   else

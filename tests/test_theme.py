@@ -1,6 +1,8 @@
 import importlib.util
 from pathlib import Path
+import tempfile
 import unittest
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -78,6 +80,20 @@ class ThemeTests(unittest.TestCase):
         dark = THEME.theme_from(THEME.fallback_palette("dark"), "/tmp/wallpaper.png", "dark")
         self.assertIn(f'fill="{light["onPrimary"]}"', THEME.render_papirus_svg(source, light))
         self.assertIn(f'fill="{THEME.mix(dark["accent"], "#000000", .62)}"', THEME.render_papirus_svg(source, dark))
+
+    def test_unchanged_colloid_palette_still_checks_source_patch(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            previous_output = THEME.OUT
+            THEME.OUT = Path(temporary)
+            try:
+                with mock.patch.object(THEME, "update_colloid") as update_colloid:
+                    content = "$accent-dark: #123456;\n"
+                    THEME.publish_colloid_palette(content, "dark")
+                    THEME.publish_colloid_palette(content, "dark")
+                    self.assertEqual(update_colloid.call_count, 2)
+                    self.assertEqual(update_colloid.call_args.args[1], "dark")
+            finally:
+                THEME.OUT = previous_output
 
 
 if __name__ == "__main__":
