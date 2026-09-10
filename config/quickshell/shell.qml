@@ -136,7 +136,12 @@ ShellRoot {
         if (notificationServer.doNotDisturb) return
         const key = notificationKey(notification)
         const existing = popupIndex(key)
-        if (existing >= 0) popupNotifications.remove(existing)
+        if (existing >= 0) {
+            popupNotifications.setProperty(existing, "payload", notification)
+            popupNotifications.setProperty(existing, "deadline", Date.now() + popupDuration(notification))
+            notificationServer.newest = notification
+            return
+        }
         popupNotifications.append({ key: key, payload: notification, deadline: Date.now() + popupDuration(notification) })
         const limit = popupLimit()
         while (popupNotifications.count > limit) {

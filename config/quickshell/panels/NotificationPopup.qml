@@ -13,6 +13,8 @@ PanelWindow {
     property int overflowCount: 0
     property bool suppressed: false
     property bool removalPending: false
+    readonly property int fadeDuration: Math.max(1, Math.round(Design.safeNumber(controller.config.shell.animationFast, Design.animationFast)))
+    readonly property int motionDuration: Math.max(fadeDuration, Math.round(Design.safeNumber(controller.config.shell.animationNormal, Design.animationMorph)))
     signal dismissRequested(var notification)
     signal notificationClosed(var notification)
 
@@ -29,7 +31,7 @@ PanelWindow {
 
     Timer {
         id: removalTimer
-        interval: Design.animationMorph
+        interval: popup.motionDuration
         onTriggered: popup.removalPending = false
     }
 
@@ -43,33 +45,67 @@ PanelWindow {
         cacheBuffer: 1000
         model: popup.notifications
 
-        delegate: NotificationCard {
+        delegate: Item {
+            id: popupDelegate
             required property var payload
-            notification: payload
             width: stack.width
-            controller: popup.controller
-            theme: popup.theme
-            onDismissed: popup.dismissRequested(notification)
+            height: card.height
+            opacity: 0
+            property real visualOffset: 16
+            property bool positionAnimationReady: false
+
+            transform: Translate { x: popupDelegate.visualOffset }
+
+            Behavior on y {
+                enabled: popupDelegate.positionAnimationReady
+                NumberAnimation { duration: popup.motionDuration; easing.type: Design.easingMove }
+            }
+
+            Component.onCompleted: entrance.start()
+            ListView.onRemove: entrance.stop()
+
+            ParallelAnimation {
+                id: entrance
+                onFinished: popupDelegate.positionAnimationReady = true
+
+                NumberAnimation {
+                    target: popupDelegate
+                    property: "opacity"
+                    to: 1
+                    duration: popup.fadeDuration
+                    easing.type: Design.easingEnter
+                }
+
+                NumberAnimation {
+                    target: popupDelegate
+                    property: "visualOffset"
+                    to: 0
+                    duration: popup.motionDuration
+                    easing.type: Design.easingEnter
+                }
+            }
+
+            NotificationCard {
+                id: card
+                notification: popupDelegate.payload
+                width: parent.width
+                controller: popup.controller
+                theme: popup.theme
+                onDismissed: popup.dismissRequested(notification)
+            }
 
             Connections {
-                target: payload
-                function onClosed() { popup.notificationClosed(payload) }
+                target: popupDelegate.payload
+                function onClosed() { popup.notificationClosed(popupDelegate.payload) }
             }
         }
 
-        add: Transition {
-            ParallelAnimation {
-                NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Design.animationFast; easing.type: Design.easingEnter }
-                NumberAnimation { property: "x"; from: 16; to: 0; duration: Design.animationMorph; easing.type: Design.easingEnter }
-            }
-        }
         remove: Transition {
             ParallelAnimation {
-                NumberAnimation { property: "opacity"; to: 0; duration: Design.animationFast; easing.type: Design.easingExit }
-                NumberAnimation { property: "x"; to: 16; duration: Design.animationMorph; easing.type: Design.easingExit }
+                NumberAnimation { property: "opacity"; to: 0; duration: popup.fadeDuration; easing.type: Design.easingExit }
+                NumberAnimation { property: "visualOffset"; to: 16; duration: popup.motionDuration; easing.type: Design.easingExit }
             }
         }
-        displaced: Transition { NumberAnimation { property: "y"; duration: Design.animationMorph; easing.type: Design.easingMove } }
     }
 
     Rectangle {
