@@ -14,49 +14,10 @@ PanelWindow {
     property bool suppressed: false
     property bool removalPending: false
     signal dismissRequested(var notification)
-
-    function notificationKey(notification) {
-        return notification ? String(notification.id) : ""
-    }
-
-    function modelIndex(key) {
-        for (let index = 0; index < popupModel.count; index++) {
-            if (popupModel.get(index).key === key) return index
-        }
-        return -1
-    }
-
-    function syncModel() {
-        const current = notifications || []
-        const desiredKeys = current.map(notification => notificationKey(notification))
-        let removed = false
-        for (let index = popupModel.count - 1; index >= 0; index--) {
-            if (desiredKeys.indexOf(popupModel.get(index).key) < 0) {
-                removed = true
-                popupModel.remove(index)
-            }
-        }
-        for (let target = 0; target < current.length; target++) {
-            const notification = current[target]
-            const key = notificationKey(notification)
-            const existing = modelIndex(key)
-            if (existing < 0) popupModel.insert(target, { key: key, payload: notification })
-            else {
-                popupModel.setProperty(existing, "payload", notification)
-                if (existing !== target) popupModel.move(existing, target, 1)
-            }
-        }
-        if (removed) {
-            removalPending = true
-            removalTimer.restart()
-        } else if (current.length > 0) {
-            removalPending = false
-            removalTimer.stop()
-        }
-    }
+    signal notificationClosed(var notification)
 
     screen: shellScreen
-    visible: shellScreen !== null && !suppressed && (popupModel.count > 0 || removalPending)
+    visible: shellScreen !== null && !suppressed && (notifications.count > 0 || removalPending)
     anchors.top: true
     margins.top: Design.compactReservedHeight(controller.config.shell) + 6
     implicitWidth: 360
@@ -65,8 +26,6 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-
-    ListModel { id: popupModel; dynamicRoles: true }
 
     Timer {
         id: removalTimer
@@ -82,7 +41,7 @@ PanelWindow {
         clip: true
         interactive: false
         cacheBuffer: 1000
-        model: popupModel
+        model: popup.notifications
 
         delegate: NotificationCard {
             required property var payload
@@ -91,6 +50,11 @@ PanelWindow {
             controller: popup.controller
             theme: popup.theme
             onDismissed: popup.dismissRequested(notification)
+
+            Connections {
+                target: payload
+                function onClosed() { popup.notificationClosed(payload) }
+            }
         }
 
         add: Transition {
@@ -133,6 +97,16 @@ PanelWindow {
         }
     }
 
-    onNotificationsChanged: syncModel()
-    Component.onCompleted: syncModel()
+    Connections {
+        target: popup.notifications
+        function onCountChanged() {
+            if (popup.notifications.count === 0) {
+                popup.removalPending = true
+                removalTimer.restart()
+            } else {
+                popup.removalPending = false
+                removalTimer.stop()
+            }
+        }
+    }
 }
