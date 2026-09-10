@@ -26,6 +26,11 @@ Glass {
         return visibleActions
     }
 
+    TapHandler {
+        acceptedButtons: Qt.RightButton
+        onTapped: card.dismiss()
+    }
+
     Column {
         id: content
         anchors.left: parent.left

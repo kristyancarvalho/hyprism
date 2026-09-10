@@ -13,50 +13,13 @@ PanelWindow {
     property int overflowCount: 0
     property bool suppressed: false
     property bool removalPending: false
+    readonly property int fadeDuration: Math.max(1, Math.round(Design.safeNumber(controller.config.shell.animationFast, Design.animationFast)))
+    readonly property int motionDuration: Math.max(fadeDuration, Math.round(Design.safeNumber(controller.config.shell.animationNormal, Design.animationMorph)))
     signal dismissRequested(var notification)
-
-    function notificationKey(notification) {
-        return notification ? String(notification.id) : ""
-    }
-
-    function modelIndex(key) {
-        for (let index = 0; index < popupModel.count; index++) {
-            if (popupModel.get(index).key === key) return index
-        }
-        return -1
-    }
-
-    function syncModel() {
-        const current = notifications || []
-        const desiredKeys = current.map(notification => notificationKey(notification))
-        let removed = false
-        for (let index = popupModel.count - 1; index >= 0; index--) {
-            if (desiredKeys.indexOf(popupModel.get(index).key) < 0) {
-                removed = true
-                popupModel.remove(index)
-            }
-        }
-        for (let target = 0; target < current.length; target++) {
-            const notification = current[target]
-            const key = notificationKey(notification)
-            const existing = modelIndex(key)
-            if (existing < 0) popupModel.insert(target, { key: key, payload: notification })
-            else {
-                popupModel.setProperty(existing, "payload", notification)
-                if (existing !== target) popupModel.move(existing, target, 1)
-            }
-        }
-        if (removed) {
-            removalPending = true
-            removalTimer.restart()
-        } else if (current.length > 0) {
-            removalPending = false
-            removalTimer.stop()
-        }
-    }
+    signal notificationClosed(var notification)
 
     screen: shellScreen
-    visible: shellScreen !== null && !suppressed && (popupModel.count > 0 || removalPending)
+    visible: shellScreen !== null && !suppressed && (notifications.count > 0 || removalPending)
     anchors.top: true
     margins.top: Design.compactReservedHeight(controller.config.shell) + 6
     implicitWidth: 360
@@ -66,11 +29,9 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
-    ListModel { id: popupModel; dynamicRoles: true }
-
     Timer {
         id: removalTimer
-        interval: Design.animationMorph
+        interval: popup.motionDuration
         onTriggered: popup.removalPending = false
     }
 
@@ -82,30 +43,69 @@ PanelWindow {
         clip: true
         interactive: false
         cacheBuffer: 1000
-        model: popupModel
+        model: popup.notifications
 
-        delegate: NotificationCard {
+        delegate: Item {
+            id: popupDelegate
             required property var payload
-            notification: payload
             width: stack.width
-            controller: popup.controller
-            theme: popup.theme
-            onDismissed: popup.dismissRequested(notification)
-        }
+            height: card.height
+            opacity: 0
+            property real visualOffset: 16
+            property bool positionAnimationReady: false
 
-        add: Transition {
+            transform: Translate { x: popupDelegate.visualOffset }
+
+            Behavior on y {
+                enabled: popupDelegate.positionAnimationReady
+                NumberAnimation { duration: popup.motionDuration; easing.type: Design.easingMove }
+            }
+
+            Component.onCompleted: entrance.start()
+            ListView.onRemove: entrance.stop()
+
             ParallelAnimation {
-                NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Design.animationFast; easing.type: Design.easingEnter }
-                NumberAnimation { property: "x"; from: 16; to: 0; duration: Design.animationMorph; easing.type: Design.easingEnter }
+                id: entrance
+                onFinished: popupDelegate.positionAnimationReady = true
+
+                NumberAnimation {
+                    target: popupDelegate
+                    property: "opacity"
+                    to: 1
+                    duration: popup.fadeDuration
+                    easing.type: Design.easingEnter
+                }
+
+                NumberAnimation {
+                    target: popupDelegate
+                    property: "visualOffset"
+                    to: 0
+                    duration: popup.motionDuration
+                    easing.type: Design.easingEnter
+                }
+            }
+
+            NotificationCard {
+                id: card
+                notification: popupDelegate.payload
+                width: parent.width
+                controller: popup.controller
+                theme: popup.theme
+                onDismissed: popup.dismissRequested(notification)
+            }
+
+            Connections {
+                target: popupDelegate.payload
+                function onClosed() { popup.notificationClosed(popupDelegate.payload) }
             }
         }
+
         remove: Transition {
             ParallelAnimation {
-                NumberAnimation { property: "opacity"; to: 0; duration: Design.animationFast; easing.type: Design.easingExit }
-                NumberAnimation { property: "x"; to: 16; duration: Design.animationMorph; easing.type: Design.easingExit }
+                NumberAnimation { property: "opacity"; to: 0; duration: popup.fadeDuration; easing.type: Design.easingExit }
+                NumberAnimation { property: "visualOffset"; to: 16; duration: popup.motionDuration; easing.type: Design.easingExit }
             }
         }
-        displaced: Transition { NumberAnimation { property: "y"; duration: Design.animationMorph; easing.type: Design.easingMove } }
     }
 
     Rectangle {
@@ -133,6 +133,16 @@ PanelWindow {
         }
     }
 
-    onNotificationsChanged: syncModel()
-    Component.onCompleted: syncModel()
+    Connections {
+        target: popup.notifications
+        function onCountChanged() {
+            if (popup.notifications.count === 0) {
+                popup.removalPending = true
+                removalTimer.restart()
+            } else {
+                popup.removalPending = false
+                removalTimer.stop()
+            }
+        }
+    }
 }
