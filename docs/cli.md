@@ -89,7 +89,9 @@ hyprism-shell wallpaper current
 hyprism-shell wallpaper list
 
 hyprism-shell screenshot region
+hyprism-shell screenshot window
 hyprism-shell screenshot monitor
+hyprism-shell screenshot full
 hyprism-shell recording
 hyprism-shell color
 hyprism-shell night-mode on
@@ -99,4 +101,4 @@ hyprism-shell lock
 hyprism-shell reload
 ```
 
-The `open` and `recording` commands require a running Quickshell instance. Screenshot and color-picker commands are interactive. `lock` locks the current session, and `reload` reloads only Quickshell.
+The `open` and `recording` commands require a running Quickshell instance. Screenshot modes capture a selected region, active window, focused monitor, or complete desktop with Grim and open the result directly in a floating Satty window. Satty provides drawing, annotations, crop, undo, clipboard copy, direct save, and Save As. Direct save defaults to `paths.screenshots` from `~/.config/hyprism/user.json`; Save As selects a one-time destination, and the next editor starts from the configured default again. No unedited intermediate image is stored. Color-picker commands are interactive. `lock` locks the current session, and `reload` reloads only Quickshell.

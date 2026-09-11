@@ -54,6 +54,7 @@ ddcutil
 playerctl
 grim
 slurp
+satty
 hyprpicker
 imagemagick
 wf-recorder

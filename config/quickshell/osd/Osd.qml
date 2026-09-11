@@ -6,7 +6,7 @@ Glass {
     id: osd
     required property var controller
     property bool percentageValue: /^\d+%?$/.test(controller.osdValue)
-    property string iconName: controller.osdKind === I18n.tr("hub.volume") ? controller.volumeIconName() : controller.osdKind === I18n.tr("hub.brightness") ? "brightness" : controller.osdKind === I18n.tr("hub.microphone") ? controller.microphoneIconName() : controller.osdKind === I18n.tr("osd.screenshot") ? "screenshot" : controller.osdKind === I18n.tr("osd.color") ? "colorPicker" : controller.osdKind === I18n.tr("hub.nightMode") ? "night" : controller.osdKind === I18n.tr("hub.powerSaver") ? "powerSaver" : "settings"
+    property string iconName: controller.osdKind === I18n.tr("hub.volume") ? controller.volumeIconName() : controller.osdKind === I18n.tr("hub.brightness") ? "brightness" : controller.osdKind === I18n.tr("hub.microphone") ? controller.microphoneIconName() : controller.osdKind === I18n.tr("osd.color") ? "colorPicker" : controller.osdKind === I18n.tr("hub.nightMode") ? "night" : controller.osdKind === I18n.tr("hub.powerSaver") ? "powerSaver" : "settings"
     width: 320
     height: 58
     radius: Design.radiusMd

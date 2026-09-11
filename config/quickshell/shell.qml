@@ -425,7 +425,6 @@ ShellRoot {
         function volume(value: string): void { shellController.showOsd(I18n.tr("hub.volume"), value === "muted" ? I18n.tr("common.muted") : value) }
         function brightness(value: string): void { shellController.showOsd(I18n.tr("hub.brightness"), value) }
         function microphone(value: string): void { shellController.showOsd(I18n.tr("hub.microphone"), value === "muted" ? I18n.tr("common.muted") : value) }
-        function screenshot(value: string): void { shellController.showOsd(I18n.tr("osd.screenshot"), value.split("/").pop()) }
         function color(value: string): void { shellController.showOsd(I18n.tr("osd.color"), value) }
         function night(value: string): void { shellController.showOsd(I18n.tr("hub.nightMode"), value === "enabled" ? I18n.tr("common.enabled") : I18n.tr("common.disabled")) }
         function power(value: string): void { shellController.showOsd(I18n.tr("hub.powerSaver"), value === "power-saver" ? I18n.tr("profile.powerSaver") : I18n.tr("profile.balanced")) }

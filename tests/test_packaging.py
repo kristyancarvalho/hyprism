@@ -31,6 +31,7 @@ class PackagingTests(unittest.TestCase):
             self.assertTrue((stage / "usr/share/hyprism/config/quickshell/shell.qml").is_file())
             self.assertTrue((stage / "usr/share/hyprism/scripts/system/keyboard_backend.py").is_file())
             self.assertTrue((stage / "usr/share/applications/hyprism-keyboard-setup.desktop").is_file())
+            self.assertTrue((stage / "usr/share/applications/hyprism-screenshot.desktop").is_file())
             self.assertTrue((stage / "usr/share/licenses/hyprism-shell/LICENSE").is_file())
             self.assertFalse(any(stage.rglob("__pycache__")))
             self.assertFalse((stage / "home").exists())
@@ -68,6 +69,7 @@ class PackagingTests(unittest.TestCase):
             self.assertIn("remove", services_help.stdout)
             self.assertTrue((home / ".config/hypr").is_symlink())
             self.assertTrue((home / ".local/share/applications/hyprism-keyboard-setup.desktop").is_symlink())
+            self.assertTrue((home / ".local/share/applications/hyprism-screenshot.desktop").is_symlink())
 
     def test_aur_channels_share_runtime_dependencies(self):
         stable = (ROOT / "packaging/aur/hyprism-shell/PKGBUILD.in").read_text(encoding="utf-8")
@@ -75,6 +77,7 @@ class PackagingTests(unittest.TestCase):
         stable_dependencies = stable[stable.index("depends=("):stable.index("\n)\n", stable.index("depends=("))]
         vcs_dependencies = vcs[vcs.index("depends=("):vcs.index("\n)\n", vcs.index("depends=("))]
         self.assertEqual(stable_dependencies, vcs_dependencies)
+        self.assertIn("'satty'", stable_dependencies)
         self.assertIn("archive/refs/tags/v${pkgver}.tar.gz", stable)
         self.assertNotIn("'SKIP'", stable)
         self.assertIn("git+${url}.git#branch=main", vcs)
@@ -88,6 +91,11 @@ class PackagingTests(unittest.TestCase):
             self.assertIn("fetch-depth: 0", workflow)
             self.assertIn("fetch-tags: true", workflow)
             self.assertLess(workflow.index("actions/checkout"), workflow.index("chown -R aurbuilder"))
+
+    def test_focused_monitor_shortcut_does_not_capture_full_desktop(self):
+        keybindings = (ROOT / "config/hypr/modules/keybindings.lua").read_text(encoding="utf-8")
+        self.assertIn('bind(mod .. " + SHIFT + F", cli .. " screenshot monitor")', keybindings)
+        self.assertNotIn('cli .. " screenshot full")', keybindings)
 
 
 if __name__ == "__main__":

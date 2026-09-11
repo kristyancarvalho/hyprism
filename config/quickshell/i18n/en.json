@@ -223,7 +223,6 @@
   "osd": {
     "theme": "Theme",
     "updated": "Updated",
-    "screenshot": "Screenshot",
     "color": "Color"
   },
   "keyboard": {

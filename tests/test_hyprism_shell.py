@@ -63,6 +63,46 @@ else:
         command.chmod(0o755)
         self.environment["PATH"] = str(directory) + os.pathsep + self.environment["PATH"]
 
+    def use_fake_screenshot_commands(self):
+        directory = Path(self.temporary.name) / "screenshot-bin"
+        directory.mkdir(exist_ok=True)
+        command = directory / "command"
+        command.write_text("""#!/usr/bin/env python3
+import json
+import os
+from pathlib import Path
+import sys
+
+name = Path(sys.argv[0]).name
+log = Path(os.environ["HYPRISM_TEST_SCREENSHOT_LOG"])
+if name == "slurp":
+    if os.environ.get("HYPRISM_TEST_SLURP_CANCEL") == "1":
+        raise SystemExit(1)
+    print("1919,40 202x303")
+elif name == "hyprctl":
+    if sys.argv[-1] == "activewindow":
+        print(json.dumps({"mapped": True, "at": [1930, 66], "size": [1900, 1004]}))
+    else:
+        print(json.dumps([
+            {"name": "eDP-1", "focused": False, "scale": 1.25},
+            {"name": "HDMI-A-1", "focused": True, "scale": 1.0},
+        ]))
+elif name == "grim":
+    (log / "grim.json").write_text(json.dumps(sys.argv[1:]), encoding="utf-8")
+    sys.stdout.buffer.write(b"P6\\n1 1\\n255\\n\\0\\0\\0")
+elif name == "satty":
+    payload = sys.stdin.buffer.read()
+    (log / "satty.json").write_text(json.dumps({"arguments": sys.argv[1:], "bytes": len(payload), "state": os.environ.get("XDG_STATE_HOME")}), encoding="utf-8")
+""", encoding="utf-8")
+        command.chmod(0o755)
+        for name in ("grim", "satty", "slurp", "hyprctl"):
+            (directory / name).symlink_to(command)
+        log = Path(self.temporary.name) / "screenshot-log"
+        log.mkdir()
+        self.environment["HYPRISM_TEST_SCREENSHOT_LOG"] = str(log)
+        self.environment["PATH"] = str(directory) + os.pathsep + self.environment["PATH"]
+        return log
+
     def test_language_get_set_and_validation(self):
         self.assertEqual(self.run_cli("language").stdout, "en\n")
         changed = self.run_cli("language", "set", "pt-BR")
@@ -355,6 +395,55 @@ else:
         self.assertEqual(appearance["whiteTemperature"], 2)
         self.assertNotIn("warmWhite", appearance)
 
+    def test_screenshot_modes_stream_to_satty_with_configured_destination(self):
+        log = self.use_fake_screenshot_commands()
+        home = Path(self.temporary.name) / "home"
+        self.environment["HOME"] = str(home)
+        config = self.read_config()
+        config["paths"]["screenshots"] = "~/Captures"
+        self.config.write_text(json.dumps(config), encoding="utf-8")
+        expected_capture_arguments = {
+            "region": ["-t", "ppm", "-g", "1919,40 202x303", "-"],
+            "window": ["-t", "ppm", "-g", "1930,66 1900x1004", "-"],
+            "monitor": ["-t", "ppm", "-o", "HDMI-A-1", "-"],
+            "full": ["-t", "ppm", "-"],
+        }
+        outputs = []
+        for mode, expected in expected_capture_arguments.items():
+            with self.subTest(mode=mode):
+                result = self.run_cli("screenshot", mode)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(json.loads((log / "grim.json").read_text(encoding="utf-8")), expected)
+                satty = json.loads((log / "satty.json").read_text(encoding="utf-8"))
+                self.assertGreater(satty["bytes"], 0)
+                self.assertFalse(Path(satty["state"]).exists())
+                arguments = satty["arguments"]
+                self.assertEqual(arguments[:2], ["--filename", "-"])
+                output = Path(arguments[arguments.index("--output-filename") + 1])
+                self.assertEqual(output.parent, home / "Captures")
+                self.assertRegex(output.name, rf"^\d{{8}}_\d{{6}}_\d{{6}}_{mode}\.png$")
+                outputs.append(output)
+        self.assertEqual(len(outputs), len(set(outputs)))
+
+    def test_screenshot_region_cancellation_is_silent_and_does_not_launch_editor(self):
+        log = self.use_fake_screenshot_commands()
+        self.environment["HYPRISM_TEST_SLURP_CANCEL"] = "1"
+        result = self.run_cli("screenshot", "region")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((log / "grim.json").exists())
+        self.assertFalse((log / "satty.json").exists())
+
+    def test_screenshot_rejects_invalid_destination(self):
+        self.use_fake_screenshot_commands()
+        destination = Path(self.temporary.name) / "not-a-directory"
+        destination.write_text("occupied", encoding="utf-8")
+        config = self.read_config()
+        config["paths"]["screenshots"] = str(destination)
+        self.config.write_text(json.dumps(config), encoding="utf-8")
+        result = self.run_cli("screenshot", "full")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Unable to create screenshot directory", result.stderr)
+
     def test_public_actions_route_to_internal_implementations(self):
         fake_root = Path(self.temporary.name) / "runtime"
         (fake_root / "config").mkdir(parents=True)
@@ -376,8 +465,6 @@ else:
             ("wallpaper", "set", "/tmp/image.png"): "set /tmp/image.png\n",
             ("wallpaper", "current"): "current\n",
             ("wallpaper", "list"): "list\n",
-            ("screenshot", "region"): "screenshot-area\n",
-            ("screenshot", "monitor"): "screenshot-monitor\n",
             ("color",): "color-picker\n",
             ("lock",): "\n",
             ("reload",): "\n",

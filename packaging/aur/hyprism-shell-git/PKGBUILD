@@ -33,6 +33,7 @@ depends=(
   'qt6ct'
   'quickshell'
   'sassc'
+  'satty'
   'slurp'
   'thunar'
   'ttf-jetbrains-mono-nerd'

@@ -216,6 +216,84 @@ def internal(relative, *arguments, replace=False):
     return invoke([str(root_dir() / relative), *arguments], replace=replace)
 
 
+def hyprland_json(endpoint):
+    try:
+        result = subprocess.run(["hyprctl", "-j", endpoint], capture_output=True, text=True, check=False)
+    except FileNotFoundError:
+        raise SystemExit("Required command not found: hyprctl")
+    if result.returncode != 0:
+        detail = result.stderr.strip() or f"hyprctl exited with status {result.returncode}"
+        raise SystemExit(f"Unable to inspect Hyprland {endpoint}: {detail}")
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError as error:
+        raise SystemExit(f"Invalid Hyprland {endpoint} response: {error}")
+
+
+def screenshot_command(mode):
+    for command in ("grim", "satty"):
+        if not shutil.which(command):
+            raise SystemExit(f"Required command not found: {command}")
+
+    capture = ["grim", "-t", "ppm"]
+    if mode == "region":
+        if not shutil.which("slurp"):
+            raise SystemExit("Required command not found: slurp")
+        selection = subprocess.run(["slurp"], capture_output=True, text=True, check=False)
+        geometry = selection.stdout.strip()
+        if selection.returncode != 0 or not geometry:
+            return 0
+        capture.extend(["-g", geometry])
+    elif mode == "window":
+        window = hyprland_json("activewindow")
+        position = window.get("at", []) if isinstance(window, dict) else []
+        size = window.get("size", []) if isinstance(window, dict) else []
+        if not isinstance(window, dict) or not window.get("mapped") or len(position) != 2 or len(size) != 2 or min(size) <= 0:
+            raise SystemExit("No active Hyprland window is available to capture")
+        capture.extend(["-g", f"{position[0]},{position[1]} {size[0]}x{size[1]}"])
+    elif mode == "monitor":
+        monitors = hyprland_json("monitors")
+        monitor = next((item.get("name") for item in monitors if item.get("focused")), None)
+        if not monitor:
+            raise SystemExit("No focused Hyprland monitor is available to capture")
+        capture.extend(["-o", monitor])
+    capture.append("-")
+
+    configured_paths = configuration().get("paths", {})
+    configured_directory = configured_paths.get("screenshots", "~/Pictures/Screenshots") if isinstance(configured_paths, dict) else "~/Pictures/Screenshots"
+    screenshot_directory = Path(os.environ.get("HYPRISM_SCREENSHOT_DIR", configured_directory)).expanduser()
+    try:
+        screenshot_directory.mkdir(parents=True, exist_ok=True)
+    except OSError as error:
+        raise SystemExit(f"Unable to create screenshot directory {screenshot_directory}: {error}")
+    if not screenshot_directory.is_dir() or not os.access(screenshot_directory, os.W_OK):
+        raise SystemExit(f"Screenshot directory is not writable: {screenshot_directory}")
+
+    output = screenshot_directory / f"{datetime.now():%Y%m%d_%H%M%S_%f}_{mode}.png"
+    editor = [
+        "satty", "--filename", "-",
+        "--output-filename", str(output),
+    ]
+    if shutil.which("wl-copy"):
+        editor.extend(["--copy-command", "wl-copy"])
+    else:
+        print("Clipboard command not found: wl-copy; screenshot saving remains available", file=sys.stderr)
+
+    capture_process = subprocess.Popen(capture, stdout=subprocess.PIPE)
+    with tempfile.TemporaryDirectory(prefix="hyprism-satty-state-") as state_directory:
+        editor_environment = dict(os.environ, XDG_STATE_HOME=state_directory)
+        try:
+            editor_result = subprocess.run(editor, stdin=capture_process.stdout, env=editor_environment, check=False)
+        finally:
+            if capture_process.stdout:
+                capture_process.stdout.close()
+    capture_result = capture_process.wait()
+    if capture_result != 0:
+        print(f"Screenshot capture failed with status {capture_result}", file=sys.stderr)
+        return capture_result
+    return editor_result.returncode
+
+
 def ipc(*arguments):
     subprocess.run(
         [str(root_dir() / "scripts/system/shell-ipc"), *arguments],
@@ -637,6 +715,7 @@ def init_command(args):
         (cache / "tmux.conf", xdg_config / "tmux/theme.conf"),
         (cache / "zathura/zathurarc", xdg_config / "zathura/zathurarc"),
         (root / "config/applications/hyprism-keyboard-setup.desktop", home / ".local/share/applications/hyprism-keyboard-setup.desktop"),
+        (root / "config/applications/hyprism-screenshot.desktop", home / ".local/share/applications/hyprism-screenshot.desktop"),
     )
     created = 0
     preserved = 0
@@ -1105,8 +1184,8 @@ def parser():
     wallpaper_set = wallpaper_commands.add_parser("set")
     wallpaper_set.add_argument("image")
 
-    screenshot = commands.add_parser("screenshot", help="capture the screen")
-    screenshot.add_argument("mode", choices=("region", "monitor"))
+    screenshot = commands.add_parser("screenshot", help="capture and edit the screen")
+    screenshot.add_argument("mode", choices=("region", "window", "monitor", "full"))
     commands.add_parser("color", help="pick a screen color")
     commands.add_parser("lock", help="lock the session")
     commands.add_parser("reload", help="reload Quickshell")
@@ -1153,7 +1232,7 @@ def main():
             arguments.append(args.image)
         return internal("scripts/wallpaper", *arguments, replace=True)
     if args.command == "screenshot":
-        return internal("scripts/system/action", f"screenshot-{'area' if args.mode == 'region' else 'monitor'}", replace=True)
+        return screenshot_command(args.mode)
     if args.command == "color":
         return internal("scripts/system/action", "color-picker", replace=True)
     if args.command == "lock":

@@ -2,10 +2,6 @@
 set -Eeuo pipefail
 
 root_dir="${HYPRISM_ROOT:-$(cd -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")/../.." && pwd)}"
-config_file="${HYPRISM_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/hyprism/user.json}"
-configured_screenshot_dir=$(jq -r '.paths.screenshots // empty' "$config_file" 2>/dev/null || true)
-configured_screenshot_dir=${configured_screenshot_dir/#\~/$HOME}
-screenshot_dir="${HYPRISM_SCREENSHOT_DIR:-${configured_screenshot_dir:-$HOME/Pictures/Screenshots}}"
 notify() { command -v qs >/dev/null && "$root_dir/scripts/system/shell-ipc" osd "$1" "${2:-}" >/dev/null 2>&1 || true; }
 volume() {
   wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ "$1"
@@ -27,17 +23,6 @@ brightness() {
     "$root_dir/scripts/system/brightness-ddc" >/dev/null 2>&1 &
   fi
   notify brightness "${value:-0}"
-}
-screenshot_area() {
-  local dir="$screenshot_dir" file
-  mkdir -p "$dir"; file="$dir/$(date +%Y%m%d_%H%M%S)_area.png"
-  grim -g "$(slurp)" "$file" && wl-copy <"$file" && notify screenshot "$file"
-}
-screenshot_monitor() {
-  local dir="$screenshot_dir" file monitor
-  mkdir -p "$dir"; file="$dir/$(date +%Y%m%d_%H%M%S)_monitor.png"
-  monitor=$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name' | head -n1)
-  grim -o "$monitor" "$file" && wl-copy <"$file" && notify screenshot "$file"
 }
 clipboard_watch() {
   command -v wl-paste >/dev/null || { printf 'wl-paste is not installed.\n' >&2; return 1; }
@@ -98,8 +83,6 @@ case "${1:-}" in
   brightness-up) brightness 5%+ ;;
   brightness-down) brightness 5%- ;;
   brightness-set) brightness "${2:-0}%" ;;
-  screenshot-area) screenshot_area ;;
-  screenshot-monitor) screenshot_monitor ;;
   color-picker)
     color=$(hyprpicker -a 2>/dev/null || true)
     [[ -n $color ]] && printf '%s' "$color" | wl-copy && notify color "$color"
@@ -121,5 +104,5 @@ case "${1:-}" in
     powerprofilesctl set "$profile" >/dev/null 2>&1
     notify power "$profile"
     ;;
-  *) printf 'Usage: %s {volume-up|volume-down|volume-mute|mic-mute|brightness-up|brightness-down|brightness-set|screenshot-area|screenshot-monitor|color-picker|clipboard-watch|clipboard-store|clipboard-restore|clipboard-delete|clipboard-clear|night-mode|power-save}\n' "$0" >&2; exit 2 ;;
+  *) printf 'Usage: %s {volume-up|volume-down|volume-mute|mic-mute|brightness-up|brightness-down|brightness-set|color-picker|clipboard-watch|clipboard-store|clipboard-restore|clipboard-delete|clipboard-clear|night-mode|power-save}\n' "$0" >&2; exit 2 ;;
 esac
