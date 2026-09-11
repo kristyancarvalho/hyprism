@@ -153,7 +153,6 @@ QtObject {
         lightTheme: "󰖨",
         whiteTemperature: "󰔏",
         powerSaver: "󰌪",
-        screenshot: "󰹑",
         colorPicker: "󰏘",
         settings: "󰒓",
         chevronRight: "󰅂",

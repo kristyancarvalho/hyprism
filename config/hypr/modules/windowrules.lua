@@ -26,3 +26,11 @@ hl.window_rule({
     size = { "monitor_w * 0.42", "monitor_h * 0.58" },
     center = true,
 })
+
+hl.window_rule({
+    name = "satty-screenshot-editor",
+    match = { class = "^com\\.gabm\\.satty$" },
+    float = true,
+    size = { "monitor_w * 0.78", "monitor_h * 0.78" },
+    center = true,
+})

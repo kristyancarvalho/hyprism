@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Hyprism Screenshot Editor
+Name[pt_BR]=Editor de capturas do Hyprism
+Comment=Capture a region and annotate it before saving or copying
+Comment[pt_BR]=Capture uma região e faça anotações antes de salvar ou copiar
+Exec=hyprism-shell screenshot region
+TryExec=hyprism-shell
+Icon=satty
+Terminal=false
+Categories=Graphics;2DGraphics;
+Keywords=screenshot;capture;annotation;drawing;hyprland;
+Keywords[pt_BR]=captura;tela;anotação;desenho;hyprland;

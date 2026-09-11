@@ -287,6 +287,7 @@ link_path "$runtime_root/scripts/system/shell-ipc" "$target_home/.local/bin/hypr
 link_path "$runtime_root/scripts/system/lock" "$target_home/.local/bin/hyprism-lock"
 link_path "$runtime_root/scripts/hyprism-shell" "$target_home/.local/bin/hyprism-shell"
 link_path "$runtime_root/config/applications/hyprism-keyboard-setup.desktop" "$target_home/.local/share/applications/hyprism-keyboard-setup.desktop"
+link_path "$runtime_root/config/applications/hyprism-screenshot.desktop" "$target_home/.local/share/applications/hyprism-screenshot.desktop"
 
 run install -d -o "$target_user" -g "$target_group" "$theme_dir" "$state_dir"
 if [[ ! -s $theme_dir/fastfetch/logo-palette.json ]]; then
@@ -396,6 +397,7 @@ if ((dry_run == 0)); then
   verify_link "$theme_dir/gtk-4.0/settings.ini" "$target_home/.config/gtk-4.0/settings.ini"
   verify_link "$theme_dir/gtk-2.0/gtkrc" "$target_home/.gtkrc-2.0"
   verify_link "$runtime_root/config/applications/hyprism-keyboard-setup.desktop" "$target_home/.local/share/applications/hyprism-keyboard-setup.desktop"
+  verify_link "$runtime_root/config/applications/hyprism-screenshot.desktop" "$target_home/.local/share/applications/hyprism-screenshot.desktop"
   verify_link "$runtime_root/config/fastfetch/images/archlinux.svg" "$target_home/.config/fastfetch/images/archlinux-source.svg"
   verify_link "$runtime_root/config/tmux/tmux.conf" "$target_home/.tmux.conf"
   verify_link "$runtime_root/config/systemd/user/hyprism-hyprsunset.service" "$target_home/.config/systemd/user/hyprism-hyprsunset.service"
@@ -458,7 +460,7 @@ if ((dry_run == 0)); then
 fi
 
 missing=()
-for command in Hyprland hyprlock qs foot kitty fastfetch matugen starship tmux nvim awww awww-daemon python3 jq curl git sassc magick kvantummanager qt5ct qt6ct fc-cache fc-match wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp hyprpicker brightnessctl ddcutil wf-recorder hyprsunset zen-browser xdg-settings powerprofilesctl sddm-greeter-qt6 flatpak zathura; do command -v "$command" >/dev/null || missing+=("$command"); done
+for command in Hyprland hyprlock qs foot kitty fastfetch matugen starship tmux nvim awww awww-daemon python3 jq curl git sassc magick kvantummanager qt5ct qt6ct fc-cache fc-match wl-copy wl-paste cliphist nmcli wpctl playerctl grim slurp satty hyprpicker brightnessctl ddcutil wf-recorder hyprsunset zen-browser xdg-settings powerprofilesctl sddm-greeter-qt6 flatpak zathura; do command -v "$command" >/dev/null || missing+=("$command"); done
 effective_language=$install_language
 if ((dry_run == 0)) && [[ -s $runtime_root/config/user.json ]]; then
   effective_language=$(as_user jq -r '.language // "en"' "$runtime_root/config/user.json")

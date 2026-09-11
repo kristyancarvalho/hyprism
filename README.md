@@ -202,6 +202,8 @@ hyprism-shell open network
 
 Hyprism does not assume a keyboard layout based on the device or connection type. It preserves detected system behavior unless an explicit override is saved. `hyprism-shell keyboard setup` provides an arrow-key setup and live preview that can be used even when typing commands with the current layout is inconvenient.
 
+Screenshots open in a centered floating Satty window for drawing, arrows and shapes, text, highlighting, blur, cropping, undo, saving, and clipboard copying. `Super+Shift+S` captures a selected region and `Super+Shift+F` captures only the focused monitor; `hyprism-shell screenshot window` and the unbound `hyprism-shell screenshot full` capture the active window or complete multi-monitor desktop. Save uses `paths.screenshots` from `user.json`, which defaults to the existing Hyprism screenshots directory under the localized XDG Pictures directory. Save As chooses a one-time destination, while the next screenshot starts from the configured default again. Filenames use a sortable timestamp with microseconds and the capture mode.
+
 Manual theme selection disables automatic scheduling so the result is predictable. See the [complete CLI guide](docs/cli.md) for every command, valid widget identifier, schedule behavior, and shell action.
 
 ## Desktop widgets
@@ -267,7 +269,7 @@ Changing wallpaper preserves the selected appearance. Changing appearance preser
 | `Super+Shift+N` | Open the Network panel |
 | `Ctrl+.` | Open the Emoji Picker |
 | `Super+Shift+R` | Select or stop a recording |
-| `Super+Shift+S` / `Super+Shift+F` | Capture a region / focused monitor |
+| `Super+Shift+S` / `Super+Shift+F` | Capture and edit a region / focused monitor in Satty |
 | `Super+L` | Lock with Hyprlock |
 | `Super+Ctrl+S` | Toggle night mode |
 | `Super+B` | Open Zen Browser |
