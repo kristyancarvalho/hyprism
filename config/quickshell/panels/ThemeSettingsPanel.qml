@@ -9,45 +9,33 @@ FocusScope {
     required property var theme
     property string feedback: ""
     readonly property var schedule: controller.config.appearance.schedule || ({})
+    readonly property int appearanceIndex: schedule.enabled ? 0 : controller.lightTheme ? 1 : 2
 
     function validTime(value) {
         const match = /^(\d{2}):(\d{2})$/.exec(value)
         return match && Number(match[1]) < 24 && Number(match[2]) < 60
     }
 
-    function save() {
+    function saveSchedule() {
         feedback = ""
         if (!validTime(lightStart.text) || !validTime(darkStart.text)) {
-            feedback = I18n.tr("themeSchedule.invalidTime")
+            feedback = I18n.tr("themeSettings.invalidTime")
             return
         }
         if (lightStart.text === darkStart.text) {
-            feedback = I18n.tr("themeSchedule.sameTime")
+            feedback = I18n.tr("themeSettings.sameTime")
             return
         }
         controller.setThemeSchedule(lightStart.text, darkStart.text, true)
-        feedback = I18n.tr("themeSchedule.saved")
-    }
-
-    function setAutomatic(enabled) {
-        feedback = ""
-        if (enabled) {
-            save()
-            return
-        }
-        controller.setThemeSchedule(
-            Design.safeText(schedule.lightStart, "07:00"),
-            Design.safeText(schedule.darkStart, "18:00"),
-            false
-        )
+        feedback = I18n.tr("themeSettings.saved")
     }
 
     function takeInitialFocus() {
-        automatic.forceActiveFocus(Qt.ShortcutFocusReason)
+        appearance.forceActiveFocus(Qt.ShortcutFocusReason)
     }
 
     function initialFocusReady() {
-        return lightStart.inputActiveFocus || darkStart.inputActiveFocus || automatic.activeFocus || temperature.activeFocus || saveButton.activeFocus
+        return appearance.activeFocus || temperature.activeFocus || opacity.activeFocus || corners.activeFocus || resetButton.activeFocus || lightStart.inputActiveFocus || darkStart.inputActiveFocus
     }
 
     focus: true
@@ -59,7 +47,7 @@ FocusScope {
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: Design.spacingLg
-        spacing: Design.spacingMd
+        spacing: Design.spacingSm
 
         RowLayout {
             Layout.fillWidth: true
@@ -71,7 +59,7 @@ FocusScope {
 
                 Text {
                     Layout.fillWidth: true
-                    text: I18n.tr("themeSchedule.title")
+                    text: I18n.tr("themeSettings.title")
                     color: panel.theme.colors.foreground
                     font.family: Design.fontFamily
                     font.pixelSize: Design.fontSizeLg
@@ -80,7 +68,7 @@ FocusScope {
 
                 Text {
                     Layout.fillWidth: true
-                    text: I18n.tr("themeSchedule.description")
+                    text: I18n.tr("themeSettings.description")
                     color: panel.theme.colors.mutedForeground
                     font.family: Design.fontFamily
                     font.pixelSize: Design.fontSizeSm
@@ -95,35 +83,32 @@ FocusScope {
             }
         }
 
-        ActionButton {
-            id: automatic
+        DiscreteLevelPill {
+            id: appearance
             Layout.fillWidth: true
-            Layout.preferredHeight: 58
             theme: panel.theme
-            label: I18n.tr("themeSchedule.automatic")
-            iconName: "calendar"
-            active: panel.schedule.enabled === true
-            KeyNavigation.backtab: temperature
-            KeyNavigation.tab: panel.schedule.enabled === true ? lightStart : temperature
-            onClicked: panel.setAutomatic(panel.schedule.enabled !== true)
+            label: I18n.tr("themeSettings.appearance")
+            iconName: "lightTheme"
+            options: [I18n.tr("themeSettings.auto"), I18n.tr("themeSettings.light"), I18n.tr("themeSettings.dark")]
+            value: panel.appearanceIndex
+            onChanged: value => panel.controller.setAppearanceMode(["auto", "light", "dark"][value])
         }
 
         RowLayout {
             Layout.fillWidth: true
-            spacing: Design.spacingMd
             visible: panel.schedule.enabled === true
             enabled: visible
+            spacing: Design.spacingSm
 
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: Design.spacingXs
 
                 Text {
-                    text: I18n.tr("themeSchedule.lightStart")
-                    color: panel.theme.colors.foreground
+                    text: I18n.tr("themeSettings.lightStart")
+                    color: panel.theme.colors.mutedForeground
                     font.family: Design.fontFamily
-                    font.pixelSize: Design.fontSizeSm
-                    font.weight: Design.fontWeightMedium
+                    font.pixelSize: Design.fontSizeXs
                 }
 
                 SearchField {
@@ -135,10 +120,10 @@ FocusScope {
                     placeholderText: "07:00"
                     clearButtonEnabled: false
                     tabTarget: darkStart
-                    backtabTarget: automatic
+                    backtabTarget: appearance
                     onKeyPressed: event => {
                         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                            panel.save()
+                            panel.saveSchedule()
                             event.accepted = true
                         }
                     }
@@ -150,11 +135,10 @@ FocusScope {
                 spacing: Design.spacingXs
 
                 Text {
-                    text: I18n.tr("themeSchedule.darkStart")
-                    color: panel.theme.colors.foreground
+                    text: I18n.tr("themeSettings.darkStart")
+                    color: panel.theme.colors.mutedForeground
                     font.family: Design.fontFamily
-                    font.pixelSize: Design.fontSizeSm
-                    font.weight: Design.fontWeightMedium
+                    font.pixelSize: Design.fontSizeXs
                 }
 
                 SearchField {
@@ -169,57 +153,74 @@ FocusScope {
                     backtabTarget: lightStart
                     onKeyPressed: event => {
                         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                            panel.save()
+                            panel.saveSchedule()
                             event.accepted = true
                         }
                     }
                 }
             }
-        }
-
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: Design.spacingSm
-            visible: panel.schedule.enabled === true
-            enabled: visible
-
-            Text {
-                Layout.fillWidth: true
-                text: panel.feedback
-                color: panel.feedback === I18n.tr("themeSchedule.saved") ? panel.theme.colors.accent : panel.theme.colors.error
-                font.family: Design.fontFamily
-                font.pixelSize: Design.fontSizeXs
-                elide: Text.ElideRight
-            }
 
             ShellButton {
                 id: saveButton
-                Layout.preferredWidth: implicitWidth
+                Layout.alignment: Qt.AlignBottom
                 theme: panel.theme
-                text: I18n.tr("themeSchedule.save")
+                text: I18n.tr("themeSettings.save")
+                compact: true
                 iconName: "check"
-                KeyNavigation.backtab: darkStart
-                KeyNavigation.tab: temperature
-                onClicked: panel.save()
+                onClicked: panel.saveSchedule()
             }
+        }
+
+        Text {
+            Layout.fillWidth: true
+            visible: panel.schedule.enabled && panel.feedback.length > 0
+            text: panel.feedback
+            color: panel.feedback === I18n.tr("themeSettings.saved") ? panel.theme.colors.accent : panel.theme.colors.error
+            font.family: Design.fontFamily
+            font.pixelSize: Design.fontSizeXs
+            elide: Text.ElideRight
         }
 
         DiscreteLevelPill {
             id: temperature
             Layout.fillWidth: true
             theme: panel.theme
-            label: I18n.tr("themeSchedule.whiteTemperature")
+            label: I18n.tr("themeSettings.whiteTemperature")
             iconName: "whiteTemperature"
-            options: [
-                I18n.tr("themeSchedule.temperatureNeutral"),
-                I18n.tr("themeSchedule.temperatureSoft"),
-                I18n.tr("themeSchedule.temperatureWarm"),
-                I18n.tr("themeSchedule.temperatureAmber")
-            ]
+            options: [I18n.tr("themeSettings.temperatureNeutral"), I18n.tr("themeSettings.temperatureSoft"), I18n.tr("themeSettings.temperatureWarm"), I18n.tr("themeSettings.temperatureAmber")]
             value: panel.controller.whiteTemperature
-            KeyNavigation.backtab: panel.schedule.enabled === true ? saveButton : automatic
-            KeyNavigation.tab: automatic
             onChanged: value => panel.controller.setWhiteTemperature(value)
+        }
+
+        DiscreteLevelPill {
+            id: opacity
+            Layout.fillWidth: true
+            theme: panel.theme
+            label: I18n.tr("themeSettings.surfaceOpacity")
+            iconName: "brightness"
+            options: [I18n.tr("themeSettings.opacitySolid"), I18n.tr("themeSettings.opacitySoft"), I18n.tr("themeSettings.opacityGlass"), I18n.tr("themeSettings.opacityAiry")]
+            value: panel.controller.surfaceOpacityIndex
+            onChanged: value => panel.controller.setSurfaceOpacityPreset(value)
+        }
+
+        DiscreteLevelPill {
+            id: corners
+            Layout.fillWidth: true
+            theme: panel.theme
+            label: I18n.tr("themeSettings.cornerRadius")
+            iconName: "settings"
+            options: [I18n.tr("themeSettings.radiusSharp"), I18n.tr("themeSettings.radiusDefault"), I18n.tr("themeSettings.radiusSoft"), I18n.tr("themeSettings.radiusRound")]
+            value: panel.controller.cornerRadiusPreset
+            onChanged: value => panel.controller.setCornerRadiusPreset(value)
+        }
+
+        ShellButton {
+            id: resetButton
+            Layout.fillWidth: true
+            theme: panel.theme
+            text: I18n.tr("themeSettings.reset")
+            iconName: "refresh"
+            onClicked: panel.controller.resetThemeSettings()
         }
     }
 }

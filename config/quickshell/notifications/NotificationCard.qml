@@ -10,7 +10,7 @@ Glass {
     width: 360
     height: Math.min(136, Math.max(Design.notificationCardMinimumHeight, content.implicitHeight + Design.notificationPaddingY * 2))
     radius: Design.radiusMd
-    surfaceOpacity: .96
+    surfaceOpacity: Math.min(1, Design.shellSurfaceOpacity + .06)
     outlined: notification && notification.urgency === 2
     outlineColor: theme.colors.error
     visible: notification !== null

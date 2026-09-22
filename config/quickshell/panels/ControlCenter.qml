@@ -36,13 +36,16 @@ Item {
         return items
     }
 
-    function focusAction(index) {
+    function focusAction(index, keyboard) {
         const items = controls()
         selectedAction = navigation.clamp(index, items.length)
         const target = items[selectedAction]
         if (!target) return
-        if (target.takeFocus) target.takeFocus()
-        else target.forceActiveFocus()
+        if (target.takeFocus) target.takeFocus(keyboard === true)
+        else {
+            if (target.keyboardFocusVisible !== undefined) target.keyboardFocusVisible = keyboard === true
+            target.forceActiveFocus()
+        }
     }
 
     function takeInitialFocus() {
@@ -70,16 +73,16 @@ Item {
             controller.close()
             event.accepted = true
         } else if (event.key === Qt.Key_Left && selectedAction < quickActionCount) {
-            focusAction(navigation.grid(selectedAction, -1, 0, 2, quickActionCount))
+            focusAction(navigation.grid(selectedAction, -1, 0, 2, quickActionCount), true)
             event.accepted = true
         } else if (event.key === Qt.Key_Right && selectedAction < quickActionCount) {
-            focusAction(navigation.grid(selectedAction, 1, 0, 2, quickActionCount))
+            focusAction(navigation.grid(selectedAction, 1, 0, 2, quickActionCount), true)
             event.accepted = true
         } else if (event.key === Qt.Key_Up) {
-            focusAction(selectedAction < quickActionCount ? navigation.grid(selectedAction, 0, -1, 2, quickActionCount) : selectedAction - 1)
+            focusAction(selectedAction < quickActionCount ? navigation.grid(selectedAction, 0, -1, 2, quickActionCount) : selectedAction - 1, true)
             event.accepted = true
         } else if (event.key === Qt.Key_Down) {
-            focusAction(selectedAction < quickActionCount - 2 ? selectedAction + 2 : selectedAction < quickActionCount ? quickActionCount : selectedAction + 1)
+            focusAction(selectedAction < quickActionCount - 2 ? selectedAction + 2 : selectedAction < quickActionCount ? quickActionCount : selectedAction + 1, true)
             event.accepted = true
         }
     }
@@ -233,7 +236,7 @@ Item {
                     active: controller.lightTheme
                     onFocusEntered: panel.selectedAction = 5
                     onPrimaryClicked: controller.toggleLightTheme()
-                    onDetailClicked: controller.openThemeSchedule(controller.targetScreenName)
+                    onDetailClicked: controller.openThemeSettings(controller.targetScreenName)
                 }
             }
 

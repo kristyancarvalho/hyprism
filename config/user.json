@@ -25,6 +25,7 @@
     "topMargin": 8,
     "reserveGap": 4,
     "surfaceOpacity": 0.9,
+    "cornerRadiusPreset": 1,
     "animationFast": 110,
     "animationNormal": 150,
     "widgetLayout": { "position": "center", "side": "right" },

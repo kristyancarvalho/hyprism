@@ -4,7 +4,7 @@ import ".."
 Rectangle {
     id: glass
     property var theme
-    property real surfaceOpacity: .88
+    property real surfaceOpacity: Design.shellSurfaceOpacity
     property color baseColor: theme ? theme.colors.surface : "#131b21"
     property bool outlined: false
     property color outlineColor: theme ? theme.colors.borderSubtle : "#2d414e"

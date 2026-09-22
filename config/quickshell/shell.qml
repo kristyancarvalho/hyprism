@@ -249,6 +249,8 @@ ShellRoot {
         const incomingSchedule = incomingAppearance.schedule || {}
         const incomingTemperature = incomingAppearance.whiteTemperature
         const defaultShell = shellController.defaultShellConfig()
+        const incomingOpacity = Number(incomingShell.surfaceOpacity)
+        const incomingRadius = incomingShell.cornerRadiusPreset
         shellController.config = {
             paths: parsed.paths || {},
             appearance: {
@@ -261,10 +263,14 @@ ShellRoot {
                 }
             },
             shell: Object.assign({}, defaultShell, incomingShell, {
+                surfaceOpacity: Number.isFinite(incomingOpacity) && incomingOpacity >= .5 && incomingOpacity <= 1 ? incomingOpacity : defaultShell.surfaceOpacity,
+                cornerRadiusPreset: Number.isInteger(incomingRadius) && incomingRadius >= 0 && incomingRadius <= 3 ? incomingRadius : defaultShell.cornerRadiusPreset,
                 widgetLayout: Object.assign({}, defaultShell.widgetLayout, incomingShell.widgetLayout || {}),
                 widgets: shellController.mergedWidgetConfig(incomingShell.widgets || {})
             })
         }
+        Design.shellSurfaceOpacity = shellController.config.shell.surfaceOpacity
+        Design.cornerRadiusPreset = shellController.config.shell.cornerRadiusPreset
         shellController.configurationRevision += 1
         updateThemeSchedule()
         configError = ""
@@ -326,6 +332,7 @@ ShellRoot {
         function toggleNetwork(): void { shellController.toggleNetwork(root.focusedScreenName()) }
         function toggleBluetooth(): void { shellController.toggleBluetoothPanel(root.focusedScreenName()) }
         function openThemeSchedule(): void { shellController.openThemeSchedule(root.focusedScreenName()) }
+        function openThemeSettings(): void { shellController.openThemeSettings(root.focusedScreenName()) }
         function togglePowerMenu(): void { shellController.togglePowerMenu(root.focusedScreenName()) }
         function toggleEmojiPicker(): void { shellController.toggleEmojiPicker(root.focusedScreenName()) }
         function toggleRecording(): void { shellController.toggleRecording(root.focusedScreenName()) }
@@ -358,6 +365,8 @@ ShellRoot {
                 language: I18n.locale,
                 appearanceMode: shellController.lightTheme ? "light" : "dark",
                 whiteTemperature: shellController.whiteTemperature,
+                surfaceOpacity: shellController.config.shell.surfaceOpacity,
+                cornerRadiusPreset: shellController.cornerRadiusPreset,
                 appearanceSchedule: shellController.config.appearance.schedule,
                 pid: Quickshell.processId,
                 mode: shellController.mode,

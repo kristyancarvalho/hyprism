@@ -38,9 +38,12 @@ QtObject {
     readonly property int compactGroupSpacing: spacingMd
     readonly property int compactSeparatorHeight: 16
     readonly property int compactSeparatorWidth: 1
-    readonly property int radiusSmall: 6
-    readonly property int radiusDefault: 9
-    readonly property int radiusLarge: 16
+    property int cornerRadiusPreset: 1
+    property real shellSurfaceOpacity: .9
+    readonly property real radiusScale: [0.55, 1, 1.35, 1.7][Math.max(0, Math.min(3, cornerRadiusPreset))]
+    readonly property int radiusSmall: Math.max(2, Math.round(6 * radiusScale))
+    readonly property int radiusDefault: Math.max(3, Math.round(9 * radiusScale))
+    readonly property int radiusLarge: Math.max(5, Math.round(16 * radiusScale))
     readonly property int radiusXs: radiusSmall
     readonly property int radiusSm: radiusDefault
     readonly property int radiusMd: radiusLarge
