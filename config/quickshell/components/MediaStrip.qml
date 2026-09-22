@@ -7,11 +7,12 @@ Item {
     required property var theme
     property bool expanded: true
     readonly property var player: controller.mediaPlayer
-    readonly property bool seekable: player && player.canSeek && player.positionSupported && player.lengthSupported && player.length > 0
+    readonly property real duration: player && player.lengthSupported && player.length > 0 && player.length < 31536000 ? player.length : 0
+    readonly property bool seekable: player && player.canSeek && player.positionSupported && duration > 0
     property bool scrubbing: false
     property real scrubPosition: 0
     readonly property real shownPosition: scrubbing ? scrubPosition : player ? player.position : 0
-    readonly property real shownProgress: player && player.lengthSupported && player.length > 0 ? Design.clamp(shownPosition / player.length, 0, 1) : 0
+    readonly property real shownProgress: duration > 0 ? Design.clamp(shownPosition / duration, 0, 1) : 0
     onPlayerChanged: {
         seekSettled.stop()
         scrubbing = false
@@ -19,7 +20,7 @@ Item {
 
     function previewPosition(x, width) {
         if (!seekable) return
-        scrubPosition = Design.clamp(x / Math.max(1, width), 0, 1) * player.length
+        scrubPosition = Design.clamp(x / Math.max(1, width), 0, 1) * duration
     }
 
     Timer {
@@ -171,7 +172,7 @@ Item {
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: Design.formatDuration(media.controller.mediaPlayer ? media.controller.mediaPlayer.length : 0)
+                    text: Design.formatDuration(media.duration)
                     color: media.theme.colors.mutedForeground
                     font.family: Design.fontFamily
                     font.pixelSize: 9
