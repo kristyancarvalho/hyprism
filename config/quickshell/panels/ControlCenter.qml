@@ -93,6 +93,7 @@ Item {
     }
 
     Flickable {
+        id: viewport
         anchors.fill: parent
         anchors.margins: 18
         contentHeight: body.implicitHeight
@@ -108,12 +109,20 @@ Item {
                 spacing: Design.spacingMd
 
                 Text {
-                    Layout.fillWidth: true
-                    text: controller.formattedDate("dddd · dd MMMM  HH:mm")
+                    text: controller.formattedDate("HH:mm")
                     color: panel.theme.colors.foreground
                     font.family: Design.fontFamily
                     font.pixelSize: Design.fontSizeLg
                     font.weight: Design.fontWeightSemibold
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    text: controller.formattedDate("dddd · dd MMMM")
+                    color: panel.theme.colors.mutedForeground
+                    font.family: Design.fontFamily
+                    font.pixelSize: Design.fontSizeSm
+                    font.weight: Design.fontWeightMedium
                     elide: Text.ElideRight
                 }
 
@@ -125,14 +134,22 @@ Item {
                     filled: true
                 }
 
-                ShellButton {
+                CompactBarItem {
                     id: power
-                    Layout.preferredWidth: implicitWidth
+                    Layout.preferredWidth: Math.max(36, implicitWidth)
                     theme: panel.theme
-                    text: I18n.tr("hub.power")
                     iconName: "power"
-                    compact: true
+                    iconOnly: true
+                    clickable: true
+                    activeFocusOnTab: true
+                    Accessible.name: I18n.tr("hub.power")
                     onClicked: controller.openPowerMenu(controller.targetScreenName)
+                    Keys.onPressed: event => {
+                        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) {
+                            power.clicked()
+                            event.accepted = true
+                        }
+                    }
                 }
             }
 
@@ -340,6 +357,7 @@ Item {
 
             NotificationHistory {
                 width: parent.width
+                height: notifications.length === 0 ? Math.max(0, viewport.height - y) : implicitHeight
                 controller: panel.controller
                 theme: panel.theme
                 server: panel.notificationServer

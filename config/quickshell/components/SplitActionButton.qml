@@ -11,14 +11,14 @@ Rectangle {
     property bool toggleAvailable: true
     property bool pending: false
     readonly property bool controlFocused: activeFocus || detailArea.activeFocus
-    readonly property color detailColor: theme.colors.surfaceElevated
     signal primaryClicked()
     signal detailClicked()
     signal focusEntered()
 
     activeFocusOnTab: available && toggleAvailable
     radius: Design.radiusSm
-    color: active && available ? theme.colors.accentDim : primaryPointer.containsMouse ? theme.colors.surfaceHover : theme.colors.surfaceVariant
+    color: active && available ? theme.colors.accentDim : theme.colors.surfaceVariant
+    clip: true
     opacity: available ? pending ? .72 : 1 : .5
     implicitWidth: 170
     implicitHeight: 68
@@ -29,6 +29,13 @@ Rectangle {
     }
 
     onActiveFocusChanged: if (activeFocus) focusEntered()
+
+    Rectangle {
+        anchors { left: parent.left; right: detailArea.left; top: parent.top; bottom: parent.bottom }
+        color: button.theme.colors.foreground
+        opacity: primaryPointer.pressed ? .09 : primaryPointer.containsMouse || button.activeFocus ? .045 : 0
+        Behavior on opacity { NumberAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
+    }
 
     Row {
         anchors {
@@ -77,23 +84,11 @@ Rectangle {
         activeFocusOnTab: button.available
         clip: true
 
-        RoundedSurfaceSlice {
-            anchors.fill: parent
-            surfaceWidth: button.width
-            cornerRadius: button.radius
-            rightAligned: true
-            color: detailPointer.containsMouse || detailArea.activeFocus ? button.theme.colors.surfaceHover : button.detailColor
-        }
-
         Rectangle {
-            anchors {
-                left: parent.left
-                verticalCenter: parent.verticalCenter
-            }
-            width: 2
-            height: parent.height - Design.spacingLg
-            color: button.theme.colors.borderSubtle
-            opacity: .7
+            anchors.fill: parent
+            color: button.theme.colors.foreground
+            opacity: detailPointer.pressed ? .09 : detailPointer.containsMouse || detailArea.activeFocus ? .045 : 0
+            Behavior on opacity { NumberAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
         }
 
         StatusIcon {

@@ -6,6 +6,27 @@ Item {
     required property var controller
     required property var theme
     property bool expanded: true
+    readonly property var player: controller.mediaPlayer
+    readonly property bool seekable: player && player.canSeek && player.positionSupported && player.lengthSupported && player.length > 0
+    property bool scrubbing: false
+    property real scrubPosition: 0
+    readonly property real shownPosition: scrubbing ? scrubPosition : player ? player.position : 0
+    readonly property real shownProgress: player && player.lengthSupported && player.length > 0 ? Design.clamp(shownPosition / player.length, 0, 1) : 0
+    onPlayerChanged: {
+        seekSettled.stop()
+        scrubbing = false
+    }
+
+    function previewPosition(x, width) {
+        if (!seekable) return
+        scrubPosition = Design.clamp(x / Math.max(1, width), 0, 1) * player.length
+    }
+
+    Timer {
+        id: seekSettled
+        interval: 350
+        onTriggered: media.scrubbing = false
+    }
     activeFocusOnTab: true
     implicitWidth: expanded ? 390 : 210
     implicitHeight: expanded ? 60 : Design.barPillHeight
@@ -88,25 +109,63 @@ Item {
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: Design.formatDuration(media.controller.mediaPlayer ? media.controller.mediaPlayer.position : 0)
+                    text: Design.formatDuration(media.shownPosition)
                     color: media.theme.colors.mutedForeground
                     font.family: Design.fontFamily
                     font.pixelSize: 9
                 }
 
-                Rectangle {
+                Item {
+                    id: progressTarget
                     width: Math.max(40, parent.width - 70)
-                    height: 4
+                    height: 14
                     anchors.verticalCenter: parent.verticalCenter
-                    radius: Design.radiusSmall
-                    color: media.theme.colors.surfaceVariant
 
-                    RoundedSurfaceSlice {
-                        width: parent.width * media.controller.mediaProgress()
-                        height: parent.height
-                        surfaceWidth: parent.width
-                        cornerRadius: parent.radius
-                        color: media.theme.colors.accent
+                    Rectangle {
+                        id: progressTrack
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width
+                        height: media.seekable && (progressPointer.containsMouse || media.scrubbing) ? 7 : 4
+                        radius: Design.radiusSmall
+                        color: media.theme.colors.surfaceVariant
+                        clip: true
+
+                        Rectangle {
+                            width: parent.width * media.shownProgress
+                            height: parent.height
+                            color: media.theme.colors.accent
+                        }
+
+                        Behavior on height { NumberAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
+                    }
+
+                    MouseArea {
+                        id: progressPointer
+                        anchors.fill: parent
+                        enabled: media.seekable
+                        hoverEnabled: true
+                        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                        onPressed: mouse => {
+                            seekSettled.stop()
+                            media.scrubbing = true
+                            media.previewPosition(mouse.x, width)
+                        }
+                        onPositionChanged: mouse => {
+                            if (pressed) media.previewPosition(mouse.x, width)
+                        }
+                        onReleased: mouse => {
+                            if (!media.seekable) {
+                                media.scrubbing = false
+                                return
+                            }
+                            media.previewPosition(mouse.x, width)
+                            media.player.position = media.scrubPosition
+                            seekSettled.restart()
+                        }
+                        onCanceled: {
+                            seekSettled.stop()
+                            media.scrubbing = false
+                        }
                     }
                 }
 

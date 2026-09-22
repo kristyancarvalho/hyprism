@@ -195,13 +195,13 @@ Column {
         }
     }
 
-    Column {
+    Item {
         visible: history.notifications.length === 0
         width: parent.width
-        spacing: 4
+        height: history.height
 
         Text {
-            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.centerIn: parent
             text: I18n.tr("notifications.savedNone")
             color: history.theme.colors.mutedForeground
             font.family: Design.fontFamily
