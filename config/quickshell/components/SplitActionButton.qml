@@ -10,6 +10,7 @@ Rectangle {
     property bool available: true
     property bool toggleAvailable: true
     property bool pending: false
+    property bool keyboardFocusVisible: false
     readonly property bool controlFocused: activeFocus || detailArea.activeFocus
     signal primaryClicked()
     signal detailClicked()
@@ -23,17 +24,19 @@ Rectangle {
     implicitWidth: 170
     implicitHeight: 68
 
-    function takeFocus() {
+    function takeFocus(keyboard) {
+        keyboardFocusVisible = keyboard === true
         if (toggleAvailable) forceActiveFocus(Qt.TabFocusReason)
         else detailArea.forceActiveFocus(Qt.TabFocusReason)
     }
 
     onActiveFocusChanged: if (activeFocus) focusEntered()
+    onControlFocusedChanged: if (!controlFocused) keyboardFocusVisible = false
 
     Rectangle {
         anchors { left: parent.left; right: detailArea.left; top: parent.top; bottom: parent.bottom }
         color: button.theme.colors.foreground
-        opacity: primaryPointer.pressed ? .09 : primaryPointer.containsMouse || button.activeFocus ? .045 : 0
+        opacity: primaryPointer.pressed ? .09 : primaryPointer.containsMouse || button.activeFocus && button.keyboardFocusVisible ? .045 : 0
         Behavior on opacity { NumberAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
     }
 
@@ -87,7 +90,7 @@ Rectangle {
         Rectangle {
             anchors.fill: parent
             color: button.theme.colors.foreground
-            opacity: detailPointer.pressed ? .09 : detailPointer.containsMouse || detailArea.activeFocus ? .045 : 0
+            opacity: detailPointer.pressed ? .09 : detailPointer.containsMouse || detailArea.activeFocus && button.keyboardFocusVisible ? .045 : 0
             Behavior on opacity { NumberAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
         }
 
@@ -99,6 +102,7 @@ Rectangle {
         }
 
         Keys.onPressed: event => {
+            button.keyboardFocusVisible = true
             if (event.key === Qt.Key_Left && button.toggleAvailable) {
                 button.forceActiveFocus(Qt.BacktabFocusReason)
                 event.accepted = true
@@ -116,11 +120,15 @@ Rectangle {
             enabled: button.available && !button.pending
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
-            onClicked: button.detailClicked()
+            onClicked: {
+                button.keyboardFocusVisible = false
+                button.detailClicked()
+            }
         }
     }
 
     Keys.onPressed: event => {
+        keyboardFocusVisible = true
         if (event.key === Qt.Key_Right) {
             detailArea.forceActiveFocus(Qt.TabFocusReason)
             event.accepted = true
@@ -142,6 +150,7 @@ Rectangle {
         hoverEnabled: true
         cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
         onClicked: {
+            button.keyboardFocusVisible = false
             button.forceActiveFocus(Qt.MouseFocusReason)
             button.primaryClicked()
         }
