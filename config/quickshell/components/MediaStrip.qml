@@ -127,17 +127,30 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         width: parent.width
                         height: media.seekable && (progressPointer.containsMouse || media.scrubbing) ? 7 : 4
-                        radius: Design.radiusSmall
-                        color: media.theme.colors.surfaceVariant
+                        radius: height / 2
+                        color: media.seekable && (progressPointer.containsMouse || media.scrubbing) ? media.theme.colors.surfaceElevated : media.theme.colors.surfaceVariant
                         clip: true
 
                         Rectangle {
                             width: parent.width * media.shownProgress
                             height: parent.height
+                            radius: parent.radius
                             color: media.theme.colors.accent
                         }
 
                         Behavior on height { NumberAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
+                        Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
+                    }
+
+                    Rectangle {
+                        x: Design.clamp(progressTarget.width * media.shownProgress - width / 2, 0, progressTarget.width - width)
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 9
+                        height: 9
+                        radius: width / 2
+                        color: media.theme.colors.foreground
+                        opacity: media.seekable && (progressPointer.containsMouse || media.scrubbing) ? 1 : 0
+                        Behavior on opacity { NumberAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
                     }
 
                     MouseArea {
