@@ -51,10 +51,11 @@ PanelWindow {
             width: stack.width
             height: card.height
             opacity: 0
-            property real visualOffset: 16
+            property real entranceOffset: -16
+            property real exitOffset: 0
             property bool positionAnimationReady: false
 
-            transform: Translate { x: popupDelegate.visualOffset }
+            transform: Translate { x: popupDelegate.exitOffset; y: popupDelegate.entranceOffset }
 
             Behavior on y {
                 enabled: popupDelegate.positionAnimationReady
@@ -78,7 +79,7 @@ PanelWindow {
 
                 NumberAnimation {
                     target: popupDelegate
-                    property: "visualOffset"
+                    property: "entranceOffset"
                     to: 0
                     duration: popup.motionDuration
                     easing.type: Design.easingEnter
@@ -103,7 +104,7 @@ PanelWindow {
         remove: Transition {
             ParallelAnimation {
                 NumberAnimation { property: "opacity"; to: 0; duration: popup.fadeDuration; easing.type: Design.easingExit }
-                NumberAnimation { property: "visualOffset"; to: 16; duration: popup.motionDuration; easing.type: Design.easingExit }
+                NumberAnimation { property: "exitOffset"; to: 16; duration: popup.motionDuration; easing.type: Design.easingExit }
             }
         }
     }
