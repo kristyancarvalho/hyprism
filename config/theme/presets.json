@@ -1,0 +1,34 @@
+{
+  "defaults": {
+    "appearance": {
+      "mode": "dark",
+      "whiteTemperature": 0,
+      "schedule": {
+        "enabled": false,
+        "lightStart": "07:00",
+        "darkStart": "18:00"
+      }
+    },
+    "surfaceOpacity": 2,
+    "cornerRadius": 1,
+    "blur": 2
+  },
+  "surfaceOpacity": [
+    { "shell": 1.0, "inactiveWindow": 1.0 },
+    { "shell": 0.96, "inactiveWindow": 0.98 },
+    { "shell": 0.9, "inactiveWindow": 0.94 },
+    { "shell": 0.78, "inactiveWindow": 0.9 }
+  ],
+  "cornerRadius": [
+    { "scale": 0.55, "window": 8 },
+    { "scale": 1.0, "window": 14 },
+    { "scale": 1.35, "window": 19 },
+    { "scale": 1.7, "window": 24 }
+  ],
+  "blur": [
+    { "enabled": false, "size": 3, "passes": 1 },
+    { "enabled": true, "size": 3, "passes": 1 },
+    { "enabled": true, "size": 5, "passes": 2 },
+    { "enabled": true, "size": 8, "passes": 3 }
+  ]
+}

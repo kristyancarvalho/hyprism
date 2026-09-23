@@ -38,7 +38,12 @@ class HyprismShellTests(unittest.TestCase):
         script.parent.mkdir(parents=True)
         script.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
         script.chmod(0o755)
+        presets = runtime / "config/theme/presets.json"
+        presets.parent.mkdir(parents=True)
+        presets.write_text((ROOT / "config/theme/presets.json").read_text(encoding="utf-8"), encoding="utf-8")
         self.environment["HYPRISM_ROOT"] = str(runtime)
+        self.environment["HYPRISM_CACHE_DIR"] = str(runtime / "cache")
+        self.environment.pop("HYPRLAND_INSTANCE_SIGNATURE", None)
 
     def use_fake_systemctl(self):
         directory = Path(self.temporary.name) / "bin"
@@ -308,6 +313,37 @@ elif name == "satty":
         self.assertEqual(schedule["lightStart"], "07:30")
         self.assertEqual(schedule["darkStart"], "18:30")
         self.assertFalse(schedule["enabled"])
+
+    def test_theme_reset_uses_immutable_preset_defaults(self):
+        self.use_fake_theme_runtime()
+        runtime_config = Path(self.environment["HYPRISM_ROOT"]) / "config/user.json"
+        configured = self.read_config()
+        configured["appearance"] = {
+            "mode": "light",
+            "whiteTemperature": 3,
+            "schedule": {"enabled": True, "lightStart": "09:00", "darkStart": "21:00"},
+        }
+        configured["shell"]["surfaceOpacity"] = 0.78
+        configured["shell"]["cornerRadiusPreset"] = 3
+        configured["shell"]["blurPreset"] = 0
+        configured["weather"]["location"] = "Preserve Me"
+        runtime_config.write_text(json.dumps(configured), encoding="utf-8")
+        self.config = runtime_config
+        self.environment["HYPRISM_CONFIG"] = str(runtime_config)
+
+        reset = self.run_cli("theme", "reset")
+
+        self.assertEqual(reset.returncode, 0, reset.stderr)
+        updated = self.read_config()
+        self.assertEqual(updated["appearance"], {
+            "mode": "dark",
+            "whiteTemperature": 0,
+            "schedule": {"enabled": False, "lightStart": "07:00", "darkStart": "18:00"},
+        })
+        self.assertEqual(updated["shell"]["surfaceOpacity"], 0.9)
+        self.assertEqual(updated["shell"]["cornerRadiusPreset"], 1)
+        self.assertEqual(updated["shell"]["blurPreset"], 2)
+        self.assertEqual(updated["weather"]["location"], "Preserve Me")
 
     def test_migration_preserves_legacy_preferences_and_ptbr(self):
         existing = Path(self.temporary.name) / "existing.json"

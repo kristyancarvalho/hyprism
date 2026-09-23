@@ -10,7 +10,7 @@ Glass {
     width: 320
     height: 58
     radius: Design.radiusMd
-    surfaceOpacity: .96
+    surfaceOpacity: Math.min(1, Design.shellSurfaceOpacity + .06)
     visible: opacity > 0
     opacity: controller.osdKind.length > 0 ? 1 : 0
     Behavior on opacity { NumberAnimation { duration: Design.animationFast; easing.type: controller.osdKind.length > 0 ? Design.easingEnter : Design.easingExit } }

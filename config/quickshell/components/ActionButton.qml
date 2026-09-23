@@ -10,6 +10,7 @@ Item {
     property bool available: true
     property bool pending: false
     property bool hovered: pointer.containsMouse && available && !pending
+    property bool keyboardFocusVisible: false
     property bool managedSurface: false
     property bool suppressHover: false
     signal clicked()
@@ -17,14 +18,23 @@ Item {
     opacity: available ? pending ? .72 : 1 : .5
     implicitWidth: 170
     implicitHeight: 68
+    onActiveFocusChanged: if (!activeFocus) keyboardFocusVisible = false
 
     Rectangle {
         anchors.fill: parent
         visible: !button.managedSurface
         radius: Design.radiusSm
-        color: button.active && button.available ? button.theme.colors.accentDim : button.hovered && !button.suppressHover ? button.theme.colors.surfaceElevated : button.activeFocus ? button.theme.colors.surfaceHover : button.theme.colors.surfaceVariant
+        color: button.active && button.available ? button.theme.colors.accentDim : button.theme.colors.surfaceVariant
 
         Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
+
+        Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            color: button.theme.colors.foreground
+            opacity: pointer.pressed ? .09 : button.hovered && !button.suppressHover || button.activeFocus && button.keyboardFocusVisible ? .045 : 0
+            Behavior on opacity { NumberAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
+        }
     }
 
     Row {
@@ -62,6 +72,7 @@ Item {
     }
 
     Keys.onPressed: event => {
+        keyboardFocusVisible = true
         if (button.available && !button.pending && (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space)) {
             button.clicked()
             event.accepted = true
@@ -75,6 +86,7 @@ Item {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: {
+            button.keyboardFocusVisible = false
             button.forceActiveFocus()
             button.clicked()
         }

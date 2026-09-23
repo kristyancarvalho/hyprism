@@ -6,7 +6,11 @@ case "$direction" in
   r) long_direction=right ;;
   *) printf 'Direction must be l or r.\n' >&2; exit 2 ;;
 esac
-layout=$(hyprctl -j getoption general.layout 2>/dev/null | jq -r '.str // empty')
+workspace=$(hyprctl -j activewindow 2>/dev/null | jq -r '.workspace.name // empty')
+layout=$(hyprctl -j workspaces 2>/dev/null | jq -r --arg workspace "$workspace" '.[] | select(.name == $workspace) | .tiledLayout' | head -n 1)
+if [[ -z $layout ]]; then
+  layout=$(hyprctl -j activeworkspace 2>/dev/null | jq -r '.tiledLayout // empty')
+fi
 if [[ $layout == scrolling ]] && [[ $direction == l || $direction == r ]]; then
   hyprctl dispatch "hl.dsp.layout(\"swapcol $direction\")" 2>/dev/null \
     || hyprctl dispatch "hl.dsp.window.move({ direction = \"$long_direction\" })"

@@ -7,6 +7,7 @@ Item {
     id: controller
     visible: false
     property string mode: "compact"
+    property bool barVisible: true
     property string previousMode: "compact"
     property string targetScreenName: ""
     property string osdKind: ""
@@ -47,6 +48,19 @@ Item {
     readonly property bool powerSaver: system.powerProfile.available && system.powerProfile.mode === "power-saver"
     readonly property bool lightTheme: config.appearance && config.appearance.mode === "light"
     readonly property int whiteTemperature: config.appearance ? Math.round(Design.clamp(config.appearance.whiteTemperature, 0, 3)) : 0
+    property var themePresets: ({ surfaceOpacity: [], cornerRadius: [], blur: [] })
+    readonly property var surfaceOpacityPresets: themePresets.surfaceOpacity.map(preset => preset.shell)
+    readonly property int surfaceOpacityIndex: {
+        if (!surfaceOpacityPresets.length) return 2
+        const current = config.shell ? config.shell.surfaceOpacity : .9
+        let closest = 0
+        for (let index = 1; index < surfaceOpacityPresets.length; index++) {
+            if (Math.abs(surfaceOpacityPresets[index] - current) < Math.abs(surfaceOpacityPresets[closest] - current)) closest = index
+        }
+        return closest
+    }
+    readonly property int cornerRadiusPreset: config.shell ? config.shell.cornerRadiusPreset : 1
+    readonly property int blurPreset: config.shell ? config.shell.blurPreset : 2
     readonly property date currentTime: systemClock.date
     property var appEntries: []
     property var applicationIndex: ({})
@@ -86,10 +100,10 @@ Item {
         tasks: { enabled: true, limit: 3 },
         processes: { enabled: true, limit: 3 }
     })
-    property var config: ({ paths: { wallpapers: "~/Pictures/Wallpapers", screenshots: "~/Pictures/Screenshots", recordings: "~/Videos/Recordings" }, appearance: { mode: "dark", whiteTemperature: 0, schedule: { enabled: false, lightStart: "07:00", darkStart: "18:00" } }, shell: { primaryMonitor: "", islandWidth: 560, compactHeight: Design.compactBarHeight, topMargin: Design.shellTopMargin, reserveGap: Design.compactBottomGap, surfaceOpacity: .9, animationFast: Design.animationFast, animationNormal: Design.animationMorph, widgetLayout: { side: "right", position: "legacy" }, widgets: widgetDefaults } })
+    property var config: ({ paths: { wallpapers: "~/Pictures/Wallpapers", screenshots: "~/Pictures/Screenshots", recordings: "~/Videos/Recordings" }, appearance: { mode: "dark", whiteTemperature: 0, schedule: { enabled: false, lightStart: "07:00", darkStart: "18:00" } }, shell: { primaryMonitor: "", islandWidth: 560, compactHeight: Design.compactBarHeight, topMargin: Design.shellTopMargin, reserveGap: Design.compactBottomGap, surfaceOpacity: .9, cornerRadiusPreset: 1, blurPreset: 2, animationFast: Design.animationFast, animationNormal: Design.animationMorph, widgetLayout: { side: "right", position: "legacy" }, widgets: widgetDefaults } })
     property string rootDir: Quickshell.env("HYPRISM_ROOT") || Quickshell.shellDir + "/../.."
     readonly property bool developmentMode: Quickshell.env("HYPRISM_DEVELOPMENT") === "1"
-    readonly property var panelModes: ["launcher", "wallpaper", "clipboard", "control", "network", "bluetooth", "themeSchedule", "power", "emoji", "switcher", "recordingSelector"]
+    readonly property var panelModes: ["launcher", "wallpaper", "clipboard", "control", "network", "bluetooth", "themeSettings", "power", "emoji", "switcher", "recordingSelector"]
 
     ListModel { id: switcherWindowModel }
 
@@ -101,6 +115,8 @@ Item {
             topMargin: Design.shellTopMargin,
             reserveGap: Design.compactBottomGap,
             surfaceOpacity: .9,
+            cornerRadiusPreset: 1,
+            blurPreset: 2,
             animationFast: Design.animationFast,
             animationNormal: Design.animationMorph,
             widgetLayout: { side: "right", position: "legacy" },
@@ -150,6 +166,7 @@ Item {
 
     function openMode(next) {
         if (panelModes.indexOf(next) < 0 && next !== "hover") return
+        if (next !== "hover") barVisible = true
         panelFocusReady = false
         if (mode !== next) previousMode = mode
         mode = next
@@ -159,6 +176,11 @@ Item {
         const safeName = Design.safeText(screenName, "")
         if (safeName) targetScreenName = safeName
         openMode(next)
+    }
+
+    function toggleBar() {
+        if (barVisible) close()
+        barVisible = !barVisible
     }
 
     function togglePanel(next, screenName) {
@@ -180,7 +202,8 @@ Item {
     }
     function openNetwork(screenName) { openPanel("network", screenName) }
     function openBluetooth(screenName) { openPanel("bluetooth", screenName) }
-    function openThemeSchedule(screenName) { openPanel("themeSchedule", screenName) }
+    function openThemeSettings(screenName) { openPanel("themeSettings", screenName) }
+    function openThemeSchedule(screenName) { openThemeSettings(screenName) }
     function openPowerMenu(screenName) { openPanel("power", screenName) }
     function openEmojiPicker(screenName) { openPanel("emoji", screenName) }
     function openRecording(screenName) { openPanel("recordingSelector", screenName) }
@@ -285,6 +308,41 @@ Item {
 
     function setWhiteTemperature(level) {
         run([rootDir + "/scripts/hyprism-shell", "theme", "temperature", "set", String(Math.round(Design.clamp(level, 0, 3)))])
+    }
+
+    function setAppearanceMode(mode) {
+        if (mode === "auto") run([rootDir + "/scripts/hyprism-shell", "theme", "schedule", "enable"])
+        else if (mode === "light" || mode === "dark") run([rootDir + "/scripts/hyprism-shell", "theme", "set", mode])
+    }
+
+    function setSurfaceOpacityPreset(index) {
+        if (!surfaceOpacityPresets.length) return
+        const preset = Math.round(Design.clamp(index, 0, surfaceOpacityPresets.length - 1))
+        const shell = Object.assign({}, config.shell, { surfaceOpacity: surfaceOpacityPresets[preset] })
+        config = Object.assign({}, config, { shell: shell })
+        Design.shellSurfaceOpacity = shell.surfaceOpacity
+        run([rootDir + "/scripts/hyprism-shell", "theme", "surface-opacity", "set", String(preset)])
+    }
+
+    function setCornerRadiusPreset(index) {
+        if (!themePresets.cornerRadius.length) return
+        const preset = Math.round(Design.clamp(index, 0, themePresets.cornerRadius.length - 1))
+        const shell = Object.assign({}, config.shell, { cornerRadiusPreset: preset })
+        config = Object.assign({}, config, { shell: shell })
+        Design.cornerRadiusPreset = preset
+        run([rootDir + "/scripts/hyprism-shell", "theme", "radius", "set", String(preset)])
+    }
+
+    function setBlurPreset(index) {
+        if (!themePresets.blur.length) return
+        const preset = Math.round(Design.clamp(index, 0, themePresets.blur.length - 1))
+        const shell = Object.assign({}, config.shell, { blurPreset: preset })
+        config = Object.assign({}, config, { shell: shell })
+        run([rootDir + "/scripts/hyprism-shell", "theme", "blur", "set", String(preset)])
+    }
+
+    function resetThemeSettings() {
+        run([rootDir + "/scripts/hyprism-shell", "theme", "reset"])
     }
 
     function togglePowerSaver() {

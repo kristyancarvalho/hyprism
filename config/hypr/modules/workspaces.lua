@@ -1,5 +1,7 @@
 local mod = require("hyprism.programs").modifier
 
+hl.workspace_rule({ workspace = "special:magic", layout = "scrolling" })
+
 for workspace = 1, 10 do
     local key = workspace % 10
     hl.bind(mod .. " + " .. key, hl.dsp.focus({ workspace = workspace }))

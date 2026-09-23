@@ -9,7 +9,7 @@ Glass {
     property int contentHeight: 60
     property color iconColor: theme ? theme.colors.accent : "white"
     default property alias cardContent: content.data
-    surfaceOpacity: .86
+    surfaceOpacity: Design.themedSurfaceOpacity(.86)
     radius: Design.radiusMd
     implicitHeight: Design.widgetInnerPadding * 2 + Design.widgetHeaderHeight + Design.spacingSm + contentHeight
 
