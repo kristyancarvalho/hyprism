@@ -94,6 +94,17 @@ Rectangle {
             Behavior on opacity { NumberAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
         }
 
+        Rectangle {
+            anchors {
+                left: parent.left
+                verticalCenter: parent.verticalCenter
+            }
+            width: Design.separatorWidth
+            height: Math.max(Design.separatorHeight, parent.height - Design.spacingLg * 2)
+            color: button.theme.colors.outline
+            opacity: .55
+        }
+
         StatusIcon {
             anchors.centerIn: parent
             name: "chevronRight"
