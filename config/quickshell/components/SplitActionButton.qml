@@ -101,8 +101,8 @@ Rectangle {
             }
             width: Design.separatorWidth
             height: Math.max(Design.separatorHeight, parent.height - Design.spacingLg * 2)
-            color: button.theme.colors.outline
-            opacity: .55
+            color: button.theme.colors.mode === "dark" ? button.theme.colors.foreground : button.theme.colors.outline
+            opacity: button.theme.colors.mode === "dark" ? .22 : .55
         }
 
         StatusIcon {
