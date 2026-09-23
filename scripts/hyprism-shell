@@ -568,7 +568,8 @@ def set_shell_theme_preset(config, name, value):
 
 
 def reset_theme_settings(config):
-    defaults = default_config()
+    definitions = hyprland_appearance.presets(root_dir())
+    defaults = definitions["defaults"]
     settings = appearance(config)
     previous_mode = settings["mode"]
     previous_temperature = settings["whiteTemperature"]
@@ -578,9 +579,9 @@ def reset_theme_settings(config):
     settings["schedule"] = copy.deepcopy(standard["schedule"])
     settings.pop("warmWhite", None)
     shell = config.setdefault("shell", {})
-    shell["surfaceOpacity"] = defaults["shell"]["surfaceOpacity"]
-    shell["cornerRadiusPreset"] = defaults["shell"]["cornerRadiusPreset"]
-    shell["blurPreset"] = defaults["shell"]["blurPreset"]
+    shell["surfaceOpacity"] = definitions["surfaceOpacity"][defaults["surfaceOpacity"]]["shell"]
+    shell["cornerRadiusPreset"] = defaults["cornerRadius"]
+    shell["blurPreset"] = defaults["blur"]
     write_config(config)
     hyprland_appearance.sync(config, root_dir())
     if previous_mode != settings["mode"] or settings["mode"] == "light" and previous_temperature != settings["whiteTemperature"]:
