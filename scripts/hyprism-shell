@@ -18,6 +18,9 @@ import tty
 import urllib.parse
 import urllib.request
 
+sys.path.insert(0, str(Path(__file__).resolve().parent / "theme"))
+import hyprland_appearance
+
 
 SUPPORTED_LANGUAGES = ("en", "pt-BR")
 WIDGETS = ("clock", "weather", "media", "system", "network", "storage", "sensors", "uptime", "services", "tasks", "processes")
@@ -33,7 +36,6 @@ PANELS = {
     "recording": "toggleRecording",
 }
 THEME_MODES = ("dark", "light")
-THEME_SURFACE_OPACITIES = (1.0, 0.96, 0.9, 0.78)
 SYSTEMD_UNIT_SUFFIXES = (
     ".service", ".socket", ".timer", ".path", ".target", ".mount",
     ".automount", ".swap", ".device", ".slice", ".scope",
@@ -561,6 +563,7 @@ def set_shell_theme_preset(config, name, value):
     if shell.get(name) != value:
         shell[name] = value
         write_config(config)
+    hyprland_appearance.sync(config, root_dir())
     return value
 
 
@@ -577,7 +580,9 @@ def reset_theme_settings(config):
     shell = config.setdefault("shell", {})
     shell["surfaceOpacity"] = defaults["shell"]["surfaceOpacity"]
     shell["cornerRadiusPreset"] = defaults["shell"]["cornerRadiusPreset"]
+    shell["blurPreset"] = defaults["shell"]["blurPreset"]
     write_config(config)
+    hyprland_appearance.sync(config, root_dir())
     if previous_mode != settings["mode"] or settings["mode"] == "light" and previous_temperature != settings["whiteTemperature"]:
         regenerate_theme()
     return settings["mode"]
@@ -602,10 +607,17 @@ def theme_command(args):
         print(set_white_temperature(config, args.level))
         return 0
     if args.theme_command == "surface-opacity":
-        print(set_shell_theme_preset(config, "surfaceOpacity", THEME_SURFACE_OPACITIES[args.level]))
+        opacity = hyprland_appearance.presets(root_dir())["surfaceOpacity"][args.level]["shell"]
+        print(set_shell_theme_preset(config, "surfaceOpacity", opacity))
         return 0
     if args.theme_command == "radius":
         print(set_shell_theme_preset(config, "cornerRadiusPreset", args.level))
+        return 0
+    if args.theme_command == "blur":
+        print(set_shell_theme_preset(config, "blurPreset", args.level))
+        return 0
+    if args.theme_command == "sync":
+        hyprland_appearance.sync(config, root_dir())
         return 0
     if args.theme_command == "reset":
         print(reset_theme_settings(config))
@@ -1189,6 +1201,11 @@ def parser():
     radius_commands = radius.add_subparsers(dest="radius_command", required=True)
     radius_set = radius_commands.add_parser("set", help="set a corner radius preset")
     radius_set.add_argument("level", type=int, choices=range(4))
+    blur = theme_commands.add_parser("blur", help="select compositor blur")
+    blur_commands = blur.add_subparsers(dest="blur_command", required=True)
+    blur_set = blur_commands.add_parser("set", help="set a blur preset")
+    blur_set.add_argument("level", type=int, choices=range(4))
+    theme_commands.add_parser("sync", help="apply persisted compositor theme settings")
     theme_commands.add_parser("reset", help="restore theme settings defaults")
     schedule = theme_commands.add_parser("schedule", help="manage automatic appearance switching")
     schedule_commands = schedule.add_subparsers(dest="schedule_command", required=True)

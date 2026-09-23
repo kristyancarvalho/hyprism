@@ -40,10 +40,15 @@ QtObject {
     readonly property int compactSeparatorWidth: 1
     property int cornerRadiusPreset: 1
     property real shellSurfaceOpacity: .9
-    readonly property real radiusScale: [0.55, 1, 1.35, 1.7][Math.max(0, Math.min(3, cornerRadiusPreset))]
+    property var radiusScales: []
+    readonly property real radiusScale: radiusScales[cornerRadiusPreset] || 1
     readonly property int radiusSmall: Math.max(2, Math.round(6 * radiusScale))
     readonly property int radiusDefault: Math.max(3, Math.round(9 * radiusScale))
     readonly property int radiusLarge: Math.max(5, Math.round(16 * radiusScale))
+    function themedSurfaceOpacity(baseOpacity) {
+        if (shellSurfaceOpacity >= .999) return 1
+        return clamp(baseOpacity * shellSurfaceOpacity / .9, 0, 1)
+    }
     readonly property int radiusXs: radiusSmall
     readonly property int radiusSm: radiusDefault
     readonly property int radiusMd: radiusLarge

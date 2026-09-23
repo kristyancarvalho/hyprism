@@ -21,6 +21,7 @@ ShellRoot {
     property bool notificationServerReady: false
     property string configError: ""
     property string themeError: ""
+    property string presetError: ""
     readonly property bool hyprlandAvailable: !!Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE")
     readonly property bool developmentMode: Quickshell.env("HYPRISM_DEVELOPMENT") === "1"
     property string notificationScreenName: ""
@@ -251,6 +252,7 @@ ShellRoot {
         const defaultShell = shellController.defaultShellConfig()
         const incomingOpacity = Number(incomingShell.surfaceOpacity)
         const incomingRadius = incomingShell.cornerRadiusPreset
+        const incomingBlur = incomingShell.blurPreset
         shellController.config = {
             paths: parsed.paths || {},
             appearance: {
@@ -265,6 +267,7 @@ ShellRoot {
             shell: Object.assign({}, defaultShell, incomingShell, {
                 surfaceOpacity: Number.isFinite(incomingOpacity) && incomingOpacity >= .5 && incomingOpacity <= 1 ? incomingOpacity : defaultShell.surfaceOpacity,
                 cornerRadiusPreset: Number.isInteger(incomingRadius) && incomingRadius >= 0 && incomingRadius <= 3 ? incomingRadius : defaultShell.cornerRadiusPreset,
+                blurPreset: Number.isInteger(incomingBlur) && incomingBlur >= 0 && incomingBlur <= 3 ? incomingBlur : defaultShell.blurPreset,
                 widgetLayout: Object.assign({}, defaultShell.widgetLayout, incomingShell.widgetLayout || {}),
                 widgets: shellController.mergedWidgetConfig(incomingShell.widgets || {})
             })
@@ -274,6 +277,13 @@ ShellRoot {
         shellController.configurationRevision += 1
         updateThemeSchedule()
         configError = ""
+    }
+    function applyPresets(raw: string): void {
+        const parsed = JSON.parse(raw)
+        if (!parsed || !Array.isArray(parsed.surfaceOpacity) || !Array.isArray(parsed.cornerRadius) || !Array.isArray(parsed.blur) || parsed.surfaceOpacity.length !== 4 || parsed.cornerRadius.length !== 4 || parsed.blur.length !== 4) throw new Error("invalid theme presets")
+        shellController.themePresets = parsed
+        Design.radiusScales = parsed.cornerRadius.map(preset => preset.scale)
+        presetError = ""
     }
     function applyTheme(raw: string): void {
         const source = Design.safeText(raw, "")
@@ -297,6 +307,16 @@ ShellRoot {
             const message = String(error)
             if (message !== themeError) console.warn("invalid Hyprism theme; retaining the last valid state:", message)
             themeError = message
+        }
+    }
+    function reloadPresets(): void {
+        const source = presetFile.text()
+        if (!source) return
+        try { applyPresets(source) }
+        catch (error) {
+            const message = String(error)
+            if (message !== presetError) console.warn("invalid Hyprism theme presets; retaining the last valid state:", message)
+            presetError = message
         }
     }
     function fullscreenScreens(): var {
@@ -326,6 +346,7 @@ ShellRoot {
         target: "shell"
         function openHub(): void { shellController.openHub(root.focusedScreenName()) }
         function toggleHub(): void { shellController.toggleHub(root.focusedScreenName()) }
+        function toggleBar(): void { shellController.toggleBar() }
         function toggleLauncher(): void { shellController.toggleLauncher(root.focusedScreenName()) }
         function toggleClipboard(): void { shellController.toggleClipboard(root.focusedScreenName()) }
         function toggleWallpaperPicker(): void { shellController.toggleWallpaperPicker(root.focusedScreenName()) }
@@ -367,6 +388,8 @@ ShellRoot {
                 whiteTemperature: shellController.whiteTemperature,
                 surfaceOpacity: shellController.config.shell.surfaceOpacity,
                 cornerRadiusPreset: shellController.cornerRadiusPreset,
+                blurPreset: shellController.blurPreset,
+                barVisible: shellController.barVisible,
                 appearanceSchedule: shellController.config.appearance.schedule,
                 pid: Quickshell.processId,
                 mode: shellController.mode,
@@ -382,6 +405,7 @@ ShellRoot {
                 islandWidth: shellController.config.shell.islandWidth,
                 configError: root.configError,
                 themeError: root.themeError,
+                presetError: root.presetError,
                 islandLoaded: root.islandLoaded,
                 widgetsLoaded: root.widgetsLoaded,
                 notificationServer: root.notificationServerReady,
@@ -517,6 +541,17 @@ ShellRoot {
         }
     }
 
+    FileView {
+        id: presetFile
+        path: shellController.rootDir + "/config/theme/presets.json"
+        blockLoading: true
+        preload: true
+        watchChanges: true
+        printErrors: false
+        onLoaded: root.reloadPresets()
+        onTextChanged: root.reloadPresets()
+        onFileChanged: reload()
+    }
     FileView {
         id: configFile
         path: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/hyprism/user.json"

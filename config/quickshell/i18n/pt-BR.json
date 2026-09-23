@@ -154,6 +154,11 @@
     "radiusDefault": "Padrão",
     "radiusSoft": "Suave",
     "radiusRound": "Redondo",
+    "blur": "Desfoque",
+    "blurOff": "Desligado",
+    "blurSoft": "Suave",
+    "blurDefault": "Padrão",
+    "blurStrong": "Forte",
     "reset": "Restaurar padrões"
   },
   "notifications": {

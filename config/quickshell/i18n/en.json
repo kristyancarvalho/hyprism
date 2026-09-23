@@ -154,6 +154,11 @@
     "radiusDefault": "Default",
     "radiusSoft": "Soft",
     "radiusRound": "Round",
+    "blur": "Blur",
+    "blurOff": "Off",
+    "blurSoft": "Soft",
+    "blurDefault": "Default",
+    "blurStrong": "Strong",
     "reset": "Reset to defaults"
   },
   "notifications": {

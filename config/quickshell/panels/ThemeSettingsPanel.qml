@@ -35,7 +35,7 @@ FocusScope {
     }
 
     function initialFocusReady() {
-        return appearance.activeFocus || temperature.activeFocus || opacity.activeFocus || corners.activeFocus || resetButton.activeFocus || lightStart.inputActiveFocus || darkStart.inputActiveFocus
+        return appearance.activeFocus || temperature.activeFocus || opacity.activeFocus || corners.activeFocus || blur.activeFocus || resetButton.activeFocus || lightStart.inputActiveFocus || darkStart.inputActiveFocus
     }
 
     focus: true
@@ -83,7 +83,7 @@ FocusScope {
             }
         }
 
-        DiscreteLevelPill {
+        AppearanceChoice {
             id: appearance
             Layout.fillWidth: true
             theme: panel.theme
@@ -212,6 +212,17 @@ FocusScope {
             options: [I18n.tr("themeSettings.radiusSharp"), I18n.tr("themeSettings.radiusDefault"), I18n.tr("themeSettings.radiusSoft"), I18n.tr("themeSettings.radiusRound")]
             value: panel.controller.cornerRadiusPreset
             onChanged: value => panel.controller.setCornerRadiusPreset(value)
+        }
+
+        DiscreteLevelPill {
+            id: blur
+            Layout.fillWidth: true
+            theme: panel.theme
+            label: I18n.tr("themeSettings.blur")
+            iconName: "brightness"
+            options: [I18n.tr("themeSettings.blurOff"), I18n.tr("themeSettings.blurSoft"), I18n.tr("themeSettings.blurDefault"), I18n.tr("themeSettings.blurStrong")]
+            value: panel.controller.blurPreset
+            onChanged: value => panel.controller.setBlurPreset(value)
         }
 
         ShellButton {

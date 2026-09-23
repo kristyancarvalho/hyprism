@@ -96,7 +96,7 @@ PanelWindow {
                 Glass {
                     id: clockCard
                     theme: widgetWindow.theme
-                    surfaceOpacity: .84
+                    surfaceOpacity: Design.themedSurfaceOpacity(.84)
                     width: controller.widgetEnabled("clock") ? (controller.widgetEnabled("weather") ? (parent.width - parent.spacing) * .44 : parent.width) : 0
                     height: parent.height
                     radius: Design.radiusMd
@@ -128,7 +128,7 @@ PanelWindow {
 
                 Glass {
                     theme: widgetWindow.theme
-                    surfaceOpacity: .84
+                    surfaceOpacity: Design.themedSurfaceOpacity(.84)
                     width: controller.widgetEnabled("weather") ? parent.width - clockCard.width - (clockCard.visible ? parent.spacing : 0) : 0
                     height: parent.height
                     radius: Design.radiusMd
@@ -562,7 +562,7 @@ PanelWindow {
 
             Glass {
                 theme: widgetWindow.theme
-                surfaceOpacity: .88
+                surfaceOpacity: Design.themedSurfaceOpacity(.88)
                 width: parent.width
                 height: visible ? 112 : 0
                 radius: Design.radiusMd
