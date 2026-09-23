@@ -3,7 +3,7 @@ hl.config({
         gaps_in = 4,
         gaps_out = 10,
         border_size = 0,
-        layout = "dwindle",
+        layout = "scrolling",
         resize_on_border = true,
         allow_tearing = false,
     },
