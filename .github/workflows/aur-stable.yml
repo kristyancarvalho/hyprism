@@ -38,7 +38,11 @@ jobs:
           install -d -m 0700 -o aurbuilder -g aurbuilder /home/aurbuilder/.ssh
           install -m 0600 -o aurbuilder -g aurbuilder /dev/null /home/aurbuilder/.ssh/aur
           printf '%s\n' "$AUR_SSH_PRIVATE_KEY" >/home/aurbuilder/.ssh/aur
-          ssh-keyscan -t ed25519 aur.archlinux.org >/home/aurbuilder/.ssh/known_hosts
+          for delay in 0 5 10 20 40; do
+            sleep "$delay"
+            ssh-keyscan -t ed25519 aur.archlinux.org >/home/aurbuilder/.ssh/known_hosts && break
+          done
+          test -s /home/aurbuilder/.ssh/known_hosts
           chown aurbuilder:aurbuilder /home/aurbuilder/.ssh/known_hosts
           chmod 0600 /home/aurbuilder/.ssh/known_hosts
           printf '%s\n' 'Host aur.archlinux.org' '  IdentityFile ~/.ssh/aur' '  IdentitiesOnly yes' >/home/aurbuilder/.ssh/config

@@ -14,9 +14,19 @@ release=$($root_dir/scripts/aur/release-info)
 tag=$(jq -r .tag <<<"$release")
 version=$(jq -r .version <<<"$release")
 
+retry() {
+  local attempt=1
+  until "$@"; do
+    ((attempt >= 5)) && return 1
+    sleep $((attempt * 10))
+    attempt=$((attempt + 1))
+  done
+}
+
 if [[ ! -d $destination/.git ]]; then
-  git clone "ssh://aur@aur.archlinux.org/${package}.git" "$destination"
+  git clone "https://aur.archlinux.org/${package}.git" "$destination"
 fi
+git -C "$destination" remote set-url --push origin "ssh://aur@aur.archlinux.org/${package}.git"
 
 if [[ $channel == stable ]]; then
   archive=$(jq -r .archive <<<"$release")
@@ -68,6 +78,6 @@ fi
     git -c user.name='Hyprism AUR Bot' -c user.email='actions@users.noreply.github.com' commit -m 'Initial import'
   fi
   if [[ ${AUR_PUSH:-0} == 1 ]]; then
-    git push origin HEAD:master
+    retry git push origin HEAD:master
   fi
 )
