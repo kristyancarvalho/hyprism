@@ -47,6 +47,15 @@ QtObject {
 
     function monitorHasFullscreen(screen) {
         const monitor = monitorFor(screen)
-        return !!(monitor && monitor.activeWorkspace && monitor.activeWorkspace.hasFullscreen)
+        const workspace = monitor ? monitor.activeWorkspace : null
+        if (!workspace || !workspace.hasFullscreen) return false
+        const toplevels = Hyprland.toplevels && Hyprland.toplevels.values ? Hyprland.toplevels.values : []
+        for (let index = 0; index < toplevels.length; index++) {
+            const toplevel = toplevels[index]
+            if (!toplevel || !toplevel.monitor || !toplevel.workspace) continue
+            if (toplevel.monitor.name !== monitor.name || toplevel.workspace.id !== workspace.id) continue
+            if (toplevel.wayland && toplevel.wayland.fullscreen) return true
+        }
+        return false
     }
 }
