@@ -90,6 +90,9 @@ class ThemeTests(unittest.TestCase):
                 rendered = THEME.render_hyprlock_config(theme, "pt-BR")
                 self.assertIn("text = cmd[update:2500] hyprism-media-lock-indicator", rendered)
                 self.assertIn("color = $hyprism_muted", rendered)
+                self.assertIn("reload_cmd = hyprism-media-lock-indicator --cover", rendered)
+                image_block = rendered.split("\nimage {\n", 1)[1].split("\n}\n", 1)[0]
+                self.assertIn("\n    path =\n", image_block)
 
     def test_papirus_inheritance_follows_mode(self):
         self.assertIn("Inherits=Papirus,hicolor", THEME.papirus_index(["16x16"], "light"))

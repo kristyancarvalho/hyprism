@@ -6,6 +6,8 @@ import sys
 import tempfile
 import unittest
 
+from PIL import Image
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts/system/media-lock-indicator.py"
@@ -28,7 +30,7 @@ elif arguments[-1:] == ["metadata"]:
     if player.get("metadataError"):
         raise SystemExit(1)
     template = arguments[arguments.index("--format") + 1]
-    print(template.replace("{{title}}", player.get("title", "")).replace("{{artist}}", player.get("artist", "")))
+    print(template.replace("{{title}}", player.get("title", "")).replace("{{artist}}", player.get("artist", "")).replace("{{mpris:artUrl}}", player.get("artUrl", "")))
 '''
 
 
@@ -46,16 +48,17 @@ class HyprlockMediaTests(unittest.TestCase):
     def tearDown(self):
         self.temporary.cleanup()
 
-    def run_indicator(self, players=None, **extra):
+    def run_indicator(self, players=None, arguments=(), **extra):
         self.fixture.write_text(json.dumps(players or []), encoding="utf-8")
         environment = {
             **os.environ,
             "PATH": f"{self.bin}:/usr/bin:/bin",
             "HYPRISM_TEST_PLAYERS": self.fixture.read_text(encoding="utf-8"),
+            "HYPRISM_CACHE_DIR": str(self.directory / "cache"),
         }
         environment.update(extra)
         return subprocess.run(
-            [sys.executable, str(SCRIPT)],
+            [sys.executable, str(SCRIPT), *arguments],
             env=environment,
             text=True,
             capture_output=True,
@@ -119,6 +122,27 @@ class HyprlockMediaTests(unittest.TestCase):
         result = self.run_indicator([], HYPRISM_TEST_STATUS_ERROR="1")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout, "")
+
+    def test_cover_command_loads_local_artwork_and_hides_it_when_paused(self):
+        source = self.directory / "artwork.png"
+        Image.new("RGB", (40, 20), (180, 30, 80)).save(source)
+        result = self.run_indicator([{
+            "name": "player",
+            "status": "Playing",
+            "title": "Track",
+            "artUrl": source.as_uri(),
+        }], arguments=["--cover"])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        cover = Path(result.stdout.strip())
+        with Image.open(cover) as image:
+            self.assertEqual(image.size, (256, 256))
+            self.assertEqual(image.getpixel((128, 128)), (180, 30, 80))
+        paused = self.run_indicator([{"name": "player", "status": "Paused"}], arguments=["--cover"])
+        self.assertEqual(paused.returncode, 0, paused.stderr)
+        empty_cover = Path(paused.stdout.strip())
+        with Image.open(empty_cover) as image:
+            self.assertEqual(image.size, (1, 1))
+            self.assertEqual(image.getpixel((0, 0))[3], 0)
 
 
 if __name__ == "__main__":
