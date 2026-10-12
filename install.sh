@@ -285,6 +285,7 @@ link_path "$runtime_root/scripts/system/reload-shell" "$target_home/.local/bin/h
 link_path "$runtime_root/scripts/system/start-shell" "$target_home/.local/bin/hyprism-start-shell"
 link_path "$runtime_root/scripts/system/shell-ipc" "$target_home/.local/bin/hyprism-shell-ipc"
 link_path "$runtime_root/scripts/system/lock" "$target_home/.local/bin/hyprism-lock"
+link_path "$runtime_root/scripts/system/media-lock-indicator.py" "$target_home/.local/bin/hyprism-media-lock-indicator"
 link_path "$runtime_root/scripts/hyprism-shell" "$target_home/.local/bin/hyprism-shell"
 link_path "$runtime_root/config/applications/hyprism-keyboard-setup.desktop" "$target_home/.local/share/applications/hyprism-keyboard-setup.desktop"
 link_path "$runtime_root/config/applications/hyprism-screenshot.desktop" "$target_home/.local/share/applications/hyprism-screenshot.desktop"

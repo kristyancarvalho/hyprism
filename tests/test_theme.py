@@ -83,6 +83,14 @@ class ThemeTests(unittest.TestCase):
         self.assertIn("    text = Bloqueado", portuguese)
         self.assertIn("date +'%d/%m/%Y'", portuguese)
 
+    def test_dynamic_media_label_is_theme_aware_and_kept_in_generated_config(self):
+        for mode, raw in (("dark", THEME.fallback_palette("dark")), ("light", self.light_raw())):
+            with self.subTest(mode=mode):
+                theme = THEME.theme_from(raw, "/tmp/wallpaper.png", mode)
+                rendered = THEME.render_hyprlock_config(theme, "pt-BR")
+                self.assertIn("text = cmd[update:2500] hyprism-media-lock-indicator", rendered)
+                self.assertIn("color = $hyprism_muted", rendered)
+
     def test_papirus_inheritance_follows_mode(self):
         self.assertIn("Inherits=Papirus,hicolor", THEME.papirus_index(["16x16"], "light"))
         self.assertIn("Inherits=Papirus-Dark,Papirus,hicolor", THEME.papirus_index(["16x16"], "dark"))
