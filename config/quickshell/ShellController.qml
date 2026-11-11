@@ -61,6 +61,8 @@ Item {
     }
     readonly property int cornerRadiusPreset: config.shell ? config.shell.cornerRadiusPreset : 1
     readonly property int blurPreset: config.shell ? config.shell.blurPreset : 2
+    readonly property var normalLayouts: ["scrolling", "dwindle"]
+    readonly property string normalLayout: config.hyprland && config.hyprland.layout === "scrolling" ? "scrolling" : "dwindle"
     readonly property date currentTime: systemClock.date
     property var appEntries: []
     property var applicationIndex: ({})
@@ -100,7 +102,7 @@ Item {
         tasks: { enabled: true, limit: 3 },
         processes: { enabled: true, limit: 3 }
     })
-    property var config: ({ paths: { wallpapers: "~/Pictures/Wallpapers", screenshots: "~/Pictures/Screenshots", recordings: "~/Videos/Recordings" }, appearance: { mode: "dark", whiteTemperature: 0, schedule: { enabled: false, lightStart: "07:00", darkStart: "18:00" } }, shell: { primaryMonitor: "", islandWidth: 560, compactHeight: Design.compactBarHeight, topMargin: Design.shellTopMargin, reserveGap: Design.compactBottomGap, surfaceOpacity: .9, cornerRadiusPreset: 1, blurPreset: 2, animationFast: Design.animationFast, animationNormal: Design.animationMorph, widgetLayout: { side: "right", position: "legacy" }, widgets: widgetDefaults } })
+    property var config: ({ paths: { wallpapers: "~/Pictures/Wallpapers", screenshots: "~/Pictures/Screenshots", recordings: "~/Videos/Recordings" }, appearance: { mode: "dark", whiteTemperature: 0, schedule: { enabled: false, lightStart: "07:00", darkStart: "18:00" } }, hyprland: { layout: "dwindle" }, shell: { primaryMonitor: "", islandWidth: 560, compactHeight: Design.compactBarHeight, topMargin: Design.shellTopMargin, reserveGap: Design.compactBottomGap, surfaceOpacity: .9, cornerRadiusPreset: 1, blurPreset: 2, animationFast: Design.animationFast, animationNormal: Design.animationMorph, widgetLayout: { side: "right", position: "legacy" }, widgets: widgetDefaults } })
     property string rootDir: Quickshell.env("HYPRISM_ROOT") || Quickshell.shellDir + "/../.."
     readonly property bool developmentMode: Quickshell.env("HYPRISM_DEVELOPMENT") === "1"
     readonly property var panelModes: ["launcher", "wallpaper", "clipboard", "control", "network", "bluetooth", "themeSettings", "power", "emoji", "switcher", "recordingSelector"]
@@ -339,6 +341,12 @@ Item {
         const shell = Object.assign({}, config.shell, { blurPreset: preset })
         config = Object.assign({}, config, { shell: shell })
         run([rootDir + "/scripts/hyprism-shell", "theme", "blur", "set", String(preset)])
+    }
+
+    function setNormalLayout(layout) {
+        if (normalLayouts.indexOf(layout) < 0) return
+        config = Object.assign({}, config, { hyprland: Object.assign({}, config.hyprland, { layout: layout }) })
+        run([rootDir + "/scripts/hyprism-shell", "layout", "set", layout])
     }
 
     function resetThemeSettings() {

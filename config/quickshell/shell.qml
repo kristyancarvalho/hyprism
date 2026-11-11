@@ -247,6 +247,7 @@ ShellRoot {
         I18n.locale = I18n.supportedLocales.indexOf(parsed.language) >= 0 ? parsed.language : "en"
         const incomingShell = parsed.shell || {}
         const incomingAppearance = parsed.appearance || {}
+        const incomingHyprland = parsed.hyprland || {}
         const incomingSchedule = incomingAppearance.schedule || {}
         const incomingTemperature = incomingAppearance.whiteTemperature
         const defaultShell = shellController.defaultShellConfig()
@@ -263,6 +264,9 @@ ShellRoot {
                     lightStart: Design.safeText(incomingSchedule.lightStart, "07:00"),
                     darkStart: Design.safeText(incomingSchedule.darkStart, "18:00")
                 }
+            },
+            hyprland: {
+                layout: incomingHyprland.layout === "scrolling" ? "scrolling" : "dwindle"
             },
             shell: Object.assign({}, defaultShell, incomingShell, {
                 surfaceOpacity: Number.isFinite(incomingOpacity) && incomingOpacity >= .5 && incomingOpacity <= 1 ? incomingOpacity : defaultShell.surfaceOpacity,
@@ -389,6 +393,7 @@ ShellRoot {
                 surfaceOpacity: shellController.config.shell.surfaceOpacity,
                 cornerRadiusPreset: shellController.cornerRadiusPreset,
                 blurPreset: shellController.blurPreset,
+                normalLayout: shellController.normalLayout,
                 barVisible: shellController.barVisible,
                 appearanceSchedule: shellController.config.appearance.schedule,
                 pid: Quickshell.processId,

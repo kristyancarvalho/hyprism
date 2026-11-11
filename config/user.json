@@ -14,6 +14,9 @@
     "screenshots": "~/Pictures/Screenshots",
     "recordings": "~/Videos/Recordings"
   },
+  "hyprland": {
+    "layout": "dwindle"
+  },
   "keyboard": {
     "default": null,
     "devices": {}

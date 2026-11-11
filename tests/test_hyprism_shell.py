@@ -345,6 +345,87 @@ elif name == "satty":
         self.assertEqual(updated["shell"]["blurPreset"], 2)
         self.assertEqual(updated["weather"]["location"], "Preserve Me")
 
+    def use_fake_hyprctl(self):
+        directory = Path(self.temporary.name) / "hyprctl-bin"
+        directory.mkdir(exist_ok=True)
+        command = directory / "hyprctl"
+        command.write_text("""#!/usr/bin/env python3
+import json
+import os
+import sys
+with open(os.environ["HYPRISM_TEST_HYPRCTL_LOG"], "a", encoding="utf-8") as log:
+    log.write(json.dumps(sys.argv[1:]) + "\\n")
+print("ok")
+""", encoding="utf-8")
+        command.chmod(0o755)
+        log = Path(self.temporary.name) / "hyprctl.log"
+        self.environment["HYPRISM_TEST_HYPRCTL_LOG"] = str(log)
+        self.environment["HYPRLAND_INSTANCE_SIGNATURE"] = "test"
+        self.environment["PATH"] = str(directory) + os.pathsep + self.environment["PATH"]
+        return log
+
+    def test_layout_get_set_toggle_persist_and_generate(self):
+        self.use_fake_theme_runtime()
+        generated = Path(self.environment["HYPRISM_CACHE_DIR"]) / "theme/layout.lua"
+        self.assertEqual(self.run_cli("layout", "get").stdout, "dwindle\n")
+
+        toggled = self.run_cli("layout", "toggle")
+        self.assertEqual(toggled.returncode, 0, toggled.stderr)
+        self.assertEqual(toggled.stdout, "scrolling\n")
+        self.assertEqual(self.read_config()["hyprland"], {"layout": "scrolling"})
+        self.assertEqual(generated.read_text(encoding="utf-8"), 'return {\n    layout = "scrolling",\n}\n')
+        self.assertEqual(self.run_cli("layout", "get").stdout, "scrolling\n")
+
+        self.assertEqual(self.run_cli("layout", "toggle").stdout, "dwindle\n")
+        self.assertEqual(self.read_config()["hyprland"]["layout"], "dwindle")
+        self.assertIn('layout = "dwindle"', generated.read_text(encoding="utf-8"))
+
+        self.assertEqual(self.run_cli("layout", "set", "scrolling").stdout, "scrolling\n")
+        self.assertEqual(self.read_config()["hyprland"]["layout"], "scrolling")
+        before = self.config.read_text(encoding="utf-8")
+        invalid = self.run_cli("layout", "set", "master")
+        self.assertNotEqual(invalid.returncode, 0)
+        self.assertEqual(self.config.read_text(encoding="utf-8"), before)
+
+    def test_layout_invalid_stored_value_falls_back_to_dwindle(self):
+        self.use_fake_theme_runtime()
+        configured = self.read_config()
+        configured["hyprland"] = {"layout": "master"}
+        self.config.write_text(json.dumps(configured), encoding="utf-8")
+        self.assertEqual(self.run_cli("layout", "get").stdout, "dwindle\n")
+        self.assertEqual(self.run_cli("layout", "toggle").stdout, "scrolling\n")
+
+    def test_layout_updates_running_hyprland_general_layout_only(self):
+        self.use_fake_theme_runtime()
+        log = self.use_fake_hyprctl()
+        result = self.run_cli("layout", "set", "scrolling")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(calls, [["eval", 'hl.config({ general = { layout = "scrolling" } })']])
+
+    def test_theme_sync_and_reset_apply_persisted_layout(self):
+        self.use_fake_theme_runtime()
+        log = self.use_fake_hyprctl()
+        self.run_cli("layout", "set", "scrolling")
+        log.unlink()
+        sync = self.run_cli("theme", "sync")
+        self.assertEqual(sync.returncode, 0, sync.stderr)
+        calls = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
+        self.assertIn(["eval", 'hl.config({ general = { layout = "scrolling" } })'], calls)
+        reset = self.run_cli("theme", "reset")
+        self.assertEqual(reset.returncode, 0, reset.stderr)
+        self.assertEqual(self.read_config()["hyprland"]["layout"], "dwindle")
+
+    def test_layout_keybinding_and_magic_workspace_rule(self):
+        keybindings = (ROOT / "config/hypr/modules/keybindings.lua").read_text(encoding="utf-8")
+        workspaces = (ROOT / "config/hypr/modules/workspaces.lua").read_text(encoding="utf-8")
+        general = (ROOT / "config/hypr/modules/general.lua").read_text(encoding="utf-8")
+        self.assertIn('bind(mod .. " + SHIFT + space", cli .. " layout toggle")', keybindings)
+        self.assertIn('hl.workspace_rule({ workspace = "special:magic", layout = "scrolling" })', workspaces)
+        self.assertIn('hl.bind(mod .. " + S", hl.dsp.workspace.toggle_special("magic"))', workspaces)
+        self.assertIn('"/theme/layout.lua"', general)
+        self.assertIn("layout = layout,", general)
+
     def test_migration_preserves_legacy_preferences_and_ptbr(self):
         existing = Path(self.temporary.name) / "existing.json"
         existing.write_text(json.dumps({"shell": {"widgets": {"clock": {"enabled": False}}}, "weather": {"location": "Recife"}}), encoding="utf-8")

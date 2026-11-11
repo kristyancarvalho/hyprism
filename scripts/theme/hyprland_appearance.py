@@ -4,6 +4,9 @@ from pathlib import Path
 import subprocess
 import tempfile
 
+LAYOUTS = ("scrolling", "dwindle")
+DEFAULT_LAYOUT = "dwindle"
+
 
 def presets(root):
     with (root / "config/theme/presets.json").open(encoding="utf-8") as source:
@@ -44,24 +47,40 @@ def render(value):
     )
 
 
+def cache_dir():
+    return Path(os.environ.get("HYPRISM_CACHE_DIR", Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "hyprism"))
+
+
 def generated_path():
-    cache = Path(os.environ.get("HYPRISM_CACHE_DIR", Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "hyprism"))
-    return cache / "theme/appearance.lua"
+    return cache_dir() / "theme/appearance.lua"
 
 
-def persist(value):
-    target = generated_path()
+def layout_path():
+    return cache_dir() / "theme/layout.lua"
+
+
+def write_atomic(target, content):
     target.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(prefix=".appearance.", dir=target.parent)
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{target.stem}.", dir=target.parent)
     temporary = Path(temporary_name)
     try:
         with os.fdopen(descriptor, "w", encoding="utf-8") as output:
-            output.write(render(value))
+            output.write(content)
             output.flush()
             os.fsync(output.fileno())
         os.replace(temporary, target)
     finally:
         temporary.unlink(missing_ok=True)
+
+
+def persist(value):
+    write_atomic(generated_path(), render(value))
+
+
+def evaluate(request, failure):
+    result = subprocess.run(["hyprctl", "eval", request], capture_output=True, text=True, check=False)
+    if result.returncode or result.stdout.strip() != "ok":
+        raise SystemExit((result.stderr or result.stdout).strip() or failure)
 
 
 def apply_runtime(value):
@@ -78,13 +97,47 @@ def apply_runtime(value):
         f'passes = {blur["passes"]}'
         " } } })"
     )
-    result = subprocess.run(["hyprctl", "eval", request], capture_output=True, text=True, check=False)
-    if result.returncode or result.stdout.strip() != "ok":
-        raise SystemExit((result.stderr or result.stdout).strip() or "Hyprland theme update failed")
+    evaluate(request, "Hyprland theme update failed")
+
+
+def layout(config):
+    settings = config.get("hyprland")
+    value = settings.get("layout") if isinstance(settings, dict) else None
+    return value if value in LAYOUTS else DEFAULT_LAYOUT
+
+
+def set_layout(config, value):
+    if value not in LAYOUTS:
+        raise SystemExit(f"Unknown layout: {value}")
+    settings = config.get("hyprland")
+    if not isinstance(settings, dict):
+        settings = {}
+        config["hyprland"] = settings
+    changed = settings.get("layout") != value
+    settings["layout"] = value
+    return changed
+
+
+def render_layout(value):
+    return f'return {{\n    layout = "{value}",\n}}\n'
+
+
+def apply_layout_runtime(value):
+    if not os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+        return
+    evaluate(f'hl.config({{ general = {{ layout = "{value}" }} }})', "Hyprland layout update failed")
+
+
+def sync_layout(config):
+    value = layout(config)
+    write_atomic(layout_path(), render_layout(value))
+    apply_layout_runtime(value)
+    return value
 
 
 def sync(config, root):
     resolved = values(config, presets(root))
     persist(resolved)
     apply_runtime(resolved)
+    sync_layout(config)
     return resolved

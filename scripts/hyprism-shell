@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 import argparse
+import contextlib
 import copy
 from datetime import datetime
+import fcntl
 import importlib.util
 import json
 import os
@@ -601,6 +603,7 @@ def reset_theme_settings(config):
     shell["surfaceOpacity"] = definitions["surfaceOpacity"][defaults["surfaceOpacity"]]["shell"]
     shell["cornerRadiusPreset"] = defaults["cornerRadius"]
     shell["blurPreset"] = defaults["blur"]
+    hyprland_appearance().set_layout(config, defaults.get("layout", hyprland_appearance().DEFAULT_LAYOUT))
     write_config(config)
     hyprland_appearance().sync(config, root_dir())
     if previous_mode != settings["mode"] or settings["mode"] == "light" and previous_temperature != settings["whiteTemperature"]:
@@ -666,6 +669,36 @@ def theme_command(args):
     schedule["enabled"] = False
     write_config(config)
     print(settings["mode"])
+    return 0
+
+
+@contextlib.contextmanager
+def layout_lock():
+    path = hyprland_appearance().cache_dir() / "state/layout.lock"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(handle, fcntl.LOCK_UN)
+
+
+def layout_command(args):
+    backend = hyprland_appearance()
+    if args.layout_command == "get":
+        print(backend.layout(configuration()))
+        return 0
+    with layout_lock():
+        config = configuration()
+        if args.layout_command == "toggle":
+            target = "dwindle" if backend.layout(config) == "scrolling" else "scrolling"
+        else:
+            target = args.layout
+        if backend.set_layout(config, target):
+            write_config(config)
+        backend.sync_layout(config)
+    print(target)
     return 0
 
 
@@ -1239,6 +1272,13 @@ def parser():
     schedule_commands.add_parser("enable", help="enable and apply the schedule")
     schedule_commands.add_parser("disable", help="disable the schedule")
 
+    layout = commands.add_parser("layout", help="manage the tiling layout of normal workspaces")
+    layout_commands = layout.add_subparsers(dest="layout_command", required=True)
+    layout_commands.add_parser("get", help="print the selected layout")
+    layout_set = layout_commands.add_parser("set", help="select a layout")
+    layout_set.add_argument("layout", choices=("scrolling", "dwindle"))
+    layout_commands.add_parser("toggle", help="switch between the scrolling and dwindle layouts")
+
     keyboard = commands.add_parser("keyboard", help="inspect and configure keyboards")
     keyboard_commands = keyboard.add_subparsers(dest="keyboard_command", required=True)
     keyboard_commands.add_parser("setup", help="open the arrow-key keyboard setup")
@@ -1305,6 +1345,8 @@ def main():
         return language_command(args)
     if args.command == "theme":
         return theme_command(args)
+    if args.command == "layout":
+        return layout_command(args)
     if args.command == "keyboard":
         return keyboard_command(args)
     if args.command == "services":

@@ -274,6 +274,7 @@ Changing wallpaper preserves the selected appearance. Changing appearance preser
 | `Super+Ctrl+S` | Toggle night mode |
 | `Super+B` | Open Zen Browser |
 | `Super+1…0` | Go to workspaces 1–10 |
+| `Super+Shift+Space` | Toggle normal workspaces between scrolling and dwindle |
 
 ## Project structure
 

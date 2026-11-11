@@ -58,6 +58,11 @@ hyprism-shell theme schedule set 07:00 18:30
 hyprism-shell theme schedule get
 hyprism-shell theme schedule enable
 hyprism-shell theme schedule disable
+
+hyprism-shell layout get
+hyprism-shell layout set scrolling
+hyprism-shell layout set dwindle
+hyprism-shell layout toggle
 ```
 
 `keyboard setup` is an arrow-key interface for selecting a detected physical keyboard, previewing a layout live, and saving it only after confirmation. `Esc` restores the previous layout. Composite HID interfaces are grouped, and pointer receivers that expose auxiliary keyboard endpoints are omitted from the setup; `devices --all` includes them for diagnostics. Hyprism preserves detected system behavior by default and does not infer a layout from whether a keyboard is built in or external. Overrides are stored per Hyprland device identifier. Common presets are `system`, `us`, `us-intl`, `br-abnt2`, `pt`, `es`, `de`, and `fr`; any installed layout is available as `xkb:LAYOUT`.
@@ -69,6 +74,8 @@ Weather locations are resolved through Open-Meteo's geocoding service. Hyprism s
 Desktop widget names are `clock`, `weather`, `media`, `system`, `network`, `storage`, `sensors`, `uptime`, `services`, `tasks`, and `processes`. All-widget operations affect only these desktop widgets.
 
 Temperature levels range from neutral (`0`) to amber (`3`) and affect only light mode. The theme schedule treats the first boundary as the start of the light interval and the second as the start of the dark interval. Intervals may cross midnight. Scheduling is opt-in, is reconciled when Quickshell starts, and waits efficiently until the next boundary. A manual Hub toggle, `theme set`, or `theme toggle` disables scheduling and returns appearance control to manual mode.
+
+`layout` selects the tiling layout of normal workspaces and is shared by `Super+Shift+Space` and the Layout selector in Theme Settings. The choice is stored as `hyprland.layout` in `user.json`, applied to the running Hyprland session immediately, and restored on configuration reloads and new sessions. The `special:magic` workspace always uses scrolling regardless of this setting.
 
 ## Shell actions
 
