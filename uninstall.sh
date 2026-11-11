@@ -60,6 +60,7 @@ managed_links=(
   "$target_home/.local/share/applications/hyprism-screenshot.desktop"
   "$target_home/.local/bin/hyprism-action"
   "$target_home/.local/bin/hyprism-lock"
+  "$target_home/.local/bin/hyprism-media-lock-indicator"
   "$target_home/.local/bin/hyprism-reload-shell"
   "$target_home/.local/bin/hyprism-shell"
   "$target_home/.local/bin/hyprism-shell-ipc"

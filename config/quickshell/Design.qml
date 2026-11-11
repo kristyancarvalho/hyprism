@@ -69,7 +69,7 @@ QtObject {
     readonly property int workspaceCellSize: 24
     readonly property int workspaceCellSpacing: 4
     readonly property int morphSurfaceMaxWidth: 920
-    readonly property int morphSurfaceMaxHeight: 700
+    readonly property int morphSurfaceMaxHeight: 740
     readonly property int morphOvershootMargin: 16
     readonly property int launcherMaximumVisibleResults: 6
     readonly property int launcherResultRowHeight: 54
@@ -163,6 +163,7 @@ QtObject {
         powerSaver: "󰌪",
         colorPicker: "󰏘",
         settings: "󰒓",
+        layout: "󰕰",
         chevronRight: "󰅂",
         secure: "󰌾",
         temperature: "󰔏",

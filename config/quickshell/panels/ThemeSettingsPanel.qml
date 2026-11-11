@@ -35,7 +35,7 @@ FocusScope {
     }
 
     function initialFocusReady() {
-        return appearance.activeFocus || temperature.activeFocus || opacity.activeFocus || corners.activeFocus || blur.activeFocus || resetButton.activeFocus || lightStart.inputActiveFocus || darkStart.inputActiveFocus
+        return appearance.activeFocus || temperature.activeFocus || opacity.activeFocus || corners.activeFocus || blur.activeFocus || layout.activeFocus || resetButton.activeFocus || lightStart.inputActiveFocus || darkStart.inputActiveFocus
     }
 
     focus: true
@@ -223,6 +223,17 @@ FocusScope {
             options: [I18n.tr("themeSettings.blurOff"), I18n.tr("themeSettings.blurSoft"), I18n.tr("themeSettings.blurDefault"), I18n.tr("themeSettings.blurStrong")]
             value: panel.controller.blurPreset
             onChanged: value => panel.controller.setBlurPreset(value)
+        }
+
+        AppearanceChoice {
+            id: layout
+            Layout.fillWidth: true
+            theme: panel.theme
+            label: I18n.tr("themeSettings.layout")
+            iconName: "layout"
+            options: [I18n.tr("themeSettings.layoutScrolling"), I18n.tr("themeSettings.layoutDwindle")]
+            value: Math.max(0, panel.controller.normalLayouts.indexOf(panel.controller.normalLayout))
+            onChanged: value => panel.controller.setNormalLayout(panel.controller.normalLayouts[value])
         }
 
         ShellButton {

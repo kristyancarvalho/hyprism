@@ -159,6 +159,9 @@
     "blurSoft": "Soft",
     "blurDefault": "Default",
     "blurStrong": "Strong",
+    "layout": "Layout",
+    "layoutScrolling": "Scrolling",
+    "layoutDwindle": "Dwindle",
     "reset": "Reset to defaults"
   },
   "notifications": {

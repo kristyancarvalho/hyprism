@@ -11,7 +11,8 @@
     },
     "surfaceOpacity": 2,
     "cornerRadius": 1,
-    "blur": 2
+    "blur": 2,
+    "layout": "dwindle"
   },
   "surfaceOpacity": [
     { "shell": 1.0, "inactiveWindow": 1.0 },

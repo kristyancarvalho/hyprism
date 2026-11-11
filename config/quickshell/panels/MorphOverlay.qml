@@ -62,7 +62,7 @@ PanelWindow {
             height = controller.system.bluetooth.available && controller.system.bluetooth.devices.length ? Math.min(460, 76 + Design.listContentHeight(controller.system.bluetooth.devices.length, 58, 6, 58)) : 170
         } else if (mode === "themeSettings") {
             width = Math.min(safeWidth, 560)
-            height = controller.config.appearance.schedule.enabled ? 644 : 568
+            height = controller.config.appearance.schedule.enabled ? 728 : 652
         } else if (mode === "power") {
             width = Math.min(safeWidth, 640)
             height = 300

@@ -22,6 +22,7 @@ install-system:
 	cp -a scripts/hyprism-shell scripts/wallpaper scripts/system scripts/theme "$(DESTDIR)$(PREFIX)/share/hyprism/scripts/"
 	find "$(DESTDIR)$(PREFIX)/share/hyprism" -type d -name __pycache__ -prune -exec rm -rf -- {} +
 	install -m 0755 scripts/hyprism-shell "$(DESTDIR)$(PREFIX)/bin/hyprism-shell"
+	install -m 0755 scripts/system/media-lock-indicator.py "$(DESTDIR)$(PREFIX)/bin/hyprism-media-lock-indicator"
 	install -m 0644 config/applications/hyprism-keyboard-setup.desktop "$(DESTDIR)$(PREFIX)/share/applications/hyprism-keyboard-setup.desktop"
 	install -m 0644 config/applications/hyprism-screenshot.desktop "$(DESTDIR)$(PREFIX)/share/applications/hyprism-screenshot.desktop"
 	install -m 0644 LICENSE "$(DESTDIR)$(PREFIX)/share/licenses/$(PACKAGE_NAME)/LICENSE"

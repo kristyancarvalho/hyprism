@@ -12,7 +12,9 @@ Item {
     property string targetScreenName: ""
     property string osdKind: ""
     property string osdValue: ""
-    readonly property bool hubOpen: mode === "control"
+    readonly property var hubSurfaceModes: ["control", "network", "bluetooth", "themeSettings"]
+    readonly property bool hubSurfaceOpen: hubSurfaceModes.indexOf(mode) >= 0
+    property bool floatingSurfacesSuppressed: false
     property int switcherIndex: 0
     property alias switcherWindows: switcherWindowModel
     property var mruWindowAddresses: []
@@ -61,6 +63,8 @@ Item {
     }
     readonly property int cornerRadiusPreset: config.shell ? config.shell.cornerRadiusPreset : 1
     readonly property int blurPreset: config.shell ? config.shell.blurPreset : 2
+    readonly property var normalLayouts: ["scrolling", "dwindle"]
+    readonly property string normalLayout: config.hyprland && config.hyprland.layout === "scrolling" ? "scrolling" : "dwindle"
     readonly property date currentTime: systemClock.date
     property var appEntries: []
     property var applicationIndex: ({})
@@ -100,7 +104,7 @@ Item {
         tasks: { enabled: true, limit: 3 },
         processes: { enabled: true, limit: 3 }
     })
-    property var config: ({ paths: { wallpapers: "~/Pictures/Wallpapers", screenshots: "~/Pictures/Screenshots", recordings: "~/Videos/Recordings" }, appearance: { mode: "dark", whiteTemperature: 0, schedule: { enabled: false, lightStart: "07:00", darkStart: "18:00" } }, shell: { primaryMonitor: "", islandWidth: 560, compactHeight: Design.compactBarHeight, topMargin: Design.shellTopMargin, reserveGap: Design.compactBottomGap, surfaceOpacity: .9, cornerRadiusPreset: 1, blurPreset: 2, animationFast: Design.animationFast, animationNormal: Design.animationMorph, widgetLayout: { side: "right", position: "legacy" }, widgets: widgetDefaults } })
+    property var config: ({ paths: { wallpapers: "~/Pictures/Wallpapers", screenshots: "~/Pictures/Screenshots", recordings: "~/Videos/Recordings" }, appearance: { mode: "dark", whiteTemperature: 0, schedule: { enabled: false, lightStart: "07:00", darkStart: "18:00" } }, hyprland: { layout: "dwindle" }, shell: { primaryMonitor: "", islandWidth: 560, compactHeight: Design.compactBarHeight, topMargin: Design.shellTopMargin, reserveGap: Design.compactBottomGap, surfaceOpacity: .9, cornerRadiusPreset: 1, blurPreset: 2, animationFast: Design.animationFast, animationNormal: Design.animationMorph, widgetLayout: { side: "right", position: "legacy" }, widgets: widgetDefaults } })
     property string rootDir: Quickshell.env("HYPRISM_ROOT") || Quickshell.shellDir + "/../.."
     readonly property bool developmentMode: Quickshell.env("HYPRISM_DEVELOPMENT") === "1"
     readonly property var panelModes: ["launcher", "wallpaper", "clipboard", "control", "network", "bluetooth", "themeSettings", "power", "emoji", "switcher", "recordingSelector"]
@@ -266,18 +270,25 @@ Item {
     }
 
     function showOsd(kind, value) {
-        const safeKind = Design.safeText(kind, I18n.tr("widgets.system"))
-        if (hubOpen && [I18n.tr("hub.volume"), I18n.tr("hub.brightness"), I18n.tr("hub.microphone")].indexOf(safeKind) >= 0) return
-        osdKind = safeKind
+        if (floatingSurfacesSuppressed) return
+        osdKind = Design.safeText(kind, I18n.tr("widgets.system"))
         osdValue = Design.safeText(value, I18n.tr("common.unavailable"))
         osdTimer.restart()
     }
 
-    onHubOpenChanged: {
-        if (hubOpen && [I18n.tr("hub.volume"), I18n.tr("hub.brightness"), I18n.tr("hub.microphone")].indexOf(osdKind) >= 0) {
-            osdTimer.stop()
-            osdKind = ""
-            osdValue = ""
+    function hideOsd() {
+        osdTimer.stop()
+        osdKind = ""
+        osdValue = ""
+    }
+
+    onHubSurfaceOpenChanged: {
+        if (hubSurfaceOpen) {
+            floatingRelease.stop()
+            floatingSurfacesSuppressed = true
+            hideOsd()
+        } else {
+            floatingRelease.restart()
         }
     }
 
@@ -339,6 +350,12 @@ Item {
         const shell = Object.assign({}, config.shell, { blurPreset: preset })
         config = Object.assign({}, config, { shell: shell })
         run([rootDir + "/scripts/hyprism-shell", "theme", "blur", "set", String(preset)])
+    }
+
+    function setNormalLayout(layout) {
+        if (normalLayouts.indexOf(layout) < 0) return
+        config = Object.assign({}, config, { hyprland: Object.assign({}, config.hyprland, { layout: layout }) })
+        run([rootDir + "/scripts/hyprism-shell", "layout", "set", layout])
     }
 
     function resetThemeSettings() {
@@ -920,7 +937,12 @@ Item {
 
     Process { id: commandRunner }
     SystemClock { id: systemClock; precision: SystemClock.Seconds }
-    Timer { id: osdTimer; interval: 1600; onTriggered: { controller.osdKind = ""; controller.osdValue = "" } }
+    Timer { id: osdTimer; interval: 1600; onTriggered: controller.hideOsd() }
+    Timer {
+        id: floatingRelease
+        interval: Math.max(1, Math.round(Design.safeNumber(controller.config.shell.animationNormal, Design.animationMorph))) + Design.animationFast
+        onTriggered: controller.floatingSurfacesSuppressed = controller.hubSurfaceOpen
+    }
     Timer {
         id: taskCleanup
         interval: 500

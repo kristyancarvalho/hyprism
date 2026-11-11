@@ -440,10 +440,16 @@ def render_hyprlock_config(theme, language="en"):
         "pt-BR": {"locked": "Bloqueado", "date": "%d/%m/%Y", "check_text": "Autenticando…", "fail_text": "Senha incorreta"},
     }.get(language, {})
     lines = []
+    current_block = ""
     for line in HYPRLOCK_BASE.read_text(encoding="utf-8").splitlines():
         if line.startswith("$hyprism_"):
             continue
-        if re.match(r"^    path\s*=", line):
+        stripped = line.strip()
+        if stripped.endswith("{"):
+            current_block = stripped[:-1].strip()
+        elif stripped == "}":
+            current_block = ""
+        if current_block == "background" and re.match(r"^    path\s*=", line):
             lines.append(f"    path = {CACHE / 'state/lock-wallpaper'}")
         elif line.strip().startswith("text = cmd[update:60000] date"):
             lines.append(f"    text = cmd[update:60000] date +'{messages.get('date', '%m/%d/%Y')}'")
