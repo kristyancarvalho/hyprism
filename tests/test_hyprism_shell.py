@@ -320,6 +320,7 @@ elif name == "satty":
         configured = self.read_config()
         configured["appearance"] = {
             "mode": "light",
+            "palette": "nord",
             "whiteTemperature": 3,
             "schedule": {"enabled": True, "lightStart": "09:00", "darkStart": "21:00"},
         }
@@ -337,6 +338,7 @@ elif name == "satty":
         updated = self.read_config()
         self.assertEqual(updated["appearance"], {
             "mode": "dark",
+            "palette": "wallpaper",
             "whiteTemperature": 0,
             "schedule": {"enabled": False, "lightStart": "07:00", "darkStart": "18:00"},
         })
@@ -425,6 +427,21 @@ print("ok")
         self.assertIn('hl.bind(mod .. " + S", hl.dsp.workspace.toggle_special("magic"))', workspaces)
         self.assertIn('"/theme/layout.lua"', general)
         self.assertIn("layout = layout,", general)
+        layouts = (ROOT / "config/hypr/modules/layouts.lua").read_text(encoding="utf-8")
+        self.assertIn("column_width = 0.95,", layouts)
+
+    def test_theme_palette_defaults_sets_and_validates(self):
+        self.use_fake_theme_runtime()
+        self.assertEqual(self.run_cli("theme", "palette", "get").stdout, "wallpaper\n")
+        result = self.run_cli("theme", "palette", "set", "rose-pine")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.read_config()["appearance"]["palette"], "rose-pine")
+        self.assertEqual(self.read_config()["appearance"]["mode"], "dark")
+        self.assertEqual(self.run_cli("theme", "set", "light").returncode, 0)
+        self.assertEqual(self.read_config()["appearance"]["palette"], "rose-pine")
+        before = self.config.read_text(encoding="utf-8")
+        self.assertNotEqual(self.run_cli("theme", "palette", "set", "solarized").returncode, 0)
+        self.assertEqual(self.config.read_text(encoding="utf-8"), before)
 
     def test_migration_preserves_legacy_preferences_and_ptbr(self):
         existing = Path(self.temporary.name) / "existing.json"

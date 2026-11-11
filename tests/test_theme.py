@@ -23,6 +23,40 @@ class ThemeTests(unittest.TestCase):
             "error": "#ba1a1a", "on_error": "#ffffff", "error_container": "#ffdad6",
         }
 
+    def test_presets_keep_identity_and_readable_contrast_in_both_modes(self):
+        palettes = THEME.preset_palettes()
+        self.assertEqual(set(palettes), {"nord", "tokyo-night", "catppuccin", "gruvbox", "everforest", "rose-pine", "monochrome"})
+        for name in palettes:
+            for mode in ("dark", "light"):
+                with self.subTest(name=name, mode=mode):
+                    theme = THEME.preset_theme(name, mode, "/wallpaper.png")
+                    self.assertEqual(theme["background"], palettes[name][mode]["background"])
+                    self.assertEqual(theme["mode"], mode)
+                    self.assertGreaterEqual(THEME.contrast(theme["foreground"], theme["background"]), 4.5)
+                    self.assertGreaterEqual(THEME.contrast(theme["mutedForeground"], theme["background"]), 4.5)
+                    self.assertGreaterEqual(THEME.contrast(theme["accent"], theme["background"]), 3.0)
+                    self.assertGreaterEqual(THEME.contrast(theme["accentForeground"], theme["accent"]), 3.0)
+
+    def test_monochrome_preset_is_grayscale(self):
+        for mode in ("dark", "light"):
+            theme = THEME.preset_theme("monochrome", mode, "")
+            for key, value in theme.items():
+                if isinstance(value, str) and value.startswith("#"):
+                    with self.subTest(mode=mode, key=key):
+                        self.assertEqual(len({value[1:3], value[3:5], value[5:7]}), 1)
+        self.assertEqual(THEME.preset_theme("monochrome", "dark", "")["background"], "#000000")
+        self.assertEqual(THEME.preset_theme("monochrome", "light", "")["background"], "#ffffff")
+
+    def test_palette_setting_defaults_to_wallpaper(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory) / "user.json"
+            config.write_text('{"appearance": {"mode": "light", "palette": "catppuccin"}}', encoding="utf-8")
+            with mock.patch.dict(THEME.os.environ, {"HYPRISM_CONFIG": str(config)}):
+                self.assertEqual(THEME.appearance_settings(), ("light", 0, "catppuccin"))
+            config.write_text('{"appearance": {"palette": "unknown"}}', encoding="utf-8")
+            with mock.patch.dict(THEME.os.environ, {"HYPRISM_CONFIG": str(config)}):
+                self.assertEqual(THEME.appearance_settings()[2], "wallpaper")
+
     def test_light_theme_has_semantic_surface_hierarchy_and_contrast(self):
         theme = THEME.theme_from(self.light_raw(), "/tmp/wallpaper.png", "light")
         self.assertEqual(theme["mode"], "light")

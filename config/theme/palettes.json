@@ -1,0 +1,117 @@
+{
+  "order": ["wallpaper", "nord", "tokyo-night", "catppuccin", "gruvbox", "everforest", "rose-pine", "monochrome"],
+  "palettes": {
+    "nord": {
+      "name": "Nord",
+      "source": "https://www.nordtheme.com (MIT); light variant curated by Hyprism from the Nord palette",
+      "dark": {
+        "background": "#2e3440", "surface": "#3b4252", "surfaceVariant": "#434c5e", "surfaceHigh": "#4c566a",
+        "foreground": "#eceff4", "muted": "#d8dee9", "outline": "#616e88",
+        "accent": "#88c0d0", "secondary": "#81a1c1", "tertiary": "#b48ead",
+        "error": "#bf616a", "warning": "#ebcb8b", "success": "#a3be8c"
+      },
+      "light": {
+        "background": "#eceff4", "surface": "#e5e9f0", "surfaceVariant": "#d8dee9", "surfaceHigh": "#cdd3de",
+        "foreground": "#2e3440", "muted": "#4c566a", "outline": "#8d99ae",
+        "accent": "#5e81ac", "secondary": "#4c6a8f", "tertiary": "#8c6b85",
+        "error": "#bf616a", "warning": "#c27a52", "success": "#6b8f55"
+      }
+    },
+    "tokyo-night": {
+      "name": "Tokyo Night",
+      "source": "https://github.com/folke/tokyonight.nvim (MIT): Storm and Day",
+      "dark": {
+        "background": "#24283b", "surface": "#292e42", "surfaceVariant": "#2f3549", "surfaceHigh": "#3b4261",
+        "foreground": "#c0caf5", "muted": "#a9b1d6", "outline": "#565f89",
+        "accent": "#7aa2f7", "secondary": "#bb9af7", "tertiary": "#7dcfff",
+        "error": "#f7768e", "warning": "#e0af68", "success": "#9ece6a"
+      },
+      "light": {
+        "background": "#e1e2e7", "surface": "#d6d8e0", "surfaceVariant": "#d0d5e3", "surfaceHigh": "#c4c8da",
+        "foreground": "#3760bf", "muted": "#6172b0", "outline": "#8990b3",
+        "accent": "#2e7de9", "secondary": "#9854f1", "tertiary": "#007197",
+        "error": "#f52a65", "warning": "#8c6c3e", "success": "#587539"
+      }
+    },
+    "catppuccin": {
+      "name": "Catppuccin",
+      "source": "https://github.com/catppuccin/palette (MIT): Mocha and Latte",
+      "dark": {
+        "background": "#181825", "surface": "#1e1e2e", "surfaceVariant": "#313244", "surfaceHigh": "#45475a",
+        "foreground": "#cdd6f4", "muted": "#a6adc8", "outline": "#6c7086",
+        "accent": "#cba6f7", "secondary": "#89b4fa", "tertiary": "#f5c2e7",
+        "error": "#f38ba8", "warning": "#f9e2af", "success": "#a6e3a1"
+      },
+      "light": {
+        "background": "#eff1f5", "surface": "#e6e9ef", "surfaceVariant": "#dce0e8", "surfaceHigh": "#ccd0da",
+        "foreground": "#4c4f69", "muted": "#6c6f85", "outline": "#9ca0b0",
+        "accent": "#8839ef", "secondary": "#1e66f5", "tertiary": "#ea76cb",
+        "error": "#d20f39", "warning": "#df8e1d", "success": "#40a02b"
+      }
+    },
+    "gruvbox": {
+      "name": "Gruvbox",
+      "source": "https://github.com/morhetz/gruvbox (MIT)",
+      "dark": {
+        "background": "#282828", "surface": "#32302f", "surfaceVariant": "#3c3836", "surfaceHigh": "#504945",
+        "foreground": "#ebdbb2", "muted": "#a89984", "outline": "#665c54",
+        "accent": "#fe8019", "secondary": "#fabd2f", "tertiary": "#b8bb26",
+        "error": "#fb4934", "warning": "#fabd2f", "success": "#b8bb26"
+      },
+      "light": {
+        "background": "#fbf1c7", "surface": "#f2e5bc", "surfaceVariant": "#ebdbb2", "surfaceHigh": "#d5c4a1",
+        "foreground": "#3c3836", "muted": "#7c6f64", "outline": "#a89984",
+        "accent": "#af3a03", "secondary": "#b57614", "tertiary": "#79740e",
+        "error": "#9d0006", "warning": "#b57614", "success": "#79740e"
+      }
+    },
+    "everforest": {
+      "name": "Everforest",
+      "source": "https://github.com/sainnhe/everforest (MIT): medium contrast",
+      "dark": {
+        "background": "#2d353b", "surface": "#343f44", "surfaceVariant": "#3d484d", "surfaceHigh": "#475258",
+        "foreground": "#d3c6aa", "muted": "#9da9a0", "outline": "#7a8478",
+        "accent": "#a7c080", "secondary": "#83c092", "tertiary": "#7fbbb3",
+        "error": "#e67e80", "warning": "#dbbc7f", "success": "#a7c080"
+      },
+      "light": {
+        "background": "#fdf6e3", "surface": "#f4f0d9", "surfaceVariant": "#efebd4", "surfaceHigh": "#e6e2cc",
+        "foreground": "#5c6a72", "muted": "#829181", "outline": "#a6b0a0",
+        "accent": "#8da101", "secondary": "#35a77c", "tertiary": "#3a94c5",
+        "error": "#f85552", "warning": "#dfa000", "success": "#8da101"
+      }
+    },
+    "rose-pine": {
+      "name": "Rosé Pine",
+      "source": "https://rosepinetheme.com (MIT): Moon and Dawn",
+      "dark": {
+        "background": "#232136", "surface": "#2a273f", "surfaceVariant": "#393552", "surfaceHigh": "#44415a",
+        "foreground": "#e0def4", "muted": "#908caa", "outline": "#6e6a86",
+        "accent": "#c4a7e7", "secondary": "#ea9a97", "tertiary": "#9ccfd8",
+        "error": "#eb6f92", "warning": "#f6c177", "success": "#9ccfd8"
+      },
+      "light": {
+        "background": "#faf4ed", "surface": "#fffaf3", "surfaceVariant": "#f2e9e1", "surfaceHigh": "#dfdad9",
+        "foreground": "#575279", "muted": "#797593", "outline": "#9893a5",
+        "accent": "#907aa9", "secondary": "#d7827e", "tertiary": "#56949f",
+        "error": "#b4637a", "warning": "#ea9d34", "success": "#286983"
+      }
+    },
+    "monochrome": {
+      "name": "Black & White",
+      "source": "Hyprism",
+      "dark": {
+        "background": "#000000", "surface": "#0f0f0f", "surfaceVariant": "#1c1c1c", "surfaceHigh": "#2a2a2a",
+        "foreground": "#f5f5f5", "muted": "#a6a6a6", "outline": "#4d4d4d",
+        "accent": "#e8e8e8", "secondary": "#bdbdbd", "tertiary": "#8f8f8f",
+        "error": "#ffffff", "warning": "#d9d9d9", "success": "#bfbfbf"
+      },
+      "light": {
+        "background": "#ffffff", "surface": "#f5f5f5", "surfaceVariant": "#ebebeb", "surfaceHigh": "#dcdcdc",
+        "foreground": "#0a0a0a", "muted": "#525252", "outline": "#a3a3a3",
+        "accent": "#1a1a1a", "secondary": "#3d3d3d", "tertiary": "#5c5c5c",
+        "error": "#000000", "warning": "#2e2e2e", "success": "#474747"
+      }
+    }
+  }
+}

@@ -49,6 +49,9 @@ hyprism-shell theme get
 hyprism-shell theme set light
 hyprism-shell theme set dark
 hyprism-shell theme toggle
+hyprism-shell theme palette get
+hyprism-shell theme palette set nord
+hyprism-shell theme palette set wallpaper
 hyprism-shell theme temperature get
 hyprism-shell theme temperature set 0
 hyprism-shell theme temperature set 1
@@ -75,7 +78,9 @@ Desktop widget names are `clock`, `weather`, `media`, `system`, `network`, `stor
 
 Temperature levels range from neutral (`0`) to amber (`3`) and affect only light mode. The theme schedule treats the first boundary as the start of the light interval and the second as the start of the dark interval. Intervals may cross midnight. Scheduling is opt-in, is reconciled when Quickshell starts, and waits efficiently until the next boundary. A manual Hub toggle, `theme set`, or `theme toggle` disables scheduling and returns appearance control to manual mode.
 
-`layout` selects the tiling layout of normal workspaces and is shared by `Super+Shift+Space` and the Layout selector in Theme Settings. The choice is stored as `hyprland.layout` in `user.json`, applied to the running Hyprland session immediately, and restored on configuration reloads and new sessions. The `special:magic` workspace always uses scrolling regardless of this setting.
+`layout` selects the tiling layout of normal workspaces and is shared by `Super+Shift+Space` and the Layout selector in Theme Settings. The choice is stored as `hyprland.layout` in `user.json`, applied to the running Hyprland session immediately, and restored on configuration reloads and new sessions. The `special:magic` workspace always uses scrolling regardless of this setting. A real layout change shows a brief on-screen indicator unless the Hub is open. In the scrolling layout, each column takes 95% of the usable workspace width so the neighboring column stays partly visible; a lone window still fills the workspace.
+
+`theme palette` selects `wallpaper` (Matugen, the default) or one of the presets `nord`, `tokyo-night`, `catppuccin`, `gruvbox`, `everforest`, `rose-pine`, and `monochrome`. The light or dark variant follows the appearance mode, and presets ignore wallpaper changes.
 
 ## Shell actions
 

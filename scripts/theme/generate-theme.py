@@ -24,6 +24,7 @@ KVANTUM_BASES = {
     "dark": pathlib.Path(os.environ.get("HYPRISM_KVANTUM_BASE_DARK", "/usr/share/Kvantum/KvArcDark")),
     "light": pathlib.Path(os.environ.get("HYPRISM_KVANTUM_BASE_LIGHT", "/usr/share/Kvantum/KvArc")),
 }
+PALETTES = ROOT / "config/theme/palettes.json"
 PAPIRUS_BASE = pathlib.Path(os.environ.get("HYPRISM_PAPIRUS_BASE", "/usr/share/icons/Papirus"))
 FALLBACK = {
     "background": "#091015",
@@ -326,6 +327,70 @@ def theme_from(raw, image, mode):
         "wallpaper": image,
         "sourceAccent": raw["accent"],
         "matugenSource": raw.get("matugenSource", raw["accent"]),
+    }
+
+
+def preset_palettes():
+    with PALETTES.open(encoding="utf-8") as source:
+        return json.load(source)["palettes"]
+
+
+def preset_theme(name, mode, image):
+    raw = preset_palettes()[name][mode]
+    background = raw["background"]
+    foreground = raw["foreground"]
+    adjust = light_contrast if mode == "light" else dark_contrast
+    accent = adjust(raw["accent"], background, 4.5 if mode == "light" else 3.0)
+    secondary = adjust(raw["secondary"], background, 3.0)
+    tertiary = adjust(raw["tertiary"], background, 3.0)
+    error = adjust(raw["error"], background, 3.2)
+    muted = adjust(raw["muted"], background, 4.5)
+
+    def on(color):
+        return background if contrast(background, color) >= contrast(foreground, color) else foreground
+
+    active = mix(accent, background, .82 if mode == "light" else .64)
+    return {
+        "mode": mode,
+        "palette": name,
+        "background": background,
+        "surface": raw["surface"],
+        "surfaceContainer": raw["surfaceVariant"],
+        "surfaceContainerHigh": mix(raw["surfaceVariant"], raw["surfaceHigh"], .5),
+        "surfaceContainerHighest": raw["surfaceHigh"],
+        "surfaceVariant": raw["surfaceVariant"],
+        "surfaceElevated": mix(raw["surfaceVariant"], raw["surfaceHigh"], .5),
+        "surfaceHover": raw["surfaceHigh"],
+        "surfaceActive": active,
+        "foreground": foreground,
+        "onSurface": foreground,
+        "mutedForeground": muted,
+        "onSurfaceVariant": muted,
+        "primary": accent,
+        "onPrimary": on(accent),
+        "secondary": secondary,
+        "onSecondary": on(secondary),
+        "tertiary": tertiary,
+        "onTertiary": on(tertiary),
+        "secondaryContainer": mix(secondary, background, .78 if mode == "light" else .62),
+        "inactiveBorder": mix(raw["outline"], background, .45),
+        "accent": accent,
+        "accentForeground": on(accent),
+        "accentDim": mix(accent, background, .82 if mode == "light" else .58),
+        "outline": raw["outline"],
+        "border": raw["outline"],
+        "borderSubtle": mix(raw["outline"], background, .45),
+        "borderNormal": raw["outline"],
+        "borderFocused": accent,
+        "error": error,
+        "onError": on(error),
+        "errorContainer": mix(error, background, .78 if mode == "light" else .58),
+        "onErrorContainer": foreground,
+        "warning": adjust(raw["warning"], background, 3.2),
+        "success": adjust(raw["success"], background, 3.2),
+        "wallpaper": image,
+        "sourceAccent": raw["accent"],
+        "matugenSource": raw["accent"],
     }
 
 
@@ -849,9 +914,21 @@ def papirus_index(directories, mode):
     return "\n".join(lines)
 
 
+def papirus_signature(theme):
+    return json_text({key: theme[key] for key in ("mode", "accent", "onPrimary")} | {"base": str(PAPIRUS_BASE)})
+
+
 def publish_papirus(theme):
     icon_root = OUT / "icons"
     icon_root.mkdir(parents=True, exist_ok=True)
+    stamp = icon_root / ".Hyprism-Papirus.signature"
+    signature = papirus_signature(theme)
+    current = icon_root / "Hyprism-Papirus"
+    try:
+        if current.is_dir() and stamp.read_text(encoding="utf-8") == signature:
+            return False
+    except OSError:
+        pass
     temporary = pathlib.Path(tempfile.mkdtemp(prefix=".Hyprism-Papirus-", dir=icon_root))
     try:
         directories = set()
@@ -875,6 +952,7 @@ def publish_papirus(theme):
         generations = sorted((path for path in icon_root.glob(".Hyprism-Papirus-*") if path.is_dir()), key=lambda path: path.stat().st_mtime, reverse=True)
         for previous in generations[2:]:
             shutil.rmtree(previous)
+        write(stamp, signature)
         return True
     except (OSError, ValueError, subprocess.SubprocessError, ElementTree.ParseError) as error:
         shutil.rmtree(temporary, ignore_errors=True)
@@ -980,10 +1058,16 @@ def appearance_settings():
         mode = appearance.get("mode", "dark")
         raw_temperature = appearance.get("whiteTemperature", 2 if appearance.get("warmWhite") is True else 0)
         white_temperature = raw_temperature if isinstance(raw_temperature, int) and not isinstance(raw_temperature, bool) and raw_temperature in range(4) else 0
+        palette = appearance.get("palette", "wallpaper")
     except (OSError, AttributeError, json.JSONDecodeError):
         mode = "dark"
         white_temperature = 0
-    return (mode if mode in ("dark", "light") else "dark"), white_temperature
+        palette = "wallpaper"
+    try:
+        palette = palette if palette in preset_palettes() else "wallpaper"
+    except (OSError, KeyError, json.JSONDecodeError):
+        palette = "wallpaper"
+    return (mode if mode in ("dark", "light") else "dark"), white_temperature, palette
 
 
 def interface_language():
@@ -1031,16 +1115,21 @@ def render_gtk2_settings(theme):
 
 def main():
     image = sys.argv[1] if len(sys.argv) > 1 else ""
-    mode, white_temperature = appearance_settings()
+    mode, white_temperature, palette = appearance_settings()
     language = interface_language()
-    try:
-        raw, matugen = matugen_palette(image, mode) if image else (fallback_palette(mode), {"fallback": True})
-    except (OSError, KeyError, ValueError, json.JSONDecodeError, subprocess.SubprocessError) as error:
-        print(f"Hyprism theme: Matugen failed ({error}); retaining current artifacts", file=sys.stderr)
-        raise SystemExit(1)
-
-    theme = theme_from(warm_light_palette(raw, white_temperature if mode == "light" else 0), image, mode)
-    theme["whiteTemperature"] = white_temperature if mode == "light" else 0
+    if palette != "wallpaper":
+        matugen = {"preset": palette}
+        theme = preset_theme(palette, mode, image)
+        theme["whiteTemperature"] = 0
+    else:
+        try:
+            raw, matugen = matugen_palette(image, mode) if image else (fallback_palette(mode), {"fallback": True})
+        except (OSError, KeyError, ValueError, json.JSONDecodeError, subprocess.SubprocessError) as error:
+            print(f"Hyprism theme: Matugen failed ({error}); retaining current artifacts", file=sys.stderr)
+            raise SystemExit(1)
+        theme = theme_from(warm_light_palette(raw, white_temperature if mode == "light" else 0), image, mode)
+        theme["palette"] = "wallpaper"
+        theme["whiteTemperature"] = white_temperature if mode == "light" else 0
     publish(OUT / "matugen.json", json_text(matugen), json.loads)
     publish(OUT / "theme.json", json_text(theme), json.loads)
     publish(OUT / "kitty.conf", render_kitty(theme), validate_colors)

@@ -49,6 +49,10 @@ Item {
     readonly property bool nightMode: system.nightMode.available && system.nightMode.enabled
     readonly property bool powerSaver: system.powerProfile.available && system.powerProfile.mode === "power-saver"
     readonly property bool lightTheme: config.appearance && config.appearance.mode === "light"
+    readonly property var themePalettes: ["wallpaper", "nord", "tokyo-night", "catppuccin", "gruvbox", "everforest", "rose-pine", "monochrome"]
+    readonly property string themePalette: config.appearance && themePalettes.indexOf(config.appearance.palette) >= 0 ? config.appearance.palette : "wallpaper"
+    property string appliedThemePalette: "wallpaper"
+    property var paletteCatalog: ({})
     readonly property int whiteTemperature: config.appearance ? Math.round(Design.clamp(config.appearance.whiteTemperature, 0, 3)) : 0
     property var themePresets: ({ surfaceOpacity: [], cornerRadius: [], blur: [] })
     readonly property var surfaceOpacityPresets: themePresets.surfaceOpacity.map(preset => preset.shell)
@@ -104,7 +108,7 @@ Item {
         tasks: { enabled: true, limit: 3 },
         processes: { enabled: true, limit: 3 }
     })
-    property var config: ({ paths: { wallpapers: "~/Pictures/Wallpapers", screenshots: "~/Pictures/Screenshots", recordings: "~/Videos/Recordings" }, appearance: { mode: "dark", whiteTemperature: 0, schedule: { enabled: false, lightStart: "07:00", darkStart: "18:00" } }, hyprland: { layout: "dwindle" }, shell: { primaryMonitor: "", islandWidth: 560, compactHeight: Design.compactBarHeight, topMargin: Design.shellTopMargin, reserveGap: Design.compactBottomGap, surfaceOpacity: .9, cornerRadiusPreset: 1, blurPreset: 2, animationFast: Design.animationFast, animationNormal: Design.animationMorph, widgetLayout: { side: "right", position: "legacy" }, widgets: widgetDefaults } })
+    property var config: ({ paths: { wallpapers: "~/Pictures/Wallpapers", screenshots: "~/Pictures/Screenshots", recordings: "~/Videos/Recordings" }, appearance: { mode: "dark", palette: "wallpaper", whiteTemperature: 0, schedule: { enabled: false, lightStart: "07:00", darkStart: "18:00" } }, hyprland: { layout: "dwindle" }, shell: { primaryMonitor: "", islandWidth: 560, compactHeight: Design.compactBarHeight, topMargin: Design.shellTopMargin, reserveGap: Design.compactBottomGap, surfaceOpacity: .9, cornerRadiusPreset: 1, blurPreset: 2, animationFast: Design.animationFast, animationNormal: Design.animationMorph, widgetLayout: { side: "right", position: "legacy" }, widgets: widgetDefaults } })
     property string rootDir: Quickshell.env("HYPRISM_ROOT") || Quickshell.shellDir + "/../.."
     readonly property bool developmentMode: Quickshell.env("HYPRISM_DEVELOPMENT") === "1"
     readonly property var panelModes: ["launcher", "wallpaper", "clipboard", "control", "network", "bluetooth", "themeSettings", "power", "emoji", "switcher", "recordingSelector"]
@@ -319,6 +323,12 @@ Item {
 
     function setWhiteTemperature(level) {
         run([rootDir + "/scripts/hyprism-shell", "theme", "temperature", "set", String(Math.round(Design.clamp(level, 0, 3)))])
+    }
+
+    function setThemePalette(palette) {
+        if (themePalettes.indexOf(palette) < 0 || palette === themePalette) return
+        config = Object.assign({}, config, { appearance: Object.assign({}, config.appearance, { palette: palette }) })
+        run([rootDir + "/scripts/hyprism-shell", "theme", "palette", "set", palette])
     }
 
     function setAppearanceMode(mode) {
