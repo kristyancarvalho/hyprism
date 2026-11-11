@@ -4,8 +4,8 @@ local appearance_cache = os.getenv("HYPRISM_CACHE_DIR") or cache_home .. "/hypri
 local palette = {
     active_border = "rgb(355b6e)",
     inactive_border = "rgb(293943)",
-    shadow = "rgba(00000080)",
-    shadow_inactive = "rgba(0000005c)",
+    shadow = "rgba(00000070)",
+    shadow_inactive = "rgba(00000070)",
 }
 
 local palette_path = appearance_cache .. "/theme/hyprland.lua"

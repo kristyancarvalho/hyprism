@@ -97,7 +97,7 @@ class ThemeTests(unittest.TestCase):
                     self.assertIn(f'shadow = "{active}"', rendered)
                     self.assertIn(f'shadow_inactive = "{inactive}"', rendered)
                     self.assertLessEqual(int(active[-3:-1], 16), 0x80)
-                    self.assertLess(int(inactive[-3:-1], 16), int(active[-3:-1], 16))
+                    self.assertEqual(inactive, active)
                     self.assertGreater(int(inactive[-3:-1], 16), 0)
         tokyo = THEME.shadow_colors(THEME.preset_theme("tokyo-night", "dark", ""))[0]
         self.assertNotEqual(tokyo[5:11], "000000")
