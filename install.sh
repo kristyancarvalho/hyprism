@@ -311,6 +311,9 @@ fi
 if [[ ! -e $theme_dir/kitty.conf ]]; then
   run install -m 0644 -o "$target_user" -g "$target_group" /dev/null "$theme_dir/kitty.conf"
 fi
+if [[ ! -s $theme_dir/foot-opacity.ini || ! -s $theme_dir/kitty-opacity.conf ]]; then
+  as_user env HYPRISM_ROOT="$runtime_root" HYPRISM_CACHE_DIR="$target_home/.cache/hyprism" "$runtime_root/scripts/hyprism-shell" theme sync
+fi
 
 tpm_revision=e261deb1b47614eed3400089ce7197dc68acc4eb
 tpm_dir="$target_home/.tmux/plugins/tpm"

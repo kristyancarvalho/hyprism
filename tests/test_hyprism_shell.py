@@ -429,6 +429,21 @@ with open(os.environ["HYPRISM_TEST_HYPRCTL_LOG"] + ".qs", "a", encoding="utf-8")
         calls = [json.loads(line)[-3:] for line in osd.read_text(encoding="utf-8").splitlines()]
         self.assertEqual(calls, [["osd", "layout", "scrolling"], ["osd", "layout", "dwindle"]])
 
+    def test_terminal_opacity_follows_shell_surface_opacity(self):
+        self.use_fake_theme_runtime()
+        cache = Path(self.environment["HYPRISM_CACHE_DIR"]) / "theme"
+        for level, expected in ((0, "1.00"), (1, "0.96"), (3, "0.78"), (2, "0.90")):
+            with self.subTest(level=level):
+                result = self.run_cli("theme", "surface-opacity", "set", str(level))
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual((cache / "kitty-opacity.conf").read_text(encoding="utf-8"), f"background_opacity {expected}\n")
+                self.assertEqual((cache / "foot-opacity.ini").read_text(encoding="utf-8"), f"[colors-dark]\nalpha={expected}\n")
+        kitty = (ROOT / "config/kitty/kitty.conf").read_text(encoding="utf-8")
+        self.assertNotRegex(kitty, r"(?m)^background_opacity")
+        self.assertIn("dynamic_background_opacity yes", kitty)
+        self.assertIn("include ~/.cache/hyprism/theme/kitty-opacity.conf", kitty)
+        self.assertIn("include=~/.cache/hyprism/theme/foot-opacity.ini", (ROOT / "config/foot/foot.ini").read_text(encoding="utf-8"))
+
     def test_theme_sync_and_reset_apply_persisted_layout(self):
         self.use_fake_theme_runtime()
         log = self.use_fake_hyprctl()
