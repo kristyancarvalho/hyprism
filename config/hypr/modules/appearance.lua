@@ -4,8 +4,8 @@ local appearance_cache = os.getenv("HYPRISM_CACHE_DIR") or cache_home .. "/hypri
 local palette = {
     active_border = "rgb(355b6e)",
     inactive_border = "rgb(293943)",
-    shadow = "rgba(00000055)",
-    shadow_inactive = "rgba(0000003d)",
+    shadow = "rgba(00000080)",
+    shadow_inactive = "rgba(0000005c)",
 }
 
 local palette_path = appearance_cache .. "/theme/hyprland.lua"
@@ -47,7 +47,7 @@ hl.config({
         inactive_opacity = appearance.inactive_opacity,
         shadow = {
             enabled = true,
-            range = 20,
+            range = 30,
             render_power = 2,
             color = palette.shadow,
             color_inactive = palette.shadow_inactive,
