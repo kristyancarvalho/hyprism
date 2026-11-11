@@ -35,7 +35,7 @@ FocusScope {
     }
 
     function initialFocusReady() {
-        return appearance.activeFocus || temperature.activeFocus || opacity.activeFocus || corners.activeFocus || blur.activeFocus || layout.activeFocus || resetButton.activeFocus || lightStart.inputActiveFocus || darkStart.inputActiveFocus
+        return appearance.activeFocus || palette.activeFocus || temperature.activeFocus || opacity.activeFocus || corners.activeFocus || blur.activeFocus || layout.activeFocus || resetButton.activeFocus || lightStart.inputActiveFocus || darkStart.inputActiveFocus
     }
 
     focus: true
@@ -44,205 +44,231 @@ FocusScope {
         event.accepted = true
     }
 
-    ColumnLayout {
+    Flickable {
+        id: scroller
         anchors.fill: parent
-        anchors.margins: Design.spacingLg
-        spacing: Design.spacingSm
+        contentWidth: width
+        contentHeight: content.implicitHeight + Design.spacingLg * 2
+        boundsBehavior: Flickable.StopAtBounds
+        clip: true
 
-        RowLayout {
-            Layout.fillWidth: true
+        ColumnLayout {
+            id: content
+            x: Design.spacingLg
+            y: Design.spacingLg
+            width: scroller.width - Design.spacingLg * 2
             spacing: Design.spacingSm
 
-            ColumnLayout {
+            RowLayout {
                 Layout.fillWidth: true
-                spacing: Design.spacingXs
+                spacing: Design.spacingSm
 
-                Text {
+                ColumnLayout {
                     Layout.fillWidth: true
-                    text: I18n.tr("themeSettings.title")
-                    color: panel.theme.colors.foreground
-                    font.family: Design.fontFamily
-                    font.pixelSize: Design.fontSizeLg
-                    font.weight: Design.fontWeightSemibold
+                    spacing: Design.spacingXs
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: I18n.tr("themeSettings.title")
+                        color: panel.theme.colors.foreground
+                        font.family: Design.fontFamily
+                        font.pixelSize: Design.fontSizeLg
+                        font.weight: Design.fontWeightSemibold
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: I18n.tr("themeSettings.description")
+                        color: panel.theme.colors.mutedForeground
+                        font.family: Design.fontFamily
+                        font.pixelSize: Design.fontSizeSm
+                    }
                 }
 
-                Text {
-                    Layout.fillWidth: true
-                    text: I18n.tr("themeSettings.description")
-                    color: panel.theme.colors.mutedForeground
-                    font.family: Design.fontFamily
-                    font.pixelSize: Design.fontSizeSm
-                }
-            }
-
-            ShellButton {
-                theme: panel.theme
-                iconName: "close"
-                compact: true
-                onClicked: panel.controller.close()
-            }
-        }
-
-        AppearanceChoice {
-            id: appearance
-            Layout.fillWidth: true
-            theme: panel.theme
-            label: I18n.tr("themeSettings.appearance")
-            iconName: "lightTheme"
-            options: [I18n.tr("themeSettings.auto"), I18n.tr("themeSettings.light"), I18n.tr("themeSettings.dark")]
-            value: panel.appearanceIndex
-            onChanged: value => panel.controller.setAppearanceMode(["auto", "light", "dark"][value])
-        }
-
-        RowLayout {
-            Layout.fillWidth: true
-            visible: panel.schedule.enabled === true
-            enabled: visible
-            spacing: Design.spacingSm
-
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: Design.spacingXs
-
-                Text {
-                    text: I18n.tr("themeSettings.lightStart")
-                    color: panel.theme.colors.mutedForeground
-                    font.family: Design.fontFamily
-                    font.pixelSize: Design.fontSizeXs
-                }
-
-                SearchField {
-                    id: lightStart
-                    Layout.fillWidth: true
+                ShellButton {
                     theme: panel.theme
-                    text: Design.safeText(panel.schedule.lightStart, "07:00")
-                    iconName: "lightTheme"
-                    placeholderText: "07:00"
-                    clearButtonEnabled: false
-                    tabTarget: darkStart
-                    backtabTarget: appearance
-                    onKeyPressed: event => {
-                        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                            panel.saveSchedule()
-                            event.accepted = true
+                    iconName: "close"
+                    compact: true
+                    onClicked: panel.controller.close()
+                }
+            }
+
+            AppearanceChoice {
+                id: appearance
+                Layout.fillWidth: true
+                theme: panel.theme
+                label: I18n.tr("themeSettings.appearance")
+                iconName: "lightTheme"
+                options: [I18n.tr("themeSettings.auto"), I18n.tr("themeSettings.light"), I18n.tr("themeSettings.dark")]
+                value: panel.appearanceIndex
+                onChanged: value => panel.controller.setAppearanceMode(["auto", "light", "dark"][value])
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                visible: panel.schedule.enabled === true
+                enabled: visible
+                spacing: Design.spacingSm
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: Design.spacingXs
+
+                    Text {
+                        text: I18n.tr("themeSettings.lightStart")
+                        color: panel.theme.colors.mutedForeground
+                        font.family: Design.fontFamily
+                        font.pixelSize: Design.fontSizeXs
+                    }
+
+                    SearchField {
+                        id: lightStart
+                        Layout.fillWidth: true
+                        theme: panel.theme
+                        text: Design.safeText(panel.schedule.lightStart, "07:00")
+                        iconName: "lightTheme"
+                        placeholderText: "07:00"
+                        clearButtonEnabled: false
+                        tabTarget: darkStart
+                        backtabTarget: appearance
+                        onKeyPressed: event => {
+                            if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                panel.saveSchedule()
+                                event.accepted = true
+                            }
                         }
                     }
                 }
-            }
 
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: Design.spacingXs
-
-                Text {
-                    text: I18n.tr("themeSettings.darkStart")
-                    color: panel.theme.colors.mutedForeground
-                    font.family: Design.fontFamily
-                    font.pixelSize: Design.fontSizeXs
-                }
-
-                SearchField {
-                    id: darkStart
+                ColumnLayout {
                     Layout.fillWidth: true
-                    theme: panel.theme
-                    text: Design.safeText(panel.schedule.darkStart, "18:00")
-                    iconName: "night"
-                    placeholderText: "18:00"
-                    clearButtonEnabled: false
-                    tabTarget: saveButton
-                    backtabTarget: lightStart
-                    onKeyPressed: event => {
-                        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                            panel.saveSchedule()
-                            event.accepted = true
+                    spacing: Design.spacingXs
+
+                    Text {
+                        text: I18n.tr("themeSettings.darkStart")
+                        color: panel.theme.colors.mutedForeground
+                        font.family: Design.fontFamily
+                        font.pixelSize: Design.fontSizeXs
+                    }
+
+                    SearchField {
+                        id: darkStart
+                        Layout.fillWidth: true
+                        theme: panel.theme
+                        text: Design.safeText(panel.schedule.darkStart, "18:00")
+                        iconName: "night"
+                        placeholderText: "18:00"
+                        clearButtonEnabled: false
+                        tabTarget: saveButton
+                        backtabTarget: lightStart
+                        onKeyPressed: event => {
+                            if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                panel.saveSchedule()
+                                event.accepted = true
+                            }
                         }
                     }
                 }
+
+                ShellButton {
+                    id: saveButton
+                    Layout.alignment: Qt.AlignBottom
+                    theme: panel.theme
+                    text: I18n.tr("themeSettings.save")
+                    compact: true
+                    iconName: "check"
+                    onClicked: panel.saveSchedule()
+                }
+            }
+
+            Text {
+                Layout.fillWidth: true
+                visible: panel.schedule.enabled && panel.feedback.length > 0
+                text: panel.feedback
+                color: panel.feedback === I18n.tr("themeSettings.saved") ? panel.theme.colors.accent : panel.theme.colors.error
+                font.family: Design.fontFamily
+                font.pixelSize: Design.fontSizeXs
+                elide: Text.ElideRight
+            }
+
+            PaletteChoice {
+                id: palette
+                Layout.fillWidth: true
+                theme: panel.theme
+                label: I18n.tr("themeSettings.palette")
+                status: panel.controller.appliedThemePalette !== panel.controller.themePalette ? I18n.tr("themeSettings.applying") : ""
+                options: panel.controller.themePalettes
+                catalog: panel.controller.paletteCatalog
+                variant: panel.controller.lightTheme ? "light" : "dark"
+                value: panel.controller.themePalette
+                onChanged: value => panel.controller.setThemePalette(value)
+            }
+
+            DiscreteLevelPill {
+                id: temperature
+                Layout.fillWidth: true
+                enabled: panel.controller.themePalette === "wallpaper"
+                opacity: enabled ? 1 : .45
+                theme: panel.theme
+                label: I18n.tr("themeSettings.whiteTemperature")
+                iconName: "whiteTemperature"
+                options: [I18n.tr("themeSettings.temperatureNeutral"), I18n.tr("themeSettings.temperatureSoft"), I18n.tr("themeSettings.temperatureWarm"), I18n.tr("themeSettings.temperatureAmber")]
+                value: panel.controller.whiteTemperature
+                onChanged: value => panel.controller.setWhiteTemperature(value)
+            }
+
+            DiscreteLevelPill {
+                id: opacity
+                Layout.fillWidth: true
+                theme: panel.theme
+                label: I18n.tr("themeSettings.surfaceOpacity")
+                iconName: "brightness"
+                options: [I18n.tr("themeSettings.opacitySolid"), I18n.tr("themeSettings.opacitySoft"), I18n.tr("themeSettings.opacityGlass"), I18n.tr("themeSettings.opacityAiry")]
+                value: panel.controller.surfaceOpacityIndex
+                onChanged: value => panel.controller.setSurfaceOpacityPreset(value)
+            }
+
+            DiscreteLevelPill {
+                id: corners
+                Layout.fillWidth: true
+                theme: panel.theme
+                label: I18n.tr("themeSettings.cornerRadius")
+                iconName: "settings"
+                options: [I18n.tr("themeSettings.radiusSharp"), I18n.tr("themeSettings.radiusDefault"), I18n.tr("themeSettings.radiusSoft"), I18n.tr("themeSettings.radiusRound")]
+                value: panel.controller.cornerRadiusPreset
+                onChanged: value => panel.controller.setCornerRadiusPreset(value)
+            }
+
+            DiscreteLevelPill {
+                id: blur
+                Layout.fillWidth: true
+                theme: panel.theme
+                label: I18n.tr("themeSettings.blur")
+                iconName: "brightness"
+                options: [I18n.tr("themeSettings.blurOff"), I18n.tr("themeSettings.blurSoft"), I18n.tr("themeSettings.blurDefault"), I18n.tr("themeSettings.blurStrong")]
+                value: panel.controller.blurPreset
+                onChanged: value => panel.controller.setBlurPreset(value)
+            }
+
+            AppearanceChoice {
+                id: layout
+                Layout.fillWidth: true
+                theme: panel.theme
+                label: I18n.tr("themeSettings.layout")
+                iconName: "layout"
+                options: [I18n.tr("themeSettings.layoutScrolling"), I18n.tr("themeSettings.layoutDwindle")]
+                value: Math.max(0, panel.controller.normalLayouts.indexOf(panel.controller.normalLayout))
+                onChanged: value => panel.controller.setNormalLayout(panel.controller.normalLayouts[value])
             }
 
             ShellButton {
-                id: saveButton
-                Layout.alignment: Qt.AlignBottom
+                id: resetButton
+                Layout.fillWidth: true
                 theme: panel.theme
-                text: I18n.tr("themeSettings.save")
-                compact: true
-                iconName: "check"
-                onClicked: panel.saveSchedule()
+                text: I18n.tr("themeSettings.reset")
+                iconName: "refresh"
+                onClicked: panel.controller.resetThemeSettings()
             }
-        }
-
-        Text {
-            Layout.fillWidth: true
-            visible: panel.schedule.enabled && panel.feedback.length > 0
-            text: panel.feedback
-            color: panel.feedback === I18n.tr("themeSettings.saved") ? panel.theme.colors.accent : panel.theme.colors.error
-            font.family: Design.fontFamily
-            font.pixelSize: Design.fontSizeXs
-            elide: Text.ElideRight
-        }
-
-        DiscreteLevelPill {
-            id: temperature
-            Layout.fillWidth: true
-            theme: panel.theme
-            label: I18n.tr("themeSettings.whiteTemperature")
-            iconName: "whiteTemperature"
-            options: [I18n.tr("themeSettings.temperatureNeutral"), I18n.tr("themeSettings.temperatureSoft"), I18n.tr("themeSettings.temperatureWarm"), I18n.tr("themeSettings.temperatureAmber")]
-            value: panel.controller.whiteTemperature
-            onChanged: value => panel.controller.setWhiteTemperature(value)
-        }
-
-        DiscreteLevelPill {
-            id: opacity
-            Layout.fillWidth: true
-            theme: panel.theme
-            label: I18n.tr("themeSettings.surfaceOpacity")
-            iconName: "brightness"
-            options: [I18n.tr("themeSettings.opacitySolid"), I18n.tr("themeSettings.opacitySoft"), I18n.tr("themeSettings.opacityGlass"), I18n.tr("themeSettings.opacityAiry")]
-            value: panel.controller.surfaceOpacityIndex
-            onChanged: value => panel.controller.setSurfaceOpacityPreset(value)
-        }
-
-        DiscreteLevelPill {
-            id: corners
-            Layout.fillWidth: true
-            theme: panel.theme
-            label: I18n.tr("themeSettings.cornerRadius")
-            iconName: "settings"
-            options: [I18n.tr("themeSettings.radiusSharp"), I18n.tr("themeSettings.radiusDefault"), I18n.tr("themeSettings.radiusSoft"), I18n.tr("themeSettings.radiusRound")]
-            value: panel.controller.cornerRadiusPreset
-            onChanged: value => panel.controller.setCornerRadiusPreset(value)
-        }
-
-        DiscreteLevelPill {
-            id: blur
-            Layout.fillWidth: true
-            theme: panel.theme
-            label: I18n.tr("themeSettings.blur")
-            iconName: "brightness"
-            options: [I18n.tr("themeSettings.blurOff"), I18n.tr("themeSettings.blurSoft"), I18n.tr("themeSettings.blurDefault"), I18n.tr("themeSettings.blurStrong")]
-            value: panel.controller.blurPreset
-            onChanged: value => panel.controller.setBlurPreset(value)
-        }
-
-        AppearanceChoice {
-            id: layout
-            Layout.fillWidth: true
-            theme: panel.theme
-            label: I18n.tr("themeSettings.layout")
-            iconName: "layout"
-            options: [I18n.tr("themeSettings.layoutScrolling"), I18n.tr("themeSettings.layoutDwindle")]
-            value: Math.max(0, panel.controller.normalLayouts.indexOf(panel.controller.normalLayout))
-            onChanged: value => panel.controller.setNormalLayout(panel.controller.normalLayouts[value])
-        }
-
-        ShellButton {
-            id: resetButton
-            Layout.fillWidth: true
-            theme: panel.theme
-            text: I18n.tr("themeSettings.reset")
-            iconName: "refresh"
-            onClicked: panel.controller.resetThemeSettings()
         }
     }
 }

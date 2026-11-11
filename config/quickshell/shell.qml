@@ -287,6 +287,7 @@ ShellRoot {
             paths: parsed.paths || {},
             appearance: {
                 mode: incomingAppearance.mode === "light" ? "light" : "dark",
+                palette: shellController.themePalettes.indexOf(incomingAppearance.palette) >= 0 ? incomingAppearance.palette : "wallpaper",
                 whiteTemperature: Number.isInteger(incomingTemperature) && incomingTemperature >= 0 && incomingTemperature <= 3 ? incomingTemperature : incomingAppearance.warmWhite === true ? 2 : 0,
                 schedule: {
                     enabled: incomingSchedule.enabled === true,
@@ -324,6 +325,7 @@ ShellRoot {
         const parsed = JSON.parse(source)
         if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("the root must be a JSON object")
         shellTheme.applyPalette(parsed)
+        shellController.appliedThemePalette = shellController.themePalettes.indexOf(parsed.palette) >= 0 ? parsed.palette : "wallpaper"
         themeError = ""
     }
     function reloadConfig(): void {
@@ -340,6 +342,17 @@ ShellRoot {
             const message = String(error)
             if (message !== themeError) console.warn("invalid Hyprism theme; retaining the last valid state:", message)
             themeError = message
+        }
+    }
+    function reloadPalettes(): void {
+        const source = paletteFile.text()
+        if (!source) return
+        try {
+            const parsed = JSON.parse(source)
+            if (!parsed || typeof parsed.palettes !== "object") throw new Error("invalid theme palettes")
+            shellController.paletteCatalog = parsed.palettes
+        } catch (error) {
+            console.warn("invalid Hyprism theme palettes; retaining the last valid state:", String(error))
         }
     }
     function reloadPresets(): void {
@@ -419,6 +432,8 @@ ShellRoot {
                 language: I18n.locale,
                 appearanceMode: shellController.lightTheme ? "light" : "dark",
                 whiteTemperature: shellController.whiteTemperature,
+                themePalette: shellController.themePalette,
+                appliedThemePalette: shellController.appliedThemePalette,
                 surfaceOpacity: shellController.config.shell.surfaceOpacity,
                 cornerRadiusPreset: shellController.cornerRadiusPreset,
                 blurPreset: shellController.blurPreset,
@@ -497,6 +512,9 @@ ShellRoot {
         function microphone(value: string): void { shellController.showOsd(I18n.tr("hub.microphone"), value === "muted" ? I18n.tr("common.muted") : value) }
         function color(value: string): void { shellController.showOsd(I18n.tr("osd.color"), value) }
         function night(value: string): void { shellController.showOsd(I18n.tr("hub.nightMode"), value === "enabled" ? I18n.tr("common.enabled") : I18n.tr("common.disabled")) }
+        function layout(value: string): void {
+            if (["scrolling", "dwindle"].indexOf(value) >= 0) shellController.showOsd(I18n.tr("osd.layout"), I18n.tr(value === "scrolling" ? "themeSettings.layoutScrolling" : "themeSettings.layoutDwindle"))
+        }
         function power(value: string): void { shellController.showOsd(I18n.tr("hub.powerSaver"), value === "power-saver" ? I18n.tr("profile.powerSaver") : I18n.tr("profile.balanced")) }
     }
     IpcHandler {
@@ -579,6 +597,17 @@ ShellRoot {
         }
     }
 
+    FileView {
+        id: paletteFile
+        path: shellController.rootDir + "/config/theme/palettes.json"
+        blockLoading: true
+        preload: true
+        watchChanges: true
+        printErrors: false
+        onLoaded: root.reloadPalettes()
+        onTextChanged: root.reloadPalettes()
+        onFileChanged: reload()
+    }
     FileView {
         id: presetFile
         path: shellController.rootDir + "/config/theme/presets.json"

@@ -159,6 +159,9 @@
     "blurSoft": "Suave",
     "blurDefault": "Padrão",
     "blurStrong": "Forte",
+    "palette": "Tema",
+    "paletteWallpaper": "Papel de parede",
+    "applying": "Aplicando…",
     "layout": "Layout",
     "layoutScrolling": "Rolagem",
     "layoutDwindle": "Dwindle",
@@ -259,6 +262,7 @@
     "balanced": "Equilibrado"
   },
   "osd": {
+    "layout": "Layout",
     "theme": "Tema",
     "updated": "Atualizado",
     "color": "Cor"

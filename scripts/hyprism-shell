@@ -34,6 +34,7 @@ PANELS = {
     "recording": "toggleRecording",
 }
 THEME_MODES = ("dark", "light")
+PALETTES = ("wallpaper", "nord", "tokyo-night", "catppuccin", "gruvbox", "everforest", "rose-pine", "monochrome")
 SYSTEMD_UNIT_SUFFIXES = (
     ".service", ".socket", ".timer", ".path", ".target", ".mount",
     ".automount", ".swap", ".device", ".slice", ".scope",
@@ -505,6 +506,8 @@ def appearance(config):
     if isinstance(temperature, bool) or not isinstance(temperature, int) or temperature not in range(4):
         temperature = 0
     value["whiteTemperature"] = temperature
+    if value.get("palette") not in PALETTES:
+        value["palette"] = "wallpaper"
     schedule = value.setdefault("schedule", {})
     schedule.setdefault("enabled", False)
     schedule.setdefault("lightStart", "07:00")
@@ -560,6 +563,16 @@ def set_theme_mode(config, mode, disable_schedule):
     return mode
 
 
+def set_theme_palette(config, palette):
+    settings = appearance(config)
+    if settings["palette"] == palette:
+        return palette
+    settings["palette"] = palette
+    write_config(config)
+    regenerate_theme()
+    return palette
+
+
 def reconcile_theme(config, now=None):
     settings = appearance(config)
     if not settings["schedule"]["enabled"]:
@@ -594,7 +607,9 @@ def reset_theme_settings(config):
     settings = appearance(config)
     previous_mode = settings["mode"]
     previous_temperature = settings["whiteTemperature"]
+    previous_palette = settings["palette"]
     standard = defaults["appearance"]
+    settings["palette"] = standard.get("palette", "wallpaper")
     settings["mode"] = standard["mode"]
     settings["whiteTemperature"] = standard["whiteTemperature"]
     settings["schedule"] = copy.deepcopy(standard["schedule"])
@@ -606,7 +621,7 @@ def reset_theme_settings(config):
     hyprland_appearance().set_layout(config, defaults.get("layout", hyprland_appearance().DEFAULT_LAYOUT))
     write_config(config)
     hyprland_appearance().sync(config, root_dir())
-    if previous_mode != settings["mode"] or settings["mode"] == "light" and previous_temperature != settings["whiteTemperature"]:
+    if previous_mode != settings["mode"] or previous_palette != settings["palette"] or settings["mode"] == "light" and previous_temperature != settings["whiteTemperature"]:
         regenerate_theme()
     return settings["mode"]
 
@@ -622,6 +637,12 @@ def theme_command(args):
         return 0
     if args.theme_command == "toggle":
         print(set_theme_mode(config, "dark" if settings["mode"] == "light" else "light", True))
+        return 0
+    if args.theme_command == "palette":
+        if args.palette_command == "get":
+            print(settings["palette"])
+            return 0
+        print(set_theme_palette(config, args.palette))
         return 0
     if args.theme_command == "temperature":
         if args.temperature_command == "get":
@@ -695,9 +716,15 @@ def layout_command(args):
             target = "dwindle" if backend.layout(config) == "scrolling" else "scrolling"
         else:
             target = args.layout
+        previous = backend.layout(config)
         if backend.set_layout(config, target):
             write_config(config)
         backend.sync_layout(config)
+    if previous != target and os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+        try:
+            subprocess.run([str(root_dir() / "scripts/system/shell-ipc"), "osd", "layout", target], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5, check=False)
+        except (OSError, subprocess.SubprocessError):
+            pass
     print(target)
     return 0
 
@@ -1241,6 +1268,11 @@ def parser():
     theme_set = theme_commands.add_parser("set", help="set the appearance and disable scheduling")
     theme_set.add_argument("mode", choices=THEME_MODES)
     theme_commands.add_parser("toggle", help="toggle the appearance and disable scheduling")
+    palette = theme_commands.add_parser("palette", help="select the wallpaper palette or a preset theme")
+    palette_commands = palette.add_subparsers(dest="palette_command", required=True)
+    palette_commands.add_parser("get", help="print the selected palette")
+    palette_set = palette_commands.add_parser("set", help="select a palette and regenerate the theme")
+    palette_set.add_argument("palette", choices=PALETTES)
     temperature = theme_commands.add_parser("temperature", help="manage the light palette temperature")
     temperature_commands = temperature.add_subparsers(dest="temperature_command", required=True)
     temperature_commands.add_parser("get", help="print the temperature level")

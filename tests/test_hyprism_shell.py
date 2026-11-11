@@ -320,6 +320,7 @@ elif name == "satty":
         configured = self.read_config()
         configured["appearance"] = {
             "mode": "light",
+            "palette": "nord",
             "whiteTemperature": 3,
             "schedule": {"enabled": True, "lightStart": "09:00", "darkStart": "21:00"},
         }
@@ -337,6 +338,7 @@ elif name == "satty":
         updated = self.read_config()
         self.assertEqual(updated["appearance"], {
             "mode": "dark",
+            "palette": "wallpaper",
             "whiteTemperature": 0,
             "schedule": {"enabled": False, "lightStart": "07:00", "darkStart": "18:00"},
         })
@@ -358,6 +360,14 @@ with open(os.environ["HYPRISM_TEST_HYPRCTL_LOG"], "a", encoding="utf-8") as log:
 print("ok")
 """, encoding="utf-8")
         command.chmod(0o755)
+        (directory / "qs").write_text("""#!/usr/bin/env python3
+import json
+import os
+import sys
+with open(os.environ["HYPRISM_TEST_HYPRCTL_LOG"] + ".qs", "a", encoding="utf-8") as log:
+    log.write(json.dumps(sys.argv[1:]) + "\\n")
+""", encoding="utf-8")
+        (directory / "qs").chmod(0o755)
         log = Path(self.temporary.name) / "hyprctl.log"
         self.environment["HYPRISM_TEST_HYPRCTL_LOG"] = str(log)
         self.environment["HYPRLAND_INSTANCE_SIGNATURE"] = "test"
@@ -403,6 +413,22 @@ print("ok")
         calls = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
         self.assertEqual(calls, [["eval", 'hl.config({ general = { layout = "scrolling" } })']])
 
+    def test_layout_osd_reports_only_real_changes(self):
+        self.use_fake_theme_runtime()
+        log = self.use_fake_hyprctl()
+        osd = Path(str(log) + ".qs")
+        helper = Path(self.environment["HYPRISM_ROOT"]) / "scripts/system/shell-ipc"
+        helper.parent.mkdir(parents=True, exist_ok=True)
+        helper.write_text((ROOT / "scripts/system/shell-ipc").read_text(encoding="utf-8"), encoding="utf-8")
+        helper.chmod(0o755)
+        self.run_cli("layout", "set", "dwindle")
+        self.assertFalse(osd.exists())
+        self.run_cli("layout", "toggle")
+        self.run_cli("layout", "set", "scrolling")
+        self.run_cli("layout", "set", "dwindle")
+        calls = [json.loads(line)[-3:] for line in osd.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(calls, [["osd", "layout", "scrolling"], ["osd", "layout", "dwindle"]])
+
     def test_theme_sync_and_reset_apply_persisted_layout(self):
         self.use_fake_theme_runtime()
         log = self.use_fake_hyprctl()
@@ -425,6 +451,21 @@ print("ok")
         self.assertIn('hl.bind(mod .. " + S", hl.dsp.workspace.toggle_special("magic"))', workspaces)
         self.assertIn('"/theme/layout.lua"', general)
         self.assertIn("layout = layout,", general)
+        layouts = (ROOT / "config/hypr/modules/layouts.lua").read_text(encoding="utf-8")
+        self.assertIn("column_width = 0.95,", layouts)
+
+    def test_theme_palette_defaults_sets_and_validates(self):
+        self.use_fake_theme_runtime()
+        self.assertEqual(self.run_cli("theme", "palette", "get").stdout, "wallpaper\n")
+        result = self.run_cli("theme", "palette", "set", "rose-pine")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.read_config()["appearance"]["palette"], "rose-pine")
+        self.assertEqual(self.read_config()["appearance"]["mode"], "dark")
+        self.assertEqual(self.run_cli("theme", "set", "light").returncode, 0)
+        self.assertEqual(self.read_config()["appearance"]["palette"], "rose-pine")
+        before = self.config.read_text(encoding="utf-8")
+        self.assertNotEqual(self.run_cli("theme", "palette", "set", "solarized").returncode, 0)
+        self.assertEqual(self.config.read_text(encoding="utf-8"), before)
 
     def test_migration_preserves_legacy_preferences_and_ptbr(self):
         existing = Path(self.temporary.name) / "existing.json"

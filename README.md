@@ -57,7 +57,7 @@ Hyprism `0.1.0` is an early public release designed around current Arch Linux an
 
 ### Theming
 
-- Wallpaper-derived dark and light semantic palettes rather than independent static themes.
+- Wallpaper-derived dark and light semantic palettes, or a fixed preset: Nord, Tokyo Night, Catppuccin, Gruvbox, Everforest, Rosé Pine, or Black & White.
 - Four light-palette temperature levels and optional scheduled light/dark switching.
 - Coordinated output for Quickshell, Hyprland, Hyprlock, SDDM, GTK, Qt/Kvantum, Kitty, Foot, hyprtoolkit, Starship, tmux, Neovim, Fastfetch, and Zathura.
 - Live palette updates for the running shell and supported terminal/toolkit applications.
@@ -257,6 +257,20 @@ flowchart LR
 
 Changing wallpaper preserves the selected appearance. Changing appearance preserves the wallpaper. Dark mode is the default, automatic scheduling is opt-in, and light mode offers four temperature steps from neutral to amber.
 
+Theme Settings → Theme chooses where the palette comes from. **Wallpaper** is the default and derives colors from the current wallpaper with Matugen. A preset fixes the palette instead, so changing wallpaper only changes the image. Presets follow the Auto, Light, and Dark appearance setting:
+
+| Theme | Dark | Light |
+| --- | --- | --- |
+| Nord | Nord | Hyprism light variant built from the Nord palette |
+| Tokyo Night | Storm | Day |
+| Catppuccin | Mocha | Latte |
+| Gruvbox | Dark | Light |
+| Everforest | Dark (medium) | Light (medium) |
+| Rosé Pine | Moon | Dawn |
+| Black & White | Black surfaces, grayscale accents | White surfaces, grayscale accents |
+
+Every output listed above follows the preset, including GTK through Colloid and the Hyprism-Papirus folder icons. White temperature applies to the Wallpaper theme only. Use `hyprism-shell theme palette set NAME` from a terminal.
+
 ## Essential keybindings
 
 | Keybinding | Action |
@@ -274,7 +288,7 @@ Changing wallpaper preserves the selected appearance. Changing appearance preser
 | `Super+Ctrl+S` | Toggle night mode |
 | `Super+B` | Open Zen Browser |
 | `Super+1…0` | Go to workspaces 1–10 |
-| `Super+Shift+Space` | Toggle normal workspaces between scrolling and dwindle |
+| `Super+Shift+Space` | Toggle normal workspaces between scrolling and dwindle, with a brief on-screen indicator |
 
 ## Project structure
 
@@ -307,6 +321,8 @@ make check
 Keep changes focused, preserve English and PT-BR coverage for user-facing text, and include screenshots or video when behavior is visual. Pull requests receive a concise checklist automatically.
 
 ## Credits and licenses
+
+Preset palettes are adapted from [Nord](https://www.nordtheme.com), [Tokyo Night](https://github.com/folke/tokyonight.nvim), [Catppuccin](https://github.com/catppuccin/palette), [Gruvbox](https://github.com/morhetz/gruvbox), [Everforest](https://github.com/sainnhe/everforest), and [Rosé Pine](https://rosepinetheme.com), all available under the MIT License.
 
 Hyprism integrates projects including [Hyprland](https://hypr.land/), [Quickshell](https://quickshell.org/), [Matugen](https://github.com/InioX/matugen), [Colloid](https://github.com/vinceliuice/Colloid-gtk-theme), and [Papirus](https://github.com/PapirusDevelopmentTeam/papirus-icon-theme).
 

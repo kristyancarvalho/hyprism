@@ -2,6 +2,7 @@
   "defaults": {
     "appearance": {
       "mode": "dark",
+      "palette": "wallpaper",
       "whiteTemperature": 0,
       "schedule": {
         "enabled": false,

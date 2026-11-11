@@ -159,6 +159,9 @@
     "blurSoft": "Soft",
     "blurDefault": "Default",
     "blurStrong": "Strong",
+    "palette": "Theme",
+    "paletteWallpaper": "Wallpaper",
+    "applying": "Applying…",
     "layout": "Layout",
     "layoutScrolling": "Scrolling",
     "layoutDwindle": "Dwindle",
@@ -259,6 +262,7 @@
     "balanced": "Balanced"
   },
   "osd": {
+    "layout": "Layout",
     "theme": "Theme",
     "updated": "Updated",
     "color": "Color"
