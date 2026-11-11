@@ -55,13 +55,13 @@
       "dark": {
         "background": "#282828", "surface": "#32302f", "surfaceVariant": "#3c3836", "surfaceHigh": "#504945",
         "foreground": "#ebdbb2", "muted": "#a89984", "outline": "#665c54",
-        "accent": "#fe8019", "secondary": "#fabd2f", "tertiary": "#b8bb26",
+        "accent": "#fabd2f", "secondary": "#d79921", "tertiary": "#b8bb26",
         "error": "#fb4934", "warning": "#fabd2f", "success": "#b8bb26"
       },
       "light": {
         "background": "#fbf1c7", "surface": "#f2e5bc", "surfaceVariant": "#ebdbb2", "surfaceHigh": "#d5c4a1",
         "foreground": "#3c3836", "muted": "#7c6f64", "outline": "#a89984",
-        "accent": "#af3a03", "secondary": "#b57614", "tertiary": "#79740e",
+        "accent": "#b57614", "secondary": "#d79921", "tertiary": "#79740e",
         "error": "#9d0006", "warning": "#b57614", "success": "#79740e"
       }
     },
