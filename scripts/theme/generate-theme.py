@@ -613,7 +613,7 @@ def render_colloid(matugen, theme):
             "surface_variant": theme["surfaceVariant"],
             "on_surface_variant": theme["mutedForeground"],
             "surface_container_lowest": theme["background"],
-            "surface_container_low": theme["surface"],
+            "surface_container_low": theme["background"],
             "surface_container": theme["surfaceContainer"],
             "surface_container_high": theme["surfaceContainerHigh"],
             "surface_container_highest": theme["surfaceContainerHighest"],
@@ -1012,7 +1012,7 @@ def render_kvantum(theme):
         "layout_margin": "8",
         "animate_states": "true",
         "window.color": theme["background"],
-        "base.color": theme["surface"],
+        "base.color": theme["background"],
         "alt.base.color": theme["surfaceVariant"],
         "button.color": theme["surfaceVariant"],
         "light.color": theme["surfaceElevated"],
@@ -1040,7 +1040,7 @@ def render_kvantum(theme):
         "[Colors:Selection]\n"
         f'BackgroundNormal={theme["accent"]}\nForegroundNormal={theme["background"]}\n\n'
         "[Colors:View]\n"
-        f'BackgroundNormal={theme["surface"]}\nForegroundNormal={theme["foreground"]}\nForegroundInactive={theme["mutedForeground"]}\n\n'
+        f'BackgroundNormal={theme["background"]}\nForegroundNormal={theme["foreground"]}\nForegroundInactive={theme["mutedForeground"]}\n\n'
         "[Colors:Window]\n"
         f'BackgroundNormal={theme["background"]}\nForegroundNormal={theme["foreground"]}\nForegroundInactive={theme["mutedForeground"]}\n\n'
         "[General]\nColorScheme=Hyprism\nName=Hyprism\nshadeSortColumn=true\n\n"
