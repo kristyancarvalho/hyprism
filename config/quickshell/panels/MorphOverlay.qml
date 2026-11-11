@@ -349,10 +349,10 @@ PanelWindow {
 
                     Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
-                        color: theme.colors.warning
-                        width: 8
-                        height: 8
-                        radius: 4
+                        color: theme.colors.error
+                        width: 7
+                        height: 7
+                        radius: 3.5
                     }
 
                     Text {

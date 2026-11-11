@@ -65,7 +65,7 @@ QtObject {
     readonly property int easingPanelMorph: Easing.OutBack
     readonly property int easingMove: Easing.InOutCubic
     readonly property real panelMorphOvershoot: .8
-    readonly property int recordingDotCompactSize: 11
+    readonly property int recordingDotCompactSize: 8
     readonly property int workspaceCellSize: 24
     readonly property int workspaceCellSpacing: 4
     readonly property int morphSurfaceMaxWidth: 920
