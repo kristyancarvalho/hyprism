@@ -10,7 +10,7 @@ PanelWindow {
     required property var theme
 
     screen: shellScreen
-    visible: shellScreen !== null && controller.osdKind.length > 0
+    visible: shellScreen !== null && !controller.floatingSurfacesSuppressed && controller.osdKind.length > 0
     anchors { top: true }
     margins.top: Design.compactReservedHeight(controller.config.shell) + 8
     implicitWidth: 320

@@ -12,7 +12,9 @@ Item {
     property string targetScreenName: ""
     property string osdKind: ""
     property string osdValue: ""
-    readonly property bool hubOpen: mode === "control"
+    readonly property var hubSurfaceModes: ["control", "network", "bluetooth", "themeSettings"]
+    readonly property bool hubSurfaceOpen: hubSurfaceModes.indexOf(mode) >= 0
+    property bool floatingSurfacesSuppressed: false
     property int switcherIndex: 0
     property alias switcherWindows: switcherWindowModel
     property var mruWindowAddresses: []
@@ -268,18 +270,25 @@ Item {
     }
 
     function showOsd(kind, value) {
-        const safeKind = Design.safeText(kind, I18n.tr("widgets.system"))
-        if (hubOpen && [I18n.tr("hub.volume"), I18n.tr("hub.brightness"), I18n.tr("hub.microphone")].indexOf(safeKind) >= 0) return
-        osdKind = safeKind
+        if (floatingSurfacesSuppressed) return
+        osdKind = Design.safeText(kind, I18n.tr("widgets.system"))
         osdValue = Design.safeText(value, I18n.tr("common.unavailable"))
         osdTimer.restart()
     }
 
-    onHubOpenChanged: {
-        if (hubOpen && [I18n.tr("hub.volume"), I18n.tr("hub.brightness"), I18n.tr("hub.microphone")].indexOf(osdKind) >= 0) {
-            osdTimer.stop()
-            osdKind = ""
-            osdValue = ""
+    function hideOsd() {
+        osdTimer.stop()
+        osdKind = ""
+        osdValue = ""
+    }
+
+    onHubSurfaceOpenChanged: {
+        if (hubSurfaceOpen) {
+            floatingRelease.stop()
+            floatingSurfacesSuppressed = true
+            hideOsd()
+        } else {
+            floatingRelease.restart()
         }
     }
 
@@ -928,7 +937,12 @@ Item {
 
     Process { id: commandRunner }
     SystemClock { id: systemClock; precision: SystemClock.Seconds }
-    Timer { id: osdTimer; interval: 1600; onTriggered: { controller.osdKind = ""; controller.osdValue = "" } }
+    Timer { id: osdTimer; interval: 1600; onTriggered: controller.hideOsd() }
+    Timer {
+        id: floatingRelease
+        interval: Math.max(1, Math.round(Design.safeNumber(controller.config.shell.animationNormal, Design.animationMorph))) + Design.animationFast
+        onTriggered: controller.floatingSurfacesSuppressed = controller.hubSurfaceOpen
+    }
     Timer {
         id: taskCleanup
         interval: 500

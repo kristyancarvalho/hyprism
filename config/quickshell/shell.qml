@@ -27,6 +27,7 @@ ShellRoot {
     property string notificationScreenName: ""
     property var notificationHistory: []
     property int popupOverflowCount: 0
+    property var concealedPopups: []
     property bool doNotDisturb: false
     readonly property var focusedScreen: screenByName(focusedScreenName())
     readonly property var transientScreen: screenByName(shellController.targetScreenName) || focusedScreen
@@ -50,8 +51,10 @@ ShellRoot {
     }
 
     function removePopup(notification): void {
-        const index = popupIndex(notificationKey(notification))
+        const key = notificationKey(notification)
+        const index = popupIndex(key)
         if (index >= 0) popupNotifications.remove(index)
+        if (concealedPopups.some(popup => popup.key === key)) concealedPopups = concealedPopups.filter(popup => popup.key !== key)
         if (!popupNotifications.count) popupOverflowCount = 0
         notificationServer.newest = popupNotifications.count ? popupNotifications.get(popupNotifications.count - 1).payload : null
     }
@@ -113,6 +116,7 @@ ShellRoot {
         for (let index = popupNotifications.count - 1; index >= 0; index--) {
             if (sources.indexOf(popupNotifications.get(index).payload) >= 0) popupNotifications.remove(index)
         }
+        concealedPopups = concealedPopups.filter(popup => sources.indexOf(popup.payload) < 0)
         popupOverflowCount = 0
         notificationServer.newest = null
         for (let index = 0; index < current.length; index++) {
@@ -133,9 +137,29 @@ ShellRoot {
         return requested > 0 ? Math.round(Design.clamp(requested, 3000, 10000)) : 6500
     }
 
+    function concealPopup(notification, deadline): void {
+        const key = notificationKey(notification)
+        concealedPopups = concealedPopups.filter(popup => popup.key !== key).concat([{ key: key, payload: notification, deadline: deadline }])
+    }
+
+    function concealVisiblePopups(): void {
+        for (let index = 0; index < popupNotifications.count; index++) {
+            const popup = popupNotifications.get(index)
+            concealPopup(popup.payload, popup.deadline)
+        }
+        popupNotifications.clear()
+        popupOverflowCount = 0
+        notificationServer.newest = null
+    }
+
     function showPopup(notification): void {
         if (notificationServer.doNotDisturb) return
+        if (shellController.floatingSurfacesSuppressed) {
+            concealPopup(notification, Date.now() + popupDuration(notification))
+            return
+        }
         const key = notificationKey(notification)
+        if (concealedPopups.some(popup => popup.key === key)) concealedPopups = concealedPopups.filter(popup => popup.key !== key)
         const existing = popupIndex(key)
         if (existing >= 0) {
             popupNotifications.setProperty(existing, "payload", notification)
@@ -158,6 +182,8 @@ ShellRoot {
             const popup = popupNotifications.get(index)
             if (now >= popup.deadline) expirePopup(popup.payload)
         }
+        const due = concealedPopups.filter(popup => now >= popup.deadline)
+        for (let index = 0; index < due.length; index++) expirePopup(due[index].payload)
     }
 
     function setDoNotDisturb(enabled): void {
@@ -167,6 +193,7 @@ ShellRoot {
         dndStateFile.setText(JSON.stringify({ doNotDisturb: next }) + "\n")
         if (!next) return
         popupNotifications.clear()
+        concealedPopups = []
         popupOverflowCount = 0
         notificationServer.newest = null
     }
@@ -192,10 +219,12 @@ ShellRoot {
     function syncTrackedPopups(): void {
         if (doNotDisturb) {
             popupNotifications.clear()
+            concealedPopups = []
             popupOverflowCount = 0
             notificationServer.newest = null
             return
         }
+        if (concealedPopups.some(popup => !popup.payload || !popup.payload.tracked)) concealedPopups = concealedPopups.filter(popup => popup.payload && popup.payload.tracked)
         for (let index = popupNotifications.count - 1; index >= 0; index--) {
             const notification = popupNotifications.get(index).payload
             if (!notification || !notification.tracked) popupNotifications.remove(index)
@@ -430,6 +459,9 @@ ShellRoot {
                 wallpaperSelectedIndex: shellController.wallpaperSelectedIndex,
                 wallpaperFocusTarget: shellController.wallpaperFocusTarget,
                 popupCount: popupNotifications.count,
+                concealedPopupCount: root.concealedPopups.length,
+                floatingSurfacesSuppressed: shellController.floatingSurfacesSuppressed,
+                osdKind: shellController.osdKind,
                 popupOverflowCount: root.popupOverflowCount,
                 notificationHistoryCount: root.notificationHistory.length,
                 doNotDisturb: notificationServer.doNotDisturb,
@@ -499,6 +531,7 @@ ShellRoot {
         function clearNotifications(): void {
             if (!root.developmentMode) return
             popupNotifications.clear()
+            root.concealedPopups = []
             root.popupOverflowCount = 0
             root.notificationHistory = []
             notificationServer.newest = null
@@ -609,7 +642,13 @@ ShellRoot {
         }
     }
     Timer { id: themeScheduleRearm; interval: 1500; onTriggered: root.updateThemeSchedule() }
-    Timer { interval: 250; repeat: true; running: popupNotifications.count > 0; onTriggered: root.expireDuePopups() }
+    Timer { interval: 250; repeat: true; running: popupNotifications.count > 0 || root.concealedPopups.length > 0; onTriggered: root.expireDuePopups() }
+    Connections {
+        target: shellController
+        function onFloatingSurfacesSuppressedChanged(): void {
+            if (shellController.floatingSurfacesSuppressed) root.concealVisiblePopups()
+        }
+    }
 
     NotificationServer {
         id: notificationServer
@@ -679,7 +718,7 @@ ShellRoot {
             shellScreen: root.notificationScreen
             notifications: popupNotifications
             overflowCount: root.popupOverflowCount
-            suppressed: shellController.mode === "control" || notificationServer.doNotDisturb
+            suppressed: shellController.floatingSurfacesSuppressed || notificationServer.doNotDisturb
             controller: shellController
             theme: shellTheme
             onDismissRequested: notification => root.dismissPopup(notification)
