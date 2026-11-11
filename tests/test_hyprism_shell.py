@@ -360,6 +360,14 @@ with open(os.environ["HYPRISM_TEST_HYPRCTL_LOG"], "a", encoding="utf-8") as log:
 print("ok")
 """, encoding="utf-8")
         command.chmod(0o755)
+        (directory / "qs").write_text("""#!/usr/bin/env python3
+import json
+import os
+import sys
+with open(os.environ["HYPRISM_TEST_HYPRCTL_LOG"] + ".qs", "a", encoding="utf-8") as log:
+    log.write(json.dumps(sys.argv[1:]) + "\\n")
+""", encoding="utf-8")
+        (directory / "qs").chmod(0o755)
         log = Path(self.temporary.name) / "hyprctl.log"
         self.environment["HYPRISM_TEST_HYPRCTL_LOG"] = str(log)
         self.environment["HYPRLAND_INSTANCE_SIGNATURE"] = "test"
@@ -404,6 +412,22 @@ print("ok")
         self.assertEqual(result.returncode, 0, result.stderr)
         calls = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
         self.assertEqual(calls, [["eval", 'hl.config({ general = { layout = "scrolling" } })']])
+
+    def test_layout_osd_reports_only_real_changes(self):
+        self.use_fake_theme_runtime()
+        log = self.use_fake_hyprctl()
+        osd = Path(str(log) + ".qs")
+        helper = Path(self.environment["HYPRISM_ROOT"]) / "scripts/system/shell-ipc"
+        helper.parent.mkdir(parents=True, exist_ok=True)
+        helper.write_text((ROOT / "scripts/system/shell-ipc").read_text(encoding="utf-8"), encoding="utf-8")
+        helper.chmod(0o755)
+        self.run_cli("layout", "set", "dwindle")
+        self.assertFalse(osd.exists())
+        self.run_cli("layout", "toggle")
+        self.run_cli("layout", "set", "scrolling")
+        self.run_cli("layout", "set", "dwindle")
+        calls = [json.loads(line)[-3:] for line in osd.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(calls, [["osd", "layout", "scrolling"], ["osd", "layout", "dwindle"]])
 
     def test_theme_sync_and_reset_apply_persisted_layout(self):
         self.use_fake_theme_runtime()

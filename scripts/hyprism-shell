@@ -716,9 +716,15 @@ def layout_command(args):
             target = "dwindle" if backend.layout(config) == "scrolling" else "scrolling"
         else:
             target = args.layout
+        previous = backend.layout(config)
         if backend.set_layout(config, target):
             write_config(config)
         backend.sync_layout(config)
+    if previous != target and os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+        try:
+            subprocess.run([str(root_dir() / "scripts/system/shell-ipc"), "osd", "layout", target], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5, check=False)
+        except (OSError, subprocess.SubprocessError):
+            pass
     print(target)
     return 0
 

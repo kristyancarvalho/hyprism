@@ -512,6 +512,9 @@ ShellRoot {
         function microphone(value: string): void { shellController.showOsd(I18n.tr("hub.microphone"), value === "muted" ? I18n.tr("common.muted") : value) }
         function color(value: string): void { shellController.showOsd(I18n.tr("osd.color"), value) }
         function night(value: string): void { shellController.showOsd(I18n.tr("hub.nightMode"), value === "enabled" ? I18n.tr("common.enabled") : I18n.tr("common.disabled")) }
+        function layout(value: string): void {
+            if (["scrolling", "dwindle"].indexOf(value) >= 0) shellController.showOsd(I18n.tr("osd.layout"), I18n.tr(value === "scrolling" ? "themeSettings.layoutScrolling" : "themeSettings.layoutDwindle"))
+        }
         function power(value: string): void { shellController.showOsd(I18n.tr("hub.powerSaver"), value === "power-saver" ? I18n.tr("profile.powerSaver") : I18n.tr("profile.balanced")) }
     }
     IpcHandler {

@@ -262,6 +262,7 @@
     "balanced": "Balanced"
   },
   "osd": {
+    "layout": "Layout",
     "theme": "Theme",
     "updated": "Updated",
     "color": "Color"

@@ -288,7 +288,7 @@ Every output listed above follows the preset, including GTK through Colloid and 
 | `Super+Ctrl+S` | Toggle night mode |
 | `Super+B` | Open Zen Browser |
 | `Super+1…0` | Go to workspaces 1–10 |
-| `Super+Shift+Space` | Toggle normal workspaces between scrolling and dwindle |
+| `Super+Shift+Space` | Toggle normal workspaces between scrolling and dwindle, with a brief on-screen indicator |
 
 ## Project structure
 
