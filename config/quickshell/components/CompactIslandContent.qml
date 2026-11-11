@@ -62,7 +62,7 @@ Item {
                     width: Design.recordingDotCompactSize
                     height: Design.recordingDotCompactSize
                     radius: width / 2
-                    color: compact.theme.colors.warning
+                    color: compact.theme.colors.error
                 }
 
                 SequentialAnimation on opacity {

@@ -302,10 +302,10 @@ Item {
                     spacing: Design.spacingSm
 
                     Rectangle {
-                        Layout.preferredWidth: 8
-                        Layout.preferredHeight: 8
-                        radius: 4
-                        color: panel.theme.colors.warning
+                        Layout.preferredWidth: 7
+                        Layout.preferredHeight: 7
+                        radius: 3.5
+                        color: panel.theme.colors.error
                     }
 
                     Text {

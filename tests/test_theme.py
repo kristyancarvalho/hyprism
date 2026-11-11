@@ -87,11 +87,22 @@ class ThemeTests(unittest.TestCase):
         self.assertIn(warm["background"], THEME.render_kitty(warm))
         self.assertEqual(THEME.warm_light_palette(dark_raw, 0), dark_raw)
 
-    def test_hyprland_shadow_is_softened_only_in_light_mode(self):
-        light = THEME.theme_from(self.light_raw(), "/tmp/wallpaper.png", "light")
-        dark = dict(light, mode="dark")
-        self.assertIn('shadow = "rgba(2917132e)"', THEME.render_hyprland(light))
-        self.assertIn('shadow = "rgba(0000006e)"', THEME.render_hyprland(dark))
+    def test_hyprland_shadows_are_soft_theme_tinted_and_cover_inactive_windows(self):
+        for name in ("tokyo-night", "gruvbox", "monochrome"):
+            for mode in ("dark", "light"):
+                with self.subTest(name=name, mode=mode):
+                    theme = THEME.preset_theme(name, mode, "")
+                    active, inactive = THEME.shadow_colors(theme)
+                    rendered = THEME.render_hyprland(theme)
+                    self.assertIn(f'shadow = "{active}"', rendered)
+                    self.assertIn(f'shadow_inactive = "{inactive}"', rendered)
+                    self.assertLessEqual(int(active[-3:-1], 16), 0x55)
+                    self.assertLess(int(inactive[-3:-1], 16), int(active[-3:-1], 16))
+                    self.assertGreater(int(inactive[-3:-1], 16), 0)
+        tokyo = THEME.shadow_colors(THEME.preset_theme("tokyo-night", "dark", ""))[0]
+        self.assertNotEqual(tokyo[5:11], "000000")
+        appearance = (ROOT / "config/hypr/modules/appearance.lua").read_text(encoding="utf-8")
+        self.assertIn("color_inactive = palette.shadow_inactive,", appearance)
 
     def test_hyprlock_light_palette_uses_accessible_inverse_colors(self):
         theme = THEME.theme_from(self.light_raw(), "/tmp/wallpaper.png", "light")

@@ -114,8 +114,8 @@ Rectangle {
                 height: 48
                 radius: Design.radiusXs
                 color: selected ? choice.theme.colors.accentDim : choice.theme.colors.surfaceElevated
-                border.width: selected || cursorTarget ? 1 : 0
-                border.color: selected ? choice.theme.colors.accent : choice.theme.colors.outline
+                border.width: cursorTarget && !selected ? 1 : 0
+                border.color: choice.theme.colors.outline
                 Behavior on color { ColorAnimation { duration: Design.animationFast; easing.type: Design.easingMorph } }
 
                 Rectangle {
