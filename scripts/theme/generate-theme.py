@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import colorsys
+import importlib.util
 import json
 import os
 import pathlib
@@ -428,7 +429,6 @@ def render_foot(theme):
         f'selection-foreground={theme["foreground"][1:]}',
         f'selection-background={theme["surfaceVariant"][1:]}',
         f'urls={theme["accent"][1:]}',
-        "alpha=0.82",
     ]
     colors = terminal_colors(theme)
     lines.extend(f"regular{index}={color[1:]}" for index, color in enumerate(colors[:8]))
@@ -1070,6 +1070,21 @@ def appearance_settings():
     return (mode if mode in ("dark", "light") else "dark"), white_temperature, palette
 
 
+def publish_terminal_opacity():
+    try:
+        specification = importlib.util.spec_from_file_location("hyprism_hyprland_appearance", pathlib.Path(__file__).resolve().parent / "hyprland_appearance.py")
+        appearance = importlib.util.module_from_spec(specification)
+        specification.loader.exec_module(appearance)
+        config = pathlib.Path(os.environ.get("HYPRISM_CONFIG", HOME / ".config/hyprism/user.json"))
+        try:
+            settings = json.loads(config.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            settings = {}
+        appearance.persist_terminals(appearance.values(settings if isinstance(settings, dict) else {}, appearance.presets(ROOT)))
+    except (OSError, KeyError, ValueError, AttributeError, json.JSONDecodeError) as error:
+        print(f"Hyprism theme: terminal opacity preserved after failure ({error})", file=sys.stderr)
+
+
 def interface_language():
     config = pathlib.Path(os.environ.get("HYPRISM_CONFIG", HOME / ".config/hyprism/user.json"))
     try:
@@ -1134,6 +1149,7 @@ def main():
     publish(OUT / "theme.json", json_text(theme), json.loads)
     publish(OUT / "kitty.conf", render_kitty(theme), validate_colors)
     publish(OUT / "foot.ini", render_foot(theme), validate_colors)
+    publish_terminal_opacity()
     publish(OUT / "hyprland.lua", render_hyprland(theme), validate_colors)
     publish(OUT / "hyprtoolkit-colors.conf", render_hyprtoolkit(theme), validate_hyprtoolkit)
     publish(OUT / "hyprlock-colors.conf", render_hyprlock(theme), validate_colors)

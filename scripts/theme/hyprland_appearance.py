@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import tempfile
@@ -28,6 +29,7 @@ def values(config, definitions):
     return {
         "rounding": definitions["cornerRadius"][radius]["window"],
         "inactiveOpacity": opacity_preset["inactiveWindow"],
+        "terminalOpacity": opacity_preset["shell"],
         "blur": definitions["blur"][blur],
     }
 
@@ -75,6 +77,31 @@ def write_atomic(target, content):
 
 def persist(value):
     write_atomic(generated_path(), render(value))
+
+
+def terminal_paths():
+    return cache_dir() / "theme/kitty-opacity.conf", cache_dir() / "theme/foot-opacity.ini"
+
+
+def persist_terminals(value):
+    opacity = f'{value["terminalOpacity"]:.2f}'
+    kitty, foot = terminal_paths()
+    write_atomic(kitty, f"background_opacity {opacity}\n")
+    write_atomic(foot, f"[colors-dark]\nalpha={opacity}\n")
+
+
+def apply_terminals_runtime(value):
+    kitten = shutil.which("kitten")
+    runtime = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp"))
+    if not kitten or not runtime.is_dir():
+        return
+    for socket in runtime.glob("kitty-*"):
+        if not socket.is_socket():
+            continue
+        try:
+            subprocess.run([kitten, "@", "--to", f"unix:{socket}", "set-background-opacity", "--all", f'{value["terminalOpacity"]:.2f}'], capture_output=True, timeout=3, check=False)
+        except (OSError, subprocess.SubprocessError):
+            pass
 
 
 def evaluate(request, failure):
@@ -138,6 +165,8 @@ def sync_layout(config):
 def sync(config, root):
     resolved = values(config, presets(root))
     persist(resolved)
+    persist_terminals(resolved)
     apply_runtime(resolved)
+    apply_terminals_runtime(resolved)
     sync_layout(config)
     return resolved
