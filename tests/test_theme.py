@@ -96,8 +96,8 @@ class ThemeTests(unittest.TestCase):
                     rendered = THEME.render_hyprland(theme)
                     self.assertIn(f'shadow = "{active}"', rendered)
                     self.assertIn(f'shadow_inactive = "{inactive}"', rendered)
-                    self.assertLessEqual(int(active[-3:-1], 16), 0x55)
-                    self.assertLess(int(inactive[-3:-1], 16), int(active[-3:-1], 16))
+                    self.assertLessEqual(int(active[-3:-1], 16), 0x80)
+                    self.assertEqual(inactive, active)
                     self.assertGreater(int(inactive[-3:-1], 16), 0)
         tokyo = THEME.shadow_colors(THEME.preset_theme("tokyo-night", "dark", ""))[0]
         self.assertNotEqual(tokyo[5:11], "000000")

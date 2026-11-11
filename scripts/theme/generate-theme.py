@@ -439,9 +439,9 @@ def render_foot(theme):
 def shadow_colors(theme):
     if theme["mode"] == "light":
         tint = mix(theme["onSurface"], theme["background"], .35)
-        return f"rgba({tint[1:]}26)", f"rgba({tint[1:]}1a)"
+        return f"rgba({tint[1:]}33)", f"rgba({tint[1:]}33)"
     tint = mix(theme["background"], "#000000", .72)
-    return f"rgba({tint[1:]}55)", f"rgba({tint[1:]}3d)"
+    return f"rgba({tint[1:]}70)", f"rgba({tint[1:]}70)"
 
 
 def render_hyprland(theme):
