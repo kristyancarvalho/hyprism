@@ -28,6 +28,12 @@ command -v qs >/dev/null 2>&1 || {
 }
 
 mkdir -p "$log_dir"
+# The desktop shell watches this file to suppress notification and OSD popups
+# while the lock screen owns the session; it must exist before the first lock.
+if [[ -n ${XDG_RUNTIME_DIR:-} && -d $XDG_RUNTIME_DIR ]]; then
+  install -d -m 0700 "$XDG_RUNTIME_DIR/hyprism"
+  [[ -f $XDG_RUNTIME_DIR/hyprism/lockscreen.state ]] || printf 'unlocked\n' >"$XDG_RUNTIME_DIR/hyprism/lockscreen.state"
+fi
 export HYPRISM_ROOT="$root_dir"
 if [[ $(locale charmap 2>/dev/null || true) != UTF-8 ]]; then
   utf8_locale="$(locale -a 2>/dev/null | awk 'BEGIN { IGNORECASE=1 } /^C\.UTF-?8$|^C\.utf8$|^en_US\.UTF-?8$/ { print; exit }')"

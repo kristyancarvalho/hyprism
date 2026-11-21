@@ -154,6 +154,9 @@ ShellRoot {
 
     function showPopup(notification): void {
         if (notificationServer.doNotDisturb) return
+        // While the session is locked the notification is kept in the history
+        // but never presented, queued or replayed after unlocking.
+        if (shellController.sessionLocked) return
         if (shellController.floatingSurfacesSuppressed) {
             concealPopup(notification, Date.now() + popupDuration(notification))
             return
@@ -327,6 +330,10 @@ ShellRoot {
         shellTheme.applyPalette(parsed)
         shellController.appliedThemePalette = shellController.themePalettes.indexOf(parsed.palette) >= 0 ? parsed.palette : "wallpaper"
         themeError = ""
+    }
+    function syncLockState(): void {
+        const state = Design.safeText(lockStateFile.text(), "").trim()
+        shellController.sessionLocked = state === "locking" || state === "locked"
     }
     function reloadConfig(): void {
         try { applyConfig(configFile.text()) }
@@ -677,6 +684,25 @@ ShellRoot {
         function onFloatingSurfacesSuppressedChanged(): void {
             if (shellController.floatingSurfacesSuppressed) root.concealVisiblePopups()
         }
+        function onSessionLockedChanged(): void {
+            if (!shellController.sessionLocked) return
+            popupNotifications.clear()
+            concealedPopups = []
+            popupOverflowCount = 0
+            notificationServer.newest = null
+        }
+    }
+    FileView {
+        id: lockStateFile
+        path: Quickshell.env("HYPRISM_LOCK_STATE") || (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/hyprism/lockscreen.state"
+        blockLoading: true
+        preload: true
+        watchChanges: true
+        printErrors: false
+        onLoaded: root.syncLockState()
+        onTextChanged: root.syncLockState()
+        onFileChanged: reload()
+        onLoadFailed: shellController.sessionLocked = false
     }
 
     NotificationServer {
