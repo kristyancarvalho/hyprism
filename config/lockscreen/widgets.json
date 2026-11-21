@@ -1,48 +1,15 @@
 {
-  "widgets": {
-    "clock": {
-      "supported": true,
-      "default": true
-    },
-    "weather": {
-      "supported": true,
-      "default": true
-    },
-    "media": {
-      "supported": true,
-      "default": true
-    },
-    "system": {
-      "supported": true,
-      "default": false
-    },
-    "network": {
-      "supported": false,
-      "reason": "exposes network names and interface details"
-    },
-    "storage": {
-      "supported": false,
-      "reason": "exposes mount points and disk usage"
-    },
-    "sensors": {
-      "supported": false,
-      "reason": "not useful on the lock screen"
-    },
-    "uptime": {
-      "supported": false,
-      "reason": "not useful on the lock screen"
-    },
-    "services": {
-      "supported": false,
-      "reason": "exposes installed service names"
-    },
-    "tasks": {
-      "supported": false,
-      "reason": "exposes running task details"
-    },
-    "processes": {
-      "supported": false,
-      "reason": "exposes running process names"
-    }
+  "defaults": {
+    "clock": true,
+    "weather": true,
+    "media": true,
+    "system": false,
+    "network": false,
+    "storage": false,
+    "sensors": false,
+    "uptime": false,
+    "services": false,
+    "tasks": false,
+    "processes": false
   }
 }

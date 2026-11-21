@@ -32,10 +32,10 @@ class LockscreenWidgetTests(unittest.TestCase):
     def read_config(self):
         return json.loads(self.config.read_text(encoding="utf-8"))
 
-    def test_list_shows_only_supported_widgets_with_defaults(self):
+    def test_list_shows_every_desktop_widget_with_defaults(self):
         result = self.run_cli("lockscreen", "widgets", "list")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout.splitlines(), ["clock\tenabled", "weather\tenabled", "media\tenabled", "system\tdisabled"])
+        self.assertEqual(result.stdout.splitlines(), ["clock\tenabled", "weather\tenabled", "media\tenabled", "system\tdisabled", "network\tdisabled", "storage\tdisabled", "sensors\tdisabled", "uptime\tdisabled", "services\tdisabled", "tasks\tdisabled", "processes\tdisabled"])
 
     def test_enable_and_disable_change_only_lockscreen_configuration(self):
         before = self.read_config()
@@ -54,13 +54,52 @@ class LockscreenWidgetTests(unittest.TestCase):
         self.assertEqual(self.run_cli("widgets", "enable", "--all").returncode, 0)
         self.assertIs(self.read_config()["lockscreen"]["widgets"]["clock"], False)
 
-    def test_unsupported_and_unknown_widgets_are_rejected_without_writing(self):
+    def test_unknown_widgets_are_rejected_without_writing(self):
         original = self.config.read_text(encoding="utf-8")
-        for widget in ("network", "processes", "tasks", "nope"):
-            result = self.run_cli("lockscreen", "widgets", "enable", widget)
-            self.assertNotEqual(result.returncode, 0, widget)
-            self.assertIn(widget, result.stderr)
+        for arguments in (("enable", "nope"), ("disable", "battery"), ("enable", "")):
+            result = self.run_cli("lockscreen", "widgets", *arguments)
+            self.assertNotEqual(result.returncode, 0, arguments)
         self.assertEqual(self.config.read_text(encoding="utf-8"), original)
+
+    def test_every_desktop_widget_can_be_toggled_individually(self):
+        names = [line.split("\t")[0] for line in self.run_cli("widgets", "list").stdout.splitlines()]
+        for name in names:
+            self.assertEqual(self.run_cli("lockscreen", "widgets", "enable", name).returncode, 0, name)
+            self.assertIn(f"{name}\tenabled", self.run_cli("lockscreen", "widgets", "list").stdout)
+            others = {line for line in self.run_cli("lockscreen", "widgets", "list").stdout.splitlines()}
+            self.assertEqual(self.run_cli("lockscreen", "widgets", "disable", name).returncode, 0, name)
+            self.assertIn(f"{name}\tdisabled", self.run_cli("lockscreen", "widgets", "list").stdout)
+            self.assertEqual(len(others), len(names))
+
+    def test_enable_and_disable_all(self):
+        enabled = self.run_cli("lockscreen", "widgets", "enable", "--all").stdout.splitlines()
+        self.assertTrue(all(line.endswith("\tenabled") for line in enabled) and len(enabled) == 11)
+        disabled = self.run_cli("lockscreen", "widgets", "disable", "--all").stdout.splitlines()
+        self.assertTrue(all(line.endswith("\tdisabled") for line in disabled))
+        persisted = self.read_config()["lockscreen"]["widgets"]
+        self.assertEqual(set(persisted.values()), {False})
+        self.assertEqual(len(persisted), 11)
+
+    def test_existing_partial_configuration_keeps_values_and_defaults_the_rest(self):
+        config = self.read_config()
+        config["lockscreen"]["widgets"] = {"clock": False, "weather": True}
+        self.config.write_text(json.dumps(config), encoding="utf-8")
+        lines = self.run_cli("lockscreen", "widgets", "list").stdout.splitlines()
+        self.assertIn("clock\tdisabled", lines)
+        self.assertIn("media\tenabled", lines)
+        self.assertIn("tasks\tdisabled", lines)
+
+    def test_registry_defaults_cover_exactly_the_desktop_widgets(self):
+        qml = (QML / "ShellController.qml").read_text(encoding="utf-8")
+        block = qml[qml.index("readonly property var widgetDefaults"):qml.index("property var config:")]
+        registered = re.findall(r"^        (\w+): \{", block, re.M)
+        desktop = list(json.loads((ROOT / "config/user.json").read_text(encoding="utf-8"))["shell"]["widgets"])
+        defaults = json.loads((ROOT / "config/lockscreen/widgets.json").read_text(encoding="utf-8"))["defaults"]
+        cli = [line.split("\t")[0] for line in self.run_cli("lockscreen", "widgets", "list").stdout.splitlines()]
+        self.assertEqual(registered, desktop)
+        self.assertEqual(list(defaults), desktop)
+        self.assertEqual(cli, desktop)
+        self.assertEqual(json.loads((ROOT / "config/user.json").read_text(encoding="utf-8"))["lockscreen"]["widgets"], defaults)
 
     def test_missing_configuration_uses_catalog_defaults_and_keeps_explicit_false(self):
         config = self.read_config()
@@ -101,17 +140,8 @@ class LockscreenWidgetTests(unittest.TestCase):
         self.run_cli("lockscreen", "widgets", "disable", "clock")
         self.run_cli("lockscreen", "widgets", "enable", "system")
         result = self.run_cli("lockscreen", "widgets", "reset")
-        self.assertEqual(result.stdout.splitlines(), ["clock\tenabled", "weather\tenabled", "media\tenabled", "system\tdisabled"])
-        self.assertEqual(self.read_config()["lockscreen"]["widgets"], {"clock": True, "weather": True, "media": True, "system": False})
-
-    def test_catalog_and_default_configuration_agree(self):
-        catalog = json.loads((ROOT / "config/lockscreen/widgets.json").read_text(encoding="utf-8"))["widgets"]
-        defaults = json.loads((ROOT / "config/user.json").read_text(encoding="utf-8"))["lockscreen"]["widgets"]
-        supported = {name: entry["default"] for name, entry in catalog.items() if entry["supported"]}
-        self.assertEqual(defaults, supported)
-        for name, entry in catalog.items():
-            if not entry["supported"]:
-                self.assertTrue(entry["reason"], name)
+        self.assertEqual(result.stdout.splitlines(), ["clock\tenabled", "weather\tenabled", "media\tenabled", "system\tdisabled", "network\tdisabled", "storage\tdisabled", "sensors\tdisabled", "uptime\tdisabled", "services\tdisabled", "tasks\tdisabled", "processes\tdisabled"])
+        self.assertEqual(self.read_config()["lockscreen"]["widgets"], json.loads((ROOT / "config/lockscreen/widgets.json").read_text(encoding="utf-8"))["defaults"])
 
     def test_cli_exposes_no_unlock_operation(self):
         for arguments in (("lockscreen", "--help"), ("lockscreen", "widgets", "--help"), ("--help",)):
@@ -245,17 +275,53 @@ class LockscreenSecurityContractTests(unittest.TestCase):
         self.assertIn("LockBattery {", surface)
         self.assertIn("anchors.right: parent.right", surface)
         self.assertIn("anchors.bottom: parent.bottom", surface)
-        self.assertNotIn("battery", json.dumps(json.loads((ROOT / "config/lockscreen/widgets.json").read_text(encoding="utf-8"))))
+        self.assertNotIn("battery", (ROOT / "config/lockscreen/widgets.json").read_text(encoding="utf-8"))
 
-    def test_media_widget_is_read_only_and_only_shown_while_playing(self):
+    def test_lock_widgets_reuse_the_desktop_widget_board(self):
         widgets = self.sources["LockWidgets.qml"]
-        self.assertIn("interactive: false", widgets)
-        self.assertIn("controller.mediaPlayer.isPlaying", widgets)
-        self.assertIn("MediaService {", self.entry)
+        self.assertIn("WidgetBoard {", widgets)
+        self.assertIn("playingOnly: true", widgets)
+        self.assertIn("enabled: false", widgets)
+        desktop = (QML / "widgets/DesktopWidgets.qml").read_text(encoding="utf-8")
+        self.assertIn("WidgetBoard {", desktop)
+        board = (QML / "widgets/WidgetBoard.qml").read_text(encoding="utf-8")
+        for name in ("MediaCard", "ClockCard", "WeatherCard", "DesktopCard"):
+            self.assertIn(name, board)
+        for service in ("SystemService", "MediaService", "MonitoringService"):
+            self.assertIn(f"{service} {{", self.entry)
+
+    def test_media_card_is_the_single_desktop_implementation(self):
+        card = (QML / "components/MediaCard.qml").read_text(encoding="utf-8")
+        for icon in ('"previous"', '"pause"', '"play"', '"next"'):
+            self.assertIn(icon, card)
+        self.assertNotIn("lockscreen", card)
+        self.assertFalse(any((QML / "lockscreen").glob("*Media*")))
+
+    def test_lock_widget_visibility_comes_only_from_the_lockscreen_namespace(self):
+        self.assertIn("preferences[names[index]]", self.entry)
+        self.assertIn("parsed.lockscreen", self.entry)
+        self.assertIn("watchChanges: true", self.entry)
+
+    def test_prompt_is_hidden_until_typing_and_shows_no_lock_message(self):
+        panel = self.sources["LockPanel.qml"]
+        self.assertIn("opacity: revealed ? 1 : 0", panel)
+        self.assertIn("visible: opacity > 0", panel)
+        self.assertIn("session.promptVisible && session.secure", panel)
+        self.assertNotIn("lockscreen.locked", panel)
+        for catalog in ("en", "pt-BR"):
+            strings = json.loads((QML / f"i18n/{catalog}.json").read_text(encoding="utf-8"))["lockscreen"]
+            self.assertNotIn("locked", strings)
+            self.assertNotIn("requesting", strings)
+
+    def test_surface_opacity_uses_only_the_global_setting(self):
+        for name, source in self.sources.items():
+            self.assertNotRegex(source, r"surfaceOpacity:\s*[0-9.]+\s*$", name)
+        self.assertIn("surfaceOpacity: shellConfig.surfaceOpacity", self.sources["LockPanel.qml"])
+        self.assertIn("Design.shellSurfaceOpacity = controller.config.shell.surfaceOpacity", self.entry)
 
     def test_panel_is_narrower_than_the_bar_and_morphs_to_its_width(self):
         panel = self.sources["LockPanel.qml"]
-        self.assertIn("barWidth * .85", panel)
+        self.assertIn("barWidth * .62", panel)
         self.assertIn("restWidth + (barWidth - restWidth) * session.morphProgress", panel)
         self.assertIn("Design.compactWidth(shellConfig, screenWidth)", panel)
 

@@ -21,19 +21,7 @@ ShellRoot {
     property int surfaceCount: 0
     property bool unlocked: false
     property bool releasing: false
-    property var lockCatalog: ({})
-    property var lockPreferences: ({})
-    readonly property var enabledWidgets: {
-        const result = {}
-        const names = Object.keys(lockCatalog)
-        for (let index = 0; index < names.length; index++) {
-            const entry = lockCatalog[names[index]]
-            if (!entry || entry.supported !== true) continue
-            const chosen = lockPreferences[names[index]]
-            result[names[index]] = typeof chosen === "boolean" ? chosen : entry.default === true
-        }
-        return result
-    }
+    property var lockDefaults: ({})
 
     function writeState(value: string): void {
         stateFile.setText(value + "\n")
@@ -49,17 +37,24 @@ ShellRoot {
         const defaults = controller.defaultShellConfig()
         const opacity = Number(incoming.surfaceOpacity)
         const radius = incoming.cornerRadiusPreset
+        const lockscreen = parsed.lockscreen
+        const preferences = lockscreen && typeof lockscreen === "object" && lockscreen.widgets && typeof lockscreen.widgets === "object" ? lockscreen.widgets : {}
+        const widgets = controller.mergedWidgetConfig(incoming.widgets || {})
+        const names = Object.keys(widgets)
+        for (let index = 0; index < names.length; index++) {
+            const chosen = preferences[names[index]]
+            widgets[names[index]].enabled = typeof chosen === "boolean" ? chosen : lockDefaults[names[index]] === true
+        }
         controller.config = Object.assign({}, controller.config, {
             shell: Object.assign({}, defaults, incoming, {
                 surfaceOpacity: Number.isFinite(opacity) && opacity >= .5 && opacity <= 1 ? opacity : defaults.surfaceOpacity,
                 cornerRadiusPreset: Number.isInteger(radius) && radius >= 0 && radius <= 3 ? radius : defaults.cornerRadiusPreset,
-                widgets: controller.mergedWidgetConfig(incoming.widgets || {})
+                widgets: widgets
             })
         })
         Design.shellSurfaceOpacity = controller.config.shell.surfaceOpacity
         Design.cornerRadiusPreset = controller.config.shell.cornerRadiusPreset
-        const lockscreen = parsed.lockscreen
-        lockPreferences = lockscreen && typeof lockscreen === "object" && lockscreen.widgets && typeof lockscreen.widgets === "object" ? lockscreen.widgets : {}
+        controller.configurationRevision += 1
     }
 
     function applyTheme(raw: string): void {
@@ -78,8 +73,20 @@ ShellRoot {
 
     function applyCatalog(raw: string): void {
         const parsed = JSON.parse(raw)
-        if (!parsed || typeof parsed.widgets !== "object") throw new Error("invalid lock screen widget catalog")
-        lockCatalog = parsed.widgets
+        if (!parsed || !parsed.defaults || typeof parsed.defaults !== "object") throw new Error("invalid lock screen widget defaults")
+        lockDefaults = parsed.defaults
+    }
+
+    function refresh(): void {
+        const steps = [
+            ["lock screen widget defaults", () => applyCatalog(catalogFile.text())],
+            ["theme presets", () => applyPresets(presetFile.text())],
+            ["configuration", () => applyConfig(configFile.text())],
+            ["theme", () => applyTheme(themeFile.text())]
+        ]
+        for (const step of steps) {
+            try { step[1]() } catch (error) { console.warn("invalid " + step[0] + ":", String(error)) }
+        }
     }
 
     function beginRelease(): void {
@@ -100,6 +107,7 @@ ShellRoot {
     Theme { id: theme }
     ShellController { id: controller }
     SystemService { controller: controller }
+    MonitoringService { controller: controller }
     MediaService { controller: controller }
 
     LockSession {
@@ -126,7 +134,6 @@ ShellRoot {
             session: session
             controller: controller
             theme: theme
-            enabledWidgets: root.enabledWidgets
             background: root.background
             onSurfaceReady: root.surfaceCount = Quickshell.screens.length
         }
@@ -179,7 +186,7 @@ ShellRoot {
         blockLoading: true
         preload: true
         printErrors: false
-        onLoaded: { try { root.applyCatalog(text()) } catch (error) { console.warn("invalid lock screen widget catalog:", String(error)) } }
+        onLoaded: root.refresh()
     }
 
     FileView {
@@ -188,7 +195,7 @@ ShellRoot {
         blockLoading: true
         preload: true
         printErrors: false
-        onLoaded: { try { root.applyPresets(text()) } catch (error) { console.warn("invalid theme presets:", String(error)) } }
+        onLoaded: root.refresh()
     }
 
     FileView {
@@ -197,8 +204,13 @@ ShellRoot {
         blockLoading: true
         preload: true
         printErrors: false
-        onLoaded: { try { root.applyConfig(text()) } catch (error) { console.warn("invalid Hyprism configuration:", String(error)) } }
+        watchChanges: true
+        onFileChanged: reload()
+        onLoadFailed: configFileRetry.restart()
+        onLoaded: root.refresh()
+        onTextChanged: root.refresh()
     }
+    Timer { id: configFileRetry; interval: 250; onTriggered: configFile.reload() }
 
     FileView {
         id: themeFile
@@ -206,8 +218,16 @@ ShellRoot {
         blockLoading: true
         preload: true
         printErrors: false
-        onLoaded: { try { root.applyTheme(text()) } catch (error) { console.warn("invalid Hyprism theme:", String(error)) } }
+        watchChanges: true
+        onFileChanged: reload()
+        onLoadFailed: themeFileRetry.restart()
+        onLoaded: root.refresh()
+        onTextChanged: root.refresh()
     }
+    Timer { id: themeFileRetry; interval: 250; onTriggered: themeFile.reload() }
 
-    Component.onCompleted: writeState("locking")
+    Component.onCompleted: {
+        writeState("locking")
+        refresh()
+    }
 }

@@ -360,53 +360,41 @@ def widgets_command(args):
     return 0
 
 
-def lockscreen_catalog():
-    catalog = read_json(root_dir() / "config/lockscreen/widgets.json").get("widgets")
-    if not isinstance(catalog, dict):
-        raise SystemExit("Invalid lock screen widget catalog")
-    return catalog
+def lockscreen_defaults():
+    defaults = read_json(root_dir() / "config/lockscreen/widgets.json").get("defaults")
+    if not isinstance(defaults, dict):
+        raise SystemExit("Invalid lock screen widget defaults")
+    return {name: defaults.get(name) is True for name in WIDGETS}
 
 
-def lockscreen_supported(catalog):
-    return tuple(name for name, entry in catalog.items() if isinstance(entry, dict) and entry.get("supported") is True)
-
-
-def lockscreen_widget_enabled(config, catalog, name):
+def lockscreen_widget_enabled(config, defaults, name):
     lockscreen = config.get("lockscreen")
     widgets = lockscreen.get("widgets") if isinstance(lockscreen, dict) else None
     value = widgets.get(name) if isinstance(widgets, dict) else None
-    return value if isinstance(value, bool) else catalog[name].get("default") is True
-
-
-def lockscreen_widget_names(catalog, requested):
-    entry = catalog.get(requested)
-    if not isinstance(entry, dict):
-        raise SystemExit(f"Unknown widget: {requested}. Supported on the lock screen: {', '.join(lockscreen_supported(catalog))}")
-    if entry.get("supported") is not True:
-        reason = entry.get("reason") or "not suitable for the lock screen"
-        raise SystemExit(f"The {requested} widget is not supported on the lock screen: {reason}")
-    return requested
+    return value if isinstance(value, bool) else defaults[name]
 
 
 def lockscreen_widgets_command(args):
     config = configuration()
-    catalog = lockscreen_catalog()
-    supported = lockscreen_supported(catalog)
-    if args.lockscreen_widget_command != "list":
+    defaults = lockscreen_defaults()
+    action = args.lockscreen_widget_command
+    if action != "list":
+        if action != "reset" and not args.all and args.widget not in WIDGETS:
+            raise SystemExit(f"Unknown widget: {args.widget}. Available on the lock screen: {', '.join(WIDGETS)}")
         section = config.get("lockscreen")
         if not isinstance(section, dict):
             section = config["lockscreen"] = {}
         widgets = section.get("widgets")
         if not isinstance(widgets, dict):
             widgets = section["widgets"] = {}
-        if args.lockscreen_widget_command == "reset":
-            section["widgets"] = {name: catalog[name].get("default") is True for name in supported}
+        if action == "reset":
+            section["widgets"] = dict(defaults)
         else:
-            name = lockscreen_widget_names(catalog, args.widget)
-            widgets[name] = args.lockscreen_widget_command == "enable"
+            for name in (WIDGETS if args.all else (args.widget,)):
+                widgets[name] = action == "enable"
         write_config(config)
-    for name in supported:
-        print(f"{name}\t{'enabled' if lockscreen_widget_enabled(config, catalog, name) else 'disabled'}")
+    for name in WIDGETS:
+        print(f"{name}\t{'enabled' if lockscreen_widget_enabled(config, defaults, name) else 'disabled'}")
     return 0
 
 
@@ -1316,7 +1304,9 @@ def parser():
     lockscreen_widget_commands = lockscreen_widgets.add_subparsers(dest="lockscreen_widget_command", required=True)
     lockscreen_widget_commands.add_parser("list", help="list lock screen widget state")
     for action in ("enable", "disable"):
-        lockscreen_widget_commands.add_parser(action, help=f"{action} a lock screen widget").add_argument("widget")
+        target = lockscreen_widget_commands.add_parser(action, help=f"{action} lock screen widgets").add_mutually_exclusive_group(required=True)
+        target.add_argument("widget", nargs="?")
+        target.add_argument("--all", action="store_true")
     lockscreen_widget_commands.add_parser("reset", help="restore the default lock screen widgets")
 
     weather = commands.add_parser("weather", help="manage weather settings")

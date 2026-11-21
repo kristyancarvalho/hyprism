@@ -8,7 +8,6 @@ WlSessionLockSurface {
     required property var session
     required property var controller
     required property var theme
-    required property var enabledWidgets
     required property string background
     signal surfaceReady()
     color: theme.colors.background
@@ -53,10 +52,10 @@ WlSessionLockSurface {
         LockWidgets {
             controller: surface.controller
             theme: surface.theme
-            enabledWidgets: surface.enabledWidgets
+            shellScreen: surface.screen
             availableWidth: root.width - Design.spacingLg * 4
             availableHeight: Math.max(0, root.height - Design.compactReservedHeight(surface.controller.config.shell) - Design.spacingLg * 4)
-            visible: surface.session.secure && (topRow || showMedia || bottomRow)
+            visible: surface.session.secure && surface.screen !== null
             opacity: 1 - surface.session.morphProgress
             anchors.horizontalCenter: parent.horizontalCenter
             y: Design.compactReservedHeight(surface.controller.config.shell) + Math.max(Design.spacingLg, (availableHeight - height) * .42)

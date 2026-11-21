@@ -11,7 +11,6 @@ Glass {
     readonly property bool revealed: session.promptVisible && session.secure
     readonly property bool failed: session.authState === "failed" || session.authState === "maxTries" || session.authState === "error"
     readonly property string statusText: {
-        if (!session.secure) return I18n.tr("lockscreen.requesting")
         if (session.authState === "authenticating") return I18n.tr("lockscreen.authenticating")
         if (session.authState === "failed") return I18n.tr("lockscreen.failed")
         if (session.authState === "maxTries") return I18n.tr("lockscreen.tooMany")
@@ -19,18 +18,22 @@ Glass {
         return session.pamMessage
     }
     readonly property int horizontalPadding: Design.compactHorizontalPadding
+    readonly property real barWidth: Design.compactWidth(shellConfig, screenWidth)
+    readonly property real restWidth: Math.max(Math.min(barWidth, 280), Math.round(barWidth * .62))
     property real shake: 0
 
     anchors.top: parent.top
     anchors.topMargin: Design.compactTopMargin(shellConfig)
     anchors.horizontalCenter: parent.horizontalCenter
     anchors.horizontalCenterOffset: shake
-    readonly property real barWidth: Design.compactWidth(shellConfig, screenWidth)
-    readonly property real restWidth: Math.max(Math.min(barWidth, 320), Math.round(barWidth * .85))
     width: restWidth + (barWidth - restWidth) * session.morphProgress
     height: Design.compactHeight(shellConfig)
     radius: Design.radiusIslandCompact
     surfaceOpacity: shellConfig.surfaceOpacity
+    opacity: revealed ? 1 : 0
+    visible: opacity > 0
+
+    Behavior on opacity { NumberAnimation { duration: Design.animationMorph; easing.type: Design.easingMorph } }
 
     SequentialAnimation {
         id: shakeAnimation
@@ -55,36 +58,20 @@ Glass {
         opacity: 1 - session.morphProgress
     }
 
-    CompactBarLabel {
-        anchors.left: lockIcon.right
-        anchors.leftMargin: Design.compactItemSpacing
-        anchors.verticalCenter: parent.verticalCenter
-        text: session.secure ? I18n.tr("lockscreen.locked") : I18n.tr("lockscreen.requesting")
-        color: panel.theme.colors.mutedForeground
-        opacity: panel.revealed ? 0 : 1 - session.morphProgress
-        visible: opacity > 0
-        Behavior on opacity { NumberAnimation { duration: Design.animationFast; easing.type: Design.easingEnter } }
-    }
-
     Rectangle {
         id: field
-        readonly property real fullWidth: panel.width - lockIcon.width - panel.horizontalPadding * 2 - Design.compactItemSpacing
         anchors.left: lockIcon.right
+        anchors.right: parent.right
         anchors.leftMargin: Design.compactItemSpacing
+        anchors.rightMargin: panel.horizontalPadding
         anchors.verticalCenter: parent.verticalCenter
         height: Design.compactItemHeight
-        width: panel.revealed ? fullWidth : 0
         radius: Design.radiusDefault
         color: panel.theme.colors.surfaceElevated
-        opacity: panel.revealed ? 1 - session.morphProgress : 0
-        visible: width > 1
+        opacity: 1 - session.morphProgress
         clip: true
 
-        Behavior on width { NumberAnimation { duration: Design.animationMorph; easing.type: Design.easingMorph } }
-        Behavior on opacity { NumberAnimation { duration: Design.animationFast; easing.type: Design.easingEnter } }
-
         Row {
-            id: dots
             anchors.left: parent.left
             anchors.leftMargin: Design.compactPillPadding
             anchors.verticalCenter: parent.verticalCenter
