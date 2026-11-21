@@ -93,92 +93,21 @@ PanelWindow {
 
                 Behavior on height { NumberAnimation { duration: Design.animationMorph; easing.type: Design.easingMorph } }
 
-                Glass {
+                ClockCard {
                     id: clockCard
                     theme: widgetWindow.theme
-                    surfaceOpacity: Design.themedSurfaceOpacity(.84)
+                    controller: widgetWindow.controller
                     width: controller.widgetEnabled("clock") ? (controller.widgetEnabled("weather") ? (parent.width - parent.spacing) * .44 : parent.width) : 0
                     height: parent.height
-                    radius: Design.radiusMd
                     visible: controller.widgetEnabled("clock")
-
-                    Column {
-                        anchors.centerIn: parent
-                        spacing: 2
-
-                        Text {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: controller.formattedDate("HH:mm")
-                            color: theme.colors.foreground
-                            font.family: Design.fontFamily
-                            font.pixelSize: Design.fontSizeXl
-                            font.weight: Design.fontWeightSemibold
-                        }
-
-                        Text {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: controller.formattedDate(I18n.locale === "pt-BR" ? "dddd · dd MMMM" : "dddd · MMMM dd")
-                            color: theme.colors.mutedForeground
-                            font.family: Design.fontFamily
-                            font.pixelSize: 9
-                            font.weight: Design.fontWeightMedium
-                        }
-                    }
                 }
 
-                Glass {
+                WeatherCard {
                     theme: widgetWindow.theme
-                    surfaceOpacity: Design.themedSurfaceOpacity(.84)
+                    controller: widgetWindow.controller
                     width: controller.widgetEnabled("weather") ? parent.width - clockCard.width - (clockCard.visible ? parent.spacing : 0) : 0
                     height: parent.height
-                    radius: Design.radiusMd
                     visible: controller.widgetEnabled("weather")
-
-                    Row {
-                        anchors.fill: parent
-                        anchors.margins: Design.widgetInnerPadding
-                        spacing: Design.spacingSm
-
-                        StatusIcon {
-                            anchors.verticalCenter: parent.verticalCenter
-                            name: controller.weatherIconName(controller.weather.weatherCode)
-                            iconSize: Design.iconLg
-                            color: theme.colors.accent
-                        }
-
-                        Column {
-                            width: parent.width - Design.iconLg - Design.spacingMd
-                            anchors.verticalCenter: parent.verticalCenter
-
-                            Text {
-                                width: parent.width
-                                text: controller.weather.temperature === null ? "--°" : Math.round(Design.safeNumber(controller.weather.temperature, 0)) + "°C"
-                                color: theme.colors.foreground
-                                font.family: Design.fontFamily
-                                font.pixelSize: Design.fontSizeLg
-                                font.weight: Design.fontWeightSemibold
-                                elide: Text.ElideRight
-                            }
-
-                            Text {
-                                width: parent.width
-                                text: controller.weatherCondition(Design.safeNumber(controller.weather.weatherCode, -1))
-                                color: theme.colors.foreground
-                                font.family: Design.fontFamily
-                                font.pixelSize: Design.fontSizeXs
-                                elide: Text.ElideRight
-                            }
-
-                            Text {
-                                width: parent.width
-                                text: Design.safeText(controller.weather.city, I18n.tr("weather.local"))
-                                color: theme.colors.mutedForeground
-                                font.family: Design.fontFamily
-                                font.pixelSize: 9
-                                elide: Text.ElideRight
-                            }
-                        }
-                    }
                 }
             }
 
