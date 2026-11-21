@@ -31,7 +31,7 @@ depends=(
   'qt5ct'
   'qt6-imageformats'
   'qt6ct'
-  'quickshell'
+  'quickshell>=0.2.0'
   'sassc'
   'satty'
   'slurp'
@@ -65,6 +65,7 @@ optdepends=(
   'zathura: generated document viewer theme'
   'zathura-pdf-mupdf: PDF support for Zathura'
 )
+backup=('etc/pam.d/hyprism-lock')
 makedepends=('git')
 provides=("hyprism-shell=${pkgver}")
 conflicts=('hyprism-shell')

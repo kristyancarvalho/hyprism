@@ -327,5 +327,20 @@
     "image": "Imagem · {dimensions}",
     "preparingTheme": "Preparando tema",
     "applyingPalette": "Aplicando nova paleta"
+  },
+  "lockscreen": {
+    "locked": "Sessão bloqueada",
+    "requesting": "Protegendo a sessão…",
+    "authenticating": "Autenticando…",
+    "failed": "Senha incorreta",
+    "retry": "Tente novamente",
+    "error": "Erro de autenticação",
+    "tooMany": "Muitas tentativas",
+    "unavailable": "Autenticação indisponível",
+    "response": "Resposta",
+    "widgets": {
+      "battery": "Bateria",
+      "system": "Sistema"
+    }
   }
 }

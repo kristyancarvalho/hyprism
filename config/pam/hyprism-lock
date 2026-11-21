@@ -1,0 +1,7 @@
+#%PAM-1.0
+# PAM service used by the Hyprism Quickshell lock screen.
+# It reuses the distribution's standard authentication stack, including
+# pam_faillock and the configured delays, so lock-screen attempts are subject
+# to the same policy as any other password login.
+auth       include      system-auth
+account    include      system-auth

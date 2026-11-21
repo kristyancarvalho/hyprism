@@ -56,6 +56,14 @@
       "processes": { "enabled": true, "limit": 3 }
     }
   },
+  "lockscreen": {
+    "widgets": {
+      "clock": true,
+      "weather": true,
+      "battery": true,
+      "system": false
+    }
+  },
   "weather": {
     "enabled": true,
     "location": "São Paulo",

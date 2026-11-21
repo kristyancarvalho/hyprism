@@ -327,5 +327,20 @@
     "image": "Image · {dimensions}",
     "preparingTheme": "Preparing theme",
     "applyingPalette": "Applying new palette"
+  },
+  "lockscreen": {
+    "locked": "Session locked",
+    "requesting": "Securing session…",
+    "authenticating": "Authenticating…",
+    "failed": "Incorrect password",
+    "retry": "Try again",
+    "error": "Authentication error",
+    "tooMany": "Too many attempts",
+    "unavailable": "Authentication unavailable",
+    "response": "Response",
+    "widgets": {
+      "battery": "Battery",
+      "system": "System"
+    }
   }
 }

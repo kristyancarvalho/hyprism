@@ -110,7 +110,18 @@ hyprism-shell night-mode on
 hyprism-shell night-mode off
 hyprism-shell night-mode toggle
 hyprism-shell lock
+hyprism-shell lock --hyprlock
+hyprism-shell lockscreen lock
+hyprism-shell lockscreen status
+hyprism-shell lockscreen widgets list
+hyprism-shell lockscreen widgets enable system
+hyprism-shell lockscreen widgets disable weather
+hyprism-shell lockscreen widgets reset
 hyprism-shell reload
 ```
 
-The `open` and `recording` commands require a running Quickshell instance. Screenshot modes capture a selected region, active window, focused monitor, or complete desktop with Grim and open the result directly in a floating Satty window. Satty provides drawing, annotations, crop, undo, clipboard copy, direct save, and Save As. Direct save defaults to `paths.screenshots` from `~/.config/hyprism/user.json`; Save As selects a one-time destination, and the next editor starts from the configured default again. No unedited intermediate image is stored. Color-picker commands are interactive. `lock` locks the current session, and `reload` reloads only Quickshell.
+The `open` and `recording` commands require a running Quickshell instance. Screenshot modes capture a selected region, active window, focused monitor, or complete desktop with Grim and open the result directly in a floating Satty window. Satty provides drawing, annotations, crop, undo, clipboard copy, direct save, and Save As. Direct save defaults to `paths.screenshots` from `~/.config/hyprism/user.json`; Save As selects a one-time destination, and the next editor starts from the configured default again. No unedited intermediate image is stored. Color-picker commands are interactive. `lock` locks the current session with the Quickshell lock screen (`--hyprlock` selects the legacy fallback), and `reload` reloads only Quickshell.
+
+## Lock screen
+
+`lockscreen widgets` manages which widgets appear on the lock screen. It only edits `lockscreen.widgets` in `user.json` and never changes desktop widgets. Supported identifiers are `clock`, `weather`, `battery`, and `system`; other desktop widgets are rejected with an explanation. There is deliberately no unlock command. See [the lock screen guide](lockscreen.md).

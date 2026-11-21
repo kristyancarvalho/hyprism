@@ -360,6 +360,62 @@ def widgets_command(args):
     return 0
 
 
+def lockscreen_catalog():
+    catalog = read_json(root_dir() / "config/lockscreen/widgets.json").get("widgets")
+    if not isinstance(catalog, dict):
+        raise SystemExit("Invalid lock screen widget catalog")
+    return catalog
+
+
+def lockscreen_supported(catalog):
+    return tuple(name for name, entry in catalog.items() if isinstance(entry, dict) and entry.get("supported") is True)
+
+
+def lockscreen_widget_enabled(config, catalog, name):
+    lockscreen = config.get("lockscreen")
+    widgets = lockscreen.get("widgets") if isinstance(lockscreen, dict) else None
+    value = widgets.get(name) if isinstance(widgets, dict) else None
+    return value if isinstance(value, bool) else catalog[name].get("default") is True
+
+
+def lockscreen_widget_names(catalog, requested):
+    entry = catalog.get(requested)
+    if not isinstance(entry, dict):
+        raise SystemExit(f"Unknown widget: {requested}. Supported on the lock screen: {', '.join(lockscreen_supported(catalog))}")
+    if entry.get("supported") is not True:
+        reason = entry.get("reason") or "not suitable for the lock screen"
+        raise SystemExit(f"The {requested} widget is not supported on the lock screen: {reason}")
+    return requested
+
+
+def lockscreen_widgets_command(args):
+    config = configuration()
+    catalog = lockscreen_catalog()
+    supported = lockscreen_supported(catalog)
+    if args.lockscreen_widget_command != "list":
+        section = config.get("lockscreen")
+        if not isinstance(section, dict):
+            section = config["lockscreen"] = {}
+        widgets = section.get("widgets")
+        if not isinstance(widgets, dict):
+            widgets = section["widgets"] = {}
+        if args.lockscreen_widget_command == "reset":
+            section["widgets"] = {name: catalog[name].get("default") is True for name in supported}
+        else:
+            name = lockscreen_widget_names(catalog, args.widget)
+            widgets[name] = args.lockscreen_widget_command == "enable"
+        write_config(config)
+    for name in supported:
+        print(f"{name}\t{'enabled' if lockscreen_widget_enabled(config, catalog, name) else 'disabled'}")
+    return 0
+
+
+def lockscreen_command(args):
+    if args.lockscreen_command == "widgets":
+        return lockscreen_widgets_command(args)
+    return internal("scripts/system/lockscreen", args.lockscreen_command, replace=True)
+
+
 def normalize_unit(value):
     unit = value.strip()
     if not unit:
@@ -1252,6 +1308,17 @@ def parser():
     for action in ("enable", "disable", "toggle"):
         add_widget_target(widget_commands.add_parser(action, help=f"{action} desktop widgets"))
 
+    lockscreen = commands.add_parser("lockscreen", help="request the lock screen and manage its widgets")
+    lockscreen_commands = lockscreen.add_subparsers(dest="lockscreen_command", required=True)
+    lockscreen_commands.add_parser("lock", help="lock the session with the Quickshell lock screen")
+    lockscreen_commands.add_parser("status", help="print the non-sensitive lock state")
+    lockscreen_widgets = lockscreen_commands.add_parser("widgets", help="manage widgets shown on the lock screen")
+    lockscreen_widget_commands = lockscreen_widgets.add_subparsers(dest="lockscreen_widget_command", required=True)
+    lockscreen_widget_commands.add_parser("list", help="list lock screen widget state")
+    for action in ("enable", "disable"):
+        lockscreen_widget_commands.add_parser(action, help=f"{action} a lock screen widget").add_argument("widget")
+    lockscreen_widget_commands.add_parser("reset", help="restore the default lock screen widgets")
+
     weather = commands.add_parser("weather", help="manage weather settings")
     weather_commands = weather.add_subparsers(dest="weather_command", required=True)
     location = weather_commands.add_parser("location", help="get or set the weather location")
@@ -1342,7 +1409,7 @@ def parser():
     screenshot = commands.add_parser("screenshot", help="capture and edit the screen")
     screenshot.add_argument("mode", choices=("region", "window", "monitor", "full"))
     commands.add_parser("color", help="pick a screen color")
-    commands.add_parser("lock", help="lock the session")
+    commands.add_parser("lock", help="lock the session (use --hyprlock for the legacy fallback)").add_argument("--hyprlock", action="store_true", help="use Hyprlock instead of the Quickshell lock screen")
     commands.add_parser("reload", help="reload Quickshell")
     commands.add_parser("recording", help="open the screen recording selector")
     night_mode = commands.add_parser("night-mode", help="set the night mode")
@@ -1371,6 +1438,8 @@ def main():
         return init_command(args)
     if args.command == "widgets":
         return widgets_command(args)
+    if args.command == "lockscreen":
+        return lockscreen_command(args)
     if args.command == "weather":
         return weather_command(args)
     if args.command == "language":
@@ -1393,7 +1462,7 @@ def main():
     if args.command == "color":
         return internal("scripts/system/action", "color-picker", replace=True)
     if args.command == "lock":
-        return internal("scripts/system/lock", replace=True)
+        return internal("scripts/system/lock", *(("--hyprlock",) if args.hyprlock else ()), replace=True)
     if args.command == "reload":
         return internal("scripts/system/reload-shell", replace=True)
     if args.command == "night-mode":

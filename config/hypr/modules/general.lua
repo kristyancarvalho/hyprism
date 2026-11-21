@@ -26,5 +26,8 @@ hl.config({
         disable_splash_rendering = true,
         focus_on_activate = true,
         force_default_wallpaper = 0,
+        -- Lets a new lock client take over after the lock screen process dies.
+        -- The session stays locked meanwhile; the new client must authenticate.
+        allow_session_lock_restore = true,
     },
 })

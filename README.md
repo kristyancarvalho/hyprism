@@ -64,7 +64,7 @@ Hyprism `0.1.0` is an early public release designed around current Arch Linux an
 
 ### Utilities
 
-- Native and Flatpak application indexing, Wayland portals, clipboard history, screenshots, monitor or region recording, color picking, session locking, and night mode.
+- Native and Flatpak application indexing, Wayland portals, clipboard history, screenshots, monitor or region recording, color picking, session locking with a native Quickshell lock screen ([guide](docs/lockscreen.md)), and night mode.
 - English and Brazilian Portuguese interfaces with live language switching.
 - A stable user-facing CLI plus Makefile workflows for installation, updates, validation, reloads, and removal.
 
@@ -284,7 +284,7 @@ Every output listed above follows the preset, including GTK through Colloid and 
 | `Ctrl+.` | Open the Emoji Picker |
 | `Super+Shift+R` | Select or stop a recording |
 | `Super+Shift+S` / `Super+Shift+F` | Capture and edit a region / focused monitor in Satty |
-| `Super+L` | Lock with Hyprlock |
+| `Super+L` | Lock with the Quickshell lock screen |
 | `Super+Ctrl+S` | Toggle night mode |
 | `Super+B` | Open Zen Browser |
 | `Super+1…0` | Go to workspaces 1–10 |
