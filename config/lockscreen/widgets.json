@@ -1,15 +1,6 @@
 {
   "defaults": {
-    "clock": true,
     "weather": true,
-    "media": true,
-    "system": false,
-    "network": false,
-    "storage": false,
-    "sensors": false,
-    "uptime": false,
-    "services": false,
-    "tasks": false,
-    "processes": false
+    "media": true
   }
 }

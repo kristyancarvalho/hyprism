@@ -33,22 +33,27 @@ account include system-auth
 
 This reuses the distribution's stack, including `pam_faillock` and failure delays. The package marks it as a `backup` file and `install.sh` never overwrites an existing file, so local changes survive upgrades. `/etc/pam.d/login` and other system files are untouched. `hyprism-shell lockscreen lock` refuses to lock when this service file is missing, because nobody could unlock afterwards.
 
-## Lock-screen widgets
+## Lock-screen elements
 
-Every desktop widget can appear on the lock screen. The lock screen renders the same `WidgetBoard` as the desktop (same cards, data providers and theme), read-only, with its own visibility stored under `lockscreen.widgets` in `user.json`. It never reads or writes `shell.widgets`. Defaults live in `config/lockscreen/widgets.json`: `clock`, `weather` and `media` are on, everything else is off. A missing key uses the default; an explicit `false` is kept.
+The clock and the date below it (`sáb. 21/11/2026`, `Sat 21/11/2026`) are fixed and not configurable. The battery sits in the bottom-right corner as a small icon and percentage.
+
+Only two optional widgets exist on the lock screen, with visibility stored under `lockscreen.widgets` in `user.json` (defaults in `config/lockscreen/widgets.json`, both on) and independent of `shell.widgets`:
+
+| Widget | Position | Content |
+| --- | --- | --- |
+| `weather` | bottom-left | weather icon and temperature only |
+| `media` | bottom-center | compact desktop media strip with working previous, play/pause and next controls |
 
 ```bash
 hyprism-shell lockscreen widgets list
-hyprism-shell lockscreen widgets enable <widget>
-hyprism-shell lockscreen widgets disable <widget>
+hyprism-shell lockscreen widgets enable <weather|media>
+hyprism-shell lockscreen widgets disable <weather|media>
 hyprism-shell lockscreen widgets enable --all
 hyprism-shell lockscreen widgets disable --all
 hyprism-shell lockscreen widgets reset
 ```
 
-The clock is not a card: when enabled it is a fixed, centered element with the hour above the minutes in the accent colour. The other widgets sit below it, with media on its own full-width row underneath. Changes apply to a running lock screen immediately. The media widget only appears while a player is playing. The `tasks` widget depends on the desktop shell's task feed and shows nothing on the lock screen. The battery is not a widget: when a battery is present, a small icon and percentage sit in the bottom-right corner.
-
-Panels and widget surfaces use the global surface opacity, corner radius and theme from `user.json`, so changing them is reflected live. While the session is locked, the desktop shell stores notifications in the history but does not show popups or OSDs, and does not replay them after unlocking.
+Each widget has its own fixed anchor, so hiding one never moves another. The media strip is shown only while a player with track information is playing or paused. Obsolete `lockscreen.widgets` entries from earlier versions are ignored and dropped the next time the lock screen configuration is written; desktop widget settings are never touched. Panels use the global surface opacity, corner radius and theme, so changing them is reflected live. While the session is locked, the desktop shell stores notifications in the history but does not show popups or OSDs, and does not replay them after unlocking.
 
 ## Recovery
 

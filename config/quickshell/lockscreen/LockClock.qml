@@ -7,7 +7,6 @@ Column {
     required property var theme
     required property real screenHeight
     readonly property real glyphSize: Design.clamp(screenHeight * .125, 64, 170)
-    visible: controller.widgetEnabled("clock")
     spacing: -glyphSize * .08
 
     Text {

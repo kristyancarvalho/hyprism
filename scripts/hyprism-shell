@@ -362,9 +362,9 @@ def widgets_command(args):
 
 def lockscreen_defaults():
     defaults = read_json(root_dir() / "config/lockscreen/widgets.json").get("defaults")
-    if not isinstance(defaults, dict):
+    if not isinstance(defaults, dict) or not defaults:
         raise SystemExit("Invalid lock screen widget defaults")
-    return {name: defaults.get(name) is True for name in WIDGETS}
+    return {name: value is True for name, value in defaults.items()}
 
 
 def lockscreen_widget_enabled(config, defaults, name):
@@ -379,21 +379,21 @@ def lockscreen_widgets_command(args):
     defaults = lockscreen_defaults()
     action = args.lockscreen_widget_command
     if action != "list":
-        if action != "reset" and not args.all and args.widget not in WIDGETS:
-            raise SystemExit(f"Unknown widget: {args.widget}. Available on the lock screen: {', '.join(WIDGETS)}")
+        if action != "reset" and not args.all and args.widget not in defaults:
+            raise SystemExit(f"Unknown lock screen widget: {args.widget}. Available: {', '.join(defaults)}")
         section = config.get("lockscreen")
         if not isinstance(section, dict):
             section = config["lockscreen"] = {}
         widgets = section.get("widgets")
-        if not isinstance(widgets, dict):
-            widgets = section["widgets"] = {}
+        current = {name: widgets[name] for name in defaults if isinstance(widgets, dict) and isinstance(widgets.get(name), bool)}
         if action == "reset":
-            section["widgets"] = dict(defaults)
+            current = dict(defaults)
         else:
-            for name in (WIDGETS if args.all else (args.widget,)):
-                widgets[name] = action == "enable"
+            for name in (defaults if args.all else (args.widget,)):
+                current[name] = action == "enable"
+        section["widgets"] = current
         write_config(config)
-    for name in WIDGETS:
+    for name in defaults:
         print(f"{name}\t{'enabled' if lockscreen_widget_enabled(config, defaults, name) else 'disabled'}")
     return 0
 

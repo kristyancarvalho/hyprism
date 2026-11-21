@@ -22,6 +22,14 @@ ShellRoot {
     property bool unlocked: false
     property bool releasing: false
     property var lockDefaults: ({})
+    property var lockPreferences: ({})
+    readonly property bool weatherEnabled: widgetVisible("weather")
+    readonly property bool mediaEnabled: widgetVisible("media")
+
+    function widgetVisible(name: string): bool {
+        const chosen = lockPreferences[name]
+        return typeof chosen === "boolean" ? chosen : lockDefaults[name] === true
+    }
 
     function writeState(value: string): void {
         stateFile.setText(value + "\n")
@@ -38,23 +46,16 @@ ShellRoot {
         const opacity = Number(incoming.surfaceOpacity)
         const radius = incoming.cornerRadiusPreset
         const lockscreen = parsed.lockscreen
-        const preferences = lockscreen && typeof lockscreen === "object" && lockscreen.widgets && typeof lockscreen.widgets === "object" ? lockscreen.widgets : {}
-        const widgets = controller.mergedWidgetConfig(incoming.widgets || {})
-        const names = Object.keys(widgets)
-        for (let index = 0; index < names.length; index++) {
-            const chosen = preferences[names[index]]
-            widgets[names[index]].enabled = typeof chosen === "boolean" ? chosen : lockDefaults[names[index]] === true
-        }
+        lockPreferences = lockscreen && typeof lockscreen === "object" && lockscreen.widgets && typeof lockscreen.widgets === "object" ? lockscreen.widgets : {}
         controller.config = Object.assign({}, controller.config, {
             shell: Object.assign({}, defaults, incoming, {
                 surfaceOpacity: Number.isFinite(opacity) && opacity >= .5 && opacity <= 1 ? opacity : defaults.surfaceOpacity,
                 cornerRadiusPreset: Number.isInteger(radius) && radius >= 0 && radius <= 3 ? radius : defaults.cornerRadiusPreset,
-                widgets: widgets
+                widgets: controller.mergedWidgetConfig(incoming.widgets || {})
             })
         })
         Design.shellSurfaceOpacity = controller.config.shell.surfaceOpacity
         Design.cornerRadiusPreset = controller.config.shell.cornerRadiusPreset
-        controller.configurationRevision += 1
     }
 
     function applyTheme(raw: string): void {
@@ -107,7 +108,6 @@ ShellRoot {
     Theme { id: theme }
     ShellController { id: controller }
     SystemService { controller: controller }
-    MonitoringService { controller: controller }
     MediaService { controller: controller }
 
     LockSession {
@@ -135,6 +135,8 @@ ShellRoot {
             controller: controller
             theme: theme
             background: root.background
+            weatherEnabled: root.weatherEnabled
+            mediaEnabled: root.mediaEnabled
             onSurfaceReady: root.surfaceCount = Quickshell.screens.length
         }
     }

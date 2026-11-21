@@ -334,6 +334,15 @@
     "error": "Erro de autenticação",
     "tooMany": "Muitas tentativas",
     "unavailable": "Autenticação indisponível",
-    "response": "Resposta"
+    "response": "Resposta",
+    "weekdays": {
+      "sun": "dom.",
+      "mon": "seg.",
+      "tue": "ter.",
+      "wed": "qua.",
+      "thu": "qui.",
+      "fri": "sex.",
+      "sat": "sáb."
+    }
   }
 }

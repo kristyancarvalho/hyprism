@@ -9,6 +9,8 @@ WlSessionLockSurface {
     required property var controller
     required property var theme
     required property string background
+    required property bool weatherEnabled
+    required property bool mediaEnabled
     signal surfaceReady()
     color: theme.colors.background
 
@@ -54,25 +56,41 @@ WlSessionLockSurface {
             controller: surface.controller
             theme: surface.theme
             screenHeight: root.height
-            visible: surface.session.secure && surface.controller.widgetEnabled("clock")
+            visible: surface.session.secure
             opacity: 1 - surface.session.morphProgress
             anchors.horizontalCenter: parent.horizontalCenter
             y: Math.round((root.height - height) / 2)
         }
 
-        LockWidgets {
-            id: widgets
+        LockDate {
             controller: surface.controller
             theme: surface.theme
-            shellScreen: surface.screen
-            readonly property real topEdge: clock.visible ? clock.y + clock.height + Design.spacingLg * 1.5 : Design.compactReservedHeight(surface.controller.config.shell) + Design.spacingLg * 2
-            readonly property real bottomEdge: Design.spacingLg * 3
-            availableWidth: root.width - Design.spacingLg * 4
-            availableHeight: Math.max(0, root.height - topEdge - bottomEdge)
-            visible: surface.session.secure && surface.screen !== null
+            glyphSize: clock.glyphSize
+            visible: clock.visible
             opacity: 1 - surface.session.morphProgress
             anchors.horizontalCenter: parent.horizontalCenter
-            y: clock.visible ? topEdge : topEdge + Math.max(0, (availableHeight - height) * .4)
+            y: clock.y + clock.height + Design.spacingMd
+        }
+
+        LockWeather {
+            controller: surface.controller
+            theme: surface.theme
+            wanted: surface.session.secure && surface.weatherEnabled
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
+            anchors.leftMargin: Design.spacingLg
+            anchors.bottomMargin: Design.spacingLg
+            opacity: 1 - surface.session.morphProgress
+        }
+
+        LockMedia {
+            controller: surface.controller
+            theme: surface.theme
+            wanted: surface.session.secure && surface.mediaEnabled
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: Design.spacingLg
+            opacity: 1 - surface.session.morphProgress
         }
 
         LockBattery {
