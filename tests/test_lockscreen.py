@@ -313,6 +313,50 @@ class LockscreenSecurityContractTests(unittest.TestCase):
             self.assertNotIn("locked", strings)
             self.assertNotIn("requesting", strings)
 
+    def test_password_indicators_track_the_character_count_without_exposing_it(self):
+        panel = self.sources["LockPanel.qml"]
+        self.assertIn("function syncDots()", panel)
+        self.assertIn("const target = session.secretLength", panel)
+        self.assertIn("dotModel.clear()", panel)
+        self.assertIn("onSecretLengthChanged(): void { panel.syncDots() }", panel)
+        self.assertNotIn("console.", panel)
+        self.assertNotIn("secretLength", self.entry)
+        self.assertNotRegex(self.entry + self.sources["LockSurface.qml"], r"IpcHandler[^}]*secret")
+
+    def test_prompt_reveal_is_a_restrained_fade_and_slide_that_never_blocks_input(self):
+        panel = self.sources["LockPanel.qml"]
+        self.assertIn("Behavior on opacity", panel)
+        self.assertIn("Behavior on lift", panel)
+        self.assertIn("property real lift: revealed ? 0 : -8", panel)
+        self.assertIn("visible: opacity > 0", panel)
+        self.assertNotIn("OutBack", panel)
+        self.assertNotIn("OutBounce", panel)
+        self.assertIn("Keys.onPressed: event => surface.session.handleKey(event)", self.sources["LockSurface.qml"])
+        self.assertNotIn("promptVisible", self.session[self.session.index("function handleKey"):self.session.index("function submit")])
+
+    def test_clock_is_a_fixed_centered_element_with_two_tones(self):
+        clock = self.sources["LockClock.qml"]
+        self.assertIn('formattedDate("HH")', clock)
+        self.assertIn('formattedDate("mm")', clock)
+        self.assertIn("colors.foreground", clock)
+        self.assertIn("colors.accent", clock)
+        surface = self.sources["LockSurface.qml"]
+        self.assertIn("y: Math.round((root.height - height) / 2)", surface)
+        self.assertIn("anchors.horizontalCenter: parent.horizontalCenter", surface)
+        widgets = self.sources["LockWidgets.qml"]
+        self.assertIn("showClock: false", widgets)
+        self.assertIn("mediaBelow: true", widgets)
+
+    def test_media_sits_on_its_own_row_below_the_other_widgets(self):
+        board = (QML / "widgets/WidgetBoard.qml").read_text(encoding="utf-8")
+        self.assertIn("property bool mediaBelow: false", board)
+        self.assertIn("y: board.columnsHeight > 0 ? board.columnsHeight + board.cardGap : 0", board)
+        self.assertIn("board.mediaShown && !board.mediaBelow", board)
+        self.assertIn("board.mediaShown && board.mediaBelow", board)
+        desktop = (QML / "widgets/DesktopWidgets.qml").read_text(encoding="utf-8")
+        self.assertNotIn("mediaBelow", desktop)
+        self.assertNotIn("showClock", desktop)
+
     def test_surface_opacity_uses_only_the_global_setting(self):
         for name, source in self.sources.items():
             self.assertNotRegex(source, r"surfaceOpacity:\s*[0-9.]+\s*$", name)

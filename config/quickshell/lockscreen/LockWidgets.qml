@@ -9,7 +9,7 @@ Item {
     required property var shellScreen
     required property real availableWidth
     required property real availableHeight
-    readonly property real fit: board.logicalHeight > 0 ? Math.min(Design.widgetScale, availableWidth / board.logicalWidth, availableHeight / board.logicalHeight) : 1
+    readonly property real fit: board.logicalHeight > 0 ? Math.min(1.6, availableWidth / board.logicalWidth, availableHeight / board.logicalHeight) : 1
 
     visible: board.logicalHeight > 0
     width: board.logicalWidth * fit
@@ -22,6 +22,8 @@ Item {
         controller: cluster.controller
         theme: cluster.theme
         playingOnly: true
+        showClock: false
+        mediaBelow: true
         scale: cluster.fit
         transformOrigin: Item.TopLeft
         layer.enabled: true

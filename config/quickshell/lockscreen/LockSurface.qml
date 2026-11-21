@@ -49,16 +49,30 @@ WlSessionLockSurface {
             color: Qt.rgba(surface.theme.colors.background.r, surface.theme.colors.background.g, surface.theme.colors.background.b, wallpaper.visible ? .38 : 0)
         }
 
+        LockClock {
+            id: clock
+            controller: surface.controller
+            theme: surface.theme
+            screenHeight: root.height
+            visible: surface.session.secure && surface.controller.widgetEnabled("clock")
+            opacity: 1 - surface.session.morphProgress
+            anchors.horizontalCenter: parent.horizontalCenter
+            y: Math.round((root.height - height) / 2)
+        }
+
         LockWidgets {
+            id: widgets
             controller: surface.controller
             theme: surface.theme
             shellScreen: surface.screen
+            readonly property real topEdge: clock.visible ? clock.y + clock.height + Design.spacingLg * 1.5 : Design.compactReservedHeight(surface.controller.config.shell) + Design.spacingLg * 2
+            readonly property real bottomEdge: Design.spacingLg * 3
             availableWidth: root.width - Design.spacingLg * 4
-            availableHeight: Math.max(0, root.height - Design.compactReservedHeight(surface.controller.config.shell) - Design.spacingLg * 4)
+            availableHeight: Math.max(0, root.height - topEdge - bottomEdge)
             visible: surface.session.secure && surface.screen !== null
             opacity: 1 - surface.session.morphProgress
             anchors.horizontalCenter: parent.horizontalCenter
-            y: Design.compactReservedHeight(surface.controller.config.shell) + Math.max(Design.spacingLg, (availableHeight - height) * .42)
+            y: clock.visible ? topEdge : topEdge + Math.max(0, (availableHeight - height) * .4)
         }
 
         LockBattery {

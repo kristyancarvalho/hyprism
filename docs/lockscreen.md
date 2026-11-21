@@ -20,7 +20,7 @@ There is intentionally **no unlock command**. The CLI can request a lock and rep
 - **Release after a morph.** After PAM succeeds, the panel animates from its compact width to the exact desktop bar geometry while the lock stays held; the lock is released only when that animation finishes, so the already-running bar takes its place.
 - **Single release path.** `LockSession.unlockGranted` is emitted only from the PAM `completed` handler with `PamResult.Success` for an attempt the lock screen started with a non-empty password. It is the only caller of the release function. There are no IPC unlock handlers, shortcuts, timers, or click handlers that release the lock.
 - **Background.** The wallpaper image itself is blurred offline by `scripts/system/lock-background.py` (Pillow) and cached under `~/.cache/hyprism/state/lock-background/`; the lock surface renders that file with `PreserveAspectCrop` plus a palette dim. No screen capture, no compositor blur, so no window can show through. If no wallpaper resolves, a palette gradient is used; the desktop is never shown. Hyprism has one wallpaper for all outputs, so every output uses the same image.
-- **Panel.** The password panel reuses the compact bar's anchor, top margin, height, radius and surface opacity. The panel is completely hidden at rest, with no message. The first key reveals it at about 62% of the bar width and is inserted into the field. If the field stays empty for 4 seconds the field hides again. A non-empty password is never hidden or cleared by a timer. `Escape` only clears the field.
+- **Panel.** The password panel reuses the compact bar's anchor, top margin, height, radius and surface opacity. The panel is completely hidden at rest, with no message. The first key fades it in with a small slide at about 62% of the bar width and is inserted into the field. Each character is shown as one dot that fades in or out; the characters themselves are never displayed. If the field stays empty for 4 seconds the field hides again. A non-empty password is never hidden or cleared by a timer. `Escape` only clears the field.
 
 ## PAM service
 
@@ -46,7 +46,7 @@ hyprism-shell lockscreen widgets disable --all
 hyprism-shell lockscreen widgets reset
 ```
 
-Changes apply to a running lock screen immediately. The media widget only appears while a player is playing. The `tasks` widget depends on the desktop shell's task feed and shows nothing on the lock screen. The battery is not a widget: when a battery is present, a small icon and percentage sit in the bottom-right corner.
+The clock is not a card: when enabled it is a fixed, centered element with the hour above the minutes in the accent colour. The other widgets sit below it, with media on its own full-width row underneath. Changes apply to a running lock screen immediately. The media widget only appears while a player is playing. The `tasks` widget depends on the desktop shell's task feed and shows nothing on the lock screen. The battery is not a widget: when a battery is present, a small icon and percentage sit in the bottom-right corner.
 
 Panels and widget surfaces use the global surface opacity, corner radius and theme from `user.json`, so changing them is reflected live. While the session is locked, the desktop shell stores notifications in the history but does not show popups or OSDs, and does not replay them after unlocking.
 
