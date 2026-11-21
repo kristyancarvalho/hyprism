@@ -1,12 +1,4 @@
 #!/usr/bin/env python3
-"""Print the path of a blurred copy of the current wallpaper for the lock screen.
-
-The blur is computed from the wallpaper file itself and cached, so the lock
-screen never samples the compositor output. Nothing is printed and the exit
-status is non-zero when no wallpaper can be resolved or blurred; the lock
-screen then falls back to a palette colour.
-"""
-
 import argparse
 import hashlib
 import os
@@ -68,7 +60,7 @@ def prune(directory, keep):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, help="wallpaper to blur instead of the active one")
     arguments = parser.parse_args()
     state = cache_dir() / "state"

@@ -3,14 +3,6 @@
 //@ pragma IconTheme Hyprism-Papirus
 pragma ComponentBehavior: Bound
 
-// Dedicated Quickshell entrypoint for the Hyprism lock screen.
-//
-// It runs as its own process, separate from the desktop shell, so reloading or
-// restarting the desktop can never destroy the session-lock object. Live
-// reload is disabled for the same reason. There is deliberately no IPC
-// operation, timer, shortcut or click handler that can release the lock: the
-// single release path is LockSession.unlockGranted, emitted only after PAM
-// reports success.
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -25,10 +17,10 @@ ShellRoot {
     readonly property string stateFilePath: Quickshell.env("HYPRISM_LOCK_STATE") || (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/hyprism/lockscreen.state"
     readonly property string background: Quickshell.env("HYPRISM_LOCK_BACKGROUND") || ""
     readonly property string configHome: Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config"
-    // "requested" -> "covering" -> "secure" -> "released"
     readonly property string phase: !lock.locked ? "released" : lock.secure ? "secure" : surfaceCount >= Quickshell.screens.length && surfaceCount > 0 ? "confirming" : "covering"
     property int surfaceCount: 0
     property bool unlocked: false
+    property bool releasing: false
     property var lockCatalog: ({})
     property var lockPreferences: ({})
     readonly property var enabledWidgets: {
@@ -90,10 +82,15 @@ ShellRoot {
         lockCatalog = parsed.widgets
     }
 
-    // The single place where the session lock is released. It runs only after
-    // PAM reported success for an attempt started by LockSession.submit().
+    function beginRelease(): void {
+        if (releasing) return
+        releasing = true
+        morphAnimation.start()
+        releaseGuard.start()
+    }
+
     function releaseLock(): void {
-        if (unlocked) return
+        if (unlocked || !releasing) return
         unlocked = true
         lock.locked = false
         writeState("unlocked")
@@ -103,11 +100,12 @@ ShellRoot {
     Theme { id: theme }
     ShellController { id: controller }
     SystemService { controller: controller }
+    MediaService { controller: controller }
 
     LockSession {
         id: session
         secure: lock.secure
-        onUnlockGranted: root.releaseLock()
+        onUnlockGranted: root.beginRelease()
     }
 
     WlSessionLock {
@@ -116,9 +114,6 @@ ShellRoot {
 
         onSecureChanged: if (secure) root.writeState("locked")
         onLockedChanged: {
-            // The compositor ended the lock without authentication (for
-            // example because another client holds it). Never keep a prompt
-            // around: exit, leaving any real lock to the compositor.
             if (!locked && !root.unlocked) {
                 console.warn("session lock was not granted or was revoked by the compositor")
                 root.writeState("unlocked")
@@ -137,6 +132,29 @@ ShellRoot {
         }
     }
 
+    NumberAnimation {
+        id: morphAnimation
+        target: session
+        property: "morphProgress"
+        from: 0
+        to: 1
+        duration: 380
+        easing.type: Design.easingMorph
+        onFinished: handoff.start()
+    }
+
+    Timer {
+        id: handoff
+        interval: 90
+        onTriggered: root.releaseLock()
+    }
+
+    Timer {
+        id: releaseGuard
+        interval: 1600
+        onTriggered: root.releaseLock()
+    }
+
     Timer {
         id: quitTimer
         interval: 300
@@ -150,7 +168,6 @@ ShellRoot {
         printErrors: false
     }
 
-    // Read-only status; no operation here can unlock the session.
     IpcHandler {
         target: "lockscreen"
         function status(): string { return root.phase }

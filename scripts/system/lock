@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# Single lock entrypoint used by the keybinding, power menu and hyprism-lock.
-# The Quickshell lock screen is the default; --hyprlock selects the legacy
-# fallback. Exactly one implementation is ever started per request.
 set -Eeuo pipefail
 
 root_dir="${HYPRISM_ROOT:-$(cd -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")/../.." && pwd)}"

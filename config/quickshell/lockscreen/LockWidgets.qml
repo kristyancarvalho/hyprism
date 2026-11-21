@@ -2,8 +2,6 @@ import QtQuick
 import "../components"
 import ".."
 
-// Read-only widget cluster. It reuses the desktop clock and weather cards and
-// the shared SystemService data; nothing here handles pointer or key input.
 Item {
     id: cluster
     required property var controller
@@ -15,14 +13,14 @@ Item {
     readonly property int gap: Design.desktopWidgetGap
     readonly property bool showClock: enabledWidgets.clock === true
     readonly property bool showWeather: enabledWidgets.weather === true
-    readonly property bool showBattery: enabledWidgets.battery === true && controller.system.battery.available
+    readonly property bool showMedia: enabledWidgets.media === true && controller.mediaAvailable() && controller.mediaPlayer.isPlaying
     readonly property bool showSystem: enabledWidgets.system === true
     readonly property bool topRow: showClock || showWeather
-    readonly property bool bottomRow: showBattery || showSystem
-    readonly property real logicalHeight: (topRow ? 84 : 0) + (topRow && bottomRow ? gap : 0) + (bottomRow ? 48 : 0)
+    readonly property bool bottomRow: showSystem
+    readonly property real logicalHeight: (topRow ? 84 : 0) + (topRow && (showMedia || bottomRow) ? gap : 0) + (showMedia ? 112 : 0) + (showMedia && bottomRow ? gap : 0) + (bottomRow ? 48 : 0)
     readonly property real fit: Math.min(1.5, availableWidth / logicalWidth, availableHeight / Math.max(1, logicalHeight))
 
-    visible: topRow || bottomRow
+    visible: topRow || showMedia || bottomRow
     width: logicalWidth * fit
     height: logicalHeight * fit
     enabled: false
@@ -32,6 +30,9 @@ Item {
         height: cluster.logicalHeight
         scale: cluster.fit
         transformOrigin: Item.TopLeft
+        layer.enabled: true
+        layer.smooth: true
+        layer.textureSize: Qt.size(Math.ceil(width * scale * 2), Math.ceil(height * scale * 2))
         spacing: cluster.gap
 
         Row {
@@ -58,6 +59,15 @@ Item {
             }
         }
 
+        MediaCard {
+            theme: cluster.theme
+            controller: cluster.controller
+            interactive: false
+            visible: cluster.showMedia
+            width: parent.width
+            height: visible ? 112 : 0
+        }
+
         Row {
             width: parent.width
             height: 48
@@ -65,31 +75,11 @@ Item {
             visible: cluster.bottomRow
 
             Glass {
-                id: batteryCard
-                theme: cluster.theme
-                surfaceOpacity: Design.themedSurfaceOpacity(.84)
-                radius: Design.radiusMd
-                visible: cluster.showBattery
-                width: visible ? (cluster.showSystem ? (parent.width - parent.spacing) / 2 : parent.width) : 0
-                height: parent.height
-
-                CompactBarItem {
-                    anchors.centerIn: parent
-                    theme: cluster.theme
-                    filled: false
-                    iconName: cluster.controller.batteryIconName()
-                    iconColor: cluster.theme.colors[cluster.controller.batteryColorRole()]
-                    trailingIconName: cluster.controller.batteryCharging() ? "charging" : ""
-                    label: cluster.controller.batteryExpandedText()
-                }
-            }
-
-            Glass {
                 theme: cluster.theme
                 surfaceOpacity: Design.themedSurfaceOpacity(.84)
                 radius: Design.radiusMd
                 visible: cluster.showSystem
-                width: visible ? parent.width - (batteryCard.visible ? batteryCard.width + parent.spacing : 0) : 0
+                width: parent.width
                 height: parent.height
 
                 Row {

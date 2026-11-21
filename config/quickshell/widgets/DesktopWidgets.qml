@@ -78,6 +78,9 @@ PanelWindow {
         height: widgetWindow.logicalHeight
         scale: widgetWindow.effectiveScale
         transformOrigin: Item.TopLeft
+        layer.enabled: true
+        layer.smooth: true
+        layer.textureSize: Qt.size(Math.ceil(width * scale * 2), Math.ceil(height * scale * 2))
         spacing: widgetWindow.columnGap
 
         Column {
@@ -489,47 +492,12 @@ PanelWindow {
                 }
             }
 
-            Glass {
+            MediaCard {
                 theme: widgetWindow.theme
-                surfaceOpacity: Design.themedSurfaceOpacity(.88)
+                controller: widgetWindow.controller
                 width: parent.width
                 height: visible ? 112 : 0
-                radius: Design.radiusMd
                 visible: controller.widgetEnabled("media") && controller.mediaAvailable()
-
-                Row {
-                    anchors.fill: parent
-                    anchors.margins: Design.widgetInnerPadding
-                    spacing: Design.spacingMd
-
-                    Rectangle {
-                        width: 86
-                        height: 86
-                        anchors.verticalCenter: parent.verticalCenter
-                        radius: Design.radiusSm
-                        color: theme.colors.surfaceVariant
-                        clip: true
-
-                        RoundedImage { id: mediaArt; anchors.fill: parent; source: controller.mediaArtUrl(); fillMode: Image.PreserveAspectCrop; asynchronous: true; cache: true; radius: parent.radius }
-                        ShellIcon { anchors.centerIn: parent; visible: mediaArt.status !== Image.Ready; name: controller.applicationIcon(controller.mediaPlayer ? controller.mediaPlayer.desktopEntry : ""); fallback: "application-x-executable"; fallbackGlyph: "media"; iconSize: 42 }
-                    }
-
-                    Column {
-                        width: parent.width - 98
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: Design.spacingXs
-                        Text { width: parent.width; text: controller.mediaTitle(); elide: Text.ElideRight; color: theme.colors.foreground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeSm; font.weight: Design.fontWeightSemibold }
-                        Text { width: parent.width; text: controller.mediaArtist(); elide: Text.ElideRight; color: theme.colors.mutedForeground; font.family: Design.fontFamily; font.pixelSize: Design.fontSizeXs }
-                        Rectangle { width: parent.width; height: 4; radius: Design.radiusSmall; color: theme.colors.surfaceVariant; Rectangle { width: parent.width * controller.mediaProgress(); height: parent.height; radius: parent.radius; color: theme.colors.accent } }
-                        Row {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            spacing: Design.spacingXs
-                            ShellButton { theme: widgetWindow.theme; compact: true; iconName: "previous"; onClicked: controller.mediaPrevious() }
-                            ShellButton { theme: widgetWindow.theme; compact: true; iconName: controller.mediaPlayer && controller.mediaPlayer.isPlaying ? "pause" : "play"; onClicked: controller.mediaToggle() }
-                            ShellButton { theme: widgetWindow.theme; compact: true; iconName: "next"; onClicked: controller.mediaNext() }
-                        }
-                    }
-                }
             }
         }
     }

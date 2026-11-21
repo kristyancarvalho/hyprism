@@ -35,7 +35,7 @@ class LockscreenWidgetTests(unittest.TestCase):
     def test_list_shows_only_supported_widgets_with_defaults(self):
         result = self.run_cli("lockscreen", "widgets", "list")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout.splitlines(), ["clock\tenabled", "weather\tenabled", "battery\tenabled", "system\tdisabled"])
+        self.assertEqual(result.stdout.splitlines(), ["clock\tenabled", "weather\tenabled", "media\tenabled", "system\tdisabled"])
 
     def test_enable_and_disable_change_only_lockscreen_configuration(self):
         before = self.read_config()
@@ -56,7 +56,7 @@ class LockscreenWidgetTests(unittest.TestCase):
 
     def test_unsupported_and_unknown_widgets_are_rejected_without_writing(self):
         original = self.config.read_text(encoding="utf-8")
-        for widget in ("media", "processes", "tasks", "nope"):
+        for widget in ("network", "processes", "tasks", "nope"):
             result = self.run_cli("lockscreen", "widgets", "enable", widget)
             self.assertNotEqual(result.returncode, 0, widget)
             self.assertIn(widget, result.stderr)
@@ -66,16 +66,43 @@ class LockscreenWidgetTests(unittest.TestCase):
         config = self.read_config()
         del config["lockscreen"]
         self.config.write_text(json.dumps(config), encoding="utf-8")
-        self.assertIn("battery\tenabled", self.run_cli("lockscreen", "widgets", "list").stdout)
-        self.run_cli("lockscreen", "widgets", "disable", "battery")
-        self.assertIn("battery\tdisabled", self.run_cli("lockscreen", "widgets", "list").stdout)
+        self.assertIn("media\tenabled", self.run_cli("lockscreen", "widgets", "list").stdout)
+        self.run_cli("lockscreen", "widgets", "disable", "media")
+        self.assertIn("media\tdisabled", self.run_cli("lockscreen", "widgets", "list").stdout)
+        self.assertIn("media\tenabled", self.run_cli("widgets", "list").stdout)
+
+    def test_battery_is_not_a_configurable_widget_and_legacy_values_are_ignored(self):
+        config = self.read_config()
+        config["lockscreen"]["widgets"]["battery"] = True
+        self.config.write_text(json.dumps(config), encoding="utf-8")
+        self.assertNotIn("battery", self.run_cli("lockscreen", "widgets", "list").stdout)
+        self.assertNotEqual(self.run_cli("lockscreen", "widgets", "enable", "battery").returncode, 0)
+
+    def test_enabling_every_desktop_widget_keeps_values_and_lockscreen_untouched(self):
+        config = self.read_config()
+        for entry in config["shell"]["widgets"].values():
+            entry["enabled"] = False
+        config["lockscreen"]["widgets"]["clock"] = False
+        self.config.write_text(json.dumps(config), encoding="utf-8")
+        result = self.run_cli("widgets", "enable", "--all")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        after = self.read_config()
+        self.assertTrue(all(entry["enabled"] is True for entry in after["shell"]["widgets"].values()))
+        self.assertEqual(after["lockscreen"], config["lockscreen"])
+        self.assertEqual(after["shell"]["widgets"]["storage"]["mounts"], config["shell"]["widgets"]["storage"]["mounts"])
+
+    def test_lockscreen_changes_never_touch_desktop_widgets(self):
+        before = self.read_config()["shell"]
+        for arguments in (("disable", "clock"), ("enable", "system"), ("disable", "media"), ("reset",)):
+            self.assertEqual(self.run_cli("lockscreen", "widgets", *arguments).returncode, 0)
+        self.assertEqual(self.read_config()["shell"], before)
 
     def test_reset_restores_defaults(self):
         self.run_cli("lockscreen", "widgets", "disable", "clock")
         self.run_cli("lockscreen", "widgets", "enable", "system")
         result = self.run_cli("lockscreen", "widgets", "reset")
-        self.assertEqual(result.stdout.splitlines(), ["clock\tenabled", "weather\tenabled", "battery\tenabled", "system\tdisabled"])
-        self.assertEqual(self.read_config()["lockscreen"]["widgets"], {"clock": True, "weather": True, "battery": True, "system": False})
+        self.assertEqual(result.stdout.splitlines(), ["clock\tenabled", "weather\tenabled", "media\tenabled", "system\tdisabled"])
+        self.assertEqual(self.read_config()["lockscreen"]["widgets"], {"clock": True, "weather": True, "media": True, "system": False})
 
     def test_catalog_and_default_configuration_agree(self):
         catalog = json.loads((ROOT / "config/lockscreen/widgets.json").read_text(encoding="utf-8"))["widgets"]
@@ -198,8 +225,6 @@ class LockBackgroundTests(unittest.TestCase):
 
 
 class LockscreenSecurityContractTests(unittest.TestCase):
-    """Static guards for the properties that must hold for the QML sources."""
-
     @classmethod
     def setUpClass(cls):
         cls.entry = (QML / "lockscreen.qml").read_text(encoding="utf-8")
@@ -213,6 +238,44 @@ class LockscreenSecurityContractTests(unittest.TestCase):
             for forbidden in ("PanelWindow", "FloatingWindow", "ScreencopyView", "WlrLayershell", "BackgroundEffect"):
                 self.assertNotIn(forbidden, source, f"{name} uses {forbidden}")
 
+    def test_battery_is_a_fixed_indicator_not_a_widget(self):
+        widgets = self.sources["LockWidgets.qml"]
+        self.assertNotIn("battery", widgets.lower())
+        surface = self.sources["LockSurface.qml"]
+        self.assertIn("LockBattery {", surface)
+        self.assertIn("anchors.right: parent.right", surface)
+        self.assertIn("anchors.bottom: parent.bottom", surface)
+        self.assertNotIn("battery", json.dumps(json.loads((ROOT / "config/lockscreen/widgets.json").read_text(encoding="utf-8"))))
+
+    def test_media_widget_is_read_only_and_only_shown_while_playing(self):
+        widgets = self.sources["LockWidgets.qml"]
+        self.assertIn("interactive: false", widgets)
+        self.assertIn("controller.mediaPlayer.isPlaying", widgets)
+        self.assertIn("MediaService {", self.entry)
+
+    def test_panel_is_narrower_than_the_bar_and_morphs_to_its_width(self):
+        panel = self.sources["LockPanel.qml"]
+        self.assertIn("barWidth * .85", panel)
+        self.assertIn("restWidth + (barWidth - restWidth) * session.morphProgress", panel)
+        self.assertIn("Design.compactWidth(shellConfig, screenWidth)", panel)
+
+    def test_release_follows_the_morph_and_requires_authentication(self):
+        self.assertIn("onUnlockGranted: root.beginRelease()", self.entry)
+        self.assertEqual(self.entry.count("beginRelease()"), 2)
+        self.assertIn("if (unlocked || !releasing) return", self.entry)
+        self.assertIn("onFinished: handoff.start()", self.entry)
+        self.assertIn("if (!secure || authenticating || unlocking) return", self.session)
+
+    def test_desktop_shell_recovers_its_configuration_watch(self):
+        shell = (QML / "shell.qml").read_text(encoding="utf-8")
+        self.assertIn("onLoadFailed: configRetry.restart()", shell)
+        self.assertIn("onLoadFailed: themeRetry.restart()", shell)
+
+    def test_scaled_widget_surfaces_are_smoothed(self):
+        for name in ("widgets/DesktopWidgets.qml", "lockscreen/LockWidgets.qml"):
+            source = (QML / name).read_text(encoding="utf-8")
+            self.assertIn("layer.smooth: true", source, name)
+
     def test_live_reload_is_disabled(self):
         self.assertIn("settings.watchFiles: false", self.entry)
 
@@ -220,15 +283,15 @@ class LockscreenSecurityContractTests(unittest.TestCase):
         occurrences = [(name, line) for name, source in self.sources.items() for line in source.splitlines() if re.search(r"\.locked\s*=\s*false|\.unlock\(", line)]
         self.assertEqual(len(occurrences), 1, occurrences)
         self.assertIn("function releaseLock()", self.entry)
-        self.assertIn("onUnlockGranted: root.releaseLock()", self.entry)
-        self.assertEqual(self.entry.count("releaseLock()"), 2)
+        self.assertIn("onUnlockGranted: root.beginRelease()", self.entry)
+        self.assertEqual(self.entry.count("releaseLock()"), 3)
 
     def test_unlock_signal_is_emitted_only_from_a_pam_success(self):
         emissions = [line for line in self.session.splitlines() if "unlockGranted()" in line and "signal" not in line]
         self.assertEqual(len(emissions), 1)
         block = self.session[self.session.index("onCompleted: result"):]
         self.assertLess(block.index("PamResult.Success && expected"), block.index("session.unlockGranted()"))
-        self.assertIn("if (!secure || authenticating || secret.length === 0) return", self.session)
+        self.assertIn("if (!secure || authenticating || unlocking || secret.length === 0) return", self.session)
 
     def test_no_ipc_handler_can_unlock(self):
         handlers = re.findall(r"IpcHandler\s*{(.*?)\n    }", self.entry, re.S)
@@ -238,7 +301,7 @@ class LockscreenSecurityContractTests(unittest.TestCase):
 
     def test_input_is_ignored_until_the_compositor_confirms_the_lock(self):
         self.assertIn("secure: lock.secure", self.entry)
-        self.assertIn("if (!secure || authenticating) return", self.session)
+        self.assertIn("if (!secure || authenticating || unlocking) return", self.session)
 
     def test_password_is_never_logged_or_passed_to_processes(self):
         for name, source in self.sources.items():

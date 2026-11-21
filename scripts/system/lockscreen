@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
-# Launch the dedicated Quickshell lock-screen process.
-#
-# The lock screen runs in its own Quickshell instance (separate ShellId and
-# entrypoint, live reload disabled) so that reloading or restarting the desktop
-# shell can never destroy the session-lock object. This script can only request
-# a lock or report state; there is intentionally no unlock operation.
 set -Eeuo pipefail
 
 root_dir="${HYPRISM_ROOT:-$(cd -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")/../.." && pwd)}"
@@ -42,9 +36,7 @@ lock() {
   [[ -n ${WAYLAND_DISPLAY:-} ]] || { printf 'The lock screen requires a running Wayland session.\n' >&2; exit 1; }
   command -v qs >/dev/null 2>&1 || { printf 'Quickshell is not installed: qs command not found.\n' >&2; exit 127; }
   [[ -r $entrypoint ]] || { printf 'Lock screen entrypoint not found: %s\n' "$entrypoint" >&2; exit 1; }
-  # Never race another lock implementation for the session lock.
   if pgrep -u "$(id -u)" -x hyprlock >/dev/null 2>&1; then exit 0; fi
-  # Refuse to lock when nobody could authenticate afterwards.
   [[ -r $pam_directory/$pam_service ]] || {
     printf 'PAM service %s/%s is missing; refusing to lock because the session could not be unlocked.\n' "$pam_directory" "$pam_service" >&2
     exit 1
@@ -62,17 +54,10 @@ lock() {
     [[ -n $utf8_locale ]] && export LC_ALL="$utf8_locale"
   fi
   export HYPRISM_ROOT="$root_dir" HYPRISM_LOCK_STATE="$state_file" HYPRISM_LOCK_BACKGROUND="$background"
-  # The lock screen is selected by path; a config name inherited from the
-  # desktop shell environment would conflict with it.
   unset QS_CONFIG_NAME QS_CONFIG_PATH QS_MANIFEST HYPRISM_QS_PATH
   local code=0
   flock -n -E 75 "$lock_file" qs -p "$entrypoint" --no-duplicate >>"$cache_dir/lockscreen.log" 2>&1 || code=$?
-  # 75: another lock-screen process already owns the lock file.
   ((code == 75)) && exit 0
-  # The process ended before the compositor confirmed the lock, so the session
-  # was never locked: do not leave the desktop suppressing notifications.
-  # A confirmed ("locked") state is deliberately kept: the compositor remains
-  # locked if the client dies, and `lockscreen lock` can take it over again.
   if [[ $(head -c 32 "$state_file" 2>/dev/null | tr -d '[:space:]') == locking ]]; then
     printf 'unlocked\n' >"$state_file"
   fi

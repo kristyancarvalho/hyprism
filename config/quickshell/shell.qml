@@ -154,8 +154,6 @@ ShellRoot {
 
     function showPopup(notification): void {
         if (notificationServer.doNotDisturb) return
-        // While the session is locked the notification is kept in the history
-        // but never presented, queued or replayed after unlocking.
         if (shellController.sessionLocked) return
         if (shellController.floatingSurfacesSuppressed) {
             concealPopup(notification, Date.now() + popupDuration(notification))
@@ -636,6 +634,7 @@ ShellRoot {
         onLoaded: configReload.restart()
         onTextChanged: configReload.restart()
         onFileChanged: reload()
+        onLoadFailed: configRetry.restart()
     }
     ListModel { id: popupNotifications; dynamicRoles: true }
     FileView {
@@ -648,6 +647,7 @@ ShellRoot {
         onLoaded: themeReload.restart()
         onTextChanged: themeReload.restart()
         onFileChanged: reload()
+        onLoadFailed: themeRetry.restart()
     }
     FileView {
         id: dndStateFile
@@ -666,6 +666,8 @@ ShellRoot {
         }
         onLoadFailed: setText(JSON.stringify({ doNotDisturb: false }) + "\n")
     }
+    Timer { id: configRetry; interval: 250; onTriggered: configFile.reload() }
+    Timer { id: themeRetry; interval: 250; onTriggered: themeFile.reload() }
     Timer { id: configReload; interval: 90; onTriggered: root.reloadConfig() }
     Timer { id: themeReload; interval: 90; onTriggered: root.reloadTheme() }
     Timer { id: themeScheduleReconcile; interval: 120; onTriggered: shellController.run([shellController.rootDir + "/scripts/hyprism-shell", "_theme-reconcile"]) }

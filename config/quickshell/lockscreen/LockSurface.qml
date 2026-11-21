@@ -2,8 +2,6 @@ import QtQuick
 import Quickshell.Wayland
 import ".."
 
-// One secure lock surface per output. It is created by WlSessionLock for every
-// screen; the compositor shows nothing else on that output while it exists.
 WlSessionLockSurface {
     id: surface
     required property var lock
@@ -28,8 +26,6 @@ WlSessionLockSurface {
             surface.surfaceReady()
         }
 
-        // The only background is the pre-blurred wallpaper file (or the
-        // palette fallback). Nothing samples the compositor output.
         Rectangle {
             anchors.fill: parent
             gradient: Gradient {
@@ -60,9 +56,20 @@ WlSessionLockSurface {
             enabledWidgets: surface.enabledWidgets
             availableWidth: root.width - Design.spacingLg * 4
             availableHeight: Math.max(0, root.height - Design.compactReservedHeight(surface.controller.config.shell) - Design.spacingLg * 4)
-            visible: surface.session.secure && (topRow || bottomRow)
+            visible: surface.session.secure && (topRow || showMedia || bottomRow)
+            opacity: 1 - surface.session.morphProgress
             anchors.horizontalCenter: parent.horizontalCenter
             y: Design.compactReservedHeight(surface.controller.config.shell) + Math.max(Design.spacingLg, (availableHeight - height) * .42)
+        }
+
+        LockBattery {
+            controller: surface.controller
+            theme: surface.theme
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.rightMargin: Design.spacingLg
+            anchors.bottomMargin: Design.spacingLg
+            opacity: 1 - surface.session.morphProgress
         }
 
         LockPanel {

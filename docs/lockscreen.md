@@ -17,6 +17,7 @@ There is intentionally **no unlock command**. The CLI can request a lock and rep
 - **Confirmed before trusted.** `WlSessionLock.secure` becomes true only when the compositor confirms every output is covered. Until then the UI shows a "securing" state and ignores keyboard input. The state file only becomes `locked` after confirmation.
 - **Dedicated process.** The lock screen runs as its own Quickshell instance (`ShellId hyprism-lock`) started by `scripts/system/lockscreen`, with live reload disabled. Reloading or restarting the desktop shell (`hyprism-shell reload`) never touches it. A `flock` on `$XDG_RUNTIME_DIR/hyprism/lockscreen.lock` prevents duplicate instances; a second request is a no-op.
 - **One authentication session.** A single `PamContext` is shared by all outputs, authenticating the current user through the `hyprism-lock` PAM service. Extra PAM prompts are shown and answered through the same field.
+- **Release after a morph.** After PAM succeeds, the panel animates from 85% of the bar width to the exact desktop bar geometry while the lock stays held; the lock is released only when that animation finishes, so the already-running bar takes its place.
 - **Single release path.** `LockSession.unlockGranted` is emitted only from the PAM `completed` handler with `PamResult.Success` for an attempt the lock screen started with a non-empty password. It is the only caller of the release function. There are no IPC unlock handlers, shortcuts, timers, or click handlers that release the lock.
 - **Background.** The wallpaper image itself is blurred offline by `scripts/system/lock-background.py` (Pillow) and cached under `~/.cache/hyprism/state/lock-background/`; the lock surface renders that file with `PreserveAspectCrop` plus a palette dim. No screen capture, no compositor blur, so no window can show through. If no wallpaper resolves, a palette gradient is used; the desktop is never shown. Hyprism has one wallpaper for all outputs, so every output uses the same image.
 - **Panel.** The password panel reuses the compact bar's anchor, top margin, width, height, radius and surface opacity. At rest it only shows a lock icon and "Session locked". The first key reveals the masked field and is inserted into it. If the field stays empty for 4 seconds the field hides again. A non-empty password is never hidden or cleared by a timer. `Escape` only clears the field.
@@ -38,9 +39,9 @@ Lock-screen visibility is stored separately in `user.json` under `lockscreen.wid
 
 | Widget | Lock screen | Default |
 | --- | --- | --- |
-| `clock`, `weather`, `battery` | supported | enabled |
+| `clock`, `weather`, `media` (read-only, only while playing) | supported | enabled |
 | `system` (CPU and memory) | supported | disabled |
-| `media`, `network`, `storage`, `sensors`, `uptime`, `services`, `tasks`, `processes` | not supported (privacy or interaction) | n/a |
+| `network`, `storage`, `sensors`, `uptime`, `services`, `tasks`, `processes` | not supported (privacy or interaction) | n/a |
 
 ```bash
 hyprism-shell lockscreen widgets list
@@ -48,6 +49,8 @@ hyprism-shell lockscreen widgets enable system
 hyprism-shell lockscreen widgets disable weather
 hyprism-shell lockscreen widgets reset
 ```
+
+The battery is not a widget: when a battery is present, a small icon and percentage sit in the bottom-right corner.
 
 Widgets are read-only on the lock screen: they have no pointer or key handlers. While the session is locked, the desktop shell stores notifications in the history but does not show popups or OSDs, and does not replay them after unlocking.
 

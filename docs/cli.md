@@ -124,4 +124,4 @@ The `open` and `recording` commands require a running Quickshell instance. Scree
 
 ## Lock screen
 
-`lockscreen widgets` manages which widgets appear on the lock screen. It only edits `lockscreen.widgets` in `user.json` and never changes desktop widgets. Supported identifiers are `clock`, `weather`, `battery`, and `system`; other desktop widgets are rejected with an explanation. There is deliberately no unlock command. See [the lock screen guide](lockscreen.md).
+`lockscreen widgets` manages which widgets appear on the lock screen. It only edits `lockscreen.widgets` in `user.json` and never changes desktop widgets. Supported identifiers are `clock`, `weather`, `media`, and `system`; other desktop widgets are rejected with an explanation. There is deliberately no unlock command. See [the lock screen guide](lockscreen.md).

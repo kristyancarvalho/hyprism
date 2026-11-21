@@ -194,8 +194,6 @@ run cp -a "$repo_dir/themes/ksddm-hyprism/." "$sddm_theme_dir/"
 run ln -sfn "$sddm_state_dir/theme.conf" "$sddm_theme_dir/theme.conf"
 run install -m 0644 "$repo_dir/config/sddm/20-hyprism.conf" "$sddm_dropin"
 
-# PAM service for the Quickshell lock screen. An administrator-modified file is
-# never overwritten; the stock file is only installed when none exists.
 lock_pam_service="/etc/pam.d/hyprism-lock"
 if [[ ! -e $lock_pam_service ]]; then
   run install -m 0644 "$repo_dir/config/pam/hyprism-lock" "$lock_pam_service"

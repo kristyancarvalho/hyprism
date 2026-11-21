@@ -28,8 +28,6 @@ command -v qs >/dev/null 2>&1 || {
 }
 
 mkdir -p "$log_dir"
-# The desktop shell watches this file to suppress notification and OSD popups
-# while the lock screen owns the session; it must exist before the first lock.
 if [[ -n ${XDG_RUNTIME_DIR:-} && -d $XDG_RUNTIME_DIR ]]; then
   install -d -m 0700 "$XDG_RUNTIME_DIR/hyprism"
   [[ -f $XDG_RUNTIME_DIR/hyprism/lockscreen.state ]] || printf 'unlocked\n' >"$XDG_RUNTIME_DIR/hyprism/lockscreen.state"

@@ -2,8 +2,6 @@ import QtQuick
 import "../components"
 import ".."
 
-// Bar-shaped lock panel. It uses the geometry and surface tokens of the
-// compact Hyprism bar: same anchor, margins, height, width, radius and opacity.
 Glass {
     id: panel
     required property var session
@@ -27,7 +25,9 @@ Glass {
     anchors.topMargin: Design.compactTopMargin(shellConfig)
     anchors.horizontalCenter: parent.horizontalCenter
     anchors.horizontalCenterOffset: shake
-    width: Design.compactWidth(shellConfig, screenWidth)
+    readonly property real barWidth: Design.compactWidth(shellConfig, screenWidth)
+    readonly property real restWidth: Math.max(Math.min(barWidth, 320), Math.round(barWidth * .85))
+    width: restWidth + (barWidth - restWidth) * session.morphProgress
     height: Design.compactHeight(shellConfig)
     radius: Design.radiusIslandCompact
     surfaceOpacity: shellConfig.surfaceOpacity
@@ -52,21 +52,20 @@ Glass {
         anchors.verticalCenter: parent.verticalCenter
         name: "lock"
         color: panel.failed ? panel.theme.colors.error : panel.theme.colors.foreground
+        opacity: 1 - session.morphProgress
     }
 
-    // Resting state: a quiet label, not an input field.
     CompactBarLabel {
         anchors.left: lockIcon.right
         anchors.leftMargin: Design.compactItemSpacing
         anchors.verticalCenter: parent.verticalCenter
         text: session.secure ? I18n.tr("lockscreen.locked") : I18n.tr("lockscreen.requesting")
         color: panel.theme.colors.mutedForeground
-        opacity: panel.revealed ? 0 : 1
+        opacity: panel.revealed ? 0 : 1 - session.morphProgress
         visible: opacity > 0
         Behavior on opacity { NumberAnimation { duration: Design.animationFast; easing.type: Design.easingEnter } }
     }
 
-    // Input area: grows out of the lock icon while the prompt is revealed.
     Rectangle {
         id: field
         readonly property real fullWidth: panel.width - lockIcon.width - panel.horizontalPadding * 2 - Design.compactItemSpacing
@@ -77,7 +76,7 @@ Glass {
         width: panel.revealed ? fullWidth : 0
         radius: Design.radiusDefault
         color: panel.theme.colors.surfaceElevated
-        opacity: panel.revealed ? 1 : 0
+        opacity: panel.revealed ? 1 - session.morphProgress : 0
         visible: width > 1
         clip: true
 
@@ -92,7 +91,6 @@ Glass {
             spacing: 5
             visible: !session.echo && session.secretLength > 0
             Repeater {
-                // The mask never reveals more than the last 24 characters.
                 model: Math.min(session.secretLength, 24)
                 Rectangle {
                     width: 7

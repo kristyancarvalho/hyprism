@@ -60,7 +60,7 @@
     "widgets": {
       "clock": true,
       "weather": true,
-      "battery": true,
+      "media": true,
       "system": false
     }
   },

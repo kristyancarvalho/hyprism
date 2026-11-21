@@ -338,9 +338,6 @@
     "tooMany": "Muitas tentativas",
     "unavailable": "Autenticação indisponível",
     "response": "Resposta",
-    "widgets": {
-      "battery": "Bateria",
-      "system": "Sistema"
-    }
+    "nowPlaying": "Tocando agora"
   }
 }
