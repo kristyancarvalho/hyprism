@@ -7,7 +7,7 @@ PREFIX ?= /usr/local
 DESTDIR ?=
 PACKAGE_NAME ?= hyprism-shell
 
-.PHONY: install install-ptbr install-system update uninstall check test lint reload help
+.PHONY: install install-ptbr install-system update uninstall check test lint reload dev-session dev-session-stop help
 
 install:
 	$(SUDO) ./install.sh --user "$(USER_NAME)" --lang "$(LANG)"
@@ -41,7 +41,7 @@ test:
 	python3 -m unittest discover -s tests -v
 
 lint:
-	bash -n install.sh uninstall.sh scripts/wallpaper scripts/hyprism-shell scripts/aur/publish scripts/system/action scripts/system/brightness-ddc scripts/system/install-colloid-theme scripts/system/install-google-sans-flex scripts/system/lock scripts/system/lock-hyprlock scripts/system/lockscreen scripts/system/move-or-scroll scripts/system/publish-json scripts/system/recording-backend scripts/system/reload-shell scripts/system/shell-ipc scripts/system/start-shell scripts/system/validate-hyprlock
+	bash -n install.sh uninstall.sh scripts/wallpaper scripts/hyprism-shell scripts/aur/publish scripts/system/action scripts/system/brightness-ddc scripts/system/install-colloid-theme scripts/system/install-google-sans-flex scripts/system/lock scripts/system/lock-hyprlock scripts/system/lockscreen scripts/system/move-or-scroll scripts/system/publish-json scripts/system/recording-backend scripts/system/reload-shell scripts/system/shell-ipc scripts/system/start-shell scripts/system/validate-hyprlock scripts/dev/session
 	python3 -m py_compile scripts/hyprism-shell scripts/aur/release-info scripts/theme/generate-theme.py scripts/system/*.py
 	python3 -m json.tool config/user.json >/dev/null
 	python3 -m json.tool config/theme/palettes.json >/dev/null
@@ -51,6 +51,12 @@ lint:
 
 reload:
 	hyprism-shell reload
+
+dev-session:
+	./scripts/dev/session start
+
+dev-session-stop:
+	./scripts/dev/session stop
 
 help:
 	@printf '%s\n' \
@@ -63,4 +69,6 @@ help:
 	  'test          Run the automated test suite' \
 	  'lint          Validate scripts, Python, and JSON' \
 	  'reload        Reload the running Quickshell instance' \
+	  'dev-session   Run this checkout in a nested Hyprland window' \
+	  'dev-session-stop Stop the nested development session' \
 	  'help          Show this help'

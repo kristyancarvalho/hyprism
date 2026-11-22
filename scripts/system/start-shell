@@ -13,6 +13,7 @@ selector=(-c "$config_name")
 entrypoint="${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/$config_name/shell.qml"
 if [[ -n $config_path ]]; then
   selector=(-p "$config_path")
+  unset QS_CONFIG_NAME
   [[ -d $config_path ]] && entrypoint="$config_path/shell.qml" || entrypoint="$config_path"
 fi
 log_dir="${XDG_CACHE_HOME:-$HOME/.cache}/hyprism"

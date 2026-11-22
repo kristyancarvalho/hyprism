@@ -1,0 +1,15 @@
+---
+import Base from '../layouts/Base.astro';
+import gallery from '../data/gallery.json';
+---
+<Base title="Gallery">
+  <h1>Gallery</h1>
+  <h2>Screenshots</h2>
+  {gallery.screenshots.map((item) => (
+    <figure><img src={item.src} alt={item.caption} loading="lazy" /><figcaption>{item.caption}</figcaption></figure>
+  ))}
+  <h2>Videos</h2>
+  {gallery.videos.map((item) => (
+    <figure><video src={item.src} controls preload="metadata"></video><figcaption>{item.caption}</figcaption></figure>
+  ))}
+</Base>

@@ -1,0 +1,24 @@
+---
+import '../styles/global.css';
+interface Props { title: string }
+const { title } = Astro.props;
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{title} · Hyprism</title>
+    <link rel="icon" href="/branding/logo-mark.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <header>
+      <img src="/branding/logo-dark.svg" alt="Hyprism" height="40" />
+      <nav>
+        <a href="/">Home</a>
+        <a href="/docs/">Docs</a>
+        <a href="/gallery/">Gallery</a>
+      </nav>
+    </header>
+    <main><slot /></main>
+  </body>
+</html>

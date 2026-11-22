@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qt6-declarative-dev-tools libqt6quicktest6 qml6-module-qttest qml6-module-qtquick shellcheck
+          python -m pip install pillow
+      - name: Run test suite
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m unittest discover -s tests -v
+
+  shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: ShellCheck
+        run: |
+          git ls-files scripts config | while read -r file; do
+            head -n1 "$file" | grep -qE '^#!.*(ba)?sh' && printf '%s\n' "$file"
+          done | xargs shellcheck -S error
+
+  workflows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate workflow YAML
+        run: |
+          python -m pip install pyyaml
+          python - <<'PY'
+          import glob, yaml
+          for path in glob.glob(".github/workflows/*.yml"):
+              data = yaml.safe_load(open(path))
+              assert "jobs" in data, path
+              print("ok", path)
+          PY
+
+  packaging:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - name: Install tools
+        run: pacman -Syu --noconfirm --needed git python
+      - uses: actions/checkout@v7
+      - name: Validate PKGBUILD templates
+        run: |
+          bash -n packaging/aur/hyprism-shell-git/PKGBUILD
+          sed -e 's/@PKGVER@/0.0.0/g' -e 's/@PKGREL@/1/g' -e 's/@SHA256@/SKIP/g' packaging/aur/hyprism-shell/PKGBUILD.in >"$RUNNER_TEMP/PKGBUILD"
+          bash -n "$RUNNER_TEMP/PKGBUILD"
+
+  website:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: npm ci
+      - run: npm run build
