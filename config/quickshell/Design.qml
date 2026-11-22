@@ -99,7 +99,8 @@ QtObject {
     readonly property int separatorWidth: compactSeparatorWidth
     readonly property int outlineWidth: 1
     readonly property int surfaceShadowExtent: 18
-    readonly property int surfaceShadowOffsetY: 4
+    readonly property int surfaceShadowSlice: 30
+    readonly property real surfaceShadowOpacity: .5
     readonly property int surfaceShadowTransition: animationFast
     readonly property int historyLimit: 60
     readonly property int notificationHistoryLimit: 80
@@ -263,12 +264,6 @@ QtObject {
         const maximum = Math.max(320, safeNumber(availableWidth, compactWidthMax) - 32)
         const requested = safeNumber(shellConfig ? shellConfig.islandWidth : compactWidthMin, compactWidthMin)
         return Math.min(maximum, Math.max(compactWidthMin, Math.min(compactWidthMax, requested)))
-    }
-
-    function surfaceShadowColor(theme) {
-        const background = theme && theme.colors ? theme.colors.background : Qt.rgba(.16, .16, .16, 1)
-        const shaded = Qt.darker(background, 2.2)
-        return Qt.rgba(shaded.r, shaded.g, shaded.b, .30)
     }
 
     function launcherHeight(resultCount) {

@@ -750,7 +750,6 @@ ShellRoot {
             required property var modelData
             shellScreen: modelData
             controller: shellController
-            theme: shellTheme
         }
     }
 

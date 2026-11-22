@@ -8,7 +8,6 @@ PanelWindow {
     id: shadowWindow
     required property var shellScreen
     required property var controller
-    required property var theme
     readonly property bool fullscreenActive: HyprlandService.monitorHasFullscreen(shellScreen)
     readonly property string localMode: controller.targetScreenName === shellScreen.name ? controller.mode : "compact"
     readonly property int shadowTopInset: Math.min(Design.surfaceShadowExtent, Design.compactTopMargin(controller.config.shell))
@@ -35,8 +34,6 @@ PanelWindow {
         y: shadowWindow.shadowTopInset
         width: Design.compactWidth(shadowWindow.controller.config.shell, shadowWindow.shellScreen.width)
         height: Design.compactHeight(shadowWindow.controller.config.shell)
-        radius: Design.radiusIslandCompact
-        theme: shadowWindow.theme
         opacity: shadowWindow.shadowOpacity
     }
 }

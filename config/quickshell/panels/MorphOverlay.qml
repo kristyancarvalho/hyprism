@@ -128,8 +128,6 @@ PanelWindow {
         anchors.centerIn: morphSurface
         width: morphSurface.width
         height: morphSurface.height
-        radius: morphSurface.radius
-        theme: window.theme
         opacity: window.localMode === "compact" ? 0 : 1
         z: 0
 
