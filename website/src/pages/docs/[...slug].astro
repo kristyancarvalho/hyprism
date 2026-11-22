@@ -29,4 +29,5 @@ const toc = headings.filter((heading) => heading.depth === 2 || heading.depth ==
     </div>
     {toc.length > 2 && <aside class="toc"><p>On this page</p><nav aria-label="Table of contents">{toc.map((heading) => <a class:list={{ 'toc-sub': heading.depth === 3 }} href={`#${heading.slug}`}>{heading.text}</a>)}</nav></aside>}
   </div>
+  <script>import '../../lib/mermaid-client.ts';</script>
 </Base>

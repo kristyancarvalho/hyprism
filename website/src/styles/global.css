@@ -478,3 +478,10 @@ kbd { margin-left: auto; padding: 1px 6px; border: 1px solid var(--line); border
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   .will-reveal { opacity: 1; transform: none; }
 }
+
+.mermaid-diagram { margin: 1.75rem 0; overflow-x: auto; padding: 1rem 0; border-block: 1px solid var(--line); }
+.mermaid-diagram .mermaid-source { display: block; }
+.mermaid-diagram.is-rendered .mermaid-source { display: none; }
+.mermaid-diagram .mermaid-output { display: flex; justify-content: center; min-width: min-content; }
+.mermaid-diagram .mermaid-output svg { max-width: 100%; height: auto; }
+.mermaid-diagram.has-error::before { content: 'This diagram could not be rendered. Its source is shown below.'; display: block; color: var(--muted); font-size: .875rem; margin-bottom: .5rem; }

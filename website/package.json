@@ -15,7 +15,8 @@
     "@fontsource-variable/newsreader": "5.3.0",
     "@lucide/astro": "1.77.0",
     "astro": "7.4.13",
-    "marked": "18.2.1"
+    "marked": "18.2.1",
+    "mermaid": "12.3.0"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.4",

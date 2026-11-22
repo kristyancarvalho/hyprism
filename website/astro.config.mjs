@@ -1,11 +1,12 @@
 import { defineConfig } from 'astro/config';
 import { unified } from '@astrojs/markdown-remark';
 import { remarkDocLinks } from './src/lib/remark-doc-links.ts';
+import { remarkMermaid } from './src/lib/remark-mermaid.ts';
 
 export default defineConfig({
   site: process.env.SITE_URL || undefined,
   markdown: {
-    processor: unified({ remarkPlugins: [remarkDocLinks] }),
+    processor: unified({ remarkPlugins: [remarkMermaid, remarkDocLinks] }),
     shikiConfig: {
       themes: { light: 'gruvbox-light-medium', dark: 'gruvbox-dark-medium' },
       defaultColor: false,
