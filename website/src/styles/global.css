@@ -487,7 +487,9 @@ kbd { margin-left: auto; padding: 1px 6px; border: 1px solid var(--line); border
 .release-title-block h2 a:hover { color: var(--accent-strong); }
 .release-single { max-width: 860px; }
 .release-single .release-intro h1 { margin: 12px 0 14px; }
-.release-single .release-prose { font-size: 15px; padding: 0 0 28px; border-bottom: 1px solid var(--line); margin-block: 28px; }
+.release-single .release-prose { font-size: 15px; padding: 0 0 8px; margin-block: 28px 0; }
+.release-single .release-prose h2, .release-single .release-prose h3 { padding-bottom: 0; border-bottom: 0; }
+.release-single .pagination-link { border-bottom: 0; }
 .release-single .release-facts { display: flex; gap: 18px; color: var(--muted); }
 .release-single .current-release { margin-left: 10px; }
 .release-single .release-links { display: flex; gap: 18px; }
