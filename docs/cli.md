@@ -10,6 +10,39 @@ icon: terminal
 
 `hyprism-shell` is Hyprism's stable user-facing command interface. Query commands print plain values, mutations return a non-zero status for invalid input, and configuration changes are written atomically to `~/.config/hyprism/user.json`.
 
+## Command index
+
+| Command | Purpose |
+| --- | --- |
+| `init [--lang en\|pt-BR]` | Create or merge `user.json`, link configuration, and copy bundled wallpapers |
+| `language [set en\|pt-BR]` | Show or change the interface language |
+| `widgets list\|enable\|disable\|toggle NAME\|--all` | Desktop widget visibility |
+| `lockscreen lock\|status` | Lock the session or report the lock state |
+| `lockscreen widgets list\|enable\|disable\|reset` | Lock screen widget visibility |
+| `weather location [NAME]` | Show or resolve the weather location |
+| `theme get\|set\|toggle` | Dark or light appearance |
+| `theme palette get\|set NAME` | Wallpaper colors or a preset palette |
+| `theme temperature get\|set 0-3` | Warmth of the light wallpaper theme |
+| `theme surface-opacity set 0-3` | Shell surface opacity: 1.0, 0.96, 0.9, 0.78 |
+| `theme radius set 0-3` | Corner radius of shell surfaces and windows |
+| `theme blur set 0-3` | Compositor blur; `0` turns it off |
+| `theme sync` | Apply the saved compositor appearance to the running Hyprland |
+| `theme reset` | Restore every theme setting to its default |
+| `theme schedule get\|set\|enable\|disable` | Automatic light and dark switching |
+| `layout get\|set\|toggle` | Workspace layout, `dwindle` or `scrolling` |
+| `keyboard setup\|devices\|get\|set` | Keyboard layout overrides |
+| `services list\|add\|remove` | Units watched by the Services widget |
+| `wallpaper set\|random\|current\|list` | Wallpaper management |
+| `screenshot region\|window\|monitor\|full` | Capture and open in Satty |
+| `recording` | Open the recording selector, or stop a recording |
+| `color` | Pick a color from the screen |
+| `night-mode [on\|off\|toggle]` | Warm screen filter through hyprsunset |
+| `lock [--hyprlock]` | Lock with the Quickshell lock screen, or Hyprlock |
+| `reload` | Reload the running shell |
+| `open PANEL` | Open `hub`, `launcher`, `clipboard`, `wallpapers`, `network`, `bluetooth`, `power`, `emoji`, or `recording` |
+
+Run `hyprism-shell COMMAND --help` for the exact arguments of any command.
+
 ## Configuration
 
 Initialize a packaged installation once after installing either AUR package:
@@ -65,6 +98,11 @@ hyprism-shell theme temperature set 0
 hyprism-shell theme temperature set 1
 hyprism-shell theme temperature set 2
 hyprism-shell theme temperature set 3
+hyprism-shell theme surface-opacity set 2
+hyprism-shell theme radius set 1
+hyprism-shell theme blur set 0
+hyprism-shell theme sync
+hyprism-shell theme reset
 hyprism-shell theme schedule set 07:00 18:30
 hyprism-shell theme schedule get
 hyprism-shell theme schedule enable
@@ -125,6 +163,7 @@ hyprism-shell lockscreen widgets list
 hyprism-shell lockscreen widgets enable system
 hyprism-shell lockscreen widgets disable weather
 hyprism-shell lockscreen widgets enable --all
+hyprism-shell lockscreen widgets reset
 hyprism-shell lockscreen widgets disable --all
 hyprism-shell lockscreen widgets reset
 hyprism-shell reload

@@ -1,30 +1,41 @@
 ---
 title: Development
-description: "Find the project structure, nested development session, contributing workflow, and licenses."
+description: "Set up a checkout, run the checks, use the nested development session, and contribute."
 category: Project
 order: 20
 icon: code-xml
 ---
 
-# Development and project structure
+This guide covers working on Hyprism from a clone. The [architecture guide](architecture.md) explains how the pieces fit together and describes every directory.
 
-## Project structure
+## Setup
 
-```text
-.github/           Issue forms and pull request template
-assets/            Branding, screenshots, and demo media
-config/            Quickshell, Hyprland, toolkit, terminal, and application configuration
-docs/              Focused user documentation
-packages/          Manual installer package manifests
-packaging/         Standalone AUR package recipes
-scripts/           CLI, theme generation, services, and session utilities
-tests/             Configuration and behavior validation
-themes/            Managed session themes with upstream attribution
-wallpapers/        Built-in fallback wallpapers
-install.sh         Installation and migration workflow
-uninstall.sh       Managed removal and archival workflow
-Makefile           Project entry points
+```bash
+git clone https://github.com/kristyancarvalho/hyprism.git
+cd hyprism
 ```
+
+Nothing has to be compiled. QML, Python, Lua, and shell scripts run directly from the checkout. Running the tests needs `python3` with Pillow; the QML focus test also needs `qmltestrunner` from Qt 6 and is skipped when it is missing. The development session needs a running Hyprland desktop.
+
+## Makefile targets
+
+| Target | Purpose |
+| --- | --- |
+| `make check` | Run `lint` and `test`; run this before proposing a change |
+| `make lint` | Syntax-check shell scripts, byte-compile Python, and validate the bundled JSON files |
+| `make test` | Run the `unittest` suite in `tests/` |
+| `make dev-session` | Run the checkout in a nested Hyprland window |
+| `make dev-session-stop` | Stop a running development session |
+| `make reload` | Reload the installed shell (`hyprism-shell reload`) |
+| `make install`, `make install-ptbr`, `make update`, `make uninstall` | Repository install workflow; see [Installation](installation.md) |
+| `make install-system` | Copy immutable files under `PREFIX` and `DESTDIR`; used by the AUR packages |
+| `make website`, `make website-up`, `make website-down`, `make website-logs`, `make website-build` | Documentation website through Docker Compose |
+| `make website-releases-sync` | Refresh the website release archive from GitHub |
+| `make help` | List the targets |
+
+## Tests
+
+The suite in `tests/` checks the CLI against temporary configuration files, validates themes, translations, packaging, and documentation links, and inspects QML sources for required structure. `tests/test_lock_media_focus.py` runs a real QML interaction test: it clicks each lock screen media button and checks that `Return` still reaches the password handler. Run a single module with `python3 -m unittest tests.test_lockscreen`.
 
 ## Development session
 
@@ -40,6 +51,10 @@ How it works:
 - Only the processes in the session's own process group are stopped on exit; nothing is killed by name.
 
 Logs are in `~/.cache/hyprism-dev/logs/session.log` and `~/.cache/hyprism-dev/cache/hyprism/quickshell-startup.log`.
+
+### Debugging
+
+The shell prints QML warnings and errors to `quickshell-startup.log`. Quickshell also keeps a per-run log under the session's runtime directory in `quickshell/by-id/`. Query the nested compositor with `hyprctl` by setting `XDG_RUNTIME_DIR` to `$XDG_RUNTIME_DIR/hyprism-dev` and `HYPRLAND_INSTANCE_SIGNATURE` to the directory name under its `hypr/` folder.
 
 Troubleshooting: if the command refuses to start, make sure it is run from inside a graphical session. If a previous run was killed abnormally, `make dev-session-stop` clears its runtime directory. Use the Lua dispatcher syntax with the nested instance, for example `hl.dsp.exit()`.
 
