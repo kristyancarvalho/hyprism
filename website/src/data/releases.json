@@ -1,5 +1,14 @@
 [
   {
+    "tag": "v0.1.23",
+    "version": "0.1.23",
+    "title": "Hyprism 0.1.23",
+    "publishedAt": "2026-11-22T05:29:40Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.23",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.23",
+    "body": "## Changes\n\n- Redesigns the bar and panel shadows as a single smooth falloff, replacing the stacked layers that looked banded and blurry.\n- Shadows no longer conflict with compositor blur: they use their own layer namespace, so a blur rule for the shell never softens them.\n- The shadow is lighter and no longer darkens translucent bar and panel surfaces."
+  },
+  {
     "tag": "v0.1.22",
     "version": "0.1.22",
     "title": "Hyprism 0.1.22",
