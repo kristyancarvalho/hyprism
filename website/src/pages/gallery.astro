@@ -27,7 +27,7 @@ const categoryIcons = { Desktop: Monitor, Shell: Images, Appearance: Palette, Vi
       </figure>)}
       {gallery.videos.map((item) => <figure class="gallery-item gallery-video" data-category={item.category} data-featured={item.featured ? 'true' : 'false'} data-reveal>
         <div class="video-frame"><video controls preload="metadata" poster={item.poster} aria-label={item.alt}><source src={item.src} type="video/mp4" />Your browser does not support embedded video.</video></div>
-        <figcaption><span class="gallery-caption">{item.caption}</span><span class="gallery-category">{item.category}</span>{item.description && <p>{item.description}</p>}</figcaption>
+        <figcaption><span class="gallery-caption">{item.caption}</span><span class="gallery-category">{item.category}</span></figcaption>
       </figure>)}
     </div>
     <p class="gallery-footnote">Project media is served from the repository’s <code>assets/</code> directory.</p>
