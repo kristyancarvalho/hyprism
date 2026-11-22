@@ -1,3 +1,11 @@
+---
+title: Theming
+description: "Configure wallpaper-derived colors, appearance modes, presets, and light temperature."
+category: Features
+order: 12
+icon: palette
+---
+
 # Theming
 
 Wallpaper color and appearance mode are inputs to one coordinated theme pipeline:

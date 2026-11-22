@@ -1,6 +1,7 @@
 ---
-import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
+import { getCollection, render } from 'astro:content';
+import { BookOpen, ChevronLeft, ChevronRight, House, List } from '@lucide/astro';
 
 export async function getStaticPaths() {
   const docs = await getCollection('docs');
@@ -8,8 +9,25 @@ export async function getStaticPaths() {
 }
 
 const { doc } = Astro.props;
-const { Content } = await render(doc);
+const { Content, headings } = await render(doc);
+const docs = (await getCollection('docs')).sort((a, b) => (a.data.order ?? 999) - (b.data.order ?? 999) || a.id.localeCompare(b.id));
+const currentIndex = docs.findIndex((item) => item.id === doc.id);
+const previous = docs[currentIndex - 1];
+const next = docs[currentIndex + 1];
+const toc = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
 ---
-<Base title={doc.id}>
-  <Content />
+<Base title={doc.data.title ?? doc.id} active={doc.id} docsPage description={doc.data.description ?? 'Hyprism documentation.'}>
+  <div class="doc-page page-enter">
+    <div class="doc-content-column">
+      <div class="breadcrumbs"><a href="/"><House size={13} aria-hidden="true" />Home</a><span>/</span><a href="/docs/"><BookOpen size={13} aria-hidden="true" />Documentation</a><span>/</span><span>{doc.data.title ?? doc.id}</span></div>
+      <div class="doc-title-row"><div><p class="eyebrow">{doc.data.category ?? 'Guide'}</p><h1>{doc.data.title ?? doc.id}</h1><p class="doc-description">{doc.data.description}</p></div><button class="docs-menu-button" type="button" aria-expanded="false" aria-controls="docs-sidebar" aria-label="Open documentation navigation"><List size={16} aria-hidden="true" />Contents</button></div>
+      <article class="prose"><Content /></article>
+      <nav class="doc-pagination" aria-label="Documentation pages">
+        {previous ? <a class="pagination-link pagination-previous" href={`/docs/${previous.id}/`}><span><ChevronLeft size={13} aria-hidden="true" />Previous</span><strong>{previous.data.title ?? previous.id}</strong></a> : <span></span>}
+        {next ? <a class="pagination-link pagination-next" href={`/docs/${next.id}/`}><span>Next<ChevronRight size={13} aria-hidden="true" /></span><strong>{next.data.title ?? next.id}</strong></a> : <span></span>}
+      </nav>
+    </div>
+    {toc.length > 2 && <aside class="toc"><p>On this page</p><nav aria-label="Table of contents">{toc.map((heading) => <a class:list={{ 'toc-sub': heading.depth === 3 }} href={`#${heading.slug}`}>{heading.text}</a>)}</nav></aside>}
+  </div>
+  <script>import '../../lib/mermaid-client.ts';</script>
 </Base>

@@ -1,0 +1,26 @@
+services:
+  website:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    init: true
+    working_dir: /workspace/website
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0 --port 4321"
+    ports:
+      - "127.0.0.1:${WEBSITE_PORT:-4321}:4321"
+    volumes:
+      - .:/workspace/website:ro
+      - ../docs:/workspace/docs:ro
+      - ../assets:/workspace/assets:ro
+      - ./src/data/releases.json:/workspace/website/src/data/releases.json
+      - website_node_modules:/workspace/website/node_modules
+      - website_astro_cache:/workspace/website/.astro
+      - website_dist:/workspace/website/dist
+    environment:
+      ASTRO_TELEMETRY_DISABLED: "1"
+      CHOKIDAR_USEPOLLING: "true"
+
+volumes:
+  website_node_modules:
+  website_astro_cache:
+  website_dist:

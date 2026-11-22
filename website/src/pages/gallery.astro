@@ -1,15 +1,88 @@
 ---
+import { ArrowUpRight, Camera, ChevronLeft, ChevronRight, Film, Images, Monitor, Palette, X } from '@lucide/astro';
 import Base from '../layouts/Base.astro';
 import gallery from '../data/gallery.json';
+
+const screenshots = gallery.screenshots;
+const allMedia = [...gallery.screenshots, ...gallery.videos];
+const categories = [...new Set(allMedia.map((item) => item.category))];
+const categoryIcons = { Desktop: Monitor, Shell: Images, Appearance: Palette, Video: Film };
 ---
-<Base title="Gallery">
-  <h1>Gallery</h1>
-  <h2>Screenshots</h2>
-  {gallery.screenshots.map((item) => (
-    <figure><img src={item.src} alt={item.caption} loading="lazy" /><figcaption>{item.caption}</figcaption></figure>
-  ))}
-  <h2>Videos</h2>
-  {gallery.videos.map((item) => (
-    <figure><video src={item.src} controls preload="metadata"></video><figcaption>{item.caption}</figcaption></figure>
-  ))}
+<Base title="Gallery" active="gallery" description="Screenshots and video of Hyprism shell surfaces, widgets, and appearance settings.">
+  <section class="gallery-page page-enter">
+    <header class="gallery-heading">
+      <p class="eyebrow"><Camera size={15} aria-hidden="true" /> Interface / In use</p>
+      <h1>Gallery</h1>
+      <p>Screen captures from the current Hyprism interface, showing the shell, desktop widgets, and appearance settings.</p>
+      <div class="gallery-count"><span>{screenshots.length} screenshots</span><span>{gallery.videos.length} video</span><a href="/docs/gallery/">Media notes <ArrowUpRight size={13} aria-hidden="true" /></a></div>
+    </header>
+    <div class="gallery-toolbar"><span>Browse by area</span><div class="gallery-filter" role="group" aria-label="Filter gallery media">
+      <button type="button" class="filter-button active" data-filter="all" aria-pressed="true">Everything <span>{allMedia.length}</span></button>
+      {categories.map((category) => { const CategoryIcon = categoryIcons[category as keyof typeof categoryIcons] ?? Images; return <button type="button" class="filter-button" data-filter={category} aria-pressed="false"><CategoryIcon size={14} aria-hidden="true" />{category}<span>{allMedia.filter((item) => item.category === category).length}</span></button>; })}
+    </div></div>
+    <div class="gallery-grid">
+      {screenshots.map((item, index) => <figure class="gallery-item" data-category={item.category} data-featured={item.featured ? 'true' : 'false'} data-reveal>
+        <a class="gallery-image" href={item.src} data-lightbox={index} aria-label={`Open image: ${item.caption}`}><img src={item.src} alt={item.alt} loading="lazy" /><span class="image-open" aria-hidden="true"><ArrowUpRight size={18} /></span></a>
+        <figcaption><span class="gallery-caption">{item.caption}</span><span class="gallery-category">{item.category}</span>{item.description && <p>{item.description}</p>}</figcaption>
+      </figure>)}
+      {gallery.videos.map((item) => <figure class="gallery-item gallery-video" data-category={item.category} data-featured={item.featured ? 'true' : 'false'} data-reveal>
+        <div class="video-frame"><video controls preload="metadata" poster={item.poster} aria-label={item.alt}><source src={item.src} type="video/mp4" />Your browser does not support embedded video.</video></div>
+        <figcaption><span class="gallery-caption">{item.caption}</span><span class="gallery-category">{item.category}</span>{item.description && <p>{item.description}</p>}</figcaption>
+      </figure>)}
+    </div>
+    <p class="gallery-footnote">Project media is served from the repository’s <code>assets/</code> directory.</p>
+  </section>
+  <dialog class="gallery-lightbox" aria-label="Screenshot viewer">
+    <div class="lightbox-topline"><span class="lightbox-position"></span><button class="lightbox-close" type="button" aria-label="Close image viewer"><X size={20} aria-hidden="true" /></button></div>
+    <button class="lightbox-previous" type="button" aria-label="Previous image"><ChevronLeft size={24} aria-hidden="true" /></button>
+    <figure><img class="lightbox-image" alt="" /><figcaption class="lightbox-caption"></figcaption></figure>
+    <button class="lightbox-next" type="button" aria-label="Next image"><ChevronRight size={24} aria-hidden="true" /></button>
+  </dialog>
+  <script define:vars={{ screenshots }}>
+    const filters = document.querySelectorAll<HTMLButtonElement>('.filter-button');
+    const items = document.querySelectorAll<HTMLElement>('.gallery-item');
+    filters.forEach((filter) => filter.addEventListener('click', () => {
+      const category = filter.dataset.filter;
+      filters.forEach((button) => { const active = button === filter; button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active)); });
+      items.forEach((item) => { item.hidden = category !== 'all' && item.dataset.category !== category; });
+    }));
+
+    const lightbox = document.querySelector<HTMLDialogElement>('.gallery-lightbox');
+    const lightboxImage = document.querySelector<HTMLImageElement>('.lightbox-image');
+    const lightboxCaption = document.querySelector<HTMLElement>('.lightbox-caption');
+    const lightboxPosition = document.querySelector<HTMLElement>('.lightbox-position');
+    const closeButton = document.querySelector<HTMLButtonElement>('.lightbox-close');
+    let current = 0;
+    const showImage = (index) => {
+      current = (index + screenshots.length) % screenshots.length;
+      const media = screenshots[current];
+      if (lightboxImage) { lightboxImage.src = media.src; lightboxImage.alt = media.alt; }
+      if (lightboxCaption) lightboxCaption.textContent = media.caption;
+      if (lightboxPosition) lightboxPosition.textContent = `${String(current + 1).padStart(2, '0')} / ${String(screenshots.length).padStart(2, '0')}`;
+    };
+    document.querySelectorAll<HTMLAnchorElement>('[data-lightbox]').forEach((link) => link.addEventListener('click', (event) => {
+      event.preventDefault();
+      showImage(Number(link.dataset.lightbox));
+      lightbox?.showModal();
+      closeButton?.focus();
+    }));
+    document.querySelector('.lightbox-previous')?.addEventListener('click', () => showImage(current - 1));
+    document.querySelector('.lightbox-next')?.addEventListener('click', () => showImage(current + 1));
+    closeButton?.addEventListener('click', () => lightbox?.close());
+    lightbox?.addEventListener('click', (event) => { if (event.target === lightbox) lightbox.close(); });
+    document.addEventListener('keydown', (event) => {
+      if (!lightbox?.open) return;
+      if (event.key === 'ArrowLeft') showImage(current - 1);
+      if (event.key === 'ArrowRight') showImage(current + 1);
+    });
+
+    if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }), { threshold: 0.08 });
+      document.querySelectorAll('[data-reveal]').forEach((element) => { element.classList.add('will-reveal'); observer.observe(element); });
+    }
+  </script>
 </Base>

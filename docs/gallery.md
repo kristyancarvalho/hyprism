@@ -1,3 +1,27 @@
+---
+title: Gallery
+description: "Screenshots and video tour of Hyprism shell surfaces, widgets, and appearance."
+category: Project
+order: 21
+icon: images
+---
+
+## Current source
+
+Captured from the latest source in the nested [development session](development.md#development-session), with the Ember wallpaper and the Gruvbox palette.
+
+![Hyprism desktop with the compact bar and desktop widgets, Gruvbox palette](../assets/screenshots/gruvbox-desktop.webp)
+
+![Hyprism Hub with quick controls and notifications](../assets/screenshots/gruvbox-hub.webp)
+
+![Hyprism App Launcher](../assets/screenshots/gruvbox-launcher.webp)
+
+![Hyprism lock screen with clock, date, weather, and battery](../assets/screenshots/gruvbox-lockscreen.webp)
+
+## Earlier releases
+
+The images below show dark and light appearance from an earlier release.
+
 # Gallery
 
 Dark and light comparisons of the same interface with wallpaper-derived colors.

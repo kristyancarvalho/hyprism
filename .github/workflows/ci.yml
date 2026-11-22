@@ -81,4 +81,14 @@ jobs:
           cache: npm
           cache-dependency-path: website/package-lock.json
       - run: npm ci
+      - run: npm run check
       - run: npm run build
+
+  website-container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate website Compose configuration
+        run: docker compose --project-name hyprism-docs --file website/compose.yaml config --quiet
+      - name: Build website development image
+        run: docker compose --project-name hyprism-docs --file website/compose.yaml build website

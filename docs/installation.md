@@ -1,3 +1,11 @@
+---
+title: Installation
+description: "Install Hyprism from the AUR or from a repository checkout, then initialize your desktop configuration."
+category: Get started
+order: 1
+icon: package-check
+---
+
 # Installation
 
 Install the latest stable release from the AUR, then initialize the user configuration in English:
@@ -53,3 +61,22 @@ The AUR packages own immutable files under `/usr/share/hyprism` and `/usr/bin`. 
 - A standard user `PATH` containing `~/.local/bin` after installation.
 
 The installer and package lists target Arch Linux. Other distributions are not currently supported by the automated installation workflow. Hyprism owns a broad set of linked configuration paths and is best evaluated as a complete, opinionated desktop environment rather than layered over an unrelated dotfiles setup.
+
+## Packages
+
+The AUR packages pull in the runtime the shell needs, including `hyprland`, `quickshell` 0.2.0 or newer, `awww`, `matugen`, `python-pillow`, `networkmanager`, `wireplumber`, `upower`, `power-profiles-daemon`, `wl-clipboard` with `cliphist`, `grim`, `slurp` and `satty`, and the Kvantum, qt5ct, qt6ct, and Papirus theming stack. Optional extras such as `ddcutil` for external monitor brightness, `flatpak`, and `fastfetch` are listed as optional dependencies; `pacman -Qi hyprism-shell` shows them with their purpose. The repository installer reads `packages/pacman.txt` and `packages/aur.txt` instead.
+
+## First launch
+
+After `hyprism-shell init`, choose **Hyprland** in your display manager, or start it from a TTY. The shell, wallpaper, and theme start automatically from Hyprland's autostart. Set your weather location with `hyprism-shell weather location "City"` and review the [configuration reference](configuration.md) for everything else.
+
+## Troubleshooting
+
+| Symptom | What to check |
+| --- | --- |
+| No bar or widgets after login | `~/.cache/hyprism/quickshell-startup.log`; run `hyprism-shell reload` |
+| `hyprism-shell: command not found` after a repository install | `~/.local/bin` must be on `PATH` |
+| Weather stays empty | Set a location with `hyprism-shell weather location`; the service needs network access to Open-Meteo |
+| Lock request refused | `/etc/pam.d/hyprism-lock` must exist; reinstall the package or run `make update` |
+| Colors did not follow a wallpaper change | The palette may be set to a preset; `hyprism-shell theme palette set wallpaper` |
+| Paths you configured were replaced | Conflicting files are kept in `~/.local/state/hyprism/backups/` |

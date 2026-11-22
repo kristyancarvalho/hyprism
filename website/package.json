@@ -4,10 +4,22 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview"
+    "check": "astro check",
+    "build": "astro build && node scripts/validate-output.mjs",
+    "preview": "astro preview",
+    "releases:sync": "node scripts/sync-releases.mjs"
   },
   "dependencies": {
-    "astro": "7.4.13"
+    "@astrojs/markdown-remark": "7.3.10",
+    "@fontsource-variable/ibm-plex-sans": "5.3.0",
+    "@fontsource-variable/newsreader": "5.3.0",
+    "@lucide/astro": "1.77.0",
+    "astro": "7.4.13",
+    "marked": "18.2.1",
+    "mermaid": "12.3.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.4",
+    "typescript": "5.7.3"
   }
 }

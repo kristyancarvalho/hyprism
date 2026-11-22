@@ -1,0 +1,38 @@
+---
+import { ArrowLeft, ArrowRight, ArrowUpRight, CalendarDays, GitBranch, List, Tag } from '@lucide/astro';
+import { Marked, Renderer } from 'marked';
+import Base from '../../layouts/Base.astro';
+import releases from '../../data/releases.json';
+
+export function getStaticPaths() {
+  return releases.map((release, index) => ({ params: { tag: release.tag }, props: { index } }));
+}
+
+const { index } = Astro.props;
+const release = releases[index];
+const newer = releases[index - 1];
+const older = releases[index + 1];
+const renderer = new Renderer();
+renderer.html = ({ text }) => text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+const html = await new Marked({ gfm: true, renderer }).parse(release.body);
+const releaseDate = new Intl.DateTimeFormat('en', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(release.publishedAt));
+---
+<Base title={release.title} active="releases" description={`Release notes for Hyprism ${release.version}, published ${releaseDate}.`}>
+  <article class="release-page release-single page-enter">
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/releases/"><List size={13} aria-hidden="true" />Release notes</a><span>/</span><span>{release.tag}</span></nav>
+    <header class="release-intro">
+      <p class="eyebrow"><Tag size={15} aria-hidden="true" /> {release.tag}{index === 0 && <span class="current-release">Latest</span>}</p>
+      <h1>{release.title}</h1>
+      <div class="release-facts"><span><CalendarDays size={14} aria-hidden="true" /> <time datetime={release.publishedAt}>{releaseDate}</time></span><span><GitBranch size={14} aria-hidden="true" /> {release.version}</span></div>
+    </header>
+    <div class="release-prose prose" set:html={html} />
+    <nav class="release-links" aria-label={`${release.tag} source links`}>
+      <a href={release.url} target="_blank" rel="noreferrer">GitHub release <ArrowUpRight size={14} aria-hidden="true" /></a>
+      <a href={release.tagUrl} target="_blank" rel="noreferrer">Source tag <ArrowUpRight size={14} aria-hidden="true" /></a>
+    </nav>
+    <nav class="doc-pagination" aria-label="Other releases">
+      {older ? <a class="pagination-link pagination-previous" href={`/releases/${older.tag}/`}><span><ArrowLeft size={13} aria-hidden="true" />Older</span><strong>{older.title}</strong></a> : <span></span>}
+      {newer ? <a class="pagination-link pagination-next" href={`/releases/${newer.tag}/`}><span>Newer<ArrowRight size={13} aria-hidden="true" /></span><strong>{newer.title}</strong></a> : <span></span>}
+    </nav>
+  </article>
+</Base>

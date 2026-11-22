@@ -1,3 +1,11 @@
+---
+title: Lock screen
+description: "How Hyprism protects the Wayland session with a native session lock and PAM authentication."
+category: Features
+order: 11
+icon: shield-check
+---
+
 # Quickshell lock screen
 
 Hyprism ships a native lock screen implemented in Quickshell. Hyprlock stays installed and is selectable as a manual fallback while the new lock screen is being validated.
@@ -21,6 +29,26 @@ There is intentionally **no unlock command**. The CLI can request a lock and rep
 - **Single release path.** `LockSession.unlockGranted` is emitted only from the PAM `completed` handler with `PamResult.Success` for an attempt the lock screen started with a non-empty password. It is the only caller of the release function. There are no IPC unlock handlers, shortcuts, timers, or click handlers that release the lock.
 - **Background.** The wallpaper image itself is blurred offline by `scripts/system/lock-background.py` (Pillow) and cached under `~/.cache/hyprism/state/lock-background/`; the lock surface renders that file with `PreserveAspectCrop` plus a palette dim. No screen capture, no compositor blur, so no window can show through. If no wallpaper resolves, a palette gradient is used; the desktop is never shown. Hyprism has one wallpaper for all outputs, so every output uses the same image.
 - **Panel.** The password panel reuses the compact bar's anchor, top margin, height, radius and surface opacity. The panel is completely hidden at rest, with no message. The first key fades it in with a small slide at about 62% of the bar width and is inserted into the field. Each character is shown as one dot that fades in or out; the characters themselves are never displayed. If the field stays empty for 4 seconds the field hides again. A non-empty password is never hidden or cleared by a timer. `Escape` only clears the field.
+
+## Authentication flow
+
+```mermaid
+stateDiagram-v2
+    [*] --> Securing: lock requested
+    Securing --> Idle: compositor confirms every output is covered
+    Idle --> Typing: first key
+    Typing --> Idle: field empty for 4 seconds
+    Typing --> Authenticating: Return or Enter
+    Authenticating --> Typing: PAM failure, field cleared
+    Authenticating --> Unlocking: PAM success
+    Unlocking --> [*]: panel morphs into the bar, lock released
+```
+
+Keyboard input is ignored while the lock is still securing and while PAM is working. A failed attempt shows the error and accepts a new password; the PAM stack decides delays and lockouts.
+
+## Keyboard focus
+
+The lock surface has a single keyboard target: the root item of each lock surface, which forwards keys to the shared session. There is no text field that could lose focus. The media strip on the lock screen is built with keyboard controls turned off, so its buttons never take focus when clicked, are skipped by Tab, and ignore `Return`, `Enter`, and `Space`. Clicking Previous, Play/Pause, or Next therefore never changes where your password goes, and `Return` always submits it. A QML test in `tests/` clicks each button and verifies this.
 
 ## PAM service
 
