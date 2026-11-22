@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+root_dir=$(cd -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")/../.." && pwd)
+action=${1:-start}
+case "$action" in
+  start|stop|status) ;;
+  *) printf 'usage: %s [start|stop|status]\n' "${0##*/}" >&2; exit 2 ;;
+esac
+
+parent_runtime=${XDG_RUNTIME_DIR:-}
+dev_base="${HYPRISM_DEV_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/hyprism-dev}"
+dev_runtime="${parent_runtime:-/tmp}/hyprism-dev"
+pid_file="$dev_runtime/session.pid"
+log_dir="$dev_base/logs"
+verbosity=${HYPRISM_DEV_LOG:-}
+
+alive() { [[ -n ${1:-} ]] && kill -0 -- "-$1" 2>/dev/null; }
+recorded_group() { [[ -r $pid_file ]] && cat "$pid_file" || true; }
+
+stop_session() {
+  local group
+  group=$(recorded_group)
+  if alive "$group" && [[ $(ps -o args= -p "$group" 2>/dev/null) == *"hyprism-dev-session"* ]]; then
+    kill -TERM -- "-$group" 2>/dev/null || true
+    for _ in 1 2 3 4 5 6 7 8 9 10; do alive "$group" || break; sleep 0.5; done
+    alive "$group" && kill -KILL -- "-$group" 2>/dev/null || true
+    printf 'Stopped development session (process group %s)\n' "$group"
+  else
+    printf 'No development session is running\n'
+  fi
+  rm -rf -- "$dev_runtime"
+}
+
+case "$action" in
+  stop) stop_session; exit 0 ;;
+  status)
+    group=$(recorded_group)
+    if alive "$group"; then printf 'running (process group %s)\n' "$group"; else printf 'stopped\n'; fi
+    exit 0 ;;
+esac
+
+missing=()
+for tool in Hyprland dbus-run-session qs awww-daemon awww jq python3; do
+  command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
+done
+if ((${#missing[@]})); then
+  printf 'Missing required commands: %s\nInstall them (for example: sudo pacman -S hyprland quickshell awww dbus jq python).\n' "${missing[*]}" >&2
+  exit 127
+fi
+if [[ -z $parent_runtime || ! -d $parent_runtime ]]; then
+  printf 'XDG_RUNTIME_DIR is not set; run this from inside your graphical session.\n' >&2
+  exit 1
+fi
+if [[ -z ${WAYLAND_DISPLAY:-} && -z ${DISPLAY:-} ]]; then
+  printf 'No parent compositor was found (WAYLAND_DISPLAY and DISPLAY are unset). Refusing to start outside a graphical session.\n' >&2
+  exit 1
+fi
+parent_socket=$WAYLAND_DISPLAY
+[[ $parent_socket == /* ]] || parent_socket="$parent_runtime/$parent_socket"
+[[ -S $parent_socket ]] || { printf 'Parent Wayland socket not found: %s\n' "$parent_socket" >&2; exit 1; }
+[[ -r $root_dir/config/hypr/hyprland.lua && -r $root_dir/config/quickshell/shell.qml ]] || {
+  printf 'Not a Hyprism checkout: %s\n' "$root_dir" >&2; exit 1
+}
+
+group=$(recorded_group)
+if alive "$group"; then
+  printf 'A development session is already running (process group %s). Run: make dev-session-stop\n' "$group" >&2
+  exit 1
+fi
+rm -rf -- "$dev_runtime"
+
+install -d -m 0700 "$dev_runtime" "$dev_base" "$dev_base/home" "$dev_base/config/hyprism" "$dev_base/cache" "$dev_base/state" "$log_dir"
+[[ -f $dev_base/config/hyprism/user.json ]] || cp "$root_dir/config/user.json" "$dev_base/config/hyprism/user.json"
+parent_name=${parent_socket##*/}
+ln -s "$parent_socket" "$dev_runtime/$parent_name"
+for socket in pipewire-0 pulse; do
+  [[ -e $parent_runtime/$socket ]] && ln -s "$parent_runtime/$socket" "$dev_runtime/$socket"
+done
+
+log="$log_dir/session.log"
+: >"$log"
+printf 'Hyprism development session\n'
+printf '  source:        %s\n' "$root_dir"
+printf '  hyprland:      %s\n' "$root_dir/config/hypr/hyprland.lua"
+printf '  backend:       nested on %s\n' "$parent_name"
+printf '  runtime dir:   %s\n' "$dev_runtime"
+printf '  data dir:      %s\n' "$dev_base"
+printf '  log:           %s\n' "$log"
+printf '  build:         none required (QML and scripts run from source)\n'
+
+env_args=(
+  "HYPRISM_ROOT=$root_dir"
+  "HYPRISM_CONFIG=$dev_base/config/hyprism/user.json"
+  "HYPRISM_CACHE_DIR=$dev_base/cache/hyprism"
+  "HYPRISM_WALLPAPER_DIR=$root_dir/wallpapers"
+  "HYPRISM_QS_PATH=$root_dir/config/quickshell/shell.qml"
+  "HYPRISM_DEVELOPMENT=1"
+  "HOME=$dev_base/home"
+  "XDG_CONFIG_HOME=$dev_base/config"
+  "XDG_CACHE_HOME=$dev_base/cache"
+  "XDG_STATE_HOME=$dev_base/state"
+  "XDG_DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}"
+  "XDG_RUNTIME_DIR=$dev_runtime"
+  "WAYLAND_DISPLAY=$parent_name"
+  "PATH=$root_dir/scripts:$PATH"
+)
+[[ -n $verbosity ]] && env_args+=("HYPRLAND_LOG_WIRE=" "HYPRLAND_TRACE=1")
+
+cleanup() {
+  local code=$?
+  trap - EXIT INT TERM
+  if [[ -n ${child:-} ]] && alive "$child"; then
+    kill -TERM -- "-$child" 2>/dev/null || true
+    for _ in 1 2 3 4 5 6 7 8 9 10; do alive "$child" || break; sleep 0.5; done
+    alive "$child" && kill -KILL -- "-$child" 2>/dev/null || true
+  fi
+  rm -rf -- "$dev_runtime"
+  exit "$code"
+}
+trap cleanup EXIT INT TERM
+
+setsid -w env -u HYPRLAND_INSTANCE_SIGNATURE -u HYPRLAND_CMD "${env_args[@]}" \
+  bash -c 'exec -a hyprism-dev-session dbus-run-session -- Hyprland -c "$HYPRISM_ROOT/config/hypr/hyprland.lua"' >>"$log" 2>&1 &
+child=$!
+printf '%s\n' "$child" >"$pid_file"
+printf '  process group: %s\n\nClose the nested window or run "make dev-session-stop" to end the session.\n' "$child"
+wait "$child" || code=$?
+child=$child
+printf 'Development session ended (exit %s). Log: %s\n' "${code:-0}" "$log"
+exit "${code:-0}"

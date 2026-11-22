@@ -18,6 +18,23 @@ uninstall.sh       Managed removal and archival workflow
 Makefile           Project entry points
 ```
 
+## Development session
+
+`make dev-session` opens a nested Hyprland window inside your running Hyprland desktop and runs the current checkout in it. Nothing is installed and the parent session is not touched. Close the window, press `Ctrl+C`, or run `make dev-session-stop` to end it.
+
+Requirements: `Hyprland`, `quickshell`, `awww`, `dbus`, `jq` and `python3`, and a running Wayland session. Missing commands are listed with exit status 127.
+
+How it works:
+
+- Hyprland starts with `config/hypr/hyprland.lua` from the checkout, and `HYPRISM_ROOT` points at the checkout so scripts, QML and wallpapers resolve to source files instead of `/usr/share/hyprism` or `~/.local/share/hyprism`. No build step is needed.
+- The session runs under its own D-Bus session, a private `XDG_RUNTIME_DIR` (`$XDG_RUNTIME_DIR/hyprism-dev`), and private `HOME`, `XDG_CONFIG_HOME`, `XDG_CACHE_HOME` and `XDG_STATE_HOME` under `~/.cache/hyprism-dev` (override with `HYPRISM_DEV_DIR`). Its `user.json` is seeded from `config/user.json` once and then kept between runs.
+- Wallpapers come from the repository `wallpapers/` directory.
+- Only the processes in the session's own process group are stopped on exit; nothing is killed by name.
+
+Logs are in `~/.cache/hyprism-dev/logs/session.log` and `~/.cache/hyprism-dev/cache/hyprism/quickshell-startup.log`.
+
+Troubleshooting: if the command refuses to start, make sure it is run from inside a graphical session. If a previous run was killed abnormally, `make dev-session-stop` clears its runtime directory. Use the Lua dispatcher syntax with the nested instance, for example `hl.dsp.exit()`.
+
 ## Contributing
 
 Use the structured [issue chooser](https://github.com/kristyancarvalho/hyprism/issues/new/choose) for reproducible bugs, feature requests, and installation problems. Remove credentials and personal data from logs or screenshots.
