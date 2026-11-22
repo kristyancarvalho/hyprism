@@ -8,9 +8,9 @@ const recent = releases.slice(0, 3);
 const tour = gallery.videos[0];
 const shortDate = (value: string) => new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(value));
 
-const desk = gallery.screenshots.find((item) => item.src.endsWith('/desktop.webp'))!;
+const desk = gallery.screenshots.find((item) => item.src.endsWith('/gruvbox-desktop.webp'))!;
 const widgets = gallery.screenshots.find((item) => item.src.endsWith('/desktop-widgets.webp'))!;
-const launcher = gallery.screenshots.find((item) => item.src.endsWith('/launcher.webp'))!;
+const launcher = gallery.screenshots.find((item) => item.src.endsWith('/gruvbox-launcher.webp'))!;
 ---
 <Base title="Hyprism" active="home" description="Hyprism is a cohesive, wallpaper-driven Hyprland desktop built with Quickshell, with a morphing shell, practical widgets, coordinated themes, and a native session lock.">
   <section class="home-hero">
@@ -23,7 +23,7 @@ const launcher = gallery.screenshots.find((item) => item.src.endsWith('/launcher
     </div>
     <figure class="hero-capture" data-reveal>
       <img src={desk.src} alt={desk.alt} fetchpriority="high" />
-      <figcaption><span><SunMoon size={14} aria-hidden="true" /> Dark and light appearance</span><span>Desktop / 01</span></figcaption>
+      <figcaption><span><SunMoon size={14} aria-hidden="true" /> Gruvbox palette, current source</span><span>Desktop / 01</span></figcaption>
     </figure>
     <a class="hero-down" href="#overview"><span>Explore the desktop</span><ArrowDown size={15} aria-hidden="true" /></a>
   </section>

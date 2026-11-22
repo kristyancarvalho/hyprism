@@ -1,21 +1,123 @@
 {
   "screenshots": [
-    { "src": "/media/screenshots/desktop.webp", "alt": "Hyprism desktop and compact island shown in dark and light themes", "caption": "Desktop and compact island", "description": "A concise status surface for workspaces, windows, and system state.", "category": "Desktop", "featured": true },
-    { "src": "/media/screenshots/island-expanded.webp", "alt": "Expanded Hyprism island with workspace and application context", "caption": "Expanded island", "description": "The island expands to reveal more of the current session.", "category": "Desktop" },
-    { "src": "/media/screenshots/desktop-widgets.webp", "alt": "Hyprism desktop widget dashboard in dark and light themes", "caption": "Desktop widgets", "description": "A configurable collection of clock, weather, media, and system cards.", "category": "Desktop", "featured": true },
-    { "src": "/media/screenshots/control-center.webp", "alt": "Hyprism Hub with system controls and appearance settings", "caption": "The Hub", "description": "Network, Bluetooth, audio, brightness, power, and appearance controls.", "category": "Shell" },
-    { "src": "/media/screenshots/launcher.webp", "alt": "Hyprism application launcher with search and application results", "caption": "App Launcher", "category": "Shell" },
-    { "src": "/media/screenshots/notifications.webp", "alt": "Hyprism notification history panel", "caption": "Notification history", "category": "Shell" },
-    { "src": "/media/screenshots/network.webp", "alt": "Hyprism NetworkManager connection panel", "caption": "Network panel", "category": "Shell" },
-    { "src": "/media/screenshots/bluetooth.webp", "alt": "Hyprism Bluetooth device panel", "caption": "Bluetooth panel", "category": "Shell" },
-    { "src": "/media/screenshots/clipboard.webp", "alt": "Hyprism clipboard history panel", "caption": "Clipboard", "category": "Shell" },
-    { "src": "/media/screenshots/emoji-picker.webp", "alt": "Hyprism emoji picker", "caption": "Emoji Picker", "category": "Shell" },
-    { "src": "/media/screenshots/power-menu.webp", "alt": "Hyprism power menu with session actions", "caption": "Power Menu", "category": "Shell" },
-    { "src": "/media/screenshots/recording.webp", "alt": "Hyprism screen recording selector", "caption": "Screen recording", "category": "Shell" },
-    { "src": "/media/screenshots/wallpaper-picker.webp", "alt": "Hyprism wallpaper picker", "caption": "Wallpaper Picker", "category": "Appearance" },
-    { "src": "/media/screenshots/theme-options.webp", "alt": "Hyprism theme settings for light temperature and appearance scheduling", "caption": "Theme settings", "category": "Appearance" }
+    {
+      "src": "/media/screenshots/gruvbox-desktop.webp",
+      "alt": "Hyprism desktop with the compact bar and desktop widgets on the amber Ember wallpaper with the Gruvbox palette",
+      "caption": "Desktop and widgets",
+      "description": "Clock, weather, performance, network, storage, system, sensors and services cards from the current source, Gruvbox palette.",
+      "category": "Desktop",
+      "featured": true
+    },
+    {
+      "src": "/media/screenshots/gruvbox-hub.webp",
+      "alt": "Hyprism Hub open over the desktop with network, Bluetooth, night mode, power, Do Not Disturb, theme, volume, microphone and brightness controls",
+      "caption": "The Hub",
+      "description": "Quick controls and notification history, opened from the bar.",
+      "category": "Shell",
+      "featured": true
+    },
+    {
+      "src": "/media/screenshots/gruvbox-launcher.webp",
+      "alt": "Hyprism application launcher with a search field and installed applications",
+      "caption": "App Launcher",
+      "description": "Search and launch native and Flatpak applications.",
+      "category": "Shell"
+    },
+    {
+      "src": "/media/screenshots/gruvbox-lockscreen.webp",
+      "alt": "Hyprism lock screen with a large two-line clock, the date, weather in the bottom-left corner and battery in the bottom-right corner",
+      "caption": "Lock screen",
+      "description": "Native session lock at rest: clock, localized date, weather and battery. The password panel appears on the first key press.",
+      "category": "Lock screen",
+      "featured": true
+    },
+    {
+      "src": "/media/screenshots/island-expanded.webp",
+      "alt": "Expanded Hyprism island with workspace and application context",
+      "caption": "Expanded island",
+      "description": "The island expands to reveal more of the current session. Captured from an earlier release in dark and light appearance.",
+      "category": "Desktop"
+    },
+    {
+      "src": "/media/screenshots/desktop-widgets.webp",
+      "alt": "Hyprism desktop widget dashboard in dark and light themes",
+      "caption": "Desktop widgets",
+      "description": "A configurable collection of clock, weather, media, and system cards. Captured from an earlier release in dark and light appearance.",
+      "category": "Desktop"
+    },
+    {
+      "src": "/media/screenshots/notifications.webp",
+      "alt": "Hyprism notification history panel",
+      "caption": "Notification history",
+      "category": "Shell",
+      "description": "Captured from an earlier release in dark and light appearance."
+    },
+    {
+      "src": "/media/screenshots/network.webp",
+      "alt": "Hyprism NetworkManager connection panel",
+      "caption": "Network panel",
+      "category": "Shell",
+      "description": "Captured from an earlier release in dark and light appearance."
+    },
+    {
+      "src": "/media/screenshots/bluetooth.webp",
+      "alt": "Hyprism Bluetooth device panel",
+      "caption": "Bluetooth panel",
+      "category": "Shell",
+      "description": "Captured from an earlier release in dark and light appearance."
+    },
+    {
+      "src": "/media/screenshots/clipboard.webp",
+      "alt": "Hyprism clipboard history panel",
+      "caption": "Clipboard",
+      "category": "Shell",
+      "description": "Captured from an earlier release in dark and light appearance."
+    },
+    {
+      "src": "/media/screenshots/emoji-picker.webp",
+      "alt": "Hyprism emoji picker",
+      "caption": "Emoji Picker",
+      "category": "Shell",
+      "description": "Captured from an earlier release in dark and light appearance."
+    },
+    {
+      "src": "/media/screenshots/power-menu.webp",
+      "alt": "Hyprism power menu with session actions",
+      "caption": "Power Menu",
+      "category": "Shell",
+      "description": "Captured from an earlier release in dark and light appearance."
+    },
+    {
+      "src": "/media/screenshots/recording.webp",
+      "alt": "Hyprism screen recording selector",
+      "caption": "Screen recording",
+      "category": "Shell",
+      "description": "Captured from an earlier release in dark and light appearance."
+    },
+    {
+      "src": "/media/screenshots/wallpaper-picker.webp",
+      "alt": "Hyprism wallpaper picker",
+      "caption": "Wallpaper Picker",
+      "category": "Appearance",
+      "description": "Captured from an earlier release in dark and light appearance."
+    },
+    {
+      "src": "/media/screenshots/theme-options.webp",
+      "alt": "Hyprism theme settings for light temperature and appearance scheduling",
+      "caption": "Theme settings",
+      "category": "Appearance",
+      "description": "Captured from an earlier release in dark and light appearance."
+    }
   ],
   "videos": [
-    { "src": "/media/demo/hyprism-tour.mp4", "poster": "/media/demo/hyprism-tour.webp", "alt": "Hyprism feature tour video", "caption": "Hyprism feature tour", "description": "A short walkthrough of the shell, panels, widgets, and appearance settings.", "category": "Video", "featured": true }
+    {
+      "src": "/media/demo/hyprism-tour.mp4",
+      "poster": "/media/demo/hyprism-tour.webp",
+      "alt": "Hyprism feature tour video",
+      "caption": "Hyprism feature tour",
+      "description": "A short walkthrough of the shell, panels, widgets, and appearance settings.",
+      "category": "Video",
+      "featured": true
+    }
   ]
 }
