@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+website_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd -- "$website_dir/.." && pwd)"
+action="${1:-up}"
+port="${WEBSITE_PORT:-4321}"
+compose=(docker compose --project-name hyprism-docs --file "$website_dir/compose.yaml")
+
+check_port() {
+  current="$(WEBSITE_PORT="$port" "${compose[@]}" ps -q website 2>/dev/null || true)"
+  current_port=''
+  if [[ -n "$current" ]]; then
+    current_port="$(docker inspect --format '{{with index .NetworkSettings.Ports "4321/tcp"}}{{(index . 0).HostPort}}{{end}}' "$current" 2>/dev/null || true)"
+  fi
+  if [[ "$current_port" == "$port" ]]; then
+    return
+  fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    printf '%s\n' 'Python 3 is required to check that the requested website port is available.' >&2
+    exit 127
+  fi
+  if ! python3 -c 'import socket,sys; s=socket.socket(); s.bind(("127.0.0.1", int(sys.argv[1]))); s.close()' "$port" 2>/dev/null; then
+    printf 'Port %s is already in use. Try `make website WEBSITE_PORT=4322`.\n' "$port" >&2
+    exit 1
+  fi
+}
+
+if ! command -v docker >/dev/null 2>&1; then
+  printf '%s\n' 'Docker is required. Install Docker Engine and Docker Compose v2, then retry.' >&2
+  exit 127
+fi
+if ! docker compose version >/dev/null 2>&1; then
+  printf '%s\n' 'Docker Compose v2 is required (`docker compose`).' >&2
+  exit 127
+fi
+
+case "$action" in
+  up)
+    if [[ ! "$port" =~ ^[0-9]+$ ]] || (( port < 1 || port > 65535 )); then
+      printf 'WEBSITE_PORT must be a TCP port from 1 to 65535; got: %s\n' "$port" >&2
+      exit 2
+    fi
+    if ! docker info >/dev/null 2>&1; then
+      printf '%s\n' 'Docker is installed but the daemon is unavailable. Start Docker and retry.' >&2
+      exit 1
+    fi
+    check_port
+    cd "$repo_root"
+    WEBSITE_PORT="$port" "${compose[@]}" up --build website
+    ;;
+  up-detached)
+    if [[ ! "$port" =~ ^[0-9]+$ ]] || (( port < 1 || port > 65535 )); then
+      printf 'WEBSITE_PORT must be a TCP port from 1 to 65535; got: %s\n' "$port" >&2
+      exit 2
+    fi
+    if ! docker info >/dev/null 2>&1; then
+      printf '%s\n' 'Docker is installed but the daemon is unavailable. Start Docker and retry.' >&2
+      exit 1
+    fi
+    check_port
+    cd "$repo_root"
+    WEBSITE_PORT="$port" "${compose[@]}" up --build --detach website
+    printf 'Hyprism docs is running at http://localhost:%s\n' "$port"
+    ;;
+  down)
+    "${compose[@]}" down
+    ;;
+  logs)
+    "${compose[@]}" logs --follow website
+    ;;
+  build)
+    docker info >/dev/null 2>&1 || { printf '%s\n' 'Docker daemon unavailable. Start Docker and retry.' >&2; exit 1; }
+    cd "$repo_root"
+    WEBSITE_PORT="$port" "${compose[@]}" run --build --rm website sh -c 'npm ci && npm run build'
+    ;;
+  sync-releases)
+    docker info >/dev/null 2>&1 || { printf '%s\n' 'Docker daemon unavailable. Start Docker and retry.' >&2; exit 1; }
+    cd "$repo_root"
+    WEBSITE_PORT="$port" "${compose[@]}" run --build --rm website sh -c 'npm ci && npm run releases:sync'
+    ;;
+  *)
+    printf 'Usage: %s {up|up-detached|down|logs|build|sync-releases}\n' "${0##*/}" >&2
+    exit 2
+    ;;
+esac

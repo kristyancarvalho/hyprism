@@ -87,6 +87,8 @@ Use `hyprism-shell init --lang pt-BR` for Brazilian Portuguese. `hyprism-shell-g
 | Layout, contributing, credits | [Development](docs/development.md) |
 | Screenshots and video | [Gallery](docs/gallery.md) |
 
+Preview the Astro documentation website locally with Docker Compose using `make website` (default `http://localhost:4321`). See the [website development notes](docs/development.md#documentation-website) for authoring, alternate ports, and cleanup commands.
+
 ## Contributing
 
 Use the [issue chooser](https://github.com/kristyancarvalho/hyprism/issues/new/choose) for bugs and requests, and run `make check` before proposing a change. Details are in the [development guide](docs/development.md).

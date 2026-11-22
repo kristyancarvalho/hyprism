@@ -1,3 +1,11 @@
+---
+title: Development
+description: "Find the project structure, nested development session, contributing workflow, and licenses."
+category: Project
+order: 20
+icon: code-xml
+---
+
 # Development and project structure
 
 ## Project structure
@@ -56,3 +64,11 @@ Hyprism integrates projects including [Hyprland](https://hypr.land/), [Quickshel
 Hyprism's original code and documentation are available under the [MIT License](../LICENSE), copyright Hyprism contributors.
 
 Vendored and adapted components retain their attribution and licenses in their respective directories, including [KSDDM](../themes/ksddm-hyprism/LICENSE) and [NvChad](../config/nvim/LICENSE).
+
+## Documentation website
+
+The Astro website in `website/` reads Markdown directly from `docs/`; do not create a second copy under the website source tree. Add frontmatter for `title`, `description`, `category`, `order`, and optional `icon` to control document navigation and search. Categories group related guides in the sidebar and index. The filename becomes the page slug, including nested directories.
+
+Link to another guide with a relative Markdown link such as `[Theming](theming.md)`. Refer to repository screenshots and video with paths relative to `docs/`, such as `../assets/screenshots/desktop.webp`; the website maps those paths to its local media URLs. The gallery is managed in `website/src/data/gallery.json`, with image alt text, caption, category, optional description, and `featured` metadata. Keep gallery media in `assets/`.
+
+Run the local site through Docker Compose with `make website`; open `http://localhost:4321` and press `Ctrl+C` to stop the foreground server. Use `make website-down` to clean up its isolated Compose project. The port can be changed with `make website WEBSITE_PORT=4322`. `make website-up`, `make website-logs`, and `make website-build` provide detached, log, and production build workflows. Refresh the local release archive from GitHub with `make website-releases-sync`; builds and page views use only the checked-in release metadata. `SITE_URL` may be set for canonical URLs and populated sitemap entries when a public site domain is established.

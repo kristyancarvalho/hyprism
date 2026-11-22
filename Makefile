@@ -6,8 +6,9 @@ SUDO ?= sudo
 PREFIX ?= /usr/local
 DESTDIR ?=
 PACKAGE_NAME ?= hyprism-shell
+WEBSITE_PORT ?= 4321
 
-.PHONY: install install-ptbr install-system update uninstall check test lint reload dev-session dev-session-stop help
+.PHONY: install install-ptbr install-system update uninstall check test lint reload dev-session dev-session-stop website website-up website-down website-logs website-build website-releases-sync help
 
 install:
 	$(SUDO) ./install.sh --user "$(USER_NAME)" --lang "$(LANG)"
@@ -58,6 +59,24 @@ dev-session:
 dev-session-stop:
 	./scripts/dev/session stop
 
+website:
+	WEBSITE_PORT="$(WEBSITE_PORT)" ./website/dev up
+
+website-up:
+	WEBSITE_PORT="$(WEBSITE_PORT)" ./website/dev up-detached
+
+website-down:
+	./website/dev down
+
+website-logs:
+	./website/dev logs
+
+website-build:
+	WEBSITE_PORT="$(WEBSITE_PORT)" ./website/dev build
+
+website-releases-sync:
+	./website/dev sync-releases
+
 help:
 	@printf '%s\n' \
 	  'install       Install Hyprism in English (LANG may override)' \
@@ -71,4 +90,10 @@ help:
 	  'reload        Reload the running Quickshell instance' \
 	  'dev-session   Run this checkout in a nested Hyprland window' \
 	  'dev-session-stop Stop the nested development session' \
+	  'website       Run the docs website in the foreground (WEBSITE_PORT=4321)' \
+	  'website-up    Run the docs website in the background' \
+	  'website-down  Stop only the docs website containers' \
+	  'website-logs  Follow docs website logs' \
+	  'website-build Build the docs website in Docker' \
+	  'website-releases-sync Refresh website release notes from GitHub' \
 	  'help          Show this help'
