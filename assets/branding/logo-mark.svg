@@ -1,9 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 112" role="img" aria-labelledby="t"><title id="t">Hyprism logo mark</title>
-  <defs><linearGradient id="frame" x1="12" y1="100" x2="104" y2="14" gradientUnits="userSpaceOnUse"><stop stop-color="#5B9BB5"/><stop offset="1" stop-color="#D9776A"/></linearGradient></defs>
-  <path d="M58 14 104 100H12Z" fill="none" stroke="url(#frame)" stroke-width="6" stroke-linejoin="round"/>
-  <path d="M2 66h28.6" stroke="#9AA7AE" stroke-width="5" stroke-linecap="round"/>
-  <path d="M30.6 66 87.6 70" stroke="#9AA7AE" stroke-opacity=".55" stroke-width="3" stroke-linecap="round"/>
-  <path d="M87.6 70 124 52" stroke="#5B9BB5" stroke-width="5" stroke-linecap="round"/>
-  <path d="M87.6 70 126 72" stroke="#C9A36B" stroke-width="5" stroke-linecap="round"/>
-  <path d="M87.6 70 124 92" stroke="#D9776A" stroke-width="5" stroke-linecap="round"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Hyprism"><rect width="128" height="128" rx="30" fill="#14181B"/><g transform="translate(10 18) scale(.84)"><defs><mask id="m"><rect x="-20" y="-20" width="200" height="160" fill="#fff"/><path d="M0 58 L82.4 70" stroke="#000" stroke-width="7"/></mask></defs><path d="M54 16 L96 96 L12 96 Z" fill="#F1EEE8" stroke="#F1EEE8" stroke-width="8" stroke-linejoin="round" mask="url(#m)"/><path d="M0 58 L22 61.1" stroke="#F1EEE8" stroke-width="7"/><path d="M82.4 70 L124 47 L124 59.5 Z" fill="#4F93B0"/><path d="M82.4 70 L124 63 L124 75.5 Z" fill="#D4A55E"/><path d="M82.4 70 L124 79 L124 91.5 Z" fill="#DB6F5E"/></g></svg>
