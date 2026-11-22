@@ -1,0 +1,54 @@
+<svg viewBox="79 345 246 316" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg">
+   <defs>
+    <style>
+      .st0 {
+        fill: url(#a);
+      }
+
+      .st1 {
+        fill: url(#b);
+      }
+
+      .st2 {
+        fill: url(#c);
+      }
+
+      .st3 {
+        fill: url(#d);
+      }
+
+      .st4 {
+        fill: url(#e);
+      }
+
+      .st5 {
+        fill: url(#f);
+      }
+
+      .st6 {
+        fill: url(#g);
+      }
+
+      .st7 {
+        fill: url(#h);
+      }
+
+      .st8 {
+        fill: url(#i);
+      }
+    </style>
+    <linearGradient gradientUnits="userSpaceOnUse" y2="491.29" x2="561.93" y1="593.85" x1="561.93" id="i">
+      <stop stop-color="#00a8f4" offset="0" style="--darkreader-inline-stopcolor: var(--darkreader-background-00a8f4, #0086c3);" data-darkreader-inline-stopcolor=""/>
+      <stop stop-color="#00e5d0" offset="1" style="--darkreader-inline-stopcolor: var(--darkreader-background-00e5d0, #00b7a6);" data-darkreader-inline-stopcolor=""/>
+    </linearGradient>
+    <linearGradient xlink:href="#i" y2="491.58" x2="630.69" y1="567.48" x1="630.69" id="c"/>
+    <linearGradient xlink:href="#i" y2="493.77" x2="480.34" y1="596.04" x1="480.34" id="a"/>
+    <linearGradient xlink:href="#i" y2="470.31" x2="392.86" y1="567.48" x1="392.86" id="b"/>
+    <linearGradient xlink:href="#i" y2="491.73" x2="804.79" y1="567.48" x1="804.79" id="f"/>
+    <linearGradient xlink:href="#i" y2="463.46" x2="883.97" y1="569.67" x1="883.97" id="g"/>
+    <linearGradient xlink:href="#i" y2="465.94" x2="671.56" y1="567.48" x1="671.56" id="d"/>
+    <linearGradient xlink:href="#i" y2="491.58" x2="724.23" y1="569.67" x1="724.23" id="e"/>
+    <linearGradient xlink:href="#i" y2="346.78" x2="202.09" y1="659.7" x1="202.09" id="h"/>
+  </defs>
+  <path d="M311.03,491.55c-9.09-20.56-22.42-39.71-35.29-58.22-2.38-3.41-4.62-6.64-6.84-9.87-3.15-4.6-7.42-10.49-12.36-17.31-11.29-15.59-28.92-39.62-40.84-59.36v49.42c12.28,17.62,24.2,33.49,30.57,42.78,13.94,20.33,30.09,42,39.67,63.66,28.78,65.13-11.7,128.85-82.05,129.61h-1.26c-.18,0-.35,0-.53,0-.18,0-.35,0-.53,0h-1.26c-70.35-.76-110.84-64.48-82.05-129.61,9.58-21.67,25.72-43.33,39.67-63.66,6.36-9.28,18.28-25.16,30.57-42.78v-49.42c-11.92,19.75-29.55,43.78-40.84,59.36-4.94,6.81-9.21,12.7-12.36,17.31-2.22,3.23-4.46,6.45-6.84,9.87-12.88,18.52-26.21,37.67-35.29,58.22-8.83,19.97-12.7,40.38-11.49,60.65,1.16,19.65,7.28,38.57,17.68,54.73,10.28,15.97,24.74,29.21,41.81,38.29,17.64,9.37,37.44,14.25,58.87,14.48.52,0,1.03,0,1.56,0,.18,0,.35,0,.53,0,.18,0,.35,0,.53,0,.52,0,1.03,0,1.56,0,21.43-.23,41.23-5.1,58.87-14.48,17.07-9.08,31.52-22.32,41.81-38.29,10.4-16.16,16.52-35.08,17.68-54.73,1.2-20.27-2.67-40.68-11.49-60.65Z" class="st7"/>
+</svg>
