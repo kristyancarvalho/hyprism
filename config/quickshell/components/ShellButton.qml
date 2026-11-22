@@ -12,9 +12,10 @@ Rectangle {
     property bool compact: false
     property bool available: true
     property bool pending: false
+    property bool keyboardFocusable: true
     property bool hovered: pointer.containsMouse && available && !pending
     signal clicked()
-    activeFocusOnTab: available
+    activeFocusOnTab: available && keyboardFocusable
     implicitWidth: content.implicitWidth + (compact ? 18 : 26)
     implicitHeight: compact ? 30 : 38
     radius: Design.radiusDefault
@@ -47,6 +48,7 @@ Rectangle {
         }
     }
 
+    Keys.enabled: button.keyboardFocusable
     Keys.onPressed: event => {
         if (button.available && !button.pending && (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space)) {
             button.clicked()
@@ -61,7 +63,7 @@ Rectangle {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: {
-            button.forceActiveFocus()
+            if (button.keyboardFocusable) button.forceActiveFocus()
             button.clicked()
         }
     }

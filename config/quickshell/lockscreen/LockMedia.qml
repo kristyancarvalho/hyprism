@@ -23,5 +23,6 @@ Glass {
         anchors.margins: media.padding
         controller: media.controller
         theme: media.theme
+        keyboardControls: false
     }
 }

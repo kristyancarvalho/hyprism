@@ -6,6 +6,7 @@ Item {
     required property var controller
     required property var theme
     property bool expanded: true
+    property bool keyboardControls: true
     readonly property var player: controller.mediaPlayer
     readonly property real duration: player && player.lengthSupported && player.length > 0 && player.length < 31536000 ? player.length : 0
     readonly property bool seekable: player && player.canSeek && player.positionSupported && duration > 0
@@ -28,7 +29,8 @@ Item {
         interval: 350
         onTriggered: media.scrubbing = false
     }
-    activeFocusOnTab: true
+    activeFocusOnTab: keyboardControls
+    Keys.enabled: keyboardControls
     implicitWidth: expanded ? 390 : 210
     implicitHeight: expanded ? 60 : Design.barPillHeight
 
@@ -199,9 +201,9 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 3
 
-            ShellButton { theme: media.theme; compact: true; iconName: "previous"; onClicked: media.controller.mediaPrevious() }
-            ShellButton { theme: media.theme; compact: true; iconName: media.controller.mediaPlayer && media.controller.mediaPlayer.isPlaying ? "pause" : "play"; onClicked: media.controller.mediaToggle() }
-            ShellButton { theme: media.theme; compact: true; iconName: "next"; onClicked: media.controller.mediaNext() }
+            ShellButton { theme: media.theme; compact: true; keyboardFocusable: media.keyboardControls; iconName: "previous"; onClicked: media.controller.mediaPrevious() }
+            ShellButton { theme: media.theme; compact: true; keyboardFocusable: media.keyboardControls; iconName: media.controller.mediaPlayer && media.controller.mediaPlayer.isPlaying ? "pause" : "play"; onClicked: media.controller.mediaToggle() }
+            ShellButton { theme: media.theme; compact: true; keyboardFocusable: media.keyboardControls; iconName: "next"; onClicked: media.controller.mediaNext() }
         }
     }
 }
