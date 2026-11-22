@@ -746,6 +746,17 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
 
+        BarShadow {
+            required property var modelData
+            shellScreen: modelData
+            controller: shellController
+            theme: shellTheme
+        }
+    }
+
+    Variants {
+        model: Quickshell.screens
+
         DesktopWidgets {
             required property var modelData
             shellScreen: modelData

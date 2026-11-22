@@ -143,8 +143,6 @@ Rectangle {
                             height: 12
                             radius: 6
                             color: modelData
-                            border.width: 1
-                            border.color: Qt.rgba(choice.theme.colors.foreground.r, choice.theme.colors.foreground.g, choice.theme.colors.foreground.b, .18)
                         }
                     }
                 }
