@@ -1,14 +1,19 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "cd website && npm ci",
-  "buildCommand": "cd website && npm run build",
-  "outputDirectory": "website/dist",
+  "installCommand": "cd website 2>/dev/null; npm ci",
+  "buildCommand": "cd website 2>/dev/null; npm run build",
+  "outputDirectory": "dist",
   "trailingSlash": true,
   "headers": [
     {
       "source": "/_astro/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
     }
   ]
 }
