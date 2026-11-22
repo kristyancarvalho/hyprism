@@ -327,5 +327,22 @@
     "image": "Image · {dimensions}",
     "preparingTheme": "Preparing theme",
     "applyingPalette": "Applying new palette"
+  },
+  "lockscreen": {
+    "authenticating": "Authenticating…",
+    "failed": "Incorrect password",
+    "error": "Authentication error",
+    "tooMany": "Too many attempts",
+    "unavailable": "Authentication unavailable",
+    "response": "Response",
+    "weekdays": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    }
   }
 }

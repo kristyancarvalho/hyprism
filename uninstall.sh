@@ -60,6 +60,7 @@ managed_links=(
   "$target_home/.local/share/applications/hyprism-screenshot.desktop"
   "$target_home/.local/bin/hyprism-action"
   "$target_home/.local/bin/hyprism-lock"
+  "$target_home/.local/bin/hyprism-lockscreen"
   "$target_home/.local/bin/hyprism-media-lock-indicator"
   "$target_home/.local/bin/hyprism-reload-shell"
   "$target_home/.local/bin/hyprism-shell"
@@ -95,6 +96,7 @@ fi
 if [[ $(id -u) -eq 0 ]]; then
   run install -d -o "$target_user" -g "$(id -gn "$target_user")" "$backup_root"
   run rm -f /etc/sddm.conf.d/20-hyprism.conf
+  [[ ! -f /etc/pam.d/hyprism-lock ]] || run mv /etc/pam.d/hyprism-lock "$backup_root/hyprism-lock.pam"
   [[ ! -d /usr/share/sddm/themes/hyprism-ksddm ]] || run mv /usr/share/sddm/themes/hyprism-ksddm "$backup_root/sddm-theme"
 fi
 

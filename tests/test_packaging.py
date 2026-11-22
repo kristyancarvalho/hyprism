@@ -36,8 +36,22 @@ class PackagingTests(unittest.TestCase):
             self.assertTrue((stage / "usr/share/applications/hyprism-keyboard-setup.desktop").is_file())
             self.assertTrue((stage / "usr/share/applications/hyprism-screenshot.desktop").is_file())
             self.assertTrue((stage / "usr/share/licenses/hyprism-shell/LICENSE").is_file())
+            self.assertTrue((stage / "usr/share/hyprism/config/quickshell/lockscreen.qml").is_file())
+            self.assertTrue((stage / "usr/share/hyprism/config/lockscreen/widgets.json").is_file())
+            self.assertTrue(os.access(stage / "usr/share/hyprism/scripts/system/lockscreen", os.X_OK))
+            pam = stage / "etc/pam.d/hyprism-lock"
+            self.assertEqual(pam.stat().st_mode & 0o777, 0o644)
+            self.assertIn("auth       include      system-auth", pam.read_text(encoding="utf-8"))
             self.assertFalse(any(stage.rglob("__pycache__")))
             self.assertFalse((stage / "home").exists())
+
+    def test_lock_pam_service_is_a_protected_backup_file_in_every_package(self):
+        for recipe in ("packaging/aur/hyprism-shell/PKGBUILD.in", "packaging/aur/hyprism-shell-git/PKGBUILD"):
+            text = (ROOT / recipe).read_text(encoding="utf-8")
+            self.assertIn("backup=('etc/pam.d/hyprism-lock')", text, recipe)
+            self.assertIn("'hyprlock'", text, recipe)
+        installer = (ROOT / "install.sh").read_text(encoding="utf-8")
+        self.assertIn('if [[ ! -e $lock_pam_service ]]; then', installer)
 
     def test_staged_cli_discovers_resources_and_initializes_user_config(self):
         with tempfile.TemporaryDirectory() as temporary:

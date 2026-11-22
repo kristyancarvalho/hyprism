@@ -15,6 +15,7 @@ Item {
     readonly property var hubSurfaceModes: ["control", "network", "bluetooth", "themeSettings"]
     readonly property bool hubSurfaceOpen: hubSurfaceModes.indexOf(mode) >= 0
     property bool floatingSurfacesSuppressed: false
+    property bool sessionLocked: false
     property int switcherIndex: 0
     property alias switcherWindows: switcherWindowModel
     property var mruWindowAddresses: []
@@ -275,6 +276,7 @@ Item {
 
     function showOsd(kind, value) {
         if (floatingSurfacesSuppressed) return
+        if (sessionLocked) return
         osdKind = Design.safeText(kind, I18n.tr("widgets.system"))
         osdValue = Design.safeText(value, I18n.tr("common.unavailable"))
         osdTimer.restart()
@@ -285,6 +287,8 @@ Item {
         osdKind = ""
         osdValue = ""
     }
+
+    onSessionLockedChanged: if (sessionLocked) hideOsd()
 
     onHubSurfaceOpenChanged: {
         if (hubSurfaceOpen) {

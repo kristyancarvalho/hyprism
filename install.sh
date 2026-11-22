@@ -194,6 +194,11 @@ run cp -a "$repo_dir/themes/ksddm-hyprism/." "$sddm_theme_dir/"
 run ln -sfn "$sddm_state_dir/theme.conf" "$sddm_theme_dir/theme.conf"
 run install -m 0644 "$repo_dir/config/sddm/20-hyprism.conf" "$sddm_dropin"
 
+lock_pam_service="/etc/pam.d/hyprism-lock"
+if [[ ! -e $lock_pam_service ]]; then
+  run install -m 0644 "$repo_dir/config/pam/hyprism-lock" "$lock_pam_service"
+fi
+
 locale -a 2>/dev/null | grep -Eiq '^C\.UTF-?8$|^C\.utf8$|^en_US\.UTF-?8$' \
   || { printf 'The system must provide at least one UTF-8 locale.\n' >&2; exit 1; }
 
@@ -285,6 +290,7 @@ link_path "$runtime_root/scripts/system/reload-shell" "$target_home/.local/bin/h
 link_path "$runtime_root/scripts/system/start-shell" "$target_home/.local/bin/hyprism-start-shell"
 link_path "$runtime_root/scripts/system/shell-ipc" "$target_home/.local/bin/hyprism-shell-ipc"
 link_path "$runtime_root/scripts/system/lock" "$target_home/.local/bin/hyprism-lock"
+link_path "$runtime_root/scripts/system/lockscreen" "$target_home/.local/bin/hyprism-lockscreen"
 link_path "$runtime_root/scripts/system/media-lock-indicator.py" "$target_home/.local/bin/hyprism-media-lock-indicator"
 link_path "$runtime_root/scripts/hyprism-shell" "$target_home/.local/bin/hyprism-shell"
 link_path "$runtime_root/config/applications/hyprism-keyboard-setup.desktop" "$target_home/.local/share/applications/hyprism-keyboard-setup.desktop"

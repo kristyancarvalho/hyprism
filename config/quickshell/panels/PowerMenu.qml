@@ -9,7 +9,7 @@ Item {
     property string confirming: ""
     property int selectedIndex: 0
     readonly property var entries: [
-        { label: I18n.tr("power.lock"), icon: "lock", command: "hyprlock", destructive: false },
+        { label: I18n.tr("power.lock"), icon: "lock", command: "hyprism-shell lock", destructive: false },
         { label: I18n.tr("power.suspend"), icon: "suspend", command: "systemctl suspend", destructive: true },
         { label: I18n.tr("power.logout"), icon: "logout", command: "command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch exit", destructive: true },
         { label: I18n.tr("power.reboot"), icon: "reboot", command: "systemctl reboot", destructive: true },

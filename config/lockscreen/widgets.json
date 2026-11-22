@@ -1,0 +1,6 @@
+{
+  "defaults": {
+    "weather": true,
+    "media": true
+  }
+}

@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+root_dir="${HYPRISM_ROOT:-$(cd -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")/../.." && pwd)}"
+cache_dir="${HYPRISM_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/hyprism}"
+pam_directory="/etc/pam.d"
+pam_service="hyprism-lock"
+entrypoint="$root_dir/config/quickshell/lockscreen.qml"
+
+runtime_base="${XDG_RUNTIME_DIR:-}"
+[[ -n $runtime_base && -d $runtime_base ]] || { printf 'XDG_RUNTIME_DIR is required.\n' >&2; exit 1; }
+runtime_dir="$runtime_base/hyprism"
+state_file="$runtime_dir/lockscreen.state"
+lock_file="$runtime_dir/lockscreen.lock"
+
+prepare_runtime() {
+  install -d -m 0700 "$runtime_dir"
+  [[ -f $state_file ]] || printf 'unlocked\n' >"$state_file"
+}
+
+process_running() {
+  [[ -e $lock_file ]] || return 1
+  ! flock -n "$lock_file" true 2>/dev/null
+}
+
+status() {
+  local recorded=unlocked
+  [[ -r $state_file ]] && recorded=$(head -c 32 "$state_file" | tr -d '[:space:]')
+  case $recorded in
+    locking|locked) process_running && printf '%s\n' "$recorded" || printf 'orphaned\n' ;;
+    *) printf 'unlocked\n' ;;
+  esac
+}
+
+lock() {
+  [[ -n ${WAYLAND_DISPLAY:-} ]] || { printf 'The lock screen requires a running Wayland session.\n' >&2; exit 1; }
+  command -v qs >/dev/null 2>&1 || { printf 'Quickshell is not installed: qs command not found.\n' >&2; exit 127; }
+  [[ -r $entrypoint ]] || { printf 'Lock screen entrypoint not found: %s\n' "$entrypoint" >&2; exit 1; }
+  if pgrep -u "$(id -u)" -x hyprlock >/dev/null 2>&1; then exit 0; fi
+  [[ -r $pam_directory/$pam_service ]] || {
+    printf 'PAM service %s/%s is missing; refusing to lock because the session could not be unlocked.\n' "$pam_directory" "$pam_service" >&2
+    exit 1
+  }
+  prepare_runtime
+  process_running && exit 0
+
+  mkdir -p "$cache_dir"
+  local background=""
+  background=$(python3 "$root_dir/scripts/system/lock-background.py" 2>/dev/null || true)
+
+  if [[ $(locale charmap 2>/dev/null || true) != UTF-8 ]]; then
+    local utf8_locale
+    utf8_locale="$(locale -a 2>/dev/null | awk 'BEGIN { IGNORECASE=1 } /^C\.UTF-?8$|^C\.utf8$|^en_US\.UTF-?8$/ { print; exit }')"
+    [[ -n $utf8_locale ]] && export LC_ALL="$utf8_locale"
+  fi
+  export HYPRISM_ROOT="$root_dir" HYPRISM_LOCK_STATE="$state_file" HYPRISM_LOCK_BACKGROUND="$background"
+  unset QS_CONFIG_NAME QS_CONFIG_PATH QS_MANIFEST HYPRISM_QS_PATH
+  local code=0
+  flock -n -E 75 "$lock_file" qs -p "$entrypoint" --no-duplicate >>"$cache_dir/lockscreen.log" 2>&1 || code=$?
+  ((code == 75)) && exit 0
+  if [[ $(head -c 32 "$state_file" 2>/dev/null | tr -d '[:space:]') == locking ]]; then
+    printf 'unlocked\n' >"$state_file"
+  fi
+  exit "$code"
+}
+
+case "${1:-}" in
+  lock) lock ;;
+  status) status ;;
+  *) printf 'Usage: %s {lock|status}\n' "$0" >&2; exit 2 ;;
+esac

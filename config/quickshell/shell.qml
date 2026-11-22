@@ -154,6 +154,7 @@ ShellRoot {
 
     function showPopup(notification): void {
         if (notificationServer.doNotDisturb) return
+        if (shellController.sessionLocked) return
         if (shellController.floatingSurfacesSuppressed) {
             concealPopup(notification, Date.now() + popupDuration(notification))
             return
@@ -327,6 +328,10 @@ ShellRoot {
         shellTheme.applyPalette(parsed)
         shellController.appliedThemePalette = shellController.themePalettes.indexOf(parsed.palette) >= 0 ? parsed.palette : "wallpaper"
         themeError = ""
+    }
+    function syncLockState(): void {
+        const state = Design.safeText(lockStateFile.text(), "").trim()
+        shellController.sessionLocked = state === "locking" || state === "locked"
     }
     function reloadConfig(): void {
         try { applyConfig(configFile.text()) }
@@ -629,6 +634,7 @@ ShellRoot {
         onLoaded: configReload.restart()
         onTextChanged: configReload.restart()
         onFileChanged: reload()
+        onLoadFailed: configRetry.restart()
     }
     ListModel { id: popupNotifications; dynamicRoles: true }
     FileView {
@@ -641,6 +647,7 @@ ShellRoot {
         onLoaded: themeReload.restart()
         onTextChanged: themeReload.restart()
         onFileChanged: reload()
+        onLoadFailed: themeRetry.restart()
     }
     FileView {
         id: dndStateFile
@@ -659,6 +666,8 @@ ShellRoot {
         }
         onLoadFailed: setText(JSON.stringify({ doNotDisturb: false }) + "\n")
     }
+    Timer { id: configRetry; interval: 250; onTriggered: configFile.reload() }
+    Timer { id: themeRetry; interval: 250; onTriggered: themeFile.reload() }
     Timer { id: configReload; interval: 90; onTriggered: root.reloadConfig() }
     Timer { id: themeReload; interval: 90; onTriggered: root.reloadTheme() }
     Timer { id: themeScheduleReconcile; interval: 120; onTriggered: shellController.run([shellController.rootDir + "/scripts/hyprism-shell", "_theme-reconcile"]) }
@@ -677,6 +686,25 @@ ShellRoot {
         function onFloatingSurfacesSuppressedChanged(): void {
             if (shellController.floatingSurfacesSuppressed) root.concealVisiblePopups()
         }
+        function onSessionLockedChanged(): void {
+            if (!shellController.sessionLocked) return
+            popupNotifications.clear()
+            concealedPopups = []
+            popupOverflowCount = 0
+            notificationServer.newest = null
+        }
+    }
+    FileView {
+        id: lockStateFile
+        path: Quickshell.env("HYPRISM_LOCK_STATE") || (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/hyprism/lockscreen.state"
+        blockLoading: true
+        preload: true
+        watchChanges: true
+        printErrors: false
+        onLoaded: root.syncLockState()
+        onTextChanged: root.syncLockState()
+        onFileChanged: reload()
+        onLoadFailed: shellController.sessionLocked = false
     }
 
     NotificationServer {
