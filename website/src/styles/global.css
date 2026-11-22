@@ -1,0 +1,6 @@
+body { font-family: system-ui, sans-serif; margin: 0; background: #14181b; color: #f1eee8; }
+a { color: #5b9bb5; }
+main, header, nav { max-width: 56rem; margin: 0 auto; padding: 1rem; }
+nav a { margin-right: 1rem; }
+img, video { max-width: 100%; }
+figure { margin: 1.5rem 0; }

@@ -1,0 +1,11 @@
+{
+  "screenshots": [
+    { "src": "/media/screenshots/desktop.webp", "caption": "Desktop and compact island", "category": "desktop" },
+    { "src": "/media/screenshots/desktop-widgets.webp", "caption": "Desktop widgets", "category": "desktop" },
+    { "src": "/media/screenshots/control-center.webp", "caption": "Hub", "category": "shell" },
+    { "src": "/media/screenshots/launcher.webp", "caption": "App Launcher", "category": "shell" }
+  ],
+  "videos": [
+    { "src": "/media/demo/hyprism-tour.mp4", "caption": "Feature tour", "category": "overview" }
+  ]
+}

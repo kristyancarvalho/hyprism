@@ -67,3 +67,18 @@ jobs:
           bash -n packaging/aur/hyprism-shell-git/PKGBUILD
           sed -e 's/@PKGVER@/0.0.0/g' -e 's/@PKGREL@/1/g' -e 's/@SHA256@/SKIP/g' packaging/aur/hyprism-shell/PKGBUILD.in >"$RUNNER_TEMP/PKGBUILD"
           bash -n "$RUNNER_TEMP/PKGBUILD"
+
+  website:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: npm ci
+      - run: npm run build
