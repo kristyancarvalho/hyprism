@@ -1,3 +1,11 @@
+---
+title: Desktop widgets
+description: "Explore the eleven optional cards for weather, media, hardware, network, and system activity."
+category: Features
+order: 10
+icon: panels-top-left
+---
+
 # Desktop widgets
 
 Desktop widgets are separate from core shell functionality such as the island, Hub, launcher, and notification daemon. Available CLI identifiers are:

@@ -1,0 +1,209 @@
+[
+  {
+    "tag": "v0.1.22",
+    "version": "0.1.22",
+    "title": "Hyprism 0.1.22",
+    "publishedAt": "2026-11-22T00:17:05Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.22",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.22",
+    "body": "## Changes\n\n- Adds a native Quickshell lock screen with a secure Wayland session lock and PAM authentication.\n- The lock screen shows the clock, localized date, weather and media widgets, and a dot indicator for the password length.\n- Media controls on the lock screen no longer take keyboard focus, so Return always submits the password.\n- Notification popups and the OSD are suppressed while the session is locked."
+  },
+  {
+    "tag": "v0.1.21",
+    "version": "0.1.21",
+    "title": "Hyprism 0.1.21",
+    "publishedAt": "2026-11-14T05:09:03Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.21",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.21",
+    "body": "## Changes\n\n- The compact bar no longer draws an outline; expanded panels keep theirs.\n"
+  },
+  {
+    "tag": "v0.1.20",
+    "version": "0.1.20",
+    "title": "Hyprism 0.1.20",
+    "publishedAt": "2026-11-11T17:40:56Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.20",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.20",
+    "body": "## Changes\n\n- The bar, Hub and floating shell surfaces, GTK 3/4 applications, and Qt/Kvantum applications now use the same background color as the terminal, in every theme.\n"
+  },
+  {
+    "tag": "v0.1.19",
+    "version": "0.1.19",
+    "title": "Hyprism 0.1.19",
+    "publishedAt": "2026-11-11T17:33:00Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.19",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.19",
+    "body": "## Changes\n\n- Window shadows are wider (range 30) and more visible, still tinted with the active theme.\n- Focused and unfocused windows now share the same shadow, so the focused window no longer stands out with a heavier shadow over its neighbors.\n"
+  },
+  {
+    "tag": "v0.1.18",
+    "version": "0.1.18",
+    "title": "Hyprism 0.1.18",
+    "publishedAt": "2026-11-11T17:24:45Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.18",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.18",
+    "body": "## Changes\n\n- Window shadows are softer, tinted with each theme's background, and now applied to inactive windows as well as the active one.\n- Gruvbox accents use a slightly greenish yellow based on its original yellow and green.\n- The recording indicator is smaller and always uses the active theme's red.\n- The active theme card in Theme Settings is marked by its background only, without a border.\n"
+  },
+  {
+    "tag": "v0.1.17",
+    "version": "0.1.17",
+    "title": "Hyprism 0.1.17",
+    "publishedAt": "2026-11-11T16:40:07Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.17",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.17",
+    "body": "## Changes\n\n- Kitty and Foot background opacity now follow the Surface opacity setting in Theme Settings instead of fixed values; open Kitty windows update immediately.\n"
+  },
+  {
+    "tag": "v0.1.16",
+    "version": "0.1.16",
+    "title": "Hyprism 0.1.16",
+    "publishedAt": "2026-11-11T04:43:22Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.16",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.16",
+    "body": "## Changes\n\n- Gruvbox now uses its yellow tones instead of orange for accents in both dark and light variants.\n"
+  },
+  {
+    "tag": "v0.1.15",
+    "version": "0.1.15",
+    "title": "Hyprism 0.1.15",
+    "publishedAt": "2026-11-11T04:25:06Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.15",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.15",
+    "body": "## Changes\n\n- Added system-wide preset themes selectable in Theme Settings: Nord, Tokyo Night (Storm/Day), Catppuccin (Mocha/Latte), Gruvbox, Everforest, and Rosé Pine (Moon/Dawn), each with dark and light variants that follow the Auto, Light, and Dark appearance setting.\n- Added a monochrome Black & White theme with black or white surfaces, grayscale accents, and grayscale folder icons.\n- Kept Wallpaper (Matugen) as the default theme source; presets stay fixed when the wallpaper changes, and switching back to Wallpaper derives colors from the current image.\n- Presets apply to Quickshell, Hyprland, Hyprlock, SDDM, GTK 3/4 through Colloid, Qt/Kvantum, Hyprism-Papirus folder icons, Kitty, Foot, hyprtoolkit, tmux, Starship, Neovim, Fastfetch, and Zathura. Reselecting the active theme does no extra work, and unchanged folder icons are not regenerated.\n- Added `Super+Shift+Space` and a Theme Settings selector to switch normal workspaces between the scrolling and dwindle layouts; the choice persists, applies immediately, and the `special:magic` workspace always stays scrolling.\n- Added a brief on-screen indicator showing the resulting layout after a real layout change.\n- Scrolling-layout columns now take 95% of the usable workspace width so the neighboring column stays partly visible.\n- Floating notifications and on-screen indicators are hidden while the Hub or its panels are open; notifications are still saved to history and expire normally.\n- Added the playing media's title and artwork to the lock screen.\n"
+  },
+  {
+    "tag": "v0.1.14",
+    "version": "0.1.14",
+    "title": "Hyprism 0.1.14",
+    "publishedAt": "2026-10-12T04:43:28Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.14",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.14",
+    "body": "## Changes\n\n- Refined tmux window indicators with consistent active and inactive segment shapes, a more visible inactive surface, a right-pointing separator, and no active underline.\n- Improved AUR publishing reliability with retries for transient failures.\n"
+  },
+  {
+    "tag": "v0.1.13",
+    "version": "0.1.13",
+    "title": "Hyprism 0.1.13",
+    "publishedAt": "2026-09-28T20:02:36Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.13",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.13",
+    "body": "## Highlights\n\n- Keep the Quickshell top bar visible when Kitty restores a maximized window by distinguishing maximized state from true fullscreen.\n- Prevent new Kitty windows from restoring a saved maximized state so they join the Hyprland tiling layout without covering existing windows.\n- Preserve per-monitor bar hiding for true fullscreen windows and restore the bar when fullscreen ends.\n"
+  },
+  {
+    "tag": "v0.1.12",
+    "version": "0.1.12",
+    "title": "Hyprism 0.1.12",
+    "publishedAt": "2026-09-23T04:01:32Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.12",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.12",
+    "body": "## Highlights\n\n- Add compact vertical separators between the primary toggle and detail-panel action for Wi-Fi, Bluetooth, and Theme controls in the Hub.\n- Preserve the unified active and inactive surface across both click targets.\n- Keep separators vertically inset so they do not span the full control height.\n- Improve separator contrast specifically for dark themes while retaining the approved light-theme treatment.\n"
+  },
+  {
+    "tag": "v0.1.11",
+    "version": "0.1.11",
+    "title": "Hyprism 0.1.11",
+    "publishedAt": "2026-09-23T03:26:08Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.11",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.11",
+    "body": "## Highlights\n\n- Refine the Hub with unified split controls, clearer header hierarchy, centered empty notifications, and corrected interaction-state feedback.\n- Add rounded interactive media progress with hover feedback, a seek thumb, click-to-seek, and drag scrubbing for seekable players.\n- Make transient notifications enter vertically from the top bar while preserving stack reflow and notification lifecycles.\n- Replace the light-theme panel with compact Theme Settings for appearance, white temperature, shell opacity, corner radius, blur, and reset defaults.\n- Synchronize opacity, rounding, and blur presets live with Hyprland while preserving the existing automatic light/dark schedule.\n- Add Super+F top-bar visibility toggling with exclusive-zone handling.\n- Scope the scrolling layout to special:magic while leaving normal workspaces on their configured layout.\n- Repair Theme Settings reset persistence and packaged CLI discovery of the Hyprland appearance backend.\n"
+  },
+  {
+    "tag": "v0.1.10",
+    "version": "0.1.10",
+    "title": "Hyprism 0.1.10",
+    "publishedAt": "2026-09-11T04:57:00Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.10",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.10",
+    "body": "## Highlights\n\n- Replace the former custom screenshot actions with an interactive Satty editing workflow.\n- Add freehand drawing, shapes, arrows, text, crop, undo and redo, clipboard copy, direct save, and Save As through Satty.\n- Keep the existing configured Hyprism screenshot directory as the default while allowing a different one-time Save As destination.\n- Preserve region and focused-monitor shortcuts, add active-window and full-desktop CLI modes, and keep the fullscreen shortcut limited to the active monitor.\n- Launch Satty as a centered floating window.\n- Add matching manual-install and AUR runtime dependencies, launcher integration, documentation, and validation coverage.\n- Remove the obsolete screenshot capture functions and duplicate screenshot OSD path."
+  },
+  {
+    "tag": "v0.1.9",
+    "version": "0.1.9",
+    "title": "Hyprism 0.1.9",
+    "publishedAt": "2026-09-10T02:57:27Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.9",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.9",
+    "body": "## Notification improvements\n\n- Smoothed popup entrance and exit motion with a correctly initialized hidden and offset visual state, eliminating the flash when a notification first appears.\n- Added smooth stack reflow for removal and variable-height notification updates without stale gaps or delegate resets.\n- Added right-click dismissal across the notification card while preserving close-button and action-button behavior.\n- Kept distinct same-application notifications independent, with per-notification expiration and identity-safe removal.\n- Preserved explicit replacement semantics by updating the existing notification card and timeout in place.\n"
+  },
+  {
+    "tag": "v0.1.8",
+    "version": "0.1.8",
+    "title": "Hyprism 0.1.8",
+    "publishedAt": "2026-08-31T06:35:31Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.8",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.8",
+    "body": "## Fixes\n\n- Standardized hardcoded runtime diagnostics, installer validation messages, generated-theme errors, and nonlocalized fallback interface text on English while retaining the Brazilian Portuguese catalog.\n- Made wallpaper, screenshot, and recording directories follow the target user’s XDG directories, with language-aware English and Brazilian Portuguese fallbacks and preservation of existing custom paths.\n- Localized Hyprlock’s date order, locked state, authentication status, and password failure message from the installed Hyprism language."
+  },
+  {
+    "tag": "v0.1.7",
+    "version": "0.1.7",
+    "title": "Hyprism 0.1.7",
+    "publishedAt": "2026-08-31T01:54:42Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.7",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.7",
+    "body": "## Fixes\n\n- Fixed Thunar rubberband cursor-path artifacts by applying a square, dynamically colored selection rectangle to its Exo icon view.\n- Serialized wallpaper and appearance regeneration so overlapping selections or light/dark switches cannot restore a stale palette.\n- Rebuilds Colloid when its source patch changes even if the wallpaper palette is unchanged, preserving GTK fixes across updates and restarts."
+  },
+  {
+    "tag": "v0.1.6",
+    "version": "0.1.6",
+    "title": "Hyprism 0.1.6",
+    "publishedAt": "2026-08-30T00:22:37Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.6",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.6",
+    "body": "## Fixes\n\n- Fixed Hyprland panel keybindings when the compositor PATH does not include `~/.local/bin`. Panel actions now invoke Hyprism’s installed CLI by absolute path."
+  },
+  {
+    "tag": "v0.1.5",
+    "version": "0.1.5",
+    "title": "Hyprism 0.1.5",
+    "publishedAt": "2026-08-30T00:16:46Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.5",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.5",
+    "body": "## Fixes\n\n- Fixed GTK drag-selection rubberband rendering artifacts by using a clean solid accent border and subtle dynamic palette-derived fill, avoiding stale selection trails.\n- Monitored-service changes now refresh the Services widget live. Adding or removing services with `hyprism-shell` no longer requires manually reloading Quickshell."
+  },
+  {
+    "tag": "v0.1.4",
+    "version": "0.1.4",
+    "title": "Hyprism 0.1.4",
+    "publishedAt": "2026-08-28T14:44:13Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.4",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.4",
+    "body": "Hyprism 0.1.4 improves first-run input safety and makes desktop service monitoring user-configurable.\n\n- Removes personal BR/US-International keyboard assumptions from fresh installations.\n- Adds per-device keyboard configuration through `hyprism-shell`, including an arrow-key TUI with temporary preview and safe revert.\n- Groups composite HID interfaces and hides auxiliary pointer-receiver keyboard endpoints from the normal setup flow.\n- Adds `hyprism-shell services list/add/remove` for system and user units monitored by the Services widget.\n- Preserves explicit empty service lists, live widget updates, and distinct active, inactive, failed, and missing states.\n- Includes AUR installation documentation and resilient stable-release tag resolution.\n\nThis remains a source-only release. Feedback and bug reports are welcome."
+  },
+  {
+    "tag": "v0.1.3",
+    "version": "0.1.3",
+    "title": "Hyprism 0.1.3",
+    "publishedAt": "2026-08-27T23:25:14Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.3",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.3",
+    "body": "Hyprism 0.1.3 makes the project ready for system packaging and AUR distribution.\n\n- Adds a packaging-safe `/usr/share/hyprism` runtime with `PREFIX` and `DESTDIR` support.\n- Adds idempotent `hyprism-shell init` user configuration with English and PT-BR selection.\n- Preserves the existing local installation workflow while discovering packaged resources automatically.\n- Adds stable and VCS AUR recipes plus dedicated publishing workflows.\n- Adds package-content, configuration-preservation, and installation tests.\n\nThis is a source-only release. GitHub-provided source archives are the release artifacts."
+  },
+  {
+    "tag": "v0.1.2",
+    "version": "0.1.2",
+    "title": "Hyprism 0.1.2",
+    "publishedAt": "2026-08-27T21:59:02Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.2",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.2",
+    "body": "This patch release refines the Light Theme white-temperature control.\n\n- Presents four explicit segmented presets in cold-to-warm order: Neutral, Soft, Warm, and Amber.\n- Adds comfortable endpoint spacing, subtle segment dividers, and a distinct animated position indicator.\n- Improves direct segment selection, discrete drag snapping, and left/right keyboard navigation.\n- Preserves the existing theme configuration and propagation across Hyprism theme targets.\n\nHyprism 0.1.2 remains a source-only release."
+  },
+  {
+    "tag": "v0.1.1",
+    "version": "0.1.1",
+    "title": "Hyprism 0.1.1",
+    "publishedAt": "2026-08-27T20:55:19Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.1",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.1",
+    "body": "Hyprism 0.1.1 is a focused patch release improving Hyprlock readability in light appearance.\n\n## Fix\n\n- Uses a dedicated inverse light-mode lock palette so the dimmed wallpaper no longer competes with dark text.\n- Raises foreground contrast to at least 7:1 and muted, accent, secondary, and error roles to at least 4.5:1 against the authentication surface.\n- Preserves the existing dark-mode palette, lock-screen geometry, animations, and behavior.\n\nThis remains a source-only release for current Arch Linux and Hyprland environments.\n"
+  },
+  {
+    "tag": "v0.1.0",
+    "version": "0.1.0",
+    "title": "Hyprism 0.1.0",
+    "publishedAt": "2026-08-27T15:49:35Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.0",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.0",
+    "body": "Hyprism 0.1.0 is the first public release of the project: an opinionated Hyprland desktop environment built around a cohesive Quickshell experience.\n\n## Highlights\n\n- Morphing Quickshell shell with a compact island, Hub, app launcher, notifications, media controls, clipboard, emoji picker, wallpaper picker, power menu, and recording controls.\n- Wallpaper-derived semantic palettes with live dark and light modes across Quickshell, Hyprland, GTK, Qt/Kvantum, Kitty, Foot, hyprtoolkit, and other configured applications.\n- Dynamic desktop widgets for clock, weather, performance, network, storage, system information, sensors, services, and media.\n- Integrated NetworkManager and Bluetooth controls, notification history and Do Not Disturb, focus-following keyboard navigation, screenshots, screen recording, night mode, and lock screen support.\n- `hyprism-shell` for widgets, weather, localization, appearance schedules, wallpapers, screenshots, recording, and common shell actions.\n- English and Brazilian Portuguese interfaces with live language switching.\n- Makefile-based installation, update, validation, reload, and uninstall workflows with declarative user configuration.\n\nThis is an early release intended for current Arch Linux and Hyprland environments. Feedback and reproducible bug reports are welcome through the repository issue forms.\n"
+  }
+]

@@ -1,0 +1,7 @@
+---
+import Base from '../layouts/Base.astro';
+import { ArrowRight, BookOpen, House } from '@lucide/astro';
+---
+<Base title="Page not found" description="The requested Hyprism page could not be found.">
+  <section class="not-found"><p class="eyebrow">404 · Lost in the prism</p><h1>This page isn’t here.</h1><p>The address may have changed, or the page may not exist.</p><div><a class="button button-primary" href="/"><House size={16} aria-hidden="true" />Back to home<ArrowRight size={14} aria-hidden="true" /></a><a class="button button-quiet" href="/docs/"><BookOpen size={15} aria-hidden="true" />Open documentation</a></div></section>
+</Base>

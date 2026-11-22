@@ -1,3 +1,11 @@
+---
+title: Gallery
+description: "Screenshots and video tour of Hyprism shell surfaces, widgets, and appearance."
+category: Project
+order: 21
+icon: images
+---
+
 # Gallery
 
 Dark and light comparisons of the same interface with wallpaper-derived colors.

@@ -1,3 +1,11 @@
+---
+title: Configuration
+description: "Understand the user.json preferences Hyprism keeps in your home directory."
+category: Guides
+order: 5
+icon: sliders-horizontal
+---
+
 # Configuration
 
 User preferences are stored in `~/.config/hyprism/user.json`. The installer migrates existing settings conservatively, while CLI mutations preserve unrelated values and replace the JSON atomically.

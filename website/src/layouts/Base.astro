@@ -1,24 +1,183 @@
 ---
 import '../styles/global.css';
-interface Props { title: string }
-const { title } = Astro.props;
+import { getCollection } from 'astro:content';
+import { ArrowUpRight, BookOpen, CodeXml, Images, Menu, Moon, Palette, PackageCheck, Search, SlidersHorizontal, Sun, Tags, X } from '@lucide/astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  active?: string;
+  docsPage?: boolean;
+}
+
+const { title = 'Hyprism', description = 'A cohesive, wallpaper-driven Hyprland desktop built with Quickshell.', active = '', docsPage = false } = Astro.props;
+const docs = (await getCollection('docs')).sort((a, b) => (a.data.order ?? 999) - (b.data.order ?? 999) || a.id.localeCompare(b.id));
+const groupedDocs = docs.reduce((groups, doc) => {
+  const category = doc.data.category ?? 'Guides';
+  groups.set(category, [...(groups.get(category) ?? []), doc]);
+  return groups;
+}, new Map<string, typeof docs>());
+const siteUrl = Astro.site?.toString().replace(/\/$/, '');
+const canonical = siteUrl ? new URL(Astro.url.pathname, `${siteUrl}/`).toString() : undefined;
+const pageTitle = title === 'Hyprism' ? title : `${title} · Hyprism`;
+const categoryIcons = { 'Get started': PackageCheck, Guides: SlidersHorizontal, Features: Palette, Project: CodeXml };
 ---
-<html lang="en">
+<!doctype html>
+<html lang="en" data-theme="system">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>{title} · Hyprism</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    {canonical && <meta property="og:url" content={canonical} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    {siteUrl && <><meta property="og:image" content={`${siteUrl}/branding/banner.png`} /><meta name="twitter:image" content={`${siteUrl}/branding/banner.png`} /></>}
+    {canonical && <link rel="canonical" href={canonical} />}
+    <title>{pageTitle}</title>
     <link rel="icon" href="/branding/logo-mark.svg" type="image/svg+xml" />
+    <script is:inline>
+      const savedTheme = localStorage.getItem('hyprism-theme');
+      const systemTheme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.dataset.theme = savedTheme || systemTheme;
+    </script>
   </head>
   <body>
-    <header>
-      <img src="/branding/logo-dark.svg" alt="Hyprism" height="40" />
-      <nav>
-        <a href="/">Home</a>
-        <a href="/docs/">Docs</a>
-        <a href="/gallery/">Gallery</a>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Hyprism home"><img class="brand-light" src="/branding/logo-light.svg" alt="Hyprism" width="150" height="38" /><img class="brand-dark" src="/branding/logo-dark.svg" alt="" width="150" height="38" /></a>
+      <button class="mobile-menu-button" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Open navigation"><Menu class="menu-open" size={20} aria-hidden="true" /><X class="menu-close" size={20} aria-hidden="true" /></button>
+      <nav id="primary-nav" class="primary-nav" aria-label="Main navigation">
+        <a class:list={[{ active: active === 'docs' }, 'nav-link']} href="/docs/"><BookOpen size={15} aria-hidden="true" />Docs</a>
+        <a class:list={[{ active: active === 'gallery' }, 'nav-link']} href="/gallery/"><Images size={15} aria-hidden="true" />Gallery</a>
+        <a class:list={[{ active: active === 'releases' }, 'nav-link']} href="/releases/"><Tags size={15} aria-hidden="true" />Releases</a>
+        <a class="nav-link external-link" href="https://github.com/kristyancarvalho/hyprism" target="_blank" rel="noreferrer">GitHub <ArrowUpRight size={14} aria-hidden="true" /></a>
+        <button class="theme-toggle" type="button" aria-label="Switch to dark theme" title="Toggle color theme"><Moon class="theme-moon" size={17} aria-hidden="true" /><Sun class="theme-sun" size={17} aria-hidden="true" /></button>
       </nav>
     </header>
-    <main><slot /></main>
+    {docsPage ? (
+      <div class="docs-shell">
+        <aside class="docs-sidebar" id="docs-sidebar" aria-label="Documentation navigation">
+          <div class="sidebar-top"><a href="/docs/" class="sidebar-title">Documentation</a><button class="sidebar-close" type="button" aria-label="Close documentation navigation"><X size={18} aria-hidden="true" /></button></div>
+          <a class="search-trigger" href="#search" data-search-open><Search size={16} aria-hidden="true" /> Search documentation <kbd>/</kbd></a>
+          <nav class="docs-nav">
+            {[...groupedDocs.entries()].map(([category, items]) => (
+              <section class="docs-nav-group">
+                {(() => { const CategoryIcon = categoryIcons[category as keyof typeof categoryIcons] ?? BookOpen; return <h2><CategoryIcon size={13} aria-hidden="true" />{category}</h2>; })()}
+                {items.map((doc) => <a href={`/docs/${doc.id}/`} class:list={{ selected: active === doc.id }} aria-current={active === doc.id ? 'page' : undefined}>{doc.data.title ?? doc.id}</a>)}
+              </section>
+            ))}
+          </nav>
+        </aside>
+        <button class="sidebar-scrim" type="button" aria-label="Close documentation navigation"></button>
+        <main id="main" class="docs-main"><slot /></main>
+      </div>
+    ) : <main id="main"><slot /></main>}
+    <footer class="site-footer">
+      <a href="/" class="footer-brand"><img src="/branding/logo-mark.svg" alt="" width="24" height="24" /> Hyprism</a>
+      <span>Hyprland · Quickshell · Arch Linux</span>
+      <div><a href="/docs/">Documentation</a><a href="/gallery/">Gallery</a><a href="/releases/">Releases</a><a href="https://github.com/kristyancarvalho/hyprism" target="_blank" rel="noreferrer">Source <ArrowUpRight size={13} aria-hidden="true" /></a></div>
+    </footer>
+    <dialog class="search-dialog" aria-label="Search documentation">
+      <form method="dialog" class="search-box">
+        <label class="visually-hidden" for="doc-search">Search documentation</label>
+        <Search size={19} aria-hidden="true" /><input id="doc-search" type="search" placeholder="Search guides, commands, and features…" autocomplete="off" /><kbd>Esc</kbd>
+      </form>
+      <div class="search-results" aria-live="polite"><p class="search-hint">Search across all Hyprism guides.</p></div>
+    </dialog>
+    <script>
+      const root = document.documentElement;
+      const themeButton = document.querySelector<HTMLButtonElement>('.theme-toggle');
+      const setTheme = (theme: string, persist = true) => {
+        root.dataset.theme = theme;
+        if (persist) localStorage.setItem('hyprism-theme', theme);
+        if (themeButton) {
+          themeButton.setAttribute('aria-label', `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`);
+        }
+      };
+      themeButton?.addEventListener('click', () => setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark'));
+      setTheme(root.dataset.theme || 'light', false);
+
+      const menuButton = document.querySelector<HTMLButtonElement>('.mobile-menu-button');
+      const primaryNav = document.querySelector<HTMLElement>('.primary-nav');
+      const toggleMenu = (open: boolean) => {
+        primaryNav?.classList.toggle('open', open);
+        menuButton?.setAttribute('aria-expanded', String(open));
+        menuButton?.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+      };
+      menuButton?.addEventListener('click', () => toggleMenu(menuButton.getAttribute('aria-expanded') !== 'true'));
+      primaryNav?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => toggleMenu(false)));
+
+      const sidebar = document.querySelector<HTMLElement>('.docs-sidebar');
+      const sidebarScrim = document.querySelector<HTMLButtonElement>('.sidebar-scrim');
+      const sidebarClose = document.querySelector<HTMLButtonElement>('.sidebar-close');
+      const sidebarToggle = document.querySelector<HTMLButtonElement>('.docs-menu-button');
+      const toggleSidebar = (open: boolean) => {
+        sidebar?.classList.toggle('open', open);
+        sidebarScrim?.classList.toggle('visible', open);
+        sidebarToggle?.setAttribute('aria-expanded', String(open));
+      };
+      sidebarToggle?.addEventListener('click', () => toggleSidebar(!sidebar?.classList.contains('open')));
+      sidebarClose?.addEventListener('click', () => toggleSidebar(false));
+      sidebarScrim?.addEventListener('click', () => toggleSidebar(false));
+
+      document.querySelectorAll<HTMLPreElement>('.prose pre').forEach((pre) => {
+        const button = document.createElement('button');
+        button.className = 'copy-code';
+        button.type = 'button';
+        button.textContent = 'Copy';
+        button.setAttribute('aria-label', 'Copy code block');
+        button.addEventListener('click', async () => {
+          await navigator.clipboard.writeText(pre.querySelector('code')?.innerText ?? pre.innerText);
+          button.textContent = 'Copied';
+          window.setTimeout(() => { button.textContent = 'Copy'; }, 1600);
+        });
+        pre.append(button);
+      });
+
+      const dialog = document.querySelector<HTMLDialogElement>('.search-dialog');
+      const input = document.querySelector<HTMLInputElement>('#doc-search');
+      const results = document.querySelector<HTMLElement>('.search-results');
+      let searchIndex: { slug: string; title: string; description: string; category: string; text: string }[] = [];
+      let indexReady = false;
+      const openSearch = async () => {
+        if (!dialog?.open) dialog?.showModal();
+        input?.focus();
+        if (!indexReady) {
+          try {
+            searchIndex = await (await fetch('/search-index.json')).json();
+            indexReady = true;
+          } catch {
+            if (results) results.innerHTML = '<p class="search-hint">Search is unavailable right now.</p>';
+          }
+        }
+      };
+      document.querySelectorAll('[data-search-open]').forEach((button) => button.addEventListener('click', (event) => { event.preventDefault(); openSearch(); }));
+      document.addEventListener('keydown', (event) => {
+        if (event.key === '/' && !(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLTextAreaElement)) { event.preventDefault(); openSearch(); }
+      });
+      input?.addEventListener('input', () => {
+        const query = input.value.trim().toLowerCase();
+        if (!results) return;
+        if (!query) { results.innerHTML = '<p class="search-hint">Search across all Hyprism guides.</p>'; return; }
+        const matches = searchIndex.map((item) => ({ item, score: `${item.title} ${item.description} ${item.text}`.toLowerCase().indexOf(query) })).filter((match) => match.score >= 0).sort((a, b) => a.score - b.score).slice(0, 8);
+        if (!matches.length) { results.innerHTML = '<p class="search-hint">No guides found. Try another search.</p>'; return; }
+        results.replaceChildren(...matches.map(({ item }) => {
+          const link = document.createElement('a');
+          link.className = 'search-result';
+          link.href = `/docs/${item.slug}/`;
+          const title = document.createElement('strong'); title.textContent = item.title;
+          const category = document.createElement('span'); category.textContent = item.category;
+          const description = document.createElement('small'); description.textContent = item.description;
+          link.append(title, category, description);
+          link.addEventListener('click', () => dialog?.close());
+          return link;
+        }));
+      });
+    </script>
   </body>
 </html>

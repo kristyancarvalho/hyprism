@@ -1,11 +1,35 @@
 ---
-import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-const docs = (await getCollection('docs')).sort((a, b) => a.id.localeCompare(b.id));
+import { getCollection } from 'astro:content';
+import { ArrowRight, BookOpen, CodeXml, Images, Keyboard, Languages, PackageCheck, Palette, PanelsTopLeft, Search, ShieldCheck, SlidersHorizontal, Terminal } from '@lucide/astro';
+
+const docs = (await getCollection('docs')).sort((a, b) => (a.data.order ?? 999) - (b.data.order ?? 999) || a.id.localeCompare(b.id));
+const groups = docs.reduce((result, doc) => {
+  const category = doc.data.category ?? 'Guides';
+  result.set(category, [...(result.get(category) ?? []), doc]);
+  return result;
+}, new Map<string, typeof docs>());
+const guideIcons = {
+  'package-check': PackageCheck,
+  'sliders-horizontal': SlidersHorizontal,
+  terminal: Terminal,
+  'panels-top-left': PanelsTopLeft,
+  'shield-check': ShieldCheck,
+  palette: Palette,
+  keyboard: Keyboard,
+  languages: Languages,
+  'code-xml': CodeXml,
+  images: Images,
+};
 ---
-<Base title="Documentation">
-  <h1>Documentation</h1>
-  <ul>
-    {docs.map((doc) => <li><a href={`/docs/${doc.id}/`}>{doc.id}</a></li>)}
-  </ul>
+<Base title="Documentation" active="docs" docsPage description="Guides for installing, configuring, and using the Hyprism desktop environment.">
+  <div class="docs-index page-enter">
+      <p class="eyebrow"><BookOpen size={15} aria-hidden="true" /> Hyprism handbook</p>
+    <h1>Documentation</h1>
+    <p class="docs-lede">Install, configure, and understand the pieces of your Hyprism desktop.</p>
+    <button class="index-search search-trigger" type="button" data-search-open><Search size={17} aria-hidden="true" /> Search all documentation <kbd>/</kbd></button>
+    <div class="doc-categories">
+      {[...groups.entries()].map(([category, items]) => <section><h2>{category}</h2><div class="doc-index-grid">{items.map((doc) => { const GuideIcon = guideIcons[doc.data.icon as keyof typeof guideIcons] ?? BookOpen; return <a class="doc-index-item" href={`/docs/${doc.id}/`}><GuideIcon size={18} aria-hidden="true" /><span><strong>{doc.data.title ?? doc.id}</strong><small>{doc.data.description ?? 'Read the guide.'}</small></span><ArrowRight size={15} aria-hidden="true" /></a>; })}</div></section>)}
+    </div>
+  </div>
 </Base>

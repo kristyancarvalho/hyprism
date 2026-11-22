@@ -1,3 +1,11 @@
+---
+title: Keybindings
+description: "Reference the default Hyprland shortcuts provided by Hyprism."
+category: Guides
+order: 7
+icon: keyboard
+---
+
 # Keybindings
 
 | Keybinding | Action |

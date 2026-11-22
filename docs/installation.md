@@ -1,3 +1,11 @@
+---
+title: Installation
+description: "Install Hyprism from the AUR or from a repository checkout, then initialize your desktop configuration."
+category: Get started
+order: 1
+icon: package-check
+---
+
 # Installation
 
 Install the latest stable release from the AUR, then initialize the user configuration in English:

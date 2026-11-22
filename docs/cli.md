@@ -1,3 +1,11 @@
+---
+title: Command line
+description: "Use hyprism-shell to manage widgets, themes, keyboard preferences, and desktop actions."
+category: Guides
+order: 6
+icon: terminal
+---
+
 # hyprism-shell
 
 `hyprism-shell` is Hyprism's stable user-facing command interface. Query commands print plain values, mutations return a non-zero status for invalid input, and configuration changes are written atomically to `~/.config/hyprism/user.json`.

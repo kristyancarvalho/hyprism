@@ -1,3 +1,11 @@
+---
+title: Lock screen
+description: "How Hyprism protects the Wayland session with a native session lock and PAM authentication."
+category: Features
+order: 11
+icon: shield-check
+---
+
 # Quickshell lock screen
 
 Hyprism ships a native lock screen implemented in Quickshell. Hyprlock stays installed and is selectable as a manual fallback while the new lock screen is being validated.

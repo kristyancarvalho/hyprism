@@ -1,3 +1,11 @@
+---
+title: Localization
+description: "Switch the interface between English and Brazilian Portuguese."
+category: Guides
+order: 8
+icon: languages
+---
+
 # Localization
 
 English is the default for fresh installations. Brazilian Portuguese is available through `make install-ptbr` or `make install LANG=pt-BR`. Updates preserve a valid existing language choice.
