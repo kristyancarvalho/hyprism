@@ -15,5 +15,10 @@
         }
       ]
     }
-  ]
+  ],
+  "build": {
+    "env": {
+      "SITE_URL": "https://hyprism.kristyan.dev"
+    }
+  }
 }
