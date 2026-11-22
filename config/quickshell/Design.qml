@@ -98,7 +98,6 @@ QtObject {
     readonly property int separatorHeight: compactSeparatorHeight
     readonly property int separatorWidth: compactSeparatorWidth
     readonly property int outlineWidth: 1
-    readonly property int surfaceShadowBlur: 14
     readonly property int surfaceShadowExtent: 18
     readonly property int surfaceShadowOffsetY: 4
     readonly property int surfaceShadowTransition: animationFast
@@ -269,7 +268,7 @@ QtObject {
     function surfaceShadowColor(theme) {
         const background = theme && theme.colors ? theme.colors.background : Qt.rgba(.16, .16, .16, 1)
         const shaded = Qt.darker(background, 2.2)
-        return Qt.rgba(shaded.r, shaded.g, shaded.b, .34)
+        return Qt.rgba(shaded.r, shaded.g, shaded.b, .30)
     }
 
     function launcherHeight(resultCount) {
