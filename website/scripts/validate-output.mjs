@@ -50,9 +50,18 @@ for (const entry of docs) {
   if (!search.some((item) => item.slug === slug)) failures.push(`Missing search index entry: ${slug}`);
 }
 if (!routes.has('/404')) failures.push('Missing 404 page');
+const releases = JSON.parse(await readFile(join(root, 'src/data/releases.json'), 'utf8'));
+const tags = new Set();
+for (const release of releases) {
+  if (!/^v\d+\.\d+\.\d+$/.test(release.tag) || release.version !== release.tag.slice(1)) failures.push(`Inconsistent release metadata: ${release.tag}`);
+  if (Number.isNaN(Date.parse(release.publishedAt))) failures.push(`Invalid release date: ${release.tag}`);
+  if (tags.has(release.tag)) failures.push(`Duplicate release: ${release.tag}`);
+  tags.add(release.tag);
+  if (!routes.has(`/releases/${release.tag}/`)) failures.push(`Missing release route: ${release.tag}`);
+}
 if (failures.length) {
   process.stderr.write(`${failures.join('\n')}\n`);
   process.exitCode = 1;
 } else {
-  process.stdout.write(`Validated ${htmlFiles.length} HTML pages, ${docs.length} documentation routes, and ${search.length} search records.\n`);
+  process.stdout.write(`Validated ${htmlFiles.length} HTML pages, ${docs.length} documentation routes, ${releases.length} release pages, and ${search.length} search records.\n`);
 }

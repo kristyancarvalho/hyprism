@@ -485,3 +485,13 @@ kbd { margin-left: auto; padding: 1px 6px; border: 1px solid var(--line); border
 .mermaid-diagram .mermaid-output { display: flex; justify-content: center; min-width: min-content; }
 .mermaid-diagram .mermaid-output svg { max-width: 100%; height: auto; }
 .mermaid-diagram.has-error::before { content: 'This diagram could not be rendered. Its source is shown below.'; display: block; color: var(--muted); font-size: .875rem; margin-bottom: .5rem; }
+
+.release-title-block h2 a { color: inherit; text-decoration: none; }
+.release-title-block h2 a:hover { color: var(--accent-strong); }
+.release-single { max-width: 860px; }
+.release-single .release-intro h1 { margin: 12px 0 14px; }
+.release-single .release-prose { font-size: 15px; padding: 28px 0; border-block: 1px solid var(--line); margin-block: 28px; }
+.release-single .release-facts { display: flex; gap: 18px; color: var(--muted); }
+.release-single .current-release { margin-left: 10px; }
+.release-single .release-links { display: flex; gap: 18px; }
+.release-single .release-intro { display: block; }

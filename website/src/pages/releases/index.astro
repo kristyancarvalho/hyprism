@@ -1,5 +1,5 @@
 ---
-import { ArrowDown, ArrowUpRight, CalendarDays, ChevronDown, GitBranch, Tag } from '@lucide/astro';
+import { ArrowRight, ArrowUpRight, CalendarDays, GitBranch, Tag } from '@lucide/astro';
 import { Marked, Renderer } from 'marked';
 import Base from '../../layouts/Base.astro';
 import releases from '../../data/releases.json';
@@ -16,8 +16,8 @@ const releaseDate = (value: string) => new Intl.DateTimeFormat('en', { day: 'num
     <header class="release-intro">
       <p class="eyebrow"><Tag size={15} aria-hidden="true" /> Project archive <span class="intro-rule"></span> {releases.length} releases</p>
       <h1>Release notes</h1>
-      <p>Published changes to Hyprism, in release order. Each entry uses the original GitHub release notes and points back to its source.</p>
-      <a class="latest-link" href={`#${latest.tag}`}><span>Latest release</span><strong>{latest.version}</strong><ArrowDown size={16} aria-hidden="true" /></a>
+      <p>Published changes to Hyprism, in release order. Every release has its own page with the original GitHub release notes and links to its source.</p>
+      <a class="latest-link" href={`/releases/${latest.tag}/`}><span>Latest release</span><strong>{latest.version}</strong><ArrowRight size={16} aria-hidden="true" /></a>
     </header>
     <div class="release-timeline" aria-label="Hyprism releases">
       {notes.map(({ release, html }, index) => (
@@ -27,15 +27,13 @@ const releaseDate = (value: string) => new Intl.DateTimeFormat('en', { day: 'num
             <header class="release-header">
               <div class="release-title-block">
                 <p class="release-kicker">{index === 0 && <span class="current-release">Latest</span>}<span><Tag size={14} aria-hidden="true" /> {release.tag}</span></p>
-                <h2>{release.title}</h2>
+                <h2><a href={`/releases/${release.tag}/`}>{release.title}</a></h2>
               </div>
               <div class="release-facts"><span><CalendarDays size={14} aria-hidden="true" /> {releaseDate(release.publishedAt)}</span><span><GitBranch size={14} aria-hidden="true" /> {release.version}</span></div>
             </header>
-            <details class="release-details" open={index === 0}>
-              <summary><span>Release notes</span><ChevronDown size={16} aria-hidden="true" /></summary>
-              <div class="release-prose" set:html={html} />
-            </details>
+            {index === 0 && <div class="release-prose" set:html={html} />}
             <nav class="release-links" aria-label={`${release.tag} source links`}>
+              <a href={`/releases/${release.tag}/`}>Read the notes <ArrowRight size={14} aria-hidden="true" /></a>
               <a href={release.url} target="_blank" rel="noreferrer">GitHub release <ArrowUpRight size={14} aria-hidden="true" /></a>
               <a href={release.tagUrl} target="_blank" rel="noreferrer">Source tag <ArrowUpRight size={14} aria-hidden="true" /></a>
             </nav>
