@@ -2,6 +2,11 @@
 import { ArrowDown, ArrowRight, ArrowUpRight, AppWindow, BookOpen, Layers2, LockKeyhole, Monitor, MonitorCog, PackageCheck, Palette, PanelsTopLeft, SunMoon, Tags, Terminal } from '@lucide/astro';
 import Base from '../layouts/Base.astro';
 import gallery from '../data/gallery.json';
+import releases from '../data/releases.json';
+
+const recent = releases.slice(0, 3);
+const tour = gallery.videos[0];
+const shortDate = (value: string) => new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(value));
 
 const desk = gallery.screenshots.find((item) => item.src.endsWith('/desktop.webp'))!;
 const widgets = gallery.screenshots.find((item) => item.src.endsWith('/desktop-widgets.webp'))!;
@@ -26,13 +31,13 @@ const launcher = gallery.screenshots.find((item) => item.src.endsWith('/launcher
   <section id="overview" class="overview-strip">
     <p class="overview-index">01 / Overview</p>
     <p class="overview-copy">Hyprism connects the window manager, shell, widgets, and system controls into one session. The same wallpaper-derived palette carries through the desktop and supported applications.</p>
-    <a href="/docs/development/">Project structure <ArrowUpRight size={14} aria-hidden="true" /></a>
+    <a href="/docs/architecture/">How it fits together <ArrowUpRight size={14} aria-hidden="true" /></a>
   </section>
 
   <section class="desktop-map section-wrap" aria-labelledby="desktop-map-title">
     <header class="section-heading editorial-heading"><div><p class="eyebrow">02 / The desktop</p><h2 id="desktop-map-title">A session with<br />working parts.</h2></div><p>Each surface has a clear job, from a compact status bar to a dedicated native session lock.</p></header>
     <div class="capability-list">
-      <a class="capability-row" href="/docs/development/" data-reveal><span class="capability-number">01</span><span class="capability-icon"><PanelsTopLeft size={20} aria-hidden="true" /></span><span class="capability-copy"><strong>Shell and controls</strong><small>A compact island expands into workspaces, window context, Hub controls, launcher, notifications, and media.</small></span><ArrowUpRight size={17} aria-hidden="true" /></a>
+      <a class="capability-row" href="/docs/architecture/" data-reveal><span class="capability-number">01</span><span class="capability-icon"><PanelsTopLeft size={20} aria-hidden="true" /></span><span class="capability-copy"><strong>Shell and controls</strong><small>A compact island expands into workspaces, window context, Hub controls, launcher, notifications, and media.</small></span><ArrowUpRight size={17} aria-hidden="true" /></a>
       <a class="capability-row" href="/docs/desktop-widgets/" data-reveal><span class="capability-number">02</span><span class="capability-icon"><Layers2 size={20} aria-hidden="true" /></span><span class="capability-copy"><strong>Desktop widgets</strong><small>Eleven optional cards cover time, weather, performance, network, storage, services, tasks, and media.</small></span><ArrowUpRight size={17} aria-hidden="true" /></a>
       <a class="capability-row" href="/docs/theming/" data-reveal><span class="capability-number">03</span><span class="capability-icon"><Palette size={20} aria-hidden="true" /></span><span class="capability-copy"><strong>Appearance and color</strong><small>Matugen derives a palette from your wallpaper; named presets, light temperature, and optional scheduling are available.</small></span><ArrowUpRight size={17} aria-hidden="true" /></a>
       <a class="capability-row" href="/docs/lockscreen/" data-reveal><span class="capability-number">04</span><span class="capability-icon"><LockKeyhole size={20} aria-hidden="true" /></span><span class="capability-copy"><strong>Native session lock</strong><small>A Wayland session lock waits for compositor-confirmed coverage and uses PAM authentication.</small></span><ArrowUpRight size={17} aria-hidden="true" /></a>
@@ -50,9 +55,20 @@ const launcher = gallery.screenshots.find((item) => item.src.endsWith('/launcher
     <figure class="story-capture launcher-capture" data-reveal><img src={launcher.src} alt={launcher.alt} loading="lazy" /><figcaption><span><AppWindow size={14} aria-hidden="true" /> App Launcher</span><span>03 / 03</span></figcaption></figure>
   </section>
 
-  <section class="archive-strip">
-    <div><p class="eyebrow">05 / Project history</p><h2>Changes, version by version.</h2><p>Browse published release notes and their source tags.</p></div>
-    <a class="button button-secondary" href="/releases/"><Tags size={16} aria-hidden="true" />Release notes<ArrowRight size={15} aria-hidden="true" /></a>
+  {tour && (
+    <section class="tour-reel section-wrap" aria-labelledby="tour-title">
+      <header class="section-heading editorial-heading"><div><p class="eyebrow">05 / In motion</p><h2 id="tour-title">The real desktop,<br />recorded.</h2></div><p>{tour.description}</p></header>
+      <figure class="tour-capture" data-reveal><video src={tour.src} poster={tour.poster} controls muted loop playsinline preload="none" aria-label={tour.alt}></video><figcaption><span><Monitor size={14} aria-hidden="true" /> {tour.caption}</span><a href="/gallery/">Full gallery <ArrowRight size={13} aria-hidden="true" /></a></figcaption></figure>
+    </section>
+  )}
+
+  <section class="release-news section-wrap" aria-labelledby="news-title">
+    <header class="news-heading"><p class="eyebrow">06 / Latest releases</p><h2 id="news-title">What changed recently.</h2><a class="text-link" href="/releases/"><Tags size={15} aria-hidden="true" />All {releases.length} releases <ArrowRight size={15} aria-hidden="true" /></a></header>
+    <ol class="news-list">
+      {recent.map((release) => (
+        <li data-reveal><a href={`/releases/${release.tag}/`}><time datetime={release.publishedAt}>{shortDate(release.publishedAt)}</time><strong>{release.title}</strong><span>{release.body.split('\n').find((line) => line.startsWith('- '))?.slice(2)}</span><ArrowUpRight size={17} aria-hidden="true" /></a></li>
+      ))}
+    </ol>
   </section>
 
   <section class="closing-line">

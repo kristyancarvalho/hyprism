@@ -495,3 +495,26 @@ kbd { margin-left: auto; padding: 1px 6px; border: 1px solid var(--line); border
 .release-single .current-release { margin-left: 10px; }
 .release-single .release-links { display: flex; gap: 18px; }
 .release-single .release-intro { display: block; }
+
+.tour-capture { margin: 0; }
+.tour-capture video { display: block; width: 100%; aspect-ratio: 16 / 9; background: var(--code-bg); border: 1px solid var(--line); }
+.tour-capture figcaption { display: flex; justify-content: space-between; gap: 16px; padding-top: 10px; color: var(--muted); font-size: 13px; }
+.tour-capture figcaption a { color: var(--accent-strong); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+.release-news { padding-block: clamp(48px, 8vw, 96px); }
+.news-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px 24px; padding-bottom: 22px; border-bottom: 1px solid var(--ink); }
+.news-heading .eyebrow { grid-column: 1 / -1; }
+.news-heading h2 { margin: 0; font: 500 clamp(30px, 4.6vw, 56px)/1.04 'Newsreader Variable', Georgia, serif; letter-spacing: -.03em; }
+.news-list { list-style: none; margin: 0; padding: 0; }
+.news-list a { display: grid; grid-template-columns: 120px minmax(0, 220px) minmax(0, 1fr) auto; gap: 24px; align-items: baseline; padding: 22px 0; border-bottom: 1px solid var(--line); color: inherit; text-decoration: none; transition: color .2s ease, padding .2s ease; }
+.news-list a:hover { color: var(--accent-strong); padding-left: 8px; }
+.news-list time { color: var(--muted); font-size: 13px; }
+.news-list strong { font: 500 22px/1.2 'Newsreader Variable', Georgia, serif; }
+.news-list span { color: var(--muted); font-size: 14px; line-height: 1.55; }
+@media (max-width: 760px) {
+  .news-heading { grid-template-columns: 1fr; }
+  .news-list a { grid-template-columns: 1fr auto; gap: 6px 16px; }
+  .news-list time, .news-list span { grid-column: 1; }
+  .news-list strong { grid-column: 1; grid-row: 2; }
+  .news-list svg { grid-column: 2; grid-row: 1 / span 3; align-self: center; }
+}
+@media (prefers-reduced-motion: reduce) { .news-list a { transition: none; } .news-list a:hover { padding-left: 0; } }
