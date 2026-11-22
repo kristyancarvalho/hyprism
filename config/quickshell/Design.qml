@@ -100,7 +100,7 @@ QtObject {
     readonly property int outlineWidth: 1
     readonly property int surfaceShadowExtent: 18
     readonly property int surfaceShadowSlice: 30
-    readonly property real surfaceShadowOpacity: .5
+    readonly property real surfaceShadowOpacity: .28
     readonly property int surfaceShadowTransition: animationFast
     readonly property int historyLimit: 60
     readonly property int notificationHistoryLimit: 80

@@ -23,6 +23,7 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     mask: Region { width: 0; height: 0 }
     WlrLayershell.layer: WlrLayer.Bottom
+    WlrLayershell.namespace: "hyprism-shadow"
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
     Behavior on shadowOpacity {

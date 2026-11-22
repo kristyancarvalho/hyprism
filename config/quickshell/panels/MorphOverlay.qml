@@ -24,6 +24,8 @@ PanelWindow {
     readonly property int safeHeight: Math.max(Design.compactBarHeight, availableHeight - Design.compactTopMargin(controller.config.shell) - 16)
     readonly property int compactWidth: Design.compactWidth(controller.config.shell, availableWidth)
     readonly property int morphDuration: Math.max(1, Math.round(Design.safeNumber(controller.config.shell.animationNormal, Design.animationMorph)))
+    readonly property int morphWidthRounded: Math.round(morphWidth)
+    readonly property int morphHeightRounded: Math.round(morphHeight)
     readonly property int shadowTopInset: Math.min(Design.surfaceShadowExtent, Design.compactTopMargin(controller.config.shell))
     readonly property var desiredGeometry: geometryForMode(localMode)
     property var morphFrom: ({ width: compactWidth, height: Design.compactHeight(controller.config.shell), radius: Design.radiusIslandCompact })
@@ -122,19 +124,6 @@ PanelWindow {
     WlrLayershell.keyboardFocus: interactive ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     onDesiredGeometryChanged: startMorph(desiredGeometry)
-
-    SurfaceShadow {
-        id: panelShadow
-        anchors.centerIn: morphSurface
-        width: morphSurface.width
-        height: morphSurface.height
-        opacity: window.localMode === "compact" ? 0 : 1
-        z: 0
-
-        Behavior on opacity {
-            NumberAnimation { duration: Design.surfaceShadowTransition; easing.type: Design.easingMorph }
-        }
-    }
 
     HyprlandFocusGrab {
         id: focusGrab
