@@ -1,5 +1,5 @@
 ---
-import { ArrowDown, ArrowRight, ArrowUpRight, AppWindow, BookOpen, Layers2, LockKeyhole, Monitor, MonitorCog, PackageCheck, Palette, PanelsTopLeft, SunMoon, Tags, Terminal } from '@lucide/astro';
+import { ArrowRight, ArrowUpRight, AppWindow, BookOpen, Layers2, LockKeyhole, Monitor, MonitorCog, PackageCheck, Palette, PanelsTopLeft, Tags, Terminal } from '@lucide/astro';
 import Base from '../layouts/Base.astro';
 import gallery from '../data/gallery.json';
 import releases from '../data/releases.json';
@@ -15,7 +15,6 @@ const launcher = gallery.screenshots.find((item) => item.src.endsWith('/gruvbox-
 <Base title="Hyprism" active="home" description="Hyprism is a cohesive, wallpaper-driven Hyprland desktop built with Quickshell, with a morphing shell, practical widgets, coordinated themes, and a native session lock.">
   <section class="home-hero">
     <div class="home-intro">
-      <p class="project-line"><Monitor size={15} aria-hidden="true" /> Linux desktop <span>·</span> Hyprland + Quickshell</p>
       <h1>Hyprism</h1>
       <p class="home-summary">A cohesive, wallpaper-driven desktop built around the Hyprland ecosystem.</p>
       <div class="hero-actions"><a class="button button-primary" href="/docs/installation/"><PackageCheck size={17} aria-hidden="true" />Installation guide<ArrowRight size={15} aria-hidden="true" /></a><a class="button button-secondary" href="/docs/"><BookOpen size={16} aria-hidden="true" />Read the docs</a></div>
@@ -23,19 +22,11 @@ const launcher = gallery.screenshots.find((item) => item.src.endsWith('/gruvbox-
     </div>
     <figure class="hero-capture" data-reveal>
       <img src={desk.src} alt={desk.alt} fetchpriority="high" />
-      <figcaption><span><SunMoon size={14} aria-hidden="true" /> Gruvbox palette, current source</span><span>Desktop / 01</span></figcaption>
     </figure>
-    <a class="hero-down" href="#overview"><span>Explore the desktop</span><ArrowDown size={15} aria-hidden="true" /></a>
-  </section>
-
-  <section id="overview" class="overview-strip">
-    <p class="overview-index">01 / Overview</p>
-    <p class="overview-copy">Hyprism connects the window manager, shell, widgets, and system controls into one session. The same wallpaper-derived palette carries through the desktop and supported applications.</p>
-    <a href="/docs/architecture/">How it fits together <ArrowUpRight size={14} aria-hidden="true" /></a>
   </section>
 
   <section class="desktop-map section-wrap" aria-labelledby="desktop-map-title">
-    <header class="section-heading editorial-heading"><div><p class="eyebrow">02 / The desktop</p><h2 id="desktop-map-title">A session with<br />working parts.</h2></div><p>Each surface has a clear job, from a compact status bar to a dedicated native session lock.</p></header>
+    <header class="section-heading editorial-heading"><div><p class="eyebrow">01 / The desktop</p><h2 id="desktop-map-title">A session with<br />working parts.</h2></div><p>Each surface has a clear job, from a compact status bar to a dedicated native session lock.</p></header>
     <div class="capability-list">
       <a class="capability-row" href="/docs/architecture/" data-reveal><span class="capability-number">01</span><span class="capability-icon"><PanelsTopLeft size={20} aria-hidden="true" /></span><span class="capability-copy"><strong>Shell and controls</strong><small>A compact island expands into workspaces, window context, Hub controls, launcher, notifications, and media.</small></span><ArrowUpRight size={17} aria-hidden="true" /></a>
       <a class="capability-row" href="/docs/desktop-widgets/" data-reveal><span class="capability-number">02</span><span class="capability-icon"><Layers2 size={20} aria-hidden="true" /></span><span class="capability-copy"><strong>Desktop widgets</strong><small>Eleven optional cards cover time, weather, performance, network, storage, services, tasks, and media.</small></span><ArrowUpRight size={17} aria-hidden="true" /></a>
@@ -47,23 +38,23 @@ const launcher = gallery.screenshots.find((item) => item.src.endsWith('/gruvbox-
 
   <section class="workspace-story section-wrap">
     <figure class="story-capture" data-reveal><img src={widgets.src} alt={widgets.alt} loading="lazy" /><figcaption><span><MonitorCog size={14} aria-hidden="true" /> Widget dashboard</span><span>02 / 03</span></figcaption></figure>
-    <div class="story-copy"><p class="eyebrow">03 / At a glance</p><h2>Useful information,<br />kept close.</h2><p>Place the clock, weather, media, and system cards on the desktop. Toggle each one independently, or use the CLI to manage the complete widget set.</p><a class="text-link" href="/docs/desktop-widgets/">Explore the widget catalog <ArrowRight size={15} aria-hidden="true" /></a></div>
+    <div class="story-copy"><p class="eyebrow">02 / At a glance</p><h2>Useful information,<br />kept close.</h2><p>Place the clock, weather, media, and system cards on the desktop. Toggle each one independently, or use the CLI to manage the complete widget set.</p><a class="text-link" href="/docs/desktop-widgets/">Explore the widget catalog <ArrowRight size={15} aria-hidden="true" /></a></div>
   </section>
 
   <section class="palette-story section-wrap">
-    <div class="palette-copy"><p class="eyebrow">04 / Appearance</p><h2>Color begins<br />with the wallpaper.</h2><p>Wallpaper-derived semantic colors flow into Quickshell and supported desktop targets. Choose a fixed preset when you want the palette to stay put.</p><a class="text-link" href="/docs/theming/">How theming works <ArrowRight size={15} aria-hidden="true" /></a><div class="palette-index" aria-label="Gruvbox-inspired color swatches"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+    <div class="palette-copy"><p class="eyebrow">03 / Appearance</p><h2>Color begins<br />with the wallpaper.</h2><p>Wallpaper-derived semantic colors flow into Quickshell and supported desktop targets. Choose a fixed preset when you want the palette to stay put.</p><a class="text-link" href="/docs/theming/">How theming works <ArrowRight size={15} aria-hidden="true" /></a><div class="palette-index" aria-label="Gruvbox-inspired color swatches"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
     <figure class="story-capture launcher-capture" data-reveal><img src={launcher.src} alt={launcher.alt} loading="lazy" /><figcaption><span><AppWindow size={14} aria-hidden="true" /> App Launcher</span><span>03 / 03</span></figcaption></figure>
   </section>
 
   {tour && (
     <section class="tour-reel section-wrap" aria-labelledby="tour-title">
-      <header class="section-heading editorial-heading"><div><p class="eyebrow">05 / In motion</p><h2 id="tour-title">The real desktop,<br />recorded.</h2></div><p>{tour.description}</p></header>
+      <header class="section-heading editorial-heading"><div><p class="eyebrow">04 / In motion</p><h2 id="tour-title">The real desktop,<br />recorded.</h2></div><p>{tour.description}</p></header>
       <figure class="tour-capture" data-reveal><video src={tour.src} poster={tour.poster} controls muted loop playsinline preload="none" aria-label={tour.alt}></video><figcaption><span><Monitor size={14} aria-hidden="true" /> {tour.caption}</span><a href="/gallery/">Full gallery <ArrowRight size={13} aria-hidden="true" /></a></figcaption></figure>
     </section>
   )}
 
   <section class="release-news section-wrap" aria-labelledby="news-title">
-    <header class="news-heading"><p class="eyebrow">06 / Latest releases</p><h2 id="news-title">What changed recently.</h2><a class="text-link" href="/releases/"><Tags size={15} aria-hidden="true" />All {releases.length} releases <ArrowRight size={15} aria-hidden="true" /></a></header>
+    <header class="news-heading"><p class="eyebrow">05 / Latest releases</p><h2 id="news-title">What changed recently.</h2><a class="text-link" href="/releases/"><Tags size={15} aria-hidden="true" />All {releases.length} releases <ArrowRight size={15} aria-hidden="true" /></a></header>
     <ol class="news-list">
       {recent.map((release) => (
         <li data-reveal><a href={`/releases/${release.tag}/`}><time datetime={release.publishedAt}>{shortDate(release.publishedAt)}</time><strong>{release.title}</strong><span>{release.body.split('\n').find((line) => line.startsWith('- '))?.slice(2)}</span><ArrowUpRight size={17} aria-hidden="true" /></a></li>
