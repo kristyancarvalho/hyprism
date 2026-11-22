@@ -98,6 +98,10 @@ QtObject {
     readonly property int separatorHeight: compactSeparatorHeight
     readonly property int separatorWidth: compactSeparatorWidth
     readonly property int outlineWidth: 1
+    readonly property int surfaceShadowExtent: 18
+    readonly property int surfaceShadowSlice: 30
+    readonly property real surfaceShadowOpacity: .28
+    readonly property int surfaceShadowTransition: animationFast
     readonly property int historyLimit: 60
     readonly property int notificationHistoryLimit: 80
     readonly property int notificationCardMinimumHeight: 76

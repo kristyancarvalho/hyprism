@@ -119,12 +119,18 @@ The QML shell keeps its data providers small and delegates system access to help
 | `Design.qml`, `Theme.qml`, `I18n.qml`, `HyprlandService.qml` | Design tokens, palette, translations, and Hyprland state |
 | `panels/` | Island, Hub, launcher, clipboard, emoji picker, network, Bluetooth, power, recording, wallpaper, theme settings, window switcher, notifications |
 | `widgets/` | Desktop widget board and its layout |
-| `components/` | Reusable controls and cards, including `MediaStrip.qml` and `ShellButton.qml` |
+| `components/` | Reusable controls and cards, including `MediaStrip.qml`, `ShellButton.qml`, and `SurfaceShadow.qml` |
 | `services/` | Data providers listed in [Shell services](#shell-services) |
 | `lockscreen/` | Lock screen session, surface, panel, clock, date, battery, weather, and media |
 | `notifications/`, `osd/` | Notification cards and the on-screen display |
 | `i18n/` | `en.json` and `pt-BR.json` catalogs |
-| `data/` | Bundled data such as the emoji list |
+| `data/` | Bundled data such as the emoji list and the shadow image |
+
+### Bar and panel shadows
+
+The shell runs on Qt Quick's software renderer, which does not draw shader effects, so shadows are a single nine-slice image (`data/surface-shadow.png`) drawn by `SurfaceShadow.qml`. The image has the surface footprint cut out, so nothing renders under translucent surfaces. Regenerate it with `scripts/theme/generate-surface-shadow.py`.
+
+Shadows live in their own layer-shell windows with the namespace `hyprism-shadow`: `BarShadow.qml` on the Bottom layer, behind application windows, and `PanelShadow.qml` on the Overlay layer, above them while a panel is open. The Hyprland layer rule that blurs the `quickshell` namespace does not match this namespace, so compositor blur never softens the shadows. Keep any custom blur rule from matching `hyprism-shadow`.
 
 ### Scripts
 

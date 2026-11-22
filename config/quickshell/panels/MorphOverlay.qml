@@ -24,6 +24,9 @@ PanelWindow {
     readonly property int safeHeight: Math.max(Design.compactBarHeight, availableHeight - Design.compactTopMargin(controller.config.shell) - 16)
     readonly property int compactWidth: Design.compactWidth(controller.config.shell, availableWidth)
     readonly property int morphDuration: Math.max(1, Math.round(Design.safeNumber(controller.config.shell.animationNormal, Design.animationMorph)))
+    readonly property int morphWidthRounded: Math.round(morphWidth)
+    readonly property int morphHeightRounded: Math.round(morphHeight)
+    readonly property int shadowTopInset: Math.min(Design.surfaceShadowExtent, Design.compactTopMargin(controller.config.shell))
     readonly property var desiredGeometry: geometryForMode(localMode)
     property var morphFrom: ({ width: compactWidth, height: Design.compactHeight(controller.config.shell), radius: Design.radiusIslandCompact })
     property var morphTarget: ({ width: compactWidth, height: Design.compactHeight(controller.config.shell), radius: Design.radiusIslandCompact })
@@ -110,9 +113,9 @@ PanelWindow {
     screen: shellScreen
     visible: shellScreen !== null && controller.barVisible && (!fullscreenActive || interactive)
     anchors.top: true
-    margins.top: Design.compactTopMargin(controller.config.shell)
-    implicitWidth: Math.min(safeWidth, Design.morphSurfaceMaxWidth + Design.morphOvershootMargin)
-    implicitHeight: Math.min(safeHeight, Design.morphSurfaceMaxHeight + Design.morphOvershootMargin)
+    margins.top: Design.compactTopMargin(controller.config.shell) - shadowTopInset
+    implicitWidth: Math.min(safeWidth, Design.morphSurfaceMaxWidth + Design.morphOvershootMargin) + Design.surfaceShadowExtent * 2
+    implicitHeight: Math.min(safeHeight, Design.morphSurfaceMaxHeight + Design.morphOvershootMargin) + Design.surfaceShadowExtent * 2
     color: "transparent"
     surfaceFormat.opaque: false
     exclusionMode: ExclusionMode.Ignore
@@ -135,13 +138,15 @@ PanelWindow {
     Glass {
         id: morphSurface
         anchors.top: parent.top
+        anchors.topMargin: window.shadowTopInset
         anchors.horizontalCenter: parent.horizontalCenter
         width: Math.round(window.morphWidth)
         height: Math.round(window.morphHeight)
         radius: window.morphRadius
         theme: window.theme
         surfaceOpacity: controller.config.shell.surfaceOpacity
-        outlined: window.interactive
+        outlined: false
+        z: 1
         clip: true
 
         HoverHandler {

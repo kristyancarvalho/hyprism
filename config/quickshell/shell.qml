@@ -746,6 +746,16 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
 
+        BarShadow {
+            required property var modelData
+            shellScreen: modelData
+            controller: shellController
+        }
+    }
+
+    Variants {
+        model: Quickshell.screens
+
         DesktopWidgets {
             required property var modelData
             shellScreen: modelData
@@ -758,14 +768,23 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
 
-        MorphOverlay {
+        Scope {
+            id: overlayScope
             required property var modelData
-            shellScreen: modelData
-            controller: shellController
-            theme: shellTheme
-            apps: appService
-            clipboard: clipboardService
-            notifications: notificationServer
+
+            MorphOverlay {
+                id: morphOverlay
+                shellScreen: overlayScope.modelData
+                controller: shellController
+                theme: shellTheme
+                apps: appService
+                clipboard: clipboardService
+                notifications: notificationServer
+            }
+
+            PanelShadow {
+                overlay: morphOverlay
+            }
         }
     }
 
