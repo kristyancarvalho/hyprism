@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 400" role="img" aria-labelledby="t"><title id="t">Hyprism — your wallpaper, refracted through the desktop</title>
+  <defs>
+    <linearGradient id="frame" x1="12" y1="100" x2="104" y2="14" gradientUnits="userSpaceOnUse"><stop stop-color="#5B9BB5"/><stop offset="1" stop-color="#D9776A"/></linearGradient>
+    <radialGradient id="glow" cx="1180" cy="200" r="620" gradientUnits="userSpaceOnUse"><stop stop-color="#5B9BB5" stop-opacity=".16"/><stop offset="1" stop-color="#5B9BB5" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1600" height="400" rx="28" fill="#14181B"/>
+  <rect width="1600" height="400" rx="28" fill="url(#glow)"/>
+  <g transform="translate(150 94) scale(1.9)">
+    <path d="M58 14 104 100H12Z" fill="none" stroke="url(#frame)" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M2 66h28.6" stroke="#9AA7AE" stroke-width="5" stroke-linecap="round"/>
+  <path d="M30.6 66 87.6 70" stroke="#9AA7AE" stroke-opacity=".55" stroke-width="3" stroke-linecap="round"/>
+  <path d="M87.6 70 124 52" stroke="#5B9BB5" stroke-width="5" stroke-linecap="round"/>
+  <path d="M87.6 70 126 72" stroke="#C9A36B" stroke-width="5" stroke-linecap="round"/>
+  <path d="M87.6 70 124 92" stroke="#D9776A" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <text x="470" y="215" fill="#F1EEE8" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-size="108" font-weight="600" letter-spacing="4">hyprism</text>
+  <text x="474" y="272" fill="#9AA7AE" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-size="30" letter-spacing="1">Your wallpaper, refracted through the desktop.</text>
+</svg>

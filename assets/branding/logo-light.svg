@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 112" role="img" aria-labelledby="t"><title id="t">Hyprism</title>
+  <defs><linearGradient id="frame" x1="12" y1="100" x2="104" y2="14" gradientUnits="userSpaceOnUse"><stop stop-color="#5B9BB5"/><stop offset="1" stop-color="#D9776A"/></linearGradient></defs>
+  <path d="M58 14 104 100H12Z" fill="none" stroke="url(#frame)" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M2 66h28.6" stroke="#9AA7AE" stroke-width="5" stroke-linecap="round"/>
+  <path d="M30.6 66 87.6 70" stroke="#9AA7AE" stroke-opacity=".55" stroke-width="3" stroke-linecap="round"/>
+  <path d="M87.6 70 124 52" stroke="#5B9BB5" stroke-width="5" stroke-linecap="round"/>
+  <path d="M87.6 70 126 72" stroke="#C9A36B" stroke-width="5" stroke-linecap="round"/>
+  <path d="M87.6 70 124 92" stroke="#D9776A" stroke-width="5" stroke-linecap="round"/>
+  <text x="156" y="82" fill="#1F2428" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-size="68" font-weight="600" letter-spacing="2">hyprism</text>
+</svg>

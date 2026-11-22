@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/branding/hyprism-banner.svg" alt="Hyprism — your wallpaper, refracted through the desktop" width="100%">
+  <img src="assets/branding/banner.svg" alt="Hyprism — your wallpaper, refracted through the desktop" width="100%">
 </p>
 
 <h1 align="center">Hyprism</h1>
