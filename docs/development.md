@@ -78,7 +78,7 @@ Hyprism integrates projects including [Hyprland](https://hypr.land/), [Quickshel
 
 Hyprism's original code and documentation are available under the [MIT License](../LICENSE), copyright Hyprism contributors.
 
-Vendored and adapted components retain their attribution and licenses in their respective directories, including the [Hyprism Pixie SDDM fork](../themes/hyprism-pixie/ORIGIN.md) and [NvChad](../config/nvim/LICENSE).
+Vendored and adapted components retain their attribution and licenses in their respective directories, including the [Hyprism Pixie SDDM fork](https://github.com/kristyancarvalho/hyprism/tree/dev/themes/hyprism-pixie) and [NvChad](../config/nvim/LICENSE).
 
 ## Documentation website
 
