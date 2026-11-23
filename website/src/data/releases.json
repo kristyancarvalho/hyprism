@@ -1,5 +1,14 @@
 [
   {
+    "tag": "v0.1.24",
+    "version": "0.1.24",
+    "title": "Hyprism 0.1.24",
+    "publishedAt": "2026-11-23T05:01:23Z",
+    "url": "https://github.com/kristyancarvalho/hyprism/releases/tag/v0.1.24",
+    "tagUrl": "https://github.com/kristyancarvalho/hyprism/tree/v0.1.24",
+    "body": "# Hyprism 0.1.24\n\nThis release replaces the SDDM login theme with the Hyprism Pixie fork, fixes logout from the power menu, and refreshes the website.\n\n## Highlights\n\n- New SDDM login screen based on Pixie, using the Hyprism palette and current wallpaper.\n- The SDDM virtual keyboard now stays hidden until you click its toggle button.\n- Logout from the power menu and Super+M now works with the Lua Hyprland configuration.\n\n## SDDM\n\n- Replaced the previous KSDDM theme with the Hyprism-maintained Pixie fork.\n- Integrates the dynamic Hyprism palette and the current wallpaper, with a blurred login card.\n- Session picker with DE/WM logos, a person icon fallback for users, and show/hide password icons.\n- English and Brazilian Portuguese localization.\n- Google Sans Flex clock.\n- Suspend, restart and shutdown controls, shown only when supported.\n- Qt Virtual Keyboard with Hyprism styling. It no longer opens when the password field is focused; it opens and closes only with the toggle button and always starts hidden.\n- Refined animations for menus, keyboard, login feedback and intro.\n- The installer, dependencies, packaging and documentation were updated for the new theme.\n\n## Desktop and Shell\n\n- The power menu and Super+M share one logout helper that prefers `hyprshutdown` and falls back to the supported Hyprland Lua dispatcher, reporting failures instead of hiding them.\n\n## Website\n\n- Centered hero divider, Quickshell, Hyprland and Arch Linux logos, and cleaner section headings and spacing.\n- Refined release page separators, and release notes now display images.\n\n## Screenshot\n\n![Hyprism SDDM login screen](https://raw.githubusercontent.com/kristyancarvalho/hyprism/v0.1.24/assets/screenshots/releases/v0.1.24-sddm.png)\n\nThe screenshot is a render of the Hyprism Pixie theme with the keyboard hidden by default.\n\n**Full changelog:** https://github.com/kristyancarvalho/hyprism/compare/v0.1.23...v0.1.24\n"
+  },
+  {
     "tag": "v0.1.23",
     "version": "0.1.23",
     "title": "Hyprism 0.1.23",
