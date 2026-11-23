@@ -11,7 +11,7 @@ Item {
     readonly property var entries: [
         { label: I18n.tr("power.lock"), icon: "lock", command: "hyprism-shell lock", destructive: false },
         { label: I18n.tr("power.suspend"), icon: "suspend", command: "systemctl suspend", destructive: true },
-        { label: I18n.tr("power.logout"), icon: "logout", command: "command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch exit", destructive: true },
+        { label: I18n.tr("power.logout"), icon: "logout", command: "", destructive: true, logout: true },
         { label: I18n.tr("power.reboot"), icon: "reboot", command: "systemctl reboot", destructive: true },
         { label: I18n.tr("power.shutdown"), icon: "power", command: "systemctl poweroff", destructive: true }
     ]
@@ -22,7 +22,8 @@ Item {
             confirming = entry.label
             return
         }
-        controller.run(["sh", "-lc", entry.command])
+        if (entry.logout) controller.logout()
+        else controller.run(["sh", "-lc", entry.command])
         controller.close()
     }
 

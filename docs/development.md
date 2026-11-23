@@ -58,6 +58,8 @@ The shell prints QML warnings and errors to `quickshell-startup.log`. Quickshell
 
 Troubleshooting: if the command refuses to start, make sure it is run from inside a graphical session. If a previous run was killed abnormally, `make dev-session-stop` clears its runtime directory. Use the Lua dispatcher syntax with the nested instance, for example `hl.dsp.exit()`.
 
+Logging out, from the power menu or `Super+M`, runs `scripts/system/logout`. It uses `hyprshutdown` when installed and otherwise the `hl.dsp.exit()` dispatcher; the legacy `hyprctl dispatch exit` is rejected by the Lua configuration. Test it only inside the nested session, which has its own runtime directory and Hyprland instance.
+
 ## Contributing
 
 Use the structured [issue chooser](https://github.com/kristyancarvalho/hyprism/issues/new/choose) for reproducible bugs, feature requests, and installation problems. Remove credentials and personal data from logs or screenshots.

@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+report() {
+  printf 'hyprism logout: %s\n' "$1" >&2
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send -u critical -a Hyprism "Hyprism" "$1" >/dev/null 2>&1 || true
+  fi
+}
+
+if command -v hyprshutdown >/dev/null 2>&1; then
+  if hyprshutdown; then
+    exit 0
+  fi
+  printf 'hyprism logout: hyprshutdown failed; using the Hyprland exit dispatcher\n' >&2
+fi
+
+if ! command -v hyprctl >/dev/null 2>&1; then
+  report "hyprctl is unavailable and hyprshutdown did not log out"
+  exit 127
+fi
+if [[ -z ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
+  report "No Hyprland instance is available to log out of"
+  exit 1
+fi
+
+status=0
+output=$(hyprctl dispatch 'hl.dsp.exit()' 2>&1) || status=$?
+if ((status != 0)) || [[ $output == error* ]]; then
+  report "Hyprland refused to exit: ${output:-exit status $status}"
+  exit $((status != 0 ? status : 1))
+fi

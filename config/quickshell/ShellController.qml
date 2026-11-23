@@ -304,6 +304,11 @@ Item {
         commandRunner.exec(command)
     }
 
+    function logout() {
+        if (logoutRunner.running) return
+        logoutRunner.exec([rootDir + "/scripts/system/logout"])
+    }
+
     function refreshWeather() {
         if (weatherService) weatherService.refresh()
     }
@@ -950,6 +955,13 @@ Item {
     }
 
     Process { id: commandRunner }
+    Process {
+        id: logoutRunner
+        stderr: StdioCollector { id: logoutErrors }
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0) controller.showOsd(I18n.tr("power.logout"), logoutErrors.text.trim() || I18n.tr("power.logoutFailed"))
+        }
+    }
     SystemClock { id: systemClock; precision: SystemClock.Seconds }
     Timer { id: osdTimer; interval: 1600; onTriggered: controller.hideOsd() }
     Timer {

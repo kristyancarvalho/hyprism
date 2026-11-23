@@ -85,7 +85,8 @@
     "suspend": "Suspend",
     "logout": "Log out",
     "reboot": "Restart",
-    "shutdown": "Shut down"
+    "shutdown": "Shut down",
+    "logoutFailed": "Could not log out"
   },
   "recording": {
     "title": "Record screen",

@@ -85,7 +85,8 @@
     "suspend": "Suspender",
     "logout": "Encerrar sessão",
     "reboot": "Reiniciar",
-    "shutdown": "Desligar"
+    "shutdown": "Desligar",
+    "logoutFailed": "Não foi possível encerrar a sessão"
   },
   "recording": {
     "title": "Gravar tela",

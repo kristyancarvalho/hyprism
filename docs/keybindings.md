@@ -20,6 +20,7 @@ icon: keyboard
 | `Super+Shift+R` | Select or stop a recording |
 | `Super+Shift+S` / `Super+Shift+F` | Capture and edit a region / focused monitor in Satty |
 | `Super+L` | Lock with the Quickshell lock screen |
+| `Super+M` | Log out through `scripts/system/logout`, the same helper as the power menu |
 | `Super+Ctrl+S` | Toggle night mode |
 | `Super+B` | Open Zen Browser |
 | `Super+1…0` | Go to workspaces 1–10 |

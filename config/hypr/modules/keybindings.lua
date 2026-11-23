@@ -31,7 +31,7 @@ bind(mod .. " + SHIFT + I", quickshell_ipc .. "togglePowerSaver")
 bind(mod .. " + SHIFT + E", cli .. " reload")
 bind(mod .. " + SHIFT + space", cli .. " layout toggle")
 bind(mod .. " + SHIFT + L", cli .. " open power")
-bind(mod .. " + M", "command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'")
+bind(mod .. " + M", script("system/logout"))
 bind(mod .. " + L", cli .. " lock")
 bind("CTRL + period", cli .. " open emoji")
 
