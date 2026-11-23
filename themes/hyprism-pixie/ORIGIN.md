@@ -19,4 +19,6 @@ No KSDDM or SilentSDDM source is reused. The former Hyprism theme was separately
 
 The dwl project does not publish a distinct logo in its upstream source. Its session name is recognized and uses the neutral desktop mark instead of displaying a different project's logo.
 
+The Google Sans Flex font files (Regular, Medium, SemiBold) under `assets/fonts/` are copyright 2015 Google LLC and are distributed under the SIL Open Font License 1.1, included as `licenses/OFL-1.1.txt`. They match the font family used by the Hyprism lock screen clock and are bundled so the greeter does not depend on fonts installed under a user's home directory.
+
 The bundled Flex Rounded font files are retained from Pixie's imported tree. Their source and attribution are part of the upstream Pixie repository; they are not Hyprism-created assets. The Material Design Icons font is distributed under Apache 2.0; its license is included in `licenses/Apache-2.0.txt`. The LXDE and LXQt artwork license texts are included under `licenses/`.

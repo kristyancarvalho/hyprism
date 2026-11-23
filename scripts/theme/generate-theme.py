@@ -538,7 +538,7 @@ def render_hyprlock_config(theme, language="en"):
     return colors + "\n" + "\n".join(lines) + "\n"
 
 
-def render_sddm(theme):
+def render_sddm(theme, language="en"):
     values = {
         "background": (SDDM_STATE / "current-wallpaper.jpg").resolve().as_uri(),
         "accentColor": theme["primary"],
@@ -552,11 +552,12 @@ def render_sddm(theme):
         "errorColor": theme["error"],
         "fontFamily": "",
         "use24HourClock": "false",
+        "language": language if language in ("en", "pt-BR") else "en",
     }
     return "[General]\n" + "".join(f"{key}={value}\n" for key, value in values.items())
 
 
-def publish_sddm(theme, image):
+def publish_sddm(theme, image, language="en"):
     if not SDDM_STATE.exists():
         if not SDDM_STATE_EXPLICIT:
             return False
@@ -588,7 +589,7 @@ def publish_sddm(theme, image):
             wallpaper_replaced = True
         if not wallpaper.is_file() or not os.access(wallpaper, os.R_OK):
             raise ValueError("readable wallpaper is missing")
-        write(SDDM_STATE / "theme.conf", render_sddm(theme), 0o644)
+        write(SDDM_STATE / "theme.conf", render_sddm(theme, language), 0o644)
         return True
     except (OSError, ValueError) as error:
         if temporary_wallpaper:
@@ -610,6 +611,17 @@ def publish_sddm(theme, image):
                     raise
         print(f"Hyprism theme: previous SDDM state preserved after failure ({error})", file=sys.stderr)
         return False
+
+
+def refresh_sddm_language(language):
+    path = SDDM_STATE / "theme.conf"
+    if not path.is_file():
+        return False
+    language = language if language in ("en", "pt-BR") else "en"
+    lines = [line for line in path.read_text(encoding="utf-8").splitlines() if not line.startswith("language=")]
+    lines.append(f"language={language}")
+    write(path, "\n".join(lines) + "\n", 0o644)
+    return True
 
 
 def render_colloid(matugen, theme):
@@ -1156,6 +1168,13 @@ def render_gtk2_settings(theme):
 
 
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "--sddm-language":
+        try:
+            refresh_sddm_language(interface_language())
+        except OSError as error:
+            print(f"Hyprism theme: SDDM language preserved after failure ({error})", file=sys.stderr)
+            raise SystemExit(1)
+        return
     image = sys.argv[1] if len(sys.argv) > 1 else ""
     mode, white_temperature, palette = appearance_settings()
     language = interface_language()
@@ -1184,8 +1203,8 @@ def main():
     publish(OUT / "gtk-3.0/settings.ini", render_gtk_settings(theme), validate_colors)
     publish(OUT / "gtk-4.0/settings.ini", render_gtk_settings(theme), validate_colors)
     publish(OUT / "gtk-2.0/gtkrc", render_gtk2_settings(theme), validate_colors)
-    publish(OUT / "sddm/theme.conf", render_sddm(theme), validate_colors)
-    publish_sddm(theme, image)
+    publish(OUT / "sddm/theme.conf", render_sddm(theme, language), validate_colors)
+    publish_sddm(theme, image, language)
     try:
         starship = render_matugen_template("starship.toml", matugen, theme)
         publish(OUT / "starship.toml", starship, validate_starship)

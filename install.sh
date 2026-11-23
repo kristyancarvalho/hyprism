@@ -315,7 +315,8 @@ if grep -qx 'autoColor=false' "$sddm_state_dir/theme.conf" 2>/dev/null \
   && grep -q '^surfaceVariantColor=.' "$sddm_state_dir/theme.conf" 2>/dev/null \
   && grep -q '^textColor=.' "$sddm_state_dir/theme.conf" 2>/dev/null \
   && grep -q '^mutedColor=.' "$sddm_state_dir/theme.conf" 2>/dev/null \
-  && grep -q '^errorColor=.' "$sddm_state_dir/theme.conf" 2>/dev/null; then sddm_theme_config_current=1; fi
+  && grep -q '^errorColor=.' "$sddm_state_dir/theme.conf" 2>/dev/null \
+  && grep -Eq '^language=(en|pt-BR)$' "$sddm_state_dir/theme.conf" 2>/dev/null; then sddm_theme_config_current=1; fi
 if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprtoolkit-colors.conf || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/hyprlock.conf || ! -s $theme_dir/gtk-3.0/settings.ini || ! -s $theme_dir/gtk-4.0/settings.ini || ! -s $theme_dir/gtk-2.0/gtkrc || $hyprlock_animations_stale -eq 1 || ! -s $theme_dir/colloid/_color-palette-matugen.scss || ! -s $theme_dir/colloid-gtk-4.0/gtk.css || ! -s $colloid_theme/gtk-3.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" || $(cat "$colloid_theme/.hyprism-patch.sha256" 2>/dev/null || true) != "$colloid_patch_hash" || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig || ! -s $theme_dir/icons/Hyprism-Papirus/index.theme || ! -s $theme_dir/starship.toml || ! -s $theme_dir/tmux.conf || ! -s $theme_dir/zathura/zathurarc || ! -s $theme_dir/nvim/matugen.lua || ! -s $target_home/.config/nvim/lua/themes/matugen.lua || ! -s $theme_dir/fastfetch/config.jsonc || ! -s $target_home/.config/fastfetch/images/archlinux.png || ! -e $state_dir/lock-wallpaper || ! -s $sddm_state_dir/current-wallpaper.jpg || ! -s $sddm_state_dir/theme.conf || $sddm_theme_config_current -eq 0 ]]; then
   if [[ $sddm_theme_config_current -eq 0 && -s $theme_dir/theme.json ]]; then
     active_wallpaper=$(as_user jq -r '.wallpaper // empty' "$theme_dir/theme.json")
@@ -338,7 +339,7 @@ if [[ ! -s $theme_dir/foot-opacity.ini || ! -s $theme_dir/kitty-opacity.conf ]];
 fi
 
 if ((dry_run == 0)); then
-  [[ -s $sddm_stage_dir/Main.qml && -s $sddm_stage_dir/components/Clock.qml && -s $sddm_stage_dir/components/PowerBar.qml && -s $sddm_stage_dir/components/SessionLogo.qml && -s $sddm_stage_dir/metadata.desktop && -s $sddm_stage_dir/login_screen.png && -s $sddm_stage_dir/assets/fonts/FlexRounded-R.ttf && -s $sddm_stage_dir/assets/fonts/FlexRounded-M.ttf && -s $sddm_stage_dir/assets/fonts/FlexRounded-B.ttf && -s $sddm_stage_dir/assets/fonts/MaterialDesignIcons.ttf ]] \
+  [[ -s $sddm_stage_dir/Main.qml && -s $sddm_stage_dir/components/Clock.qml && -s $sddm_stage_dir/components/PowerBar.qml && -s $sddm_stage_dir/components/SessionLogo.qml && -s $sddm_stage_dir/metadata.desktop && -s $sddm_stage_dir/login_screen.png && -s $sddm_stage_dir/assets/fonts/FlexRounded-R.ttf && -s $sddm_stage_dir/assets/fonts/FlexRounded-M.ttf && -s $sddm_stage_dir/assets/fonts/FlexRounded-B.ttf && -s $sddm_stage_dir/assets/fonts/MaterialDesignIcons.ttf && -s $sddm_stage_dir/assets/fonts/GoogleSansFlex-Regular.ttf && -s $sddm_stage_dir/assets/fonts/GoogleSansFlex-Medium.ttf && -s $sddm_stage_dir/assets/fonts/GoogleSansFlex-SemiBold.ttf && -s $sddm_stage_dir/imports/HyprismPixie/qmldir && -s $sddm_stage_dir/imports/HyprismPixie/KeyboardPalette.qml && -s $sddm_stage_dir/imports/QtQuick/VirtualKeyboard/Styles/hyprism/style.qml ]] \
     || { printf 'The staged Hyprism Pixie theme is incomplete.\n' >&2; exit 1; }
   for logo in hyprland dwm kdeplasma gnome xfce sway i3 qtile awesomewm bspwm cinnamon mate lxde lxqt desktop; do
     [[ -s $sddm_stage_dir/assets/logos/$logo.svg || ( $logo == qtile && -s $sddm_stage_dir/assets/logos/qtile.png ) ]] \
@@ -352,6 +353,7 @@ if ((dry_run == 0)); then
     && grep -Fqx 'background=file:///var/lib/hyprism/sddm/current-wallpaper.jpg' "$sddm_stage_dir/theme.conf" \
     && grep -q '^accentColor=.' "$sddm_stage_dir/theme.conf" \
     && grep -q '^surfaceColor=.' "$sddm_stage_dir/theme.conf" \
+    && grep -Eq '^language=(en|pt-BR)$' "$sddm_stage_dir/theme.conf" \
     || { printf 'The staged SDDM theme configuration is incomplete; the active login theme was left unchanged.\n' >&2; exit 1; }
   sddm_backup_dir="$target_home/.local/state/hyprism/backups/$timestamp/sddm"
   run install -d -m 0755 -o "$target_user" -g "$target_group" "$sddm_backup_dir"
@@ -497,6 +499,8 @@ if ((dry_run == 0)); then
     || { printf 'The PolicyKit authentication agent was not enabled.\n' >&2; exit 1; }
   grep -qx 'InputMethod=qtvirtualkeyboard' "$sddm_dropin" \
     || { printf 'The SDDM virtual input method was not configured.\n' >&2; exit 1; }
+  grep -Fq 'QML_IMPORT_PATH=/usr/share/sddm/themes/hyprism-pixie/imports' "$sddm_dropin" \
+    || { printf 'The SDDM virtual keyboard style path was not configured.\n' >&2; exit 1; }
   grep -qx 'Current=hyprism-pixie' "$sddm_dropin" \
     || { printf 'The Hyprism Pixie theme is not active in SDDM.\n' >&2; exit 1; }
   grep -qx 'autoColor=false' "$sddm_state_dir/theme.conf" \

@@ -163,6 +163,33 @@ class ThemeTests(unittest.TestCase):
                 self.assertIn(f'textColor={theme["foreground"]}\n', rendered)
                 self.assertIn(f'errorColor={theme["error"]}\n', rendered)
                 self.assertIn("background=file:///var/lib/hyprism/sddm/current-wallpaper.jpg\n", rendered)
+                self.assertIn("language=en\n", rendered)
+                self.assertIn("language=pt-BR\n", THEME.render_sddm(theme, "pt-BR"))
+                self.assertIn("language=en\n", THEME.render_sddm(theme, "fr"))
+
+    def test_sddm_language_refresh_keeps_palette_and_falls_back_to_english(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state = Path(directory)
+            conf = state / "theme.conf"
+            conf.write_text("[General]\naccentColor=#123456\nlanguage=pt-BR\n", encoding="utf-8")
+            with mock.patch.object(THEME, "SDDM_STATE", state):
+                self.assertTrue(THEME.refresh_sddm_language("fr"))
+                self.assertEqual(conf.read_text(encoding="utf-8"), "[General]\naccentColor=#123456\nlanguage=en\n")
+                self.assertTrue(THEME.refresh_sddm_language("pt-BR"))
+                self.assertEqual(conf.read_text(encoding="utf-8"), "[General]\naccentColor=#123456\nlanguage=pt-BR\n")
+            with mock.patch.object(THEME, "SDDM_STATE", state / "missing"):
+                self.assertFalse(THEME.refresh_sddm_language("en"))
+
+    def test_sddm_publication_writes_the_configured_language(self):
+        theme = THEME.preset_theme("gruvbox", "dark", "/wallpapers/manual.jpg")
+        with tempfile.TemporaryDirectory() as directory:
+            state = Path(directory)
+            (state / "current-wallpaper.jpg").write_bytes(b"jpeg")
+            with mock.patch.object(THEME, "SDDM_STATE", state):
+                self.assertTrue(THEME.publish_sddm(theme, "", "pt-BR"))
+            rendered = (state / "theme.conf").read_text(encoding="utf-8")
+            self.assertIn("language=pt-BR\n", rendered)
+            self.assertIn(f'accentColor={theme["primary"]}\n', rendered)
 
     def test_sddm_publication_restores_wallpaper_if_config_write_fails(self):
         theme = THEME.preset_theme("gruvbox", "dark", "/wallpaper.jpg")

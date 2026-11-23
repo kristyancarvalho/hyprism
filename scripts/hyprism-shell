@@ -530,6 +530,15 @@ def services_command(args):
     return 0
 
 
+def refresh_sddm_language():
+    generator = root_dir() / "scripts/theme/generate-theme.py"
+    if not generator.is_file():
+        return
+    result = subprocess.run([sys.executable, str(generator), "--sddm-language"], text=True, capture_output=True, check=False)
+    if result.returncode != 0:
+        print(result.stderr.strip() or "SDDM language could not be updated", file=sys.stderr)
+
+
 def language_command(args):
     config = configuration()
     if args.language_command is None:
@@ -537,6 +546,7 @@ def language_command(args):
         return 0
     config["language"] = args.locale
     write_config(config)
+    refresh_sddm_language()
     print(args.locale)
     return 0
 

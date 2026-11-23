@@ -15,7 +15,8 @@ class HyprismShellTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.config = Path(self.temporary.name) / "user.json"
         self.config.write_text((ROOT / "config/user.json").read_text(encoding="utf-8"), encoding="utf-8")
-        self.environment = dict(os.environ, HYPRISM_ROOT=str(ROOT), HYPRISM_CONFIG=str(self.config))
+        self.sddm_state = Path(self.temporary.name) / "sddm"
+        self.environment = dict(os.environ, HYPRISM_ROOT=str(ROOT), HYPRISM_CONFIG=str(self.config), HYPRISM_SDDM_STATE_DIR=str(self.sddm_state))
 
     def tearDown(self):
         self.temporary.cleanup()
@@ -113,6 +114,23 @@ elif name == "satty":
         changed = self.run_cli("language", "set", "pt-BR")
         self.assertEqual(changed.returncode, 0)
         self.assertEqual(self.read_config()["language"], "pt-BR")
+
+    def test_language_set_updates_sddm_language_without_touching_palette_or_wallpaper(self):
+        self.sddm_state.mkdir()
+        theme_conf = self.sddm_state / "theme.conf"
+        wallpaper = self.sddm_state / "current-wallpaper.jpg"
+        theme_conf.write_text("[General]\nbackground=file:///x.jpg\naccentColor=#112233\nlanguage=en\n", encoding="utf-8")
+        wallpaper.write_bytes(b"wallpaper")
+        self.assertEqual(self.run_cli("language", "set", "pt-BR").returncode, 0)
+        self.assertEqual(theme_conf.read_text(encoding="utf-8"), "[General]\nbackground=file:///x.jpg\naccentColor=#112233\nlanguage=pt-BR\n")
+        self.assertEqual(wallpaper.read_bytes(), b"wallpaper")
+        self.assertEqual(self.run_cli("language", "set", "en").returncode, 0)
+        self.assertIn("language=en\n", theme_conf.read_text(encoding="utf-8"))
+        self.assertEqual(theme_conf.read_text(encoding="utf-8").count("language="), 1)
+
+    def test_language_set_without_sddm_state_still_succeeds(self):
+        self.assertEqual(self.run_cli("language", "set", "pt-BR").returncode, 0)
+        self.assertFalse((self.sddm_state / "theme.conf").exists())
 
     def test_atomic_write_preserves_managed_symlink(self):
         target = Path(self.temporary.name) / "managed.json"

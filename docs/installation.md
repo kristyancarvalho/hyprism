@@ -66,11 +66,20 @@ The installer and package lists target Arch Linux. Other distributions are not c
 
 The AUR packages pull in the runtime the shell needs, including `hyprland`, `quickshell` 0.2.0 or newer, `awww`, `matugen`, `python-pillow`, `networkmanager`, `wireplumber`, `upower`, `power-profiles-daemon`, `wl-clipboard` with `cliphist`, `grim`, `slurp` and `satty`, and the Qt 6 SDDM stack (`sddm`, `qt6-declarative`, `qt6-svg`, and `qt6-virtualkeyboard`). The Kvantum, qt5ct, qt6ct, and Papirus theming stack is also installed. Optional extras such as `ddcutil` for external monitor brightness, `flatpak`, and `fastfetch` are listed as optional dependencies; `pacman -Qi hyprism-shell` shows them with their purpose. The repository installer reads `packages/pacman.txt` and `packages/aur.txt` instead.
 
-Hyprism installs its Qt 6 Pixie SDDM fork as `hyprism-pixie`. The login theme reads the same wallpaper and generated palette as the desktop from `/var/lib/hyprism/sddm/`, and includes the Qt Quick Virtual Keyboard for password entry. Session choices use bundled DE/WM logos where the projects publish artwork, with a neutral desktop mark for unknown sessions.
+Hyprism installs its Qt 6 Pixie SDDM fork as `hyprism-pixie`. The login theme reads the same wallpaper, generated palette, and interface language as the desktop from `/var/lib/hyprism/sddm/theme.conf`. Session choices use bundled DE/WM logos where the projects publish artwork, with a neutral desktop mark for unknown sessions.
 
-To preview the installed theme without leaving the desktop session, run SDDM's greeter test mode:
+- **Language.** The `language=` value in `theme.conf` is written from `hyprism-shell language`. `hyprism-shell language set en` and `hyprism-shell language set pt-BR` update only that line, so the wallpaper and palette are untouched and the next login screen uses the new language. A missing or unknown value falls back to English. The greeter never reads `LANG`, `LC_ALL`, or the SDDM account's locale.
+- **Clock font.** The clock uses Google Sans Flex, the same family as the lock screen. The theme bundles the Regular, Medium, and SemiBold files under `assets/fonts/` (SIL Open Font License 1.1, `licenses/OFL-1.1.txt`), so the greeter does not depend on fonts installed in a home directory.
+- **Card and blur.** The login card is one item that owns the position, opacity, shake, and frosted-glass backdrop. The blur samples only the wallpaper behind the card, so text and icons stay sharp. It needs Qt Quick effects (`QtQuick.Effects`, part of `qt6-declarative`); without a working scene-graph shader backend the card falls back to a translucent surface.
+- **Virtual keyboard.** The Qt Quick Virtual Keyboard follows the Hyprism palette through a bundled style at `imports/QtQuick/VirtualKeyboard/Styles/hyprism`, and is sized to about a third of the screen height. Qt only finds custom styles on its import path, so `config/sddm/20-hyprism.conf` sets `GreeterEnvironment` to `QT_IM_MODULE=qtvirtualkeyboard`, `QT_VIRTUALKEYBOARD_STYLE=hyprism`, and `QML_IMPORT_PATH=/usr/share/sddm/themes/hyprism-pixie/imports`. Without that import path the greeter silently shows Qt's default black keyboard.
+- **Power controls.** Suspend, restart, and shut down appear in the top-right corner only when SDDM reports `canSuspend`, `canReboot`, and `canPowerOff`. SDDM's test mode reports all of them as unavailable, so they are hidden there.
+
+To preview the installed theme without leaving the desktop session, run SDDM's greeter test mode with the same environment the real greeter receives:
 
 ```bash
+QT_IM_MODULE=qtvirtualkeyboard \
+QT_VIRTUALKEYBOARD_STYLE=hyprism \
+QML_IMPORT_PATH=/usr/share/sddm/themes/hyprism-pixie/imports \
 sddm-greeter-qt6 --test-mode --theme /usr/share/sddm/themes/hyprism-pixie
 ```
 

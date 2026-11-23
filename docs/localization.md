@@ -18,4 +18,6 @@ hyprism-shell language set en
 hyprism-shell language set pt-BR
 ```
 
+The same setting selects the login screen language. `hyprism-shell language set` rewrites the `language=` line of `/var/lib/hyprism/sddm/theme.conf` for the next SDDM session; its strings live in `themes/hyprism-pixie/Main.qml`.
+
 Translations live in `config/quickshell/i18n/`. English is the canonical catalog and missing values fall back to English.

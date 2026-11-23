@@ -1,8 +1,11 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Effects
 import QtQuick.VirtualKeyboard
+import QtQuick.VirtualKeyboard.Settings
 import "components"
+import "imports/HyprismPixie"
 
 FocusScope {
     id: root
@@ -10,16 +13,64 @@ FocusScope {
     height: parent ? parent.height : 1080
     focus: true
 
+    readonly property var translations: ({
+        "en": {
+            pressAnyKey: "Press any key to sign in",
+            password: "Enter password",
+            showPassword: "Show password",
+            hidePassword: "Hide password",
+            keyboard: "Virtual keyboard",
+            signIn: "Sign in",
+            signingIn: "Signing in…",
+            failed: "Sign-in failed. Check your password and try again.",
+            previousUser: "Previous user",
+            nextUser: "Next user",
+            chooseUser: "Choose user",
+            chooseSession: "Choose session",
+            keyboardLayout: "Keyboard layout",
+            suspend: "Suspend",
+            restart: "Restart",
+            shutdown: "Shut down",
+            user: "User",
+            session: "Session",
+            dateFormat: "dddd, MMMM d"
+        },
+        "pt-BR": {
+            pressAnyKey: "Pressione qualquer tecla para entrar",
+            password: "Digite a senha",
+            showPassword: "Mostrar senha",
+            hidePassword: "Ocultar senha",
+            keyboard: "Teclado virtual",
+            signIn: "Entrar",
+            signingIn: "Entrando…",
+            failed: "Falha ao entrar. Verifique a senha e tente novamente.",
+            previousUser: "Usuário anterior",
+            nextUser: "Próximo usuário",
+            chooseUser: "Escolher usuário",
+            chooseSession: "Escolher sessão",
+            keyboardLayout: "Layout do teclado",
+            suspend: "Suspender",
+            restart: "Reiniciar",
+            shutdown: "Desligar",
+            user: "Usuário",
+            session: "Sessão",
+            dateFormat: "dddd, d 'de' MMMM"
+        }
+    })
+    readonly property string language: config.language === "pt-BR" ? "pt-BR" : "en"
+    readonly property var locale: Qt.locale(language === "pt-BR" ? "pt_BR" : "en_US")
+    property date now: new Date()
+
     property bool loginVisible: false
-    property bool keyboardVisible: false
     property bool authenticating: false
     property bool passwordVisible: false
+    readonly property bool keyboardVisible: loginVisible && virtualKeyboard.active
     property int userIndex: userModel && userModel.lastIndex >= 0 ? userModel.lastIndex : 0
     property int sessionIndex: sessionModel && sessionModel.lastIndex >= 0 ? sessionModel.lastIndex : 0
     readonly property int userCount: userModel ? userModel.count : 0
     readonly property int sessionCount: sessionModel ? sessionModel.count : 0
     readonly property string username: userValue(Qt.EditRole, userValue(Qt.UserRole + 1, sddm.lastUser || ""))
-    readonly property string realName: userValue(Qt.UserRole + 2, userValue(Qt.DisplayRole, username || "User"))
+    readonly property string realName: userValue(Qt.UserRole + 2, userValue(Qt.DisplayRole, username || tr("user")))
     readonly property string userIcon: userValue(Qt.UserRole + 3, "")
     readonly property string sessionName: sessionValue(sessionIndex)
     readonly property color accent: config.accentColor || "#d79921"
@@ -29,14 +80,44 @@ FocusScope {
     readonly property color textColor: config.textColor || "#ebdbb2"
     readonly property color mutedColor: config.mutedColor || "#bdae93"
     readonly property color errorColor: config.errorColor || "#fb4934"
+    readonly property color accentForeground: config.accentForegroundColor || backgroundColor
     readonly property string wallpaperSource: config.background || "file:///var/lib/hyprism/sddm/current-wallpaper.jpg"
-    readonly property real contentWidth: Math.min(430, width - 36)
+    readonly property real contentWidth: Math.min(430, width - 70)
+    readonly property real cardPadding: 17
+    readonly property real cardVerticalPadding: 25
+    readonly property real keyboardMargin: 24
+    readonly property real keyboardGap: 24
     readonly property var availableFonts: Qt.fontFamilies()
-    readonly property string activeFontFamily: config.fontFamily && availableFonts.indexOf(config.fontFamily) >= 0 ? config.fontFamily : fontRegular.name
+    readonly property string fontFamily: config.fontFamily && availableFonts.indexOf(config.fontFamily) >= 0 ? config.fontFamily : flexRegular.name
+    readonly property string clockFontFamily: googleSansRegular.status === FontLoader.Ready ? googleSansRegular.name : "Google Sans Flex"
 
-    FontLoader { id: fontRegular; source: "assets/fonts/FlexRounded-R.ttf" }
-    FontLoader { id: fontMedium; source: "assets/fonts/FlexRounded-M.ttf" }
-    FontLoader { id: fontBold; source: "assets/fonts/FlexRounded-B.ttf" }
+    FontLoader { id: flexRegular; source: "assets/fonts/FlexRounded-R.ttf" }
+    FontLoader { id: flexMedium; source: "assets/fonts/FlexRounded-M.ttf" }
+    FontLoader { id: flexBold; source: "assets/fonts/FlexRounded-B.ttf" }
+    FontLoader { id: googleSansRegular; source: "assets/fonts/GoogleSansFlex-Regular.ttf" }
+    FontLoader { id: googleSansMedium; source: "assets/fonts/GoogleSansFlex-Medium.ttf" }
+    FontLoader { id: googleSansSemiBold; source: "assets/fonts/GoogleSansFlex-SemiBold.ttf" }
+    FontLoader { id: iconFont; source: "assets/fonts/MaterialDesignIcons.ttf" }
+
+    Binding { target: KeyboardPalette; property: "background"; value: root.backgroundColor }
+    Binding { target: KeyboardPalette; property: "surface"; value: root.surfaceColor }
+    Binding { target: KeyboardPalette; property: "surfaceVariant"; value: root.surfaceVariantColor }
+    Binding { target: KeyboardPalette; property: "accent"; value: root.accent }
+    Binding { target: KeyboardPalette; property: "accentForeground"; value: root.accentForeground }
+    Binding { target: KeyboardPalette; property: "text"; value: root.textColor }
+    Binding { target: KeyboardPalette; property: "muted"; value: root.mutedColor }
+    Binding { target: KeyboardPalette; property: "error"; value: root.errorColor }
+    Binding { target: KeyboardPalette; property: "fontFamily"; value: root.fontFamily }
+    Binding { target: KeyboardPalette; property: "iconFamily"; value: iconFont.name }
+
+    function tr(key) {
+        const table = translations[language] || translations["en"]
+        return table[key] !== undefined ? table[key] : translations["en"][key]
+    }
+
+    function glyph(codePoint) {
+        return String.fromCodePoint(codePoint)
+    }
 
     function userValue(role, fallback) {
         if (!userModel || userCount < 1 || userIndex < 0 || userIndex >= userCount) return fallback
@@ -51,11 +132,11 @@ FocusScope {
     }
 
     function sessionValue(index) {
-        return sessionValueAt(index, Qt.UserRole + 4) || sessionValueAt(index, Qt.UserRole + 2) || sessionValueAt(index, Qt.DisplayRole) || "Session"
+        return sessionValueAt(index, Qt.UserRole + 4) || sessionValueAt(index, Qt.UserRole + 2) || sessionValueAt(index, Qt.DisplayRole) || tr("session")
     }
 
     function sessionDisplayName(index) {
-        return sessionValueAt(index, Qt.DisplayRole) || sessionValueAt(index, Qt.UserRole + 4) || sessionValueAt(index, Qt.UserRole + 2) || "Session"
+        return sessionValueAt(index, Qt.DisplayRole) || sessionValueAt(index, Qt.UserRole + 4) || sessionValueAt(index, Qt.UserRole + 2) || tr("session")
     }
 
     function sessionLogo(name) {
@@ -86,7 +167,6 @@ FocusScope {
     function hideLogin() {
         if (authenticating) return
         loginVisible = false
-        keyboardVisible = false
         passwordField.text = ""
         feedback.text = ""
         Qt.inputMethod.hide()
@@ -95,18 +175,16 @@ FocusScope {
 
     function toggleKeyboard() {
         if (!loginVisible || authenticating) return
-        keyboardVisible = !keyboardVisible
         passwordField.forceActiveFocus()
-        if (keyboardVisible) Qt.inputMethod.show()
-        else Qt.inputMethod.hide()
+        if (virtualKeyboard.active) Qt.inputMethod.hide()
+        else Qt.inputMethod.show()
     }
 
     function login() {
         if (authenticating || !username || sessionIndex < 0 || sessionIndex >= sessionCount) return
         authenticating = true
-        keyboardVisible = false
         Qt.inputMethod.hide()
-        feedback.text = "Signing in…"
+        feedback.text = tr("signingIn")
         sddm.login(username.trim(), passwordField.text, sessionIndex)
     }
 
@@ -119,11 +197,18 @@ FocusScope {
         passwordField.forceActiveFocus()
     }
 
+    Timer {
+        interval: 15000
+        running: true
+        repeat: true
+        onTriggered: root.now = new Date()
+    }
+
     Connections {
         target: sddm
         function onLoginFailed() {
             root.authenticating = false
-            root.feedback = "Sign-in failed. Check your password and try again."
+            feedback.text = root.tr("failed")
             passwordField.text = ""
             passwordField.forceActiveFocus()
             shake.restart()
@@ -144,20 +229,37 @@ FocusScope {
         }
     }
 
-    Image {
-        id: wallpaper
+    Item {
+        id: backdrop
         anchors.fill: parent
-        source: root.wallpaperSource
-        fillMode: Image.PreserveAspectCrop
-        asynchronous: false
-        cache: false
+        layer.enabled: true
+
+        Image {
+            id: wallpaper
+            anchors.fill: parent
+            source: root.wallpaperSource
+            fillMode: Image.PreserveAspectCrop
+            asynchronous: false
+            cache: false
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            color: root.backgroundColor
+            opacity: wallpaper.status === Image.Ready ? (root.loginVisible ? 0.52 : 0.28) : 1
+            Behavior on opacity { NumberAnimation { duration: 400 } }
+        }
     }
 
-    Rectangle {
-        anchors.fill: parent
-        color: root.backgroundColor
-        opacity: wallpaper.status === Image.Ready ? (root.loginVisible ? 0.52 : 0.28) : 1
-        Behavior on opacity { NumberAnimation { duration: 400 } }
+    MultiEffect {
+        id: blurredBackdrop
+        anchors.fill: backdrop
+        source: backdrop
+        blurEnabled: true
+        blur: 1
+        blurMax: 36
+        autoPaddingEnabled: false
+        visible: false
     }
 
     MouseArea {
@@ -171,9 +273,16 @@ FocusScope {
         anchors.right: parent.right
         anchors.topMargin: 30
         anchors.rightMargin: 36
+        power: sddm
         textColor: root.textColor
         accentColor: root.accent
         surfaceColor: root.surfaceColor
+        fontFamily: root.fontFamily
+        iconFamily: iconFont.name
+        suspendText: root.tr("suspend")
+        restartText: root.tr("restart")
+        shutdownText: root.tr("shutdown")
+        layoutText: root.tr("keyboardLayout")
     }
 
     Text {
@@ -182,11 +291,10 @@ FocusScope {
         anchors.left: parent.left
         anchors.topMargin: 48
         anchors.leftMargin: 56
-        text: Qt.formatDateTime(new Date(), "dddd, MMMM d")
+        text: root.locale.toString(root.now, root.tr("dateFormat"))
         color: root.textColor
-        font.family: clock.fontFamily
+        font.family: root.fontFamily
         font.pixelSize: 20
-        opacity: 1
     }
 
     Clock {
@@ -194,7 +302,7 @@ FocusScope {
         anchors.centerIn: parent
         width: Math.min(parent.width - 40, 520)
         height: 310
-        fontFamily: root.activeFontFamily
+        fontFamily: root.clockFontFamily
         baseAccent: root.accent
         defaultHoursColor: root.accent
         defaultMinutesColor: root.textColor
@@ -208,232 +316,294 @@ FocusScope {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 70
-        text: "Press any key to sign in"
+        text: root.tr("pressAnyKey")
         color: root.textColor
         opacity: root.loginVisible ? 0 : .82
-        font.family: clock.fontFamily
+        font.family: root.fontFamily
         font.pixelSize: 15
         Behavior on opacity { NumberAnimation { duration: 250 } }
     }
 
-    Rectangle {
-        id: loginCardSurface
-        width: root.contentWidth + 34
-        height: loginCard.height + 50
+    Item {
+        id: card
+        width: root.contentWidth + root.cardPadding * 2
+        height: loginCard.height + root.cardVerticalPadding * 2
         x: (root.width - width) / 2
-        y: loginCard.y - 25
-        radius: 30
-        color: root.backgroundColor
-        opacity: root.loginVisible ? .78 : 0
-        visible: opacity > 0
-        border.width: 1
-        border.color: root.surfaceVariantColor
-        Behavior on opacity { NumberAnimation { duration: 260 } }
-        Behavior on y { NumberAnimation { duration: 350; easing.type: Easing.OutCubic } }
-    }
-
-    Column {
-        id: loginCard
-        width: root.contentWidth
-        spacing: 14
-        anchors.horizontalCenter: parent.horizontalCenter
-        y: root.loginVisible ? Math.max(22, (parent.height - height - (root.keyboardVisible ? virtualKeyboard.height : 0)) / 2 - 20) : parent.height + height
+        readonly property real keyboardReserve: root.keyboardVisible ? virtualKeyboard.height + root.keyboardMargin + root.keyboardGap : 0
+        readonly property real restingY: Math.max(24, (root.height - keyboardReserve - height) / 2 - (root.keyboardVisible ? 0 : 20))
+        y: root.loginVisible ? restingY : root.height
         opacity: root.loginVisible ? 1 : 0
+        visible: opacity > 0
         enabled: root.loginVisible
         transform: Translate { id: cardShake; x: 0 }
         Behavior on y { NumberAnimation { duration: 350; easing.type: Easing.OutCubic } }
-        Behavior on opacity { NumberAnimation { duration: 250 } }
+        Behavior on opacity { NumberAnimation { duration: 260 } }
 
         Item {
-            width: parent.width
-            height: 112
-            Button {
-                anchors.left: parent.left
-                anchors.verticalCenter: parent.verticalCenter
-                width: 42
-                height: 42
-                visible: root.userCount > 1
-                focusPolicy: Qt.NoFocus
-                text: "‹"
-                font.pixelSize: 32
-                onClicked: root.cycleUser(-1)
-                background: Rectangle { radius: 21; color: parent.hovered ? root.surfaceColor : "transparent" }
-                contentItem: Text { text: parent.text; color: root.textColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font: parent.font }
+            id: cardSurface
+            anchors.fill: parent
+
+            Item {
+                id: blurClip
+                anchors.fill: parent
+                layer.enabled: true
+                layer.effect: MultiEffect {
+                    maskEnabled: true
+                    maskSource: cardMask
+                }
+                ShaderEffectSource {
+                    anchors.fill: parent
+                    sourceItem: blurredBackdrop
+                    sourceRect: Qt.rect(card.x + cardShake.x, card.y, card.width, card.height)
+                    live: card.visible
+                }
             }
+
             Rectangle {
-                anchors.centerIn: parent
-                width: 96
-                height: 96
+                id: cardMask
+                anchors.fill: parent
                 radius: 30
-                color: root.surfaceColor
-                clip: true
-                Image {
-                    id: avatarImage
-                    anchors.fill: parent
-                    source: root.userIcon
-                    fillMode: Image.PreserveAspectCrop
-                    visible: status === Image.Ready
-                }
-                Text {
-                    anchors.centerIn: parent
-                    visible: avatarImage.status !== Image.Ready
-                    text: root.realName.length ? root.realName.charAt(0).toUpperCase() : "U"
-                    color: root.accent
-                    font.family: clock.fontFamily
-                    font.pixelSize: 38
-                    font.weight: Font.Medium
-                }
+                layer.enabled: true
+                visible: false
             }
-            Button {
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
-                width: 42
-                height: 42
-                visible: root.userCount > 1
-                focusPolicy: Qt.NoFocus
-                text: "›"
-                font.pixelSize: 32
-                onClicked: root.cycleUser(1)
-                background: Rectangle { radius: 21; color: parent.hovered ? root.surfaceColor : "transparent" }
-                contentItem: Text { text: parent.text; color: root.textColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font: parent.font }
-            }
-        }
-
-        Text {
-            width: parent.width
-            text: root.realName
-            color: root.textColor
-            font.family: clock.fontFamily
-            font.pixelSize: 23
-            font.weight: Font.Medium
-            horizontalAlignment: Text.AlignHCenter
-            elide: Text.ElideRight
-        }
-
-        Button {
-            id: sessionButton
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: 214
-            height: 40
-            visible: root.sessionCount > 0
-            focusPolicy: Qt.NoFocus
-            onClicked: sessionMenu.open()
-            background: Rectangle {
-                radius: 20
-                color: sessionButton.hovered || sessionMenu.opened ? root.surfaceVariantColor : root.surfaceColor
-                border.width: sessionMenu.opened ? 1 : 0
-                border.color: root.accent
-            }
-            contentItem: Row {
-                spacing: 9
-                SessionLogo { width: 20; height: 20; anchors.verticalCenter: parent.verticalCenter; source: root.sessionLogo(root.sessionName) }
-                Text { anchors.verticalCenter: parent.verticalCenter; text: root.sessionDisplayName(root.sessionIndex) + (root.sessionCount > 1 ? "  ▾" : ""); color: root.textColor; font.family: clock.fontFamily; font.pixelSize: 14; elide: Text.ElideRight; width: 170 }
-            }
-        }
-
-        Row {
-            width: parent.width
-            height: 56
-            spacing: 9
 
             Rectangle {
-                id: passwordSurface
-                width: parent.width - submitButton.width - parent.spacing
-                height: parent.height
-                radius: 16
-                color: root.surfaceColor
-                border.width: passwordField.activeFocus ? 1 : 0
-                border.color: root.accent
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 16
-                    anchors.rightMargin: 8
-                    spacing: 7
-                    Text { text: "●"; color: passwordField.activeFocus ? root.accent : root.mutedColor; font.pixelSize: 12 }
-                    TextField {
-                        id: passwordField
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        focus: root.loginVisible
-                        enabled: !root.authenticating
-                        echoMode: root.passwordVisible ? TextInput.Normal : TextInput.Password
-                        placeholderText: "Enter password"
-                        color: root.textColor
-                        placeholderTextColor: root.mutedColor
-                        font.family: clock.fontFamily
-                        font.pixelSize: 16
-                        background: Item {}
-                        selectByMouse: true
-                        onAccepted: root.login()
+                anchors.fill: parent
+                radius: 30
+                color: Qt.rgba(root.backgroundColor.r, root.backgroundColor.g, root.backgroundColor.b, .46)
+                border.width: 1
+                border.color: Qt.rgba(root.surfaceVariantColor.r, root.surfaceVariantColor.g, root.surfaceVariantColor.b, .8)
+            }
+        }
+
+        Column {
+            id: loginCard
+            x: root.cardPadding
+            y: root.cardVerticalPadding
+            width: root.contentWidth
+            spacing: 14
+
+            Item {
+                width: parent.width
+                height: 112
+                Button {
+                    id: previousUserButton
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 42
+                    height: 42
+                    visible: root.userCount > 1
+                    focusPolicy: Qt.NoFocus
+                    onClicked: root.cycleUser(-1)
+                    ToolTip.visible: hovered
+                    ToolTip.text: root.tr("previousUser")
+                    Accessible.name: root.tr("previousUser")
+                    background: Rectangle { radius: 21; color: parent.hovered ? root.surfaceColor : "transparent" }
+                    contentItem: Text { text: root.glyph(0xF0141); color: root.textColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font.family: iconFont.name; font.pixelSize: 28 }
+                }
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 96
+                    height: 96
+                    radius: 30
+                    color: root.surfaceColor
+                    clip: true
+                    Image {
+                        id: avatarImage
+                        anchors.fill: parent
+                        source: root.userIcon
+                        fillMode: Image.PreserveAspectCrop
+                        visible: status === Image.Ready
                     }
-                    ToolButton {
-                        Layout.preferredWidth: 34
-                        Layout.fillHeight: true
-                        focusPolicy: Qt.NoFocus
-                        text: root.passwordVisible ? "◉" : "◎"
-                        onClicked: root.passwordVisible = !root.passwordVisible
-                        contentItem: Text { text: parent.text; color: root.mutedColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font.pixelSize: 17 }
-                        background: Item {}
+                    Text {
+                        anchors.centerIn: parent
+                        visible: avatarImage.status !== Image.Ready
+                        text: root.glyph(0xF0004)
+                        color: root.accent
+                        font.family: iconFont.name
+                        font.pixelSize: 58
                     }
+                }
+                Button {
+                    id: nextUserButton
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 42
+                    height: 42
+                    visible: root.userCount > 1
+                    focusPolicy: Qt.NoFocus
+                    onClicked: root.cycleUser(1)
+                    ToolTip.visible: hovered
+                    ToolTip.text: root.tr("nextUser")
+                    Accessible.name: root.tr("nextUser")
+                    background: Rectangle { radius: 21; color: parent.hovered ? root.surfaceColor : "transparent" }
+                    contentItem: Text { text: root.glyph(0xF0142); color: root.textColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font.family: iconFont.name; font.pixelSize: 28 }
                 }
             }
 
+            Text {
+                width: parent.width
+                text: root.realName
+                color: root.textColor
+                font.family: root.fontFamily
+                font.pixelSize: 23
+                font.weight: Font.Medium
+                horizontalAlignment: Text.AlignHCenter
+                elide: Text.ElideRight
+            }
+
             Button {
-                id: submitButton
-                width: 56
-                height: parent.height
-                enabled: !root.authenticating
+                id: sessionButton
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: 250
+                height: 40
+                visible: root.sessionCount > 0
                 focusPolicy: Qt.NoFocus
-                onClicked: root.login()
+                onClicked: sessionMenu.open()
+                Accessible.name: root.tr("chooseSession")
                 background: Rectangle {
+                    radius: 20
+                    color: sessionButton.hovered || sessionMenu.opened ? root.surfaceVariantColor : root.surfaceColor
+                    border.width: sessionMenu.opened ? 1 : 0
+                    border.color: root.accent
+                }
+                contentItem: Row {
+                    spacing: 9
+                    SessionLogo { width: 20; height: 20; anchors.verticalCenter: parent.verticalCenter; source: root.sessionLogo(root.sessionName) }
+                    Text { anchors.verticalCenter: parent.verticalCenter; text: root.sessionDisplayName(root.sessionIndex); color: root.textColor; font.family: root.fontFamily; font.pixelSize: 14; elide: Text.ElideRight; width: root.sessionCount > 1 ? 186 : 206 }
+                    Text { visible: root.sessionCount > 1; anchors.verticalCenter: parent.verticalCenter; text: root.glyph(0xF0140); color: root.mutedColor; font.family: iconFont.name; font.pixelSize: 18 }
+                }
+            }
+
+            Row {
+                width: parent.width
+                height: 56
+                spacing: 9
+
+                Rectangle {
+                    id: passwordSurface
+                    width: parent.width - submitButton.width - parent.spacing
+                    height: parent.height
                     radius: 16
-                    color: root.authenticating ? root.surfaceVariantColor : (submitButton.down ? Qt.darker(root.accent, 1.12) : root.accent)
-                    Behavior on color { ColorAnimation { duration: 110 } }
+                    color: root.surfaceColor
+                    border.width: passwordField.activeFocus ? 1 : 0
+                    border.color: root.accent
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 8
+                        anchors.rightMargin: 8
+                        spacing: 4
+                        TextField {
+                            id: passwordField
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            focus: root.loginVisible
+                            enabled: !root.authenticating
+                            echoMode: root.passwordVisible ? TextInput.Normal : TextInput.Password
+                            inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase | Qt.ImhPreferLowercase
+                            placeholderText: root.tr("password")
+                            color: root.textColor
+                            placeholderTextColor: root.mutedColor
+                            font.family: root.fontFamily
+                            font.pixelSize: 16
+                            leftPadding: 8
+                            background: Item {}
+                            selectByMouse: true
+                            onAccepted: root.login()
+                        }
+                        ToolButton {
+                            id: visibilityButton
+                            Layout.preferredWidth: 38
+                            Layout.preferredHeight: 38
+                            Layout.alignment: Qt.AlignVCenter
+                            focusPolicy: Qt.NoFocus
+                            onClicked: root.passwordVisible = !root.passwordVisible
+                            ToolTip.visible: hovered
+                            ToolTip.text: root.passwordVisible ? root.tr("hidePassword") : root.tr("showPassword")
+                            Accessible.name: ToolTip.text
+                            contentItem: Text {
+                                text: root.glyph(root.passwordVisible ? 0xF0209 : 0xF0208)
+                                color: visibilityButton.down ? root.accent : (visibilityButton.hovered ? root.textColor : root.mutedColor)
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                                font.family: iconFont.name
+                                font.pixelSize: 22
+                            }
+                            background: Rectangle {
+                                radius: 12
+                                color: visibilityButton.down ? root.surfaceVariantColor : (visibilityButton.hovered ? Qt.rgba(root.surfaceVariantColor.r, root.surfaceVariantColor.g, root.surfaceVariantColor.b, .6) : "transparent")
+                            }
+                        }
+                    }
                 }
-                contentItem: Text {
-                    text: root.authenticating ? "…" : "→"
-                    color: config.accentForegroundColor || root.backgroundColor
-                    font.pixelSize: 27
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
+
+                Button {
+                    id: submitButton
+                    width: 56
+                    height: parent.height
+                    enabled: !root.authenticating
+                    focusPolicy: Qt.NoFocus
+                    onClicked: root.login()
+                    ToolTip.visible: hovered
+                    ToolTip.text: root.tr("signIn")
+                    Accessible.name: root.tr("signIn")
+                    background: Rectangle {
+                        radius: 16
+                        color: root.authenticating ? root.surfaceVariantColor : (submitButton.down ? Qt.darker(root.accent, 1.12) : root.accent)
+                        Behavior on color { ColorAnimation { duration: 110 } }
+                    }
+                    contentItem: Text {
+                        text: root.authenticating ? "…" : root.glyph(0xF0054)
+                        color: root.accentForeground
+                        font.family: iconFont.name
+                        font.pixelSize: 26
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
                 }
             }
-        }
 
-        Row {
-            anchors.horizontalCenter: parent.horizontalCenter
-            spacing: 8
-            Button {
-                width: 38
-                height: 34
-                focusPolicy: Qt.NoFocus
-                text: "⌨"
-                onClicked: root.toggleKeyboard()
-                background: Rectangle { radius: 12; color: root.keyboardVisible || parent.hovered ? root.surfaceVariantColor : "transparent" }
-                contentItem: Text { text: parent.text; color: root.keyboardVisible ? root.accent : root.textColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font.pixelSize: 19 }
+            Row {
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: 8
+                Button {
+                    id: keyboardButton
+                    width: 38
+                    height: 34
+                    focusPolicy: Qt.NoFocus
+                    onClicked: root.toggleKeyboard()
+                    ToolTip.visible: hovered
+                    ToolTip.text: root.tr("keyboard")
+                    Accessible.name: root.tr("keyboard")
+                    background: Rectangle { radius: 12; color: root.keyboardVisible || keyboardButton.hovered ? root.surfaceVariantColor : "transparent" }
+                    contentItem: Text { text: root.glyph(0xF030C); color: root.keyboardVisible ? root.accent : root.textColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font.family: iconFont.name; font.pixelSize: 22 }
+                }
+                Button {
+                    id: userMenuButton
+                    width: 38
+                    height: 34
+                    visible: root.userCount > 1
+                    focusPolicy: Qt.NoFocus
+                    onClicked: userMenu.open()
+                    ToolTip.visible: hovered
+                    ToolTip.text: root.tr("chooseUser")
+                    Accessible.name: root.tr("chooseUser")
+                    background: Rectangle { radius: 12; color: userMenuButton.hovered ? root.surfaceVariantColor : "transparent" }
+                    contentItem: Text { text: root.glyph(0xF0140); color: root.textColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font.family: iconFont.name; font.pixelSize: 22 }
+                }
             }
-            Button {
-                width: 38
-                height: 34
-                visible: root.userCount > 1
-                focusPolicy: Qt.NoFocus
-                text: "⌄"
-                onClicked: userMenu.open()
-                background: Rectangle { radius: 12; color: parent.hovered ? root.surfaceVariantColor : "transparent" }
-                contentItem: Text { text: parent.text; color: root.textColor; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font.pixelSize: 20 }
-            }
-        }
 
-        Text {
-            id: feedback
-            width: parent.width
-            color: root.authenticating ? root.mutedColor : root.errorColor
-            text: ""
-            visible: text.length > 0
-            horizontalAlignment: Text.AlignHCenter
-            wrapMode: Text.WordWrap
-            font.family: clock.fontFamily
-            font.pixelSize: 13
+            Text {
+                id: feedback
+                width: parent.width
+                color: root.authenticating ? root.mutedColor : root.errorColor
+                text: ""
+                visible: text.length > 0
+                horizontalAlignment: Text.AlignHCenter
+                wrapMode: Text.WordWrap
+                font.family: root.fontFamily
+                font.pixelSize: 13
+            }
         }
     }
 
@@ -450,7 +620,7 @@ FocusScope {
         width: Math.min(320, root.width - 32)
         height: Math.min(300, root.sessionCount * 48 + 20)
         x: (root.width - width) / 2
-        y: Math.max(12, loginCard.y + 150)
+        y: Math.max(12, card.y + 175)
         modal: true
         focus: true
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
@@ -471,8 +641,8 @@ FocusScope {
                 contentItem: RowLayout {
                     spacing: 10
                     SessionLogo { Layout.preferredWidth: 22; Layout.preferredHeight: 22; source: root.sessionLogo(root.sessionValue(index)) }
-                    Text { Layout.fillWidth: true; text: root.sessionDisplayName(index); color: parent.parent.selected ? root.textColor : root.mutedColor; font.family: clock.fontFamily; font.pixelSize: 14; elide: Text.ElideRight }
-                    Text { text: parent.parent.selected ? "✓" : ""; color: root.accent; font.pixelSize: 16 }
+                    Text { Layout.fillWidth: true; text: root.sessionDisplayName(index); color: parent.parent.selected ? root.textColor : root.mutedColor; font.family: root.fontFamily; font.pixelSize: 14; elide: Text.ElideRight }
+                    Text { text: parent.parent.selected ? root.glyph(0xF012C) : ""; color: root.accent; font.family: iconFont.name; font.pixelSize: 18 }
                 }
                 onClicked: { root.sessionIndex = index; sessionMenu.close(); passwordField.forceActiveFocus() }
             }
@@ -488,7 +658,7 @@ FocusScope {
         width: Math.min(300, root.width - 32)
         height: Math.min(280, root.userCount * 48 + 20)
         x: (root.width - width) / 2
-        y: Math.max(12, loginCard.y + 120)
+        y: Math.max(12, card.y + 145)
         modal: true
         focus: true
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
@@ -509,7 +679,7 @@ FocusScope {
                 contentItem: Text {
                     text: userModel.data(userModel.index(index, 0), Qt.UserRole + 2) || userModel.data(userModel.index(index, 0), Qt.DisplayRole) || userModel.data(userModel.index(index, 0), Qt.EditRole)
                     color: parent.parent.selected ? root.textColor : root.mutedColor
-                    font.family: clock.fontFamily
+                    font.family: root.fontFamily
                     font.pixelSize: 14
                     verticalAlignment: Text.AlignVCenter
                     leftPadding: 12
@@ -525,12 +695,13 @@ FocusScope {
 
     InputPanel {
         id: virtualKeyboard
-        x: 0
-        y: root.keyboardVisible ? root.height - height : root.height
-        width: root.width
-        visible: root.keyboardVisible
+        width: Math.min(root.width - 32, Math.max(640, root.height * 1.056))
+        x: (root.width - width) / 2
+        y: active && root.loginVisible ? root.height - height - root.keyboardMargin : root.height
+        visible: y < root.height
         z: 20
-        Behavior on y { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+        Behavior on y { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
     }
 
+    Component.onCompleted: VirtualKeyboardSettings.styleName = "hyprism"
 }

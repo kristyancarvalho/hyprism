@@ -10,7 +10,7 @@ Item {
     property string backgroundSource: ""
     property color defaultHoursColor: config.accentColor
     property color defaultMinutesColor: config.textColor
-    property string fontFamily: "FlexRounded" // Overridden by Main.qml
+    property string fontFamily: "Google Sans Flex"
     property color baseAccent: config.accentColor
     property color smartHoursColor: defaultHoursColor
     property color smartMinutesColor: defaultMinutesColor
@@ -49,7 +49,7 @@ Item {
         spacing: 0
 
         Column {
-            spacing: -130
+            spacing: 0
             Text {
                 text: clock.timeStr.charAt(0)
                 color: clock.smartHoursColor
@@ -57,6 +57,8 @@ Item {
                 font.family: clock.fontFamily
                 font.weight: Font.Medium
                 width: 130
+                height: 215
+                verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter
                 antialiasing: true
             }
@@ -67,13 +69,15 @@ Item {
                 font.family: clock.fontFamily
                 font.weight: Font.Medium
                 width: 130
+                height: 215
+                verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter
                 antialiasing: true
             }
         }
 
         Column {
-            spacing: -130
+            spacing: 0
             Text {
                 text: clock.timeStr.charAt(1)
                 color: clock.smartHoursColor
@@ -81,6 +85,8 @@ Item {
                 font.family: clock.fontFamily
                 font.weight: Font.Medium
                 width: 130
+                height: 215
+                verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter
                 antialiasing: true
             }
@@ -91,6 +97,8 @@ Item {
                 font.family: clock.fontFamily
                 font.weight: Font.Medium
                 width: 130
+                height: 215
+                verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter
                 antialiasing: true
             }

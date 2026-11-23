@@ -1,0 +1,2 @@
+module HyprismPixie
+singleton KeyboardPalette 1.0 KeyboardPalette.qml
