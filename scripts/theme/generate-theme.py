@@ -541,20 +541,17 @@ def render_hyprlock_config(theme, language="en"):
 def render_sddm(theme):
     values = {
         "background": (SDDM_STATE / "current-wallpaper.jpg").resolve().as_uri(),
-        "background-color": theme["background"],
-        "surface-color": theme["surface"],
-        "surface-container-color": theme["surfaceContainer"],
-        "surface-container-high-color": theme["surfaceContainerHigh"],
-        "surface-hover-color": theme["surfaceHover"],
-        "foreground-color": theme["foreground"],
-        "muted-color": theme["mutedForeground"],
-        "primary-color": theme["primary"],
-        "on-primary-color": theme["onPrimary"],
-        "secondary-color": theme["secondary"],
-        "tertiary-color": theme["tertiary"],
-        "accent-color": theme["primary"],
-        "accent-foreground-color": theme["onPrimary"],
-        "error-color": theme["error"],
+        "accentColor": theme["primary"],
+        "accentForegroundColor": theme["onPrimary"],
+        "autoColor": "false",
+        "backgroundColor": theme["background"],
+        "surfaceColor": theme["surface"],
+        "surfaceVariantColor": theme["surfaceContainerHigh"],
+        "textColor": theme["foreground"],
+        "mutedColor": theme["mutedForeground"],
+        "errorColor": theme["error"],
+        "fontFamily": "",
+        "use24HourClock": "false",
     }
     return "[General]\n" + "".join(f"{key}={value}\n" for key, value in values.items())
 
@@ -569,8 +566,12 @@ def publish_sddm(theme, image):
         return False
     wallpaper = SDDM_STATE / "current-wallpaper.jpg"
     temporary_wallpaper = None
+    previous_wallpaper = None
+    wallpaper_replaced = False
     try:
         if image:
+            if wallpaper.is_file():
+                previous_wallpaper = wallpaper.read_bytes()
             descriptor, temporary_wallpaper = tempfile.mkstemp(prefix=".current-wallpaper-", suffix=".jpg", dir=SDDM_STATE)
             os.close(descriptor)
             with Image.open(image) as source:
@@ -584,6 +585,7 @@ def publish_sddm(theme, image):
             os.chmod(temporary_wallpaper, 0o644)
             os.replace(temporary_wallpaper, wallpaper)
             temporary_wallpaper = None
+            wallpaper_replaced = True
         if not wallpaper.is_file() or not os.access(wallpaper, os.R_OK):
             raise ValueError("readable wallpaper is missing")
         write(SDDM_STATE / "theme.conf", render_sddm(theme), 0o644)
@@ -591,6 +593,21 @@ def publish_sddm(theme, image):
     except (OSError, ValueError) as error:
         if temporary_wallpaper:
             pathlib.Path(temporary_wallpaper).unlink(missing_ok=True)
+        if wallpaper_replaced:
+            if previous_wallpaper is None:
+                wallpaper.unlink(missing_ok=True)
+            else:
+                descriptor, restore_wallpaper = tempfile.mkstemp(prefix=".current-wallpaper-restore-", suffix=".jpg", dir=SDDM_STATE)
+                try:
+                    with os.fdopen(descriptor, "wb") as handle:
+                        handle.write(previous_wallpaper)
+                        handle.flush()
+                        os.fsync(handle.fileno())
+                    os.chmod(restore_wallpaper, 0o644)
+                    os.replace(restore_wallpaper, wallpaper)
+                except BaseException:
+                    pathlib.Path(restore_wallpaper).unlink(missing_ok=True)
+                    raise
         print(f"Hyprism theme: previous SDDM state preserved after failure ({error})", file=sys.stderr)
         return False
 

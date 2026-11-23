@@ -150,6 +150,38 @@ class ThemeTests(unittest.TestCase):
         self.assertIn(f'fill="{light["onPrimary"]}"', THEME.render_papirus_svg(source, light))
         self.assertIn(f'fill="{THEME.mix(dark["accent"], "#000000", .62)}"', THEME.render_papirus_svg(source, dark))
 
+    def test_sddm_output_consumes_manual_and_wallpaper_palettes(self):
+        manual = THEME.preset_theme("gruvbox", "dark", "/wallpapers/manual.jpg")
+        wallpaper = THEME.theme_from(THEME.fallback_palette("dark"), "/wallpapers/wallpaper.jpg", "dark")
+        for theme in (manual, wallpaper):
+            with self.subTest(mode=theme["mode"], accent=theme["primary"]):
+                rendered = THEME.render_sddm(theme)
+                self.assertIn("autoColor=false\n", rendered)
+                self.assertIn(f'accentColor={theme["primary"]}\n', rendered)
+                self.assertIn(f'backgroundColor={theme["background"]}\n', rendered)
+                self.assertIn(f'surfaceColor={theme["surface"]}\n', rendered)
+                self.assertIn(f'textColor={theme["foreground"]}\n', rendered)
+                self.assertIn(f'errorColor={theme["error"]}\n', rendered)
+                self.assertIn("background=file:///var/lib/hyprism/sddm/current-wallpaper.jpg\n", rendered)
+
+    def test_sddm_publication_restores_wallpaper_if_config_write_fails(self):
+        theme = THEME.preset_theme("gruvbox", "dark", "/wallpaper.jpg")
+        with tempfile.TemporaryDirectory() as temporary:
+            state = Path(temporary)
+            previous_wallpaper = state / "current-wallpaper.jpg"
+            previous_config = state / "theme.conf"
+            Image = THEME.Image
+            Image.new("RGB", (8, 8), "#123456").save(previous_wallpaper, format="JPEG")
+            previous_bytes = previous_wallpaper.read_bytes()
+            previous_config.write_text("previous config\n", encoding="utf-8")
+            previous_config_bytes = previous_config.read_bytes()
+            source = state / "source.png"
+            Image.new("RGB", (8, 8), "#abcdef").save(source, format="PNG")
+            with mock.patch.object(THEME, "SDDM_STATE", state), mock.patch.object(THEME, "write", side_effect=OSError("config write failed")):
+                self.assertFalse(THEME.publish_sddm(theme, source))
+            self.assertEqual(previous_wallpaper.read_bytes(), previous_bytes)
+            self.assertEqual(previous_config.read_bytes(), previous_config_bytes)
+
     def test_unchanged_colloid_palette_still_checks_source_patch(self):
         with tempfile.TemporaryDirectory() as temporary:
             previous_output = THEME.OUT

@@ -38,6 +38,14 @@ class PackagingTests(unittest.TestCase):
             self.assertTrue((stage / "usr/share/licenses/hyprism-shell/LICENSE").is_file())
             self.assertTrue((stage / "usr/share/hyprism/config/quickshell/lockscreen.qml").is_file())
             self.assertTrue((stage / "usr/share/hyprism/config/lockscreen/widgets.json").is_file())
+            pixie = stage / "usr/share/hyprism/themes/hyprism-pixie"
+            self.assertTrue((pixie / "Main.qml").is_file())
+            self.assertTrue((pixie / "components/Clock.qml").is_file())
+            self.assertTrue((pixie / "components/PowerBar.qml").is_file())
+            self.assertTrue((pixie / "components/SessionLogo.qml").is_file())
+            self.assertTrue((pixie / "assets/logos/hyprland.svg").is_file())
+            self.assertTrue((pixie / "assets/logos/qtile.png").is_file())
+            self.assertTrue((pixie / "ORIGIN.md").is_file())
             self.assertTrue(os.access(stage / "usr/share/hyprism/scripts/system/lockscreen", os.X_OK))
             pam = stage / "etc/pam.d/hyprism-lock"
             self.assertEqual(pam.stat().st_mode & 0o777, 0o644)
@@ -52,6 +60,26 @@ class PackagingTests(unittest.TestCase):
             self.assertIn("'hyprlock'", text, recipe)
         installer = (ROOT / "install.sh").read_text(encoding="utf-8")
         self.assertIn('if [[ ! -e $lock_pam_service ]]; then', installer)
+
+    def test_pixie_sddm_preserves_keyboard_authentication_and_logo_contracts(self):
+        theme = ROOT / "themes/hyprism-pixie"
+        main = (theme / "Main.qml").read_text(encoding="utf-8")
+        self.assertIn("import QtQuick.VirtualKeyboard", main)
+        self.assertIn("InputPanel {", main)
+        self.assertIn("Qt.inputMethod.show()", main)
+        self.assertIn("Qt.inputMethod.hide()", main)
+        self.assertIn("if (authenticating || !username", main)
+        self.assertIn("sddm.login(username.trim(), passwordField.text, sessionIndex)", main)
+        self.assertIn("sessionCount", main)
+        self.assertIn("sddm.canSuspend", (theme / "components/PowerBar.qml").read_text(encoding="utf-8"))
+        self.assertIn("sddm.canReboot", (theme / "components/PowerBar.qml").read_text(encoding="utf-8"))
+        self.assertIn("sddm.canPowerOff", (theme / "components/PowerBar.qml").read_text(encoding="utf-8"))
+        self.assertIn("height: 56", main)
+        self.assertIn("height: parent.height", main)
+        self.assertIn('["dwl",', main)
+        self.assertIn('identities[i][0] === "dwl"', main)
+        for identity in ("hyprland", "dwm", "kdeplasma", "gnome", "xfce", "sway", "i3", "qtile", "awesomewm", "bspwm", "cinnamon", "mate", "lxde", "lxqt", "desktop"):
+            self.assertTrue(any((theme / "assets/logos" / f"{identity}.{suffix}").is_file() for suffix in ("svg", "png")), identity)
 
     def test_staged_cli_discovers_resources_and_initializes_user_config(self):
         with tempfile.TemporaryDirectory() as temporary:

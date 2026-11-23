@@ -97,7 +97,8 @@ if [[ $(id -u) -eq 0 ]]; then
   run install -d -o "$target_user" -g "$(id -gn "$target_user")" "$backup_root"
   run rm -f /etc/sddm.conf.d/20-hyprism.conf
   [[ ! -f /etc/pam.d/hyprism-lock ]] || run mv /etc/pam.d/hyprism-lock "$backup_root/hyprism-lock.pam"
-  [[ ! -d /usr/share/sddm/themes/hyprism-ksddm ]] || run mv /usr/share/sddm/themes/hyprism-ksddm "$backup_root/sddm-theme"
+  [[ ! -d /usr/share/sddm/themes/hyprism-pixie ]] || run mv /usr/share/sddm/themes/hyprism-pixie "$backup_root/sddm-theme"
+  [[ ! -d /usr/share/sddm/themes/hyprism-ksddm ]] || run mv /usr/share/sddm/themes/hyprism-ksddm "$backup_root/sddm-theme-legacy"
 fi
 
 if ((dry_run)); then

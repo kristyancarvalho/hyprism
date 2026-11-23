@@ -64,7 +64,17 @@ The installer and package lists target Arch Linux. Other distributions are not c
 
 ## Packages
 
-The AUR packages pull in the runtime the shell needs, including `hyprland`, `quickshell` 0.2.0 or newer, `awww`, `matugen`, `python-pillow`, `networkmanager`, `wireplumber`, `upower`, `power-profiles-daemon`, `wl-clipboard` with `cliphist`, `grim`, `slurp` and `satty`, and the Kvantum, qt5ct, qt6ct, and Papirus theming stack. Optional extras such as `ddcutil` for external monitor brightness, `flatpak`, and `fastfetch` are listed as optional dependencies; `pacman -Qi hyprism-shell` shows them with their purpose. The repository installer reads `packages/pacman.txt` and `packages/aur.txt` instead.
+The AUR packages pull in the runtime the shell needs, including `hyprland`, `quickshell` 0.2.0 or newer, `awww`, `matugen`, `python-pillow`, `networkmanager`, `wireplumber`, `upower`, `power-profiles-daemon`, `wl-clipboard` with `cliphist`, `grim`, `slurp` and `satty`, and the Qt 6 SDDM stack (`sddm`, `qt6-declarative`, `qt6-svg`, and `qt6-virtualkeyboard`). The Kvantum, qt5ct, qt6ct, and Papirus theming stack is also installed. Optional extras such as `ddcutil` for external monitor brightness, `flatpak`, and `fastfetch` are listed as optional dependencies; `pacman -Qi hyprism-shell` shows them with their purpose. The repository installer reads `packages/pacman.txt` and `packages/aur.txt` instead.
+
+Hyprism installs its Qt 6 Pixie SDDM fork as `hyprism-pixie`. The login theme reads the same wallpaper and generated palette as the desktop from `/var/lib/hyprism/sddm/`, and includes the Qt Quick Virtual Keyboard for password entry. Session choices use bundled DE/WM logos where the projects publish artwork, with a neutral desktop mark for unknown sessions.
+
+To preview the installed theme without leaving the desktop session, run SDDM's greeter test mode:
+
+```bash
+sddm-greeter-qt6 --test-mode --theme /usr/share/sddm/themes/hyprism-pixie
+```
+
+This opens a separate greeter preview. Do not restart SDDM or log out to preview theme changes.
 
 ## First launch
 

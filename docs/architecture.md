@@ -80,7 +80,7 @@ The QML shell keeps its data providers small and delegates system access to help
 | --- | --- |
 | `config/` | Everything installed as configuration: Hyprland, Quickshell, terminals, toolkits, PAM, SDDM, and defaults |
 | `scripts/` | The `hyprism-shell` CLI, wallpaper and theme tools, and session helpers |
-| `themes/` | Vendored session themes, currently the KSDDM login theme with its upstream license |
+| `themes/` | Vendored themes, including the Qt 6 Hyprism fork of Pixie SDDM and its upstream license |
 | `wallpapers/` | Built-in wallpapers, as PNG with SVG sources, copied when the user has none |
 | `packages/` | Package lists read by `install.sh`: `pacman.txt` and `aur.txt` |
 | `packaging/aur/` | AUR recipes: a `PKGBUILD.in` template for `hyprism-shell` and the `PKGBUILD` for `hyprism-shell-git` |

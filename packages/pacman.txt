@@ -1,6 +1,8 @@
 hyprland
 hyprlock
 sddm
+qt6-declarative
+qt6-svg
 quickshell
 qt6-imageformats
 qt6-virtualkeyboard

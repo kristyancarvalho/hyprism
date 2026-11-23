@@ -1,0 +1,12 @@
+[SddmGreeterTheme]
+Name=Hyprism Pixie
+Description=Pixie SDDM adapted for Hyprism dynamic colors, wallpaper, sessions, and virtual keyboard.
+Author=Hyprism contributors; based on Pixie SDDM by xCaptaiN09
+Copyright=Pixie SDDM contributors
+License=MIT
+Type=sddm-theme
+Version=1.0
+MainScript=Main.qml
+Screenshot=login_screen.png
+QtVersion=6
+X-SDDM-Theme-InterfaceVersion=2

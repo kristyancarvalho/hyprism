@@ -183,16 +183,16 @@ if ((dry_run == 0)); then
 fi
 run install -d -o "$target_user" -g "$target_group" "$wallpaper_dir" "$screenshot_dir" "$recordings_dir"
 
-sddm_theme_dir="/usr/share/sddm/themes/hyprism-ksddm"
+sddm_theme_dir="/usr/share/sddm/themes/hyprism-pixie"
+sddm_stage_dir="/usr/share/sddm/themes/.hyprism-pixie-stage-$timestamp"
+sddm_legacy_theme_dir="/usr/share/sddm/themes/hyprism-ksddm"
 sddm_state_dir="/var/lib/hyprism/sddm"
 sddm_dropin="/etc/sddm.conf.d/20-hyprism.conf"
 run install -d -m 0755 /var/lib/hyprism
 run install -d -m 0755 -o "$target_user" -g "$target_group" "$sddm_state_dir"
-run install -d -m 0755 "$sddm_theme_dir" /etc/sddm.conf.d
-run rm -f "$sddm_theme_dir/theme.conf"
-run cp -a "$repo_dir/themes/ksddm-hyprism/." "$sddm_theme_dir/"
-run ln -sfn "$sddm_state_dir/theme.conf" "$sddm_theme_dir/theme.conf"
-run install -m 0644 "$repo_dir/config/sddm/20-hyprism.conf" "$sddm_dropin"
+run install -d -m 0755 "$sddm_stage_dir" /etc/sddm.conf.d
+run cp -a "$repo_dir/themes/hyprism-pixie/." "$sddm_stage_dir/"
+run ln -sfn "$sddm_state_dir/theme.conf" "$sddm_stage_dir/theme.conf"
 
 lock_pam_service="/etc/pam.d/hyprism-lock"
 if [[ ! -e $lock_pam_service ]]; then
@@ -220,7 +220,7 @@ for image in "$repo_dir"/wallpapers/*.{png,jpg,jpeg,webp}; do
   destination="$wallpaper_dir/$(basename "$image")"
   if [[ ! -e $destination ]]; then run install -m 0644 -o "$target_user" -g "$target_group" "$image" "$destination"; fi
 done
-if ! find -P "$wallpaper_dir" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print -quit | grep -q .; then
+if ! find -P "$wallpaper_dir" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print -quit 2>/dev/null | grep -q .; then
   command -v magick >/dev/null || { printf 'ImageMagick is required to create the initial wallpaper.\n' >&2; exit 1; }
   as_user magick -background none "$repo_dir/wallpapers/abyss.svg" "$wallpaper_dir/hyprism-abyss.png"
 fi
@@ -300,12 +300,28 @@ run install -d -o "$target_user" -g "$target_group" "$theme_dir" "$state_dir"
 if [[ ! -s $theme_dir/fastfetch/logo-palette.json ]]; then
   backup_path "$target_home/.config/fastfetch/images/archlinux.png"
 fi
-first_wallpaper=$(find -P "$wallpaper_dir" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print -quit)
+first_wallpaper=
+if [[ -d $wallpaper_dir ]]; then first_wallpaper=$(find -P "$wallpaper_dir" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print -quit); fi
 hyprlock_language=$install_language
 if ((dry_run == 0)); then hyprlock_language=$(as_user jq -r '.language // "en"' "$runtime_root/config/user.json"); fi
 if hyprlock_animations_current "$theme_dir/hyprlock.conf" "$hyprlock_language"; then hyprlock_animations_stale=0; else hyprlock_animations_stale=1; fi
-if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprtoolkit-colors.conf || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/hyprlock.conf || ! -s $theme_dir/gtk-3.0/settings.ini || ! -s $theme_dir/gtk-4.0/settings.ini || ! -s $theme_dir/gtk-2.0/gtkrc || $hyprlock_animations_stale -eq 1 || ! -s $theme_dir/colloid/_color-palette-matugen.scss || ! -s $theme_dir/colloid-gtk-4.0/gtk.css || ! -s $colloid_theme/gtk-3.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" || $(cat "$colloid_theme/.hyprism-patch.sha256" 2>/dev/null || true) != "$colloid_patch_hash" || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig || ! -s $theme_dir/icons/Hyprism-Papirus/index.theme || ! -s $theme_dir/starship.toml || ! -s $theme_dir/tmux.conf || ! -s $theme_dir/zathura/zathurarc || ! -s $theme_dir/nvim/matugen.lua || ! -s $target_home/.config/nvim/lua/themes/matugen.lua || ! -s $theme_dir/fastfetch/config.jsonc || ! -s $target_home/.config/fastfetch/images/archlinux.png || ! -e $state_dir/lock-wallpaper || ! -s $sddm_state_dir/current-wallpaper.jpg || ! -s $sddm_state_dir/theme.conf ]]; then
-  if [[ -n ${first_wallpaper:-} ]]; then
+sddm_theme_config_current=0
+if grep -qx 'autoColor=false' "$sddm_state_dir/theme.conf" 2>/dev/null \
+  && grep -Fqx 'background=file:///var/lib/hyprism/sddm/current-wallpaper.jpg' "$sddm_state_dir/theme.conf" 2>/dev/null \
+  && grep -q '^accentColor=.' "$sddm_state_dir/theme.conf" 2>/dev/null \
+  && grep -q '^accentForegroundColor=.' "$sddm_state_dir/theme.conf" 2>/dev/null \
+  && grep -q '^backgroundColor=.' "$sddm_state_dir/theme.conf" 2>/dev/null \
+  && grep -q '^surfaceColor=.' "$sddm_state_dir/theme.conf" 2>/dev/null \
+  && grep -q '^surfaceVariantColor=.' "$sddm_state_dir/theme.conf" 2>/dev/null \
+  && grep -q '^textColor=.' "$sddm_state_dir/theme.conf" 2>/dev/null \
+  && grep -q '^mutedColor=.' "$sddm_state_dir/theme.conf" 2>/dev/null \
+  && grep -q '^errorColor=.' "$sddm_state_dir/theme.conf" 2>/dev/null; then sddm_theme_config_current=1; fi
+if [[ ! -s $theme_dir/theme.json || ! -s $theme_dir/hyprtoolkit-colors.conf || ! -s $theme_dir/hyprlock-colors.conf || ! -s $theme_dir/hyprlock.conf || ! -s $theme_dir/gtk-3.0/settings.ini || ! -s $theme_dir/gtk-4.0/settings.ini || ! -s $theme_dir/gtk-2.0/gtkrc || $hyprlock_animations_stale -eq 1 || ! -s $theme_dir/colloid/_color-palette-matugen.scss || ! -s $theme_dir/colloid-gtk-4.0/gtk.css || ! -s $colloid_theme/gtk-3.0/gtk.css || $(cat "$colloid_theme/.hyprism-revision" 2>/dev/null || true) != "$colloid_revision" || $(cat "$colloid_theme/.hyprism-patch.sha256" 2>/dev/null || true) != "$colloid_patch_hash" || ! -s $theme_dir/kvantum/Hyprism/Hyprism.kvconfig || ! -s $theme_dir/icons/Hyprism-Papirus/index.theme || ! -s $theme_dir/starship.toml || ! -s $theme_dir/tmux.conf || ! -s $theme_dir/zathura/zathurarc || ! -s $theme_dir/nvim/matugen.lua || ! -s $target_home/.config/nvim/lua/themes/matugen.lua || ! -s $theme_dir/fastfetch/config.jsonc || ! -s $target_home/.config/fastfetch/images/archlinux.png || ! -e $state_dir/lock-wallpaper || ! -s $sddm_state_dir/current-wallpaper.jpg || ! -s $sddm_state_dir/theme.conf || $sddm_theme_config_current -eq 0 ]]; then
+  if [[ $sddm_theme_config_current -eq 0 && -s $theme_dir/theme.json ]]; then
+    active_wallpaper=$(as_user jq -r '.wallpaper // empty' "$theme_dir/theme.json")
+    [[ -f $active_wallpaper ]] || active_wallpaper="$sddm_state_dir/current-wallpaper.jpg"
+    as_user env HYPRISM_ROOT="$runtime_root" HYPRISM_CACHE_DIR="$target_home/.cache/hyprism" HYPRISM_SDDM_STATE_DIR="$sddm_state_dir" "$runtime_root/scripts/theme/generate-theme.py" "$active_wallpaper"
+  elif [[ -n ${first_wallpaper:-} ]]; then
     as_user env HYPRISM_ROOT="$runtime_root" HYPRISM_SDDM_STATE_DIR="$sddm_state_dir" "$runtime_root/scripts/wallpaper" set "$first_wallpaper"
   else
     as_user env HYPRISM_CACHE_DIR="$target_home/.cache/hyprism" HYPRISM_SDDM_STATE_DIR="$sddm_state_dir" "$runtime_root/scripts/theme/generate-theme.py"
@@ -319,6 +335,38 @@ if [[ ! -e $theme_dir/kitty.conf ]]; then
 fi
 if [[ ! -s $theme_dir/foot-opacity.ini || ! -s $theme_dir/kitty-opacity.conf ]]; then
   as_user env HYPRISM_ROOT="$runtime_root" HYPRISM_CACHE_DIR="$target_home/.cache/hyprism" "$runtime_root/scripts/hyprism-shell" theme sync
+fi
+
+if ((dry_run == 0)); then
+  [[ -s $sddm_stage_dir/Main.qml && -s $sddm_stage_dir/components/Clock.qml && -s $sddm_stage_dir/components/PowerBar.qml && -s $sddm_stage_dir/components/SessionLogo.qml && -s $sddm_stage_dir/metadata.desktop && -s $sddm_stage_dir/login_screen.png && -s $sddm_stage_dir/assets/fonts/FlexRounded-R.ttf && -s $sddm_stage_dir/assets/fonts/FlexRounded-M.ttf && -s $sddm_stage_dir/assets/fonts/FlexRounded-B.ttf && -s $sddm_stage_dir/assets/fonts/MaterialDesignIcons.ttf ]] \
+    || { printf 'The staged Hyprism Pixie theme is incomplete.\n' >&2; exit 1; }
+  for logo in hyprland dwm kdeplasma gnome xfce sway i3 qtile awesomewm bspwm cinnamon mate lxde lxqt desktop; do
+    [[ -s $sddm_stage_dir/assets/logos/$logo.svg || ( $logo == qtile && -s $sddm_stage_dir/assets/logos/qtile.png ) ]] \
+      || { printf 'The staged session logo is missing: %s\n' "$logo" >&2; exit 1; }
+  done
+  [[ -s $sddm_state_dir/theme.conf && -s $sddm_state_dir/current-wallpaper.jpg ]] \
+    || { printf 'Generated SDDM resources are unavailable; the active login theme was left unchanged.\n' >&2; exit 1; }
+  [[ -L $sddm_stage_dir/theme.conf && $(readlink -f "$sddm_stage_dir/theme.conf") == $(readlink -f "$sddm_state_dir/theme.conf") ]] \
+    || { printf 'The staged SDDM configuration link is invalid; the active login theme was left unchanged.\n' >&2; exit 1; }
+  grep -qx 'autoColor=false' "$sddm_stage_dir/theme.conf" \
+    && grep -Fqx 'background=file:///var/lib/hyprism/sddm/current-wallpaper.jpg' "$sddm_stage_dir/theme.conf" \
+    && grep -q '^accentColor=.' "$sddm_stage_dir/theme.conf" \
+    && grep -q '^surfaceColor=.' "$sddm_stage_dir/theme.conf" \
+    || { printf 'The staged SDDM theme configuration is incomplete; the active login theme was left unchanged.\n' >&2; exit 1; }
+  sddm_backup_dir="$target_home/.local/state/hyprism/backups/$timestamp/sddm"
+  run install -d -m 0755 -o "$target_user" -g "$target_group" "$sddm_backup_dir"
+  if [[ -e $sddm_theme_dir ]]; then run mv "$sddm_theme_dir" "$sddm_backup_dir/hyprism-pixie"; fi
+  if ! run mv "$sddm_stage_dir" "$sddm_theme_dir"; then
+    if [[ -d $sddm_backup_dir/hyprism-pixie && ! -e $sddm_theme_dir ]]; then run mv "$sddm_backup_dir/hyprism-pixie" "$sddm_theme_dir"; fi
+    printf 'The new SDDM theme could not be activated; the previous theme was restored.\n' >&2
+    exit 1
+  fi
+  [[ -L $sddm_theme_dir/theme.conf && $(readlink -f "$sddm_theme_dir/theme.conf") == $(readlink -f "$sddm_state_dir/theme.conf") ]] \
+    || { printf 'The staged SDDM configuration link is invalid; the previous theme remains archived.\n' >&2; exit 1; }
+  sddm_dropin_stage="/etc/sddm.conf.d/.20-hyprism.conf-$timestamp"
+  run install -m 0644 "$repo_dir/config/sddm/20-hyprism.conf" "$sddm_dropin_stage"
+  run mv -f "$sddm_dropin_stage" "$sddm_dropin"
+  if [[ -d $sddm_legacy_theme_dir ]]; then run mv "$sddm_legacy_theme_dir" "$sddm_backup_dir/ksddm-hyprism"; fi
 fi
 
 tpm_revision=e261deb1b47614eed3400089ce7197dc68acc4eb
@@ -437,16 +485,24 @@ if ((dry_run == 0)); then
     || { printf 'The Papirus icon theme was not installed.\n' >&2; exit 1; }
   [[ -s $theme_dir/hyprlock-colors.conf && -e $state_dir/lock-wallpaper ]] \
     || { printf 'The initial Hyprlock resources were not generated.\n' >&2; exit 1; }
-  [[ -s $sddm_theme_dir/Main.qml && -s $sddm_theme_dir/SessionIdentity.qml && -s $sddm_theme_dir/metadata.desktop && -L $sddm_theme_dir/theme.conf && -s $sddm_state_dir/theme.conf && -s $sddm_state_dir/current-wallpaper.jpg && -s $sddm_dropin ]] \
+  [[ -s $sddm_theme_dir/Main.qml && -s $sddm_theme_dir/components/Clock.qml && -s $sddm_theme_dir/components/PowerBar.qml && -s $sddm_theme_dir/components/SessionLogo.qml && -s $sddm_theme_dir/metadata.desktop && -s $sddm_theme_dir/login_screen.png && -s $sddm_theme_dir/assets/logos/hyprland.svg && -s $sddm_theme_dir/assets/logos/qtile.png && -L $sddm_theme_dir/theme.conf && -s $sddm_state_dir/theme.conf && -s $sddm_state_dir/current-wallpaper.jpg && -s $sddm_dropin ]] \
     || { printf 'The dynamic SDDM theme was not installed correctly.\n' >&2; exit 1; }
   [[ -d /usr/lib/qt6/qml/QtQuick/VirtualKeyboard ]] \
     || { printf 'The SDDM virtual keyboard was not installed.\n' >&2; exit 1; }
+  [[ -d /usr/lib/qt6/qml/QtQuick/Controls && -d /usr/lib/qt6/qml/QtQuick/Layouts && -s /usr/lib/qt6/plugins/imageformats/libqsvg.so ]] \
+    || { printf 'The SDDM Qt 6 Quick modules were not installed.\n' >&2; exit 1; }
   [[ -x /usr/lib/hyprpolkitagent/hyprpolkitagent ]] \
     || { printf 'The PolicyKit authentication agent was not installed.\n' >&2; exit 1; }
   as_user systemctl --user is-enabled --quiet hyprpolkitagent.service \
     || { printf 'The PolicyKit authentication agent was not enabled.\n' >&2; exit 1; }
   grep -qx 'InputMethod=qtvirtualkeyboard' "$sddm_dropin" \
     || { printf 'The SDDM virtual input method was not configured.\n' >&2; exit 1; }
+  grep -qx 'Current=hyprism-pixie' "$sddm_dropin" \
+    || { printf 'The Hyprism Pixie theme is not active in SDDM.\n' >&2; exit 1; }
+  grep -qx 'autoColor=false' "$sddm_state_dir/theme.conf" \
+    || { printf 'The SDDM theme is not consuming the Hyprism palette.\n' >&2; exit 1; }
+  grep -Fqx 'background=file:///var/lib/hyprism/sddm/current-wallpaper.jpg' "$sddm_state_dir/theme.conf" \
+    || { printf 'The SDDM theme is not using the current Hyprism wallpaper.\n' >&2; exit 1; }
   [[ $(stat -c '%U:%G:%a' "$sddm_state_dir") == "$target_user:$target_group:755" ]] \
     || { printf 'The dynamic SDDM state permissions are invalid.\n' >&2; exit 1; }
   [[ $(as_user fc-match --format '%{family}\n' 'Google Sans Flex') == *"Google Sans Flex"* ]] \
