@@ -120,7 +120,7 @@ class SddmThemeTests(unittest.TestCase):
     def test_virtual_keyboard_uses_the_hyprism_style_and_compact_geometry(self):
         self.assertIn('VirtualKeyboardSettings.styleName = "hyprism"', MAIN)
         self.assertIn("InputPanel {", MAIN)
-        self.assertIn("virtualKeyboard.active", MAIN)
+        self.assertIn("keyboardRequested", MAIN)
         self.assertIn("Qt.inputMethod.show()", MAIN)
         self.assertIn("Qt.inputMethod.hide()", MAIN)
         self.assertIn("Math.max(640, root.height * 1.056)", MAIN)
@@ -179,6 +179,11 @@ class SddmThemeTests(unittest.TestCase):
     @unittest.skipUnless(RUNNER.exists(), "qmltestrunner is not installed")
     def test_virtual_keys_type_into_a_dummy_password_field(self):
         self.assertRegex(self.run_qml("tst_pixie_keyboard.qml"), r"Totals: 7 passed, 0 failed")
+
+    @unittest.skipUnless(RUNNER.exists(), "qmltestrunner is not installed")
+    def test_keyboard_stays_hidden_until_the_mouse_toggle_is_clicked(self):
+        self.assertRegex(self.run_qml("tst_pixie_keyboard_default.qml"), r"Totals: 6 passed, 0 failed")
+        self.assertIn("property bool keyboardRequested: false", MAIN)
 
     @unittest.skipUnless(RUNNER.exists(), "qmltestrunner is not installed")
     def test_power_bar_offers_only_supported_actions_with_mocked_backend(self):

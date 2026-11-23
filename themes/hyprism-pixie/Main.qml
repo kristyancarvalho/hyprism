@@ -65,7 +65,8 @@ FocusScope {
     property bool introduced: false
     property bool authenticating: false
     property bool passwordVisible: false
-    readonly property bool keyboardVisible: loginVisible && virtualKeyboard.active
+    property bool keyboardRequested: false
+    readonly property bool keyboardVisible: loginVisible && keyboardRequested
     property int userIndex: userModel && userModel.lastIndex >= 0 ? userModel.lastIndex : 0
     property int sessionIndex: sessionModel && sessionModel.lastIndex >= 0 ? sessionModel.lastIndex : 0
     readonly property int userCount: userModel ? userModel.count : 0
@@ -168,6 +169,7 @@ FocusScope {
     function hideLogin() {
         if (authenticating) return
         loginVisible = false
+        keyboardRequested = false
         passwordField.text = ""
         feedback.text = ""
         Qt.inputMethod.hide()
@@ -177,13 +179,15 @@ FocusScope {
     function toggleKeyboard() {
         if (!loginVisible || authenticating) return
         passwordField.forceActiveFocus()
-        if (virtualKeyboard.active) Qt.inputMethod.hide()
-        else Qt.inputMethod.show()
+        keyboardRequested = !keyboardRequested
+        if (keyboardRequested) Qt.inputMethod.show()
+        else Qt.inputMethod.hide()
     }
 
     function login() {
         if (authenticating || !username || sessionIndex < 0 || sessionIndex >= sessionCount) return
         authenticating = true
+        keyboardRequested = false
         Qt.inputMethod.hide()
         feedback.text = tr("signingIn")
         sddm.login(username.trim(), passwordField.text, sessionIndex)
@@ -732,10 +736,11 @@ FocusScope {
         id: virtualKeyboard
         width: Math.min(root.width - 32, Math.max(640, root.height * 1.056))
         x: (root.width - width) / 2
-        y: active && root.loginVisible ? root.height - height - root.keyboardMargin : root.height
+        y: root.keyboardVisible ? root.height - height - root.keyboardMargin : root.height
         visible: y < root.height
-        opacity: active && root.loginVisible ? 1 : 0
+        opacity: root.keyboardVisible ? 1 : 0
         z: 20
+        onActiveChanged: if (active && !root.keyboardRequested) Qt.inputMethod.hide()
         Behavior on y { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
         Behavior on opacity { NumberAnimation { duration: 200 } }
     }
