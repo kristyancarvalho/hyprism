@@ -55,7 +55,7 @@ Item {
                 color: clock.smartHoursColor
                 font.pixelSize: 200
                 font.family: clock.fontFamily
-                font.weight: Font.Medium
+                font.weight: Font.DemiBold
                 width: 130
                 height: 215
                 verticalAlignment: Text.AlignVCenter
@@ -67,7 +67,7 @@ Item {
                 color: clock.smartMinutesColor
                 font.pixelSize: 200
                 font.family: clock.fontFamily
-                font.weight: Font.Medium
+                font.weight: Font.DemiBold
                 width: 130
                 height: 215
                 verticalAlignment: Text.AlignVCenter
@@ -83,7 +83,7 @@ Item {
                 color: clock.smartHoursColor
                 font.pixelSize: 200
                 font.family: clock.fontFamily
-                font.weight: Font.Medium
+                font.weight: Font.DemiBold
                 width: 130
                 height: 215
                 verticalAlignment: Text.AlignVCenter
@@ -95,7 +95,7 @@ Item {
                 color: clock.smartMinutesColor
                 font.pixelSize: 200
                 font.family: clock.fontFamily
-                font.weight: Font.Medium
+                font.weight: Font.DemiBold
                 width: 130
                 height: 215
                 verticalAlignment: Text.AlignVCenter

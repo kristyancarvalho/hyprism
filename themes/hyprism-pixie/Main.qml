@@ -455,7 +455,7 @@ FocusScope {
             Button {
                 id: sessionButton
                 anchors.horizontalCenter: parent.horizontalCenter
-                width: 250
+                width: 290
                 height: 40
                 visible: root.sessionCount > 0
                 focusPolicy: Qt.NoFocus
@@ -467,11 +467,15 @@ FocusScope {
                     border.width: sessionMenu.opened ? 1 : 0
                     border.color: root.accent
                 }
-                contentItem: Row {
-                    spacing: 9
-                    SessionLogo { width: 20; height: 20; anchors.verticalCenter: parent.verticalCenter; source: root.sessionLogo(root.sessionName) }
-                    Text { anchors.verticalCenter: parent.verticalCenter; text: root.sessionDisplayName(root.sessionIndex); color: root.textColor; font.family: root.fontFamily; font.pixelSize: 14; elide: Text.ElideRight; width: root.sessionCount > 1 ? 186 : 206 }
-                    Text { visible: root.sessionCount > 1; anchors.verticalCenter: parent.verticalCenter; text: root.glyph(0xF0140); color: root.mutedColor; font.family: iconFont.name; font.pixelSize: 18 }
+                contentItem: Item {
+                    TextMetrics { id: sessionMetrics; font.family: root.fontFamily; font.pixelSize: 14; text: root.sessionDisplayName(root.sessionIndex) }
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 10
+                        SessionLogo { width: 20; height: 20; anchors.verticalCenter: parent.verticalCenter; source: root.sessionLogo(root.sessionName) }
+                        Text { id: sessionLabel; anchors.verticalCenter: parent.verticalCenter; text: root.sessionDisplayName(root.sessionIndex); color: root.textColor; font.family: root.fontFamily; font.pixelSize: 14; elide: Text.ElideRight; width: Math.min(sessionMetrics.width, 210) }
+                        Text { visible: root.sessionCount > 1; anchors.verticalCenter: parent.verticalCenter; text: root.glyph(0xF0140); color: root.mutedColor; font.family: iconFont.name; font.pixelSize: 18 }
+                    }
                 }
             }
 

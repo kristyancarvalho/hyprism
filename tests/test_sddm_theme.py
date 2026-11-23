@@ -67,6 +67,15 @@ class SddmThemeTests(unittest.TestCase):
         self.assertIn("root.glyph(0xF0004)", MAIN)
         self.assertIn("source: root.userIcon", MAIN)
 
+    def test_clock_weight_matches_the_lock_screen(self):
+        clock = (THEME / "components/Clock.qml").read_text(encoding="utf-8")
+        self.assertEqual(clock.count("font.weight: Font.DemiBold"), 4)
+        self.assertNotIn("Font.Medium", clock)
+
+    def test_session_indicator_is_centered_in_its_button(self):
+        session = MAIN[MAIN.index("id: sessionButton"):MAIN.index("id: passwordSurface")]
+        self.assertIn("anchors.centerIn: parent", session)
+
     def test_clock_uses_google_sans_flex_bundled_with_its_license(self):
         self.assertIn('property string fontFamily: "Google Sans Flex"', (THEME / "components/Clock.qml").read_text(encoding="utf-8"))
         self.assertIn("fontFamily: root.clockFontFamily", MAIN)
@@ -137,7 +146,13 @@ class SddmThemeTests(unittest.TestCase):
         self.assertEqual(translation_keys("pt-BR")["restart"], "Reiniciar")
         self.assertEqual(translation_keys("pt-BR")["shutdown"], "Desligar")
 
+    def qml_modules_available(self):
+        roots = [Path("/usr/lib/qt6/qml"), Path("/usr/lib/x86_64-linux-gnu/qt6/qml"), Path("/usr/lib64/qt6/qml")]
+        return any((root / "QtQuick/VirtualKeyboard").is_dir() and (root / "QtQuick/Controls").is_dir() for root in roots)
+
     def run_qml(self, name):
+        if not self.qml_modules_available():
+            self.skipTest("Qt Quick Controls and Virtual Keyboard are not installed")
         result = subprocess.run(
             [str(RUNNER), "-input", str(ROOT / "tests/qml" / name)],
             env=dict(os.environ, QT_QPA_PLATFORM="offscreen", QT_IM_MODULE="qtvirtualkeyboard", QML_IMPORT_PATH=str(THEME / "imports")),
