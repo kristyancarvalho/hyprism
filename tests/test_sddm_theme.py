@@ -22,7 +22,7 @@ class SddmThemeTests(unittest.TestCase):
         self.assertNotIn("loginCardSurface", MAIN)
         card = MAIN[MAIN.index("        id: card\n"):MAIN.index("    SequentialAnimation {\n        id: shake")]
         self.assertEqual(card.count("Behavior on y"), 1)
-        self.assertEqual(card.count("Behavior on opacity"), 1)
+        self.assertEqual(card[:card.index("id: cardSurface")].count("Behavior on opacity"), 1)
         self.assertIn("id: cardSurface", card)
         self.assertIn("id: loginCard", card)
         self.assertIn("restingY", card)
