@@ -72,6 +72,16 @@ class SddmThemeTests(unittest.TestCase):
         self.assertEqual(clock.count("font.weight: Font.DemiBold"), 4)
         self.assertNotIn("Font.Medium", clock)
 
+    def test_open_and_close_operations_are_animated(self):
+        self.assertEqual(MAIN.count("enter: Transition"), 2)
+        self.assertEqual(MAIN.count("exit: Transition"), 2)
+        keyboard = MAIN[MAIN.index("id: virtualKeyboard"):]
+        self.assertIn("Behavior on y", keyboard)
+        self.assertIn("Behavior on opacity", keyboard)
+        feedback = MAIN[MAIN.index("id: feedback"):MAIN.index("id: shake")]
+        self.assertIn("Behavior on opacity", feedback)
+        self.assertIn("root.introduced ? 1 : 0", MAIN)
+
     def test_session_indicator_is_centered_in_its_button(self):
         session = MAIN[MAIN.index("id: sessionButton"):MAIN.index("id: passwordSurface")]
         self.assertIn("anchors.centerIn: parent", session)

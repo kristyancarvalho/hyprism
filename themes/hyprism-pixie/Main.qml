@@ -62,6 +62,7 @@ FocusScope {
     property date now: new Date()
 
     property bool loginVisible: false
+    property bool introduced: false
     property bool authenticating: false
     property bool passwordVisible: false
     readonly property bool keyboardVisible: loginVisible && virtualKeyboard.active
@@ -274,6 +275,8 @@ FocusScope {
         anchors.topMargin: 30
         anchors.rightMargin: 36
         power: sddm
+        opacity: root.introduced ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: 500; easing.type: Easing.OutCubic } }
         textColor: root.textColor
         accentColor: root.accent
         surfaceColor: root.surfaceColor
@@ -292,6 +295,8 @@ FocusScope {
         anchors.topMargin: 48
         anchors.leftMargin: 56
         text: root.locale.toString(root.now, root.tr("dateFormat"))
+        opacity: root.introduced ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: 500; easing.type: Easing.OutCubic } }
         color: root.textColor
         font.family: root.fontFamily
         font.pixelSize: 20
@@ -602,7 +607,9 @@ FocusScope {
                 width: parent.width
                 color: root.authenticating ? root.mutedColor : root.errorColor
                 text: ""
-                visible: text.length > 0
+                visible: text.length > 0 || opacity > 0
+                opacity: text.length > 0 ? 1 : 0
+                Behavior on opacity { NumberAnimation { duration: 200 } }
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap
                 font.family: root.fontFamily
@@ -625,6 +632,18 @@ FocusScope {
         height: Math.min(300, root.sessionCount * 48 + 20)
         x: (root.width - width) / 2
         y: Math.max(12, card.y + 175)
+        enter: Transition {
+            ParallelAnimation {
+                NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 180; easing.type: Easing.OutCubic }
+                NumberAnimation { property: "scale"; from: .94; to: 1; duration: 220; easing.type: Easing.OutCubic }
+            }
+        }
+        exit: Transition {
+            ParallelAnimation {
+                NumberAnimation { property: "opacity"; to: 0; duration: 130; easing.type: Easing.InCubic }
+                NumberAnimation { property: "scale"; to: .96; duration: 130; easing.type: Easing.InCubic }
+            }
+        }
         modal: true
         focus: true
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
@@ -663,6 +682,18 @@ FocusScope {
         height: Math.min(280, root.userCount * 48 + 20)
         x: (root.width - width) / 2
         y: Math.max(12, card.y + 145)
+        enter: Transition {
+            ParallelAnimation {
+                NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 180; easing.type: Easing.OutCubic }
+                NumberAnimation { property: "scale"; from: .94; to: 1; duration: 220; easing.type: Easing.OutCubic }
+            }
+        }
+        exit: Transition {
+            ParallelAnimation {
+                NumberAnimation { property: "opacity"; to: 0; duration: 130; easing.type: Easing.InCubic }
+                NumberAnimation { property: "scale"; to: .96; duration: 130; easing.type: Easing.InCubic }
+            }
+        }
         modal: true
         focus: true
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
@@ -703,9 +734,14 @@ FocusScope {
         x: (root.width - width) / 2
         y: active && root.loginVisible ? root.height - height - root.keyboardMargin : root.height
         visible: y < root.height
+        opacity: active && root.loginVisible ? 1 : 0
         z: 20
         Behavior on y { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
+        Behavior on opacity { NumberAnimation { duration: 200 } }
     }
 
-    Component.onCompleted: VirtualKeyboardSettings.styleName = "hyprism"
+    Component.onCompleted: {
+        VirtualKeyboardSettings.styleName = "hyprism"
+        introduced = true
+    }
 }
