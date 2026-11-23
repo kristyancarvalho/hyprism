@@ -228,6 +228,7 @@ kbd { margin-left: auto; padding: 1px 6px; border: 1px solid var(--line); border
 .prose li::marker { color: var(--accent-strong); }
 .prose strong { font-weight: 700; }
 .prose code:not(pre code), .release-prose code { padding: 2px 5px; border: 1px solid var(--line); border-radius: 2px; background: var(--surface); font-family: ui-monospace, 'Cascadia Code', monospace; font-size: .88em; }
+.prose img, .release-prose img { display: block; width: 100%; max-width: 100%; height: auto; margin: 22px 0 26px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
 .prose pre { position: relative; overflow: auto; margin: 20px 0 24px; padding: 19px 21px; border: 1px solid #504945; border-radius: 3px; background: var(--code-bg) !important; color: var(--code-fg) !important; font: 12px/1.7 ui-monospace, 'Cascadia Code', monospace; }
 .prose pre code { font: inherit; white-space: pre; }
 .prose pre.astro-code { background: var(--shiki-light-bg) !important; color: var(--shiki-light) !important; }
